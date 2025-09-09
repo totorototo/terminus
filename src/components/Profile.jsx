@@ -223,12 +223,13 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '4px',
-                    alignItems: 'flex-start'
+                    alignItems: 'flex-start',
+                    opacity: 0.4
                 }}>
                    
-                    <div style={{ margin: 0, display: 'flex', flexDirection: 'row', gap: '4px'   }}>
-                        <span>Total distance: {((section.section.totalDistance)/1000).toFixed(2)} km</span>
-                        <span>Total elevation: {(section.section.totalElevation).toFixed(0)}</span>
+                    <div style={{ margin: 0, display: 'flex', flexDirection: 'row', gap: '4px' }}>
+                        <span>distance: {((section.section.totalDistance)/1000).toFixed(2)} km</span>
+                        <span>elevation: {(section.section.totalElevation).toFixed(0)}</span>
                     </div>
                 </div>
             )}
