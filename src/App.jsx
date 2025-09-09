@@ -15,6 +15,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 
 function App() {
   const [gpsResults, setGpsResults] = useState(null);
+  const [section, setSection] = useState(null);
   const [error, setError] = useState(null);
   const [selectedPoints, setSelectedPoints] = useState([]);
   // Stress testing state
@@ -52,10 +53,16 @@ function App() {
     }
   }, [isWorkerReady]);
 
-  const handleProcessGPS = async () => {
+
+  const handleProcessGPS = async (startIndex, endIndex) => {
     try {
       setError(null);
-      const coordinates = gpx.features[0].geometry.coordinates;
+      let coordinates;
+      if (startIndex !== undefined && endIndex !== undefined) {
+        coordinates = gpx.features[0].geometry.coordinates.slice(startIndex, endIndex + 1);
+      } else {
+        coordinates = gpx.features[0].geometry.coordinates;
+      }
       const results = await processGPSData(coordinates, (progress, message) => {
         // Optionally handle progress
       });
@@ -80,6 +87,8 @@ function App() {
     try {
       const coordinates = gpx.features[0].geometry.coordinates;
       const section = await getRouteSection(coordinates, start, end);
+      console.log('Section received in App:', section);
+      setSection(section);
       // Optionally do something with section
     } catch (err) {
       setError(err.message);
@@ -246,7 +255,7 @@ function App() {
         <div style={{ height: "200px", width: "100%" }}>
           <AutoSizer>
             {({ width, height }) => (
-              <Profile gpsResults={gpsResults} width={width} height={height} />
+              <Profile gpsResults={gpsResults} width={width} height={height} handleProcessGPS={handleProcessGPS} handleGetSection={handleGetSection} section={section} />
             )}
           </AutoSizer>
         </div>

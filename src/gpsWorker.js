@@ -74,12 +74,23 @@ async function processGPSData(gpsData, requestId) {
     return [Number(point[0]), Number(point[1]), Number(point[2])]; // Ensure serializable
   });
 
+  const extrema = trace.extrema;
+  const { get: getExtremum, length: extremaLength } = extrema;
+  const serializedExtrema = Array.from({ length: extremaLength }, (_, i) => {
+    const ext = getExtremum(i);
+    return {
+      type: String(ext.type),
+      index: Number(ext.index),
+      value: Number(ext.value)
+    };
+  });
 
   const results = {
     totalDistance: Number(trace.totalDistance()),
     totalElevation: Number(trace.totalElevation()),
     pointCount: Number(gpsData.coordinates.length),
     points: serializedPoints,
+    extrema: serializedExtrema
   };
 
   self.postMessage({
@@ -173,15 +184,12 @@ async function findPointsAtDistances(data, requestId) {
 async function getRouteSection(data, requestId) {
 
   const { coordinates, start, end } = data;
-  const trace = Trace.init(coordinates);
+  const section = coordinates.slice(start, end); // Copy to avoid modifying original
 
-  const sectionPoints = trace.sliceBetweenDistances(start, end);
+  const trace = Trace.init(section);
 
-  // Convert Zig array to plain JavaScript array
-  const serializedPoints = Array.from({ length: sectionPoints.length }, (_, i) => {
-    const point = sectionPoints[i];
-    return [Number(point[0]), Number(point[1]), Number(point[2])];
-  });
+  // const sectionPoints = trace.sliceBetweenDistances(start, end);
+  const sectionPoints = trace.data;
 
   trace.deinit();
 
@@ -189,10 +197,8 @@ async function getRouteSection(data, requestId) {
     type: 'ROUTE_SECTION_READY',
     id: requestId,
     section: {
-      startKm: Number(start),
-      endKm: Number(end),
-      points: serializedPoints,
-      distance: Number(end - start)
+      totalDistance: Number(trace.totalDistance()),
+      totalElevation: Number(trace.totalElevation()),
     }
   });
 }
