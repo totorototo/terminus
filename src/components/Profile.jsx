@@ -119,13 +119,7 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
         }
     }
 
-    // Optionally, expose selected indices for parent/worker/wasm
-    useEffect(() => {
-        const i0 = Math.max(0, Math.min(selectionStartIndex, selectionEndIndex));
-        const i1 = Math.min(gpsResults.points.length - 1, Math.max(selectionStartIndex, selectionEndIndex));
-        if (!(i1 > i0)) return;
 
-    }, [selectionStartIndex, selectionEndIndex]);
 
 
     // Helper to generate selection rectangle SVG element
@@ -202,7 +196,7 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                 width={width}
                 height={height}
                 viewBox={`0 0 ${width} ${height}`}
-                style={{ cursor: isSelecting ? 'crosshair' : 'pointer' }}
+                style={{ cursor: 'crosshair' }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
@@ -214,20 +208,20 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                     </clipPath>
                 </defs>
                 <g clipPath="url(#profile-clip)">
-                        {/* Peaks highlight */}
-                        {gpsResults.peaks && scales && gpsResults.peaks.map((peakIdx, idx) => {
-                            const { xScale, yScale } = scales;
-                            if (!xScale || !yScale) return null;
-                            const x = xScale(peakIdx);
-                            const y = yScale(gpsResults.points[peakIdx][2]);
-                            return (
-                                <g key={idx}>
-                                    <text x={x} y={y - 6} fontSize={10} textAnchor="middle" fill="red">
-                                        ▲
-                                    </text>
-                                </g>
-                            );
-                        })}
+                    {/* Peaks highlight */}
+                    {gpsResults.peaks && scales && gpsResults.peaks.map((peakIdx, idx) => {
+                        const { xScale, yScale } = scales;
+                        if (!xScale || !yScale) return null;
+                        const x = xScale(peakIdx);
+                        const y = yScale(gpsResults.points[peakIdx][2]);
+                        return (
+                            <g key={idx}>
+                                <text x={x} y={y - 6} fontSize={10} textAnchor="middle" fill="red">
+                                    ▲
+                                </text>
+                            </g>
+                        );
+                    })}
                     {profileArea && (
                         <path d={profileArea.path} fill="rgba(0, 123, 255, 0.5)" />
                     )}
@@ -240,7 +234,7 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                     position: 'absolute',
                     left: 8,
                     bottom: 8,
-                    background: 'rgba(248,249,250,0.95)',
+                    background: 'rgba(248,249,250,0.98)',
                     border: '1px solid #e0e0e0',
                     borderRadius: 8,
                     fontSize: 14,
@@ -255,7 +249,7 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                     flexDirection: 'column',
                     gap: '4px',
                     alignItems: 'flex-start',
-                    opacity: 0.4
+                    opacity: 0.85
                 }}>
 
                     <div style={{ margin: 0, display: 'flex', flexDirection: 'row', gap: '4px' }}>
