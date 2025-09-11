@@ -6,15 +6,13 @@ const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 const distance = @import("gpspoint.zig").distance;
 const distance3D = @import("gpspoint.zig").distance3D;
 const elevationDeltaSigned = @import("gpspoint.zig").elevationDeltaSigned;
-const findExtrema = @import("peaks.zig").findExtrema;
 const findPeaks = @import("peaks.zig").findPeaks;
-const Extremum = @import("peaks.zig").Extremum;
 
 pub const Trace = struct {
     cumulativeDistances: []f64, // Precomputed cumulative distances in meters
     cumulativeElevations: []f64, // Cumulative elevation gain in meters
     data: [][3]f64,
-    extrema: []Extremum, // Peaks and valleys detected in smoothed elevation
+    peaks: []usize, // Indices of detected peaks in smoothed elevation
 
     pub fn init(allocator: std.mem.Allocator, points: []const [3]f64) !Trace {
         if (points.len == 0) {
@@ -22,7 +20,7 @@ pub const Trace = struct {
                 .data = @as([][3]f64, &.{}),
                 .cumulativeDistances = @as([]f64, &.{}),
                 .cumulativeElevations = @as([]f64, &.{}),
-                .extrema = @as([]Extremum, &.{}),
+                .peaks = @as([]usize, &.{}),
             };
         }
 
@@ -41,7 +39,7 @@ pub const Trace = struct {
 
         cumulativeDistances[0] = 0.0;
         cumulativeElevations[0] = 0.0;
-        const window: usize = 19; // window size (odd number recommended)
+        const window: usize = 1; // window size (odd number recommended)
 
         // Windowed moving average for elevation
         var smoothed_points = try allocator.alloc([3]f64, points.len);
@@ -75,23 +73,15 @@ pub const Trace = struct {
                 cumulativeElevations[i] = cum_elev;
             }
         }
-        // Find extrema (peaks and valleys) using peaks.zig
-        const peak_indices = try findPeaks(allocator, smoothed_elevations);
-        var extrema = try allocator.alloc(Extremum, peak_indices.len);
-        for (peak_indices, 0..) |idx, i| {
-            extrema[i] = Extremum{
-                .index = idx,
-                .type = .peak,
-                .value = smoothed_elevations[idx],
-            };
-        }
+        // Find peaks using peaks.zig
+        const peaks = try findPeaks(allocator, smoothed_elevations);
         // Free the original data allocation, use smoothed_points as the trace data
         allocator.free(data);
         return Trace{
             .data = smoothed_points[0..points.len],
             .cumulativeDistances = cumulativeDistances[0..points.len],
             .cumulativeElevations = cumulativeElevations[0..points.len],
-            .extrema = extrema,
+            .peaks = peaks,
         };
     }
 
@@ -109,7 +99,7 @@ pub const Trace = struct {
         if (self.data.len != 0) allocator.free(self.data);
         if (self.cumulativeDistances.len != 0) allocator.free(self.cumulativeDistances);
         if (self.cumulativeElevations.len != 0) allocator.free(self.cumulativeElevations);
-        if (self.extrema.len != 0) allocator.free(self.extrema);
+        if (self.peaks.len != 0) allocator.free(self.peaks);
     }
 
     pub fn pointAtDistance(self: *const Trace, targetDistance: f64) ?[3]f64 {

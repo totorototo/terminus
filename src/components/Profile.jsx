@@ -214,20 +214,20 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                     </clipPath>
                 </defs>
                 <g clipPath="url(#profile-clip)">
-                    {/* { gpsResults.extrema && scales && gpsResults.extrema.map((ext, idx) => {
-                        const { xScale, yScale } = scales;
-                        if (!xScale || !yScale) return null;
-                        const x = xScale(ext.index);
-                        const y = yScale(gpsResults.points[ext.index][2]);
-                        const isPeak = ext.type === 'peak';
-                        return (
-                            <g key={idx}>
-                                <text x={x} y={y - 6} fontSize={10} textAnchor="middle" fill={isPeak ? 'red' : 'blue'}>
-                                    {isPeak ? '▲' : '▼'}
-                                </text>
-                            </g>
-                        );
-                    })} */}
+                        {/* Peaks highlight */}
+                        {gpsResults.peaks && scales && gpsResults.peaks.map((peakIdx, idx) => {
+                            const { xScale, yScale } = scales;
+                            if (!xScale || !yScale) return null;
+                            const x = xScale(peakIdx);
+                            const y = yScale(gpsResults.points[peakIdx][2]);
+                            return (
+                                <g key={idx}>
+                                    <text x={x} y={y - 6} fontSize={10} textAnchor="middle" fill="red">
+                                        ▲
+                                    </text>
+                                </g>
+                            );
+                        })}
                     {profileArea && (
                         <path d={profileArea.path} fill="rgba(0, 123, 255, 0.5)" />
                     )}

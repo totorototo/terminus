@@ -74,15 +74,11 @@ async function processGPSData(gpsData, requestId) {
     return [Number(point[0]), Number(point[1]), Number(point[2])]; // Ensure serializable
   });
 
-  const extrema = trace.extrema;
-  const { get: getExtremum, length: extremaLength } = extrema;
-  const serializedExtrema = Array.from({ length: extremaLength }, (_, i) => {
-    const ext = getExtremum(i);
-    return {
-      type: String(ext.type),
-      index: Number(ext.index),
-      value: Number(ext.value)
-    };
+  const peaks = trace.peaks;
+  const { get: getPeak, length: peaksLength } = peaks;
+  const serializedPeaks = Array.from({ length: peaksLength }, (_, i) => {
+    const idx = getPeak(i);
+    return Number(idx);
   });
 
   const results = {
@@ -90,7 +86,7 @@ async function processGPSData(gpsData, requestId) {
     totalElevation: Number(trace.totalElevation()),
     pointCount: Number(gpsData.coordinates.length),
     points: serializedPoints,
-    extrema: serializedExtrema
+    peaks: serializedPeaks
   };
 
   self.postMessage({
