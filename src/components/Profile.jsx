@@ -21,6 +21,11 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
     const [selectionEndIndex, setSelectionEndIndex] = useState(null);
     const svgRef = useRef(null);
 
+    // Draw selection rectangle
+    let selectionRect = null;
+    let selectedPath = null;
+    let selectedArea = null;
+
     useEffect(() => {
         if (!gpsResults || width <= 0 || height <= 0) {
             return;
@@ -123,18 +128,25 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
     }, [selectionStartIndex, selectionEndIndex]);
 
 
-    // Draw selection rectangle
-    let selectionRect = null;
-    if (selectionStartX !== null && selectionEndX !== null && isSelecting) {
-        const x = Math.min(selectionStartX, selectionEndX);
-        const w = Math.abs(selectionEndX - selectionStartX);
-        selectionRect = (
-            <rect x={x} y={0} width={w} height={height} fill="rgba(255,0,0,0.2)" pointerEvents="none" />
+    // Helper to generate selection rectangle SVG element
+    function getSelectionRect(x, w, height) {
+        return (
+            <rect
+                x={x}
+                y={0}
+                width={w}
+                height={height}
+                fill="rgba(255,102,0,0.10)"
+                stroke="#ff6600"
+                strokeWidth={1.5}
+                rx={6}
+                style={{ transition: 'fill-opacity 0.2s, stroke-opacity 0.2s' }}
+                pointerEvents="none"
+            />
         );
     }
 
-    // Draw highlighted selected path
-    let selectedPath = null;
+
     if (
         selectionStartIndex !== null &&
         selectionEndIndex !== null &&
@@ -145,24 +157,42 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
         const i0 = Math.max(0, Math.min(selectionStartIndex, selectionEndIndex));
         const i1 = Math.min(gpsResults.points.length - 1, Math.max(selectionStartIndex, selectionEndIndex));
         if (i1 > i0) {
+            const { xScale, yScale } = scales;
             const selectedPoints = gpsResults.points.slice(i0, i1 + 1);
-            // Custom line generator to use global index for x
-            const linePath = (() => {
-                const { xScale, yScale } = scales;
-                if (!xScale || !yScale) return null;
-                let d = '';
-                selectedPoints.forEach((pt, idx) => {
-                    const globalIdx = i0 + idx;
-                    const x = xScale(globalIdx);
-                    const y = yScale(pt[2]);
-                    d += (idx === 0 ? 'M' : 'L') + x + ',' + y;
-                });
-                return d;
-            })();
+            // Area under selected section using getArea with xOffset
+            const selectedAreaObj = getArea(selectedPoints, xScale, yScale, domain.y.min, i0);
+            if (selectedAreaObj && selectedAreaObj.path) {
+                selectedArea = (
+                    <path
+                        d={selectedAreaObj.path}
+                        fill="rgba(255, 102, 0, 0.18)"
+                        style={{ transition: 'fill-opacity 0.2s' }}
+                        pointerEvents="none"
+                    />
+                );
+            }
+            // Path for selected section using getLine with xOffset
+            const selectedLineObj = getLine(selectedPoints, xScale, yScale, i0);
             selectedPath = (
-                <path d={linePath} stroke="#ff6600" strokeWidth={3} fill="none" pointerEvents="none" />
+                <path
+                    d={selectedLineObj.path}
+                    stroke="#ff6600"
+                    strokeWidth={3}
+                    fill="none"
+                    style={{ filter: 'drop-shadow(0 1px 2px #fff8)' }}
+                    pointerEvents="none"
+                />
             );
+            // Rectangle for selection
+            const x = xScale(i0);
+            const w = xScale(i1) - xScale(i0);
+            selectionRect = getSelectionRect(x, w, height);
         }
+    } else if (selectionStartX !== null && selectionEndX !== null && isSelecting) {
+        // fallback for drag selection before index is set
+        const x = Math.min(selectionStartX, selectionEndX);
+        const w = Math.abs(selectionEndX - selectionStartX);
+        selectionRect = getSelectionRect(x, w, height);
     }
 
     return (
@@ -202,6 +232,7 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                         <path d={profileArea.path} fill="rgba(0, 123, 255, 0.5)" />
                     )}
                     {selectedPath}
+                    {selectedArea}
                 </g>
             </svg>
             {section && (
@@ -226,10 +257,10 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                     alignItems: 'flex-start',
                     opacity: 0.4
                 }}>
-                   
+
                     <div style={{ margin: 0, display: 'flex', flexDirection: 'row', gap: '4px' }}>
-                        <span>distance: {((section.section.totalDistance)/1000).toFixed(2)} km</span>
-                        <span>elevation: {(section.section.totalElevation).toFixed(0)}</span>
+                        <span>distance: {((section.section.totalDistance) / 1000).toFixed(2)} km</span>
+                        <span>elevation gain: {(section.section.totalElevation).toFixed(0)} m</span>
                     </div>
                 </div>
             )}

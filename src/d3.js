@@ -31,22 +31,23 @@ export const createYScale = (
   );
 };
 
+
 export const getLine = (
   points,
   scaleX,
   scaleY,
+  xOffset = 0
 ) => {
   const lineShape = d3.shape
-    .line() // Specify the type for line function
-    .x((_, i) => scaleX(i))
+    .line()
+    .x((_, i) => scaleX(xOffset + i))
     .y((d) => scaleY(d[2]))
-    //.defined((d) => !d.fake)
-    .curve(d3.shape.curveCatmullRom.alpha(0.5))
-
+    .curve(d3.shape.curveCatmullRom.alpha(0.5));
   return {
     path: lineShape(points),
   };
 };
+
 
 
 export const getArea = (
@@ -54,15 +55,14 @@ export const getArea = (
   scaleX,
   scaleY,
   domainMin,
+  xOffset = 0
 ) => {
   const areaShape = d3.shape
-    .area() // Specify the type for area function
-    .x((point) => scaleX(points.indexOf(point)))
+    .area()
+    .x((_, i) => scaleX(xOffset + i))
     .y1((point) => scaleY(point[2]))
     .y0(scaleY(domainMin))
-    //.defined((d) => !d.fake)
-    .curve(d3.shape.curveLinear)
-
+    .curve(d3.shape.curveLinear);
   return {
     path: areaShape(points),
   };
