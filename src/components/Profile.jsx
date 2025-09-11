@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useId } from "react";
 import { extent } from "d3-array";
 import { createXScale, createYScale, getArea, getLine } from "../d3";
 
@@ -26,6 +26,12 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
     let selectedPath = null;
     let selectedArea = null;
 
+    // Layout: Y axis (labels+axis) 10% width, graph 90%. X axis (labels+axis) 20% height, graph 80%.
+    const yAxisWidth = Math.round(width * 0.1);
+    const xAxisHeight = Math.round(height * 0.2);
+    const graphWidth = Math.round(width * 0.9);
+    const graphHeight = Math.round(height * 0.8);
+
     useEffect(() => {
         if (!gpsResults || width <= 0 || height <= 0) {
             return;
@@ -41,20 +47,19 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
             y: { min: 0, max: Math.ceil(extentY[1]) },
         })
 
-
-        // compute scales
+        // compute scales for the inner graph area only
         const xScale = createXScale(
             { min: 0, max: gpsResults.points.length },
-            { min: 0, max: width }
+            { min: 0, max: graphWidth }
         );
         const yScale = createYScale(
             { min: 0, max: Math.ceil(extentY[1]) },
-            { min: height, max: 0 }
+            { min: graphHeight, max: 0 }
         );
 
         setScales({ xScale, yScale });
 
-    }, [gpsResults, width, height]);
+    }, [gpsResults, width, height, graphWidth, graphHeight]);
 
 
     // compute line and area paths
@@ -189,25 +194,83 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
         selectionRect = getSelectionRect(x, w, height);
     }
 
+    // Grid and ticks helpers
+    function getYTicks(numTicks = 5) {
+        if (!scales) return [];
+        const { yScale } = scales;
+        const min = domain.y.min;
+        const max = domain.y.max;
+        const step = (max - min) / (numTicks - 1);
+        return Array.from({ length: numTicks }, (_, i) => min + i * step);
+    }
+    function getXTicks(numTicks = 6) {
+        if (!scales) return [];
+        const { xScale } = scales;
+        const min = domain.x.min;
+        const max = domain.x.max;
+        const step = (max - min) / (numTicks - 1);
+        return Array.from({ length: numTicks }, (_, i) => min + i * step);
+    }
+
+    // ...existing code...
+
+    // Unique id for clipPath
+    const clipPathId = (typeof useId === 'function' ? useId() : `profile-clip-${Math.random().toString(36).slice(2, 10)}`);
+
     return (
-        <div style={{ width, height, boxSizing: "border-box", position: 'relative' }}>
+        <div style={{ width, height, boxSizing: "border-box", position: 'relative', display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
+            {/* Y axis tick labels and label */}
+            <div style={{ width: yAxisWidth, height: graphHeight, position: 'absolute', left: 0, top: 0, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', paddingRight: 16 }}>
+                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                    {getYTicks().map((yVal, i, arr) => {
+                        if (i === 0) return null;
+                        const y = scales ? scales.yScale(yVal) : 0;
+                        return (
+                            <div key={i} style={{ fontSize: 13, color: '#888', position: 'absolute', top: y - 8, right: 10 }}>
+                                {Math.round(yVal)} m
+                            </div>
+                        );
+                    })}
+                </div>
+            
+            </div>
+            {/* SVG Graph */}
             <svg
                 ref={svgRef}
-                width={width}
-                height={height}
-                viewBox={`0 0 ${width} ${height}`}
-                style={{ cursor: 'crosshair' }}
+                width={graphWidth}
+                height={graphHeight}
+                viewBox={`0 0 ${graphWidth} ${graphHeight}`}
+                style={{ cursor: 'crosshair', background: 'none', position: 'absolute', left: yAxisWidth, top: 0 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
             >
                 <defs>
-                    <clipPath id="profile-clip">
-                        <rect x="0" y="0" width={width} height={height} rx={8} ry={8} />
+                    <clipPath id={clipPathId}>
+                        <rect x="0" y="0" width={graphWidth} height={graphHeight} rx={8} ry={8} />
                     </clipPath>
                 </defs>
-                <g clipPath="url(#profile-clip)">
+                {/* Grid lines only (no tick labels in SVG) */}
+                {scales && (
+                    <g>
+                        {getYTicks().map((yVal, i, arr) => {
+                            if (i === 0 || i === arr.length - 1) return null;
+                            const y = scales.yScale(yVal);
+                            return (
+                                <line key={i} x1={0} x2={graphWidth} y1={y} y2={y} stroke="#e0e0e0" strokeDasharray="8 4 2 4" strokeWidth={1.2} />
+                            );
+                        })}
+                        {getXTicks().map((xVal, i, arr) => {
+                            if (i === 0 || i === arr.length - 1) return null;
+                            const x = scales.xScale(xVal);
+                            return (
+                                <line key={i} y1={0} y2={graphHeight} x1={x} x2={x} stroke="#e0e0e0" strokeDasharray="8 4 2 4" strokeWidth={1.2} />
+                            );
+                        })}
+                    </g>
+                )}
+                <g clipPath={`url(#${clipPathId})`}>
                     {/* Peaks highlight */}
                     {gpsResults.peaks && scales && gpsResults.peaks.map((peakIdx, idx) => {
                         const { xScale, yScale } = scales;
@@ -227,13 +290,29 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                     )}
                     {selectedPath}
                     {selectedArea}
+                   
                 </g>
             </svg>
+            {/* X axis tick labels and label */}
+            <div style={{ position: 'absolute', left: yAxisWidth, top: graphHeight, width: graphWidth, height: xAxisHeight, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start' }}>
+                <div style={{ position: 'relative', width: '100%', height: 20 }}>
+                    {getXTicks().map((xVal, i, arr) => {
+                        if (i === 0) return null;
+                        const x = scales ? scales.xScale(xVal) : 0;
+                        return (
+                            <div key={i} style={{ fontSize: 13, color: '#888', position: 'absolute',top:10, left: x - 16, minWidth: 32, textAlign: 'center' }}>
+                                {((xVal * (gpsResults.totalDistance || 0) / (gpsResults.points.length || 1)) / 1000).toFixed(1)} km
+                            </div>
+                        );
+                    })}
+                </div>
+               
+            </div>
             {section && (
                 <div style={{
                     position: 'absolute',
-                    left: 8,
-                    bottom: 8,
+                    left: yAxisWidth + 12,
+                    top: graphHeight - 58,
                     background: 'rgba(248,249,250,0.98)',
                     border: '1px solid #e0e0e0',
                     borderRadius: 8,
@@ -251,7 +330,6 @@ export default function Profile({ gpsResults, width, height, handleGetSection, s
                     alignItems: 'flex-start',
                     opacity: 0.85
                 }}>
-
                     <div style={{ margin: 0, display: 'flex', flexDirection: 'row', gap: '4px' }}>
                         <span>distance: {((section.section.totalDistance) / 1000).toFixed(2)} km</span>
                         <span>elevation gain: {(section.section.totalElevation).toFixed(0)} m</span>
