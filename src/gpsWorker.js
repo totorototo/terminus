@@ -83,6 +83,7 @@ async function processGPSData(gpsData, requestId) {
   const results = {
     totalDistance: Number(trace.totalDistance()),
     totalElevation: Number(trace.totalElevation()),
+    totalElevationLoss: Number(trace.totalElevationLoss()),
     pointCount: Number(gpsData.coordinates.length),
     points: serializedPoints,
     peaks: serializedPeaks,
@@ -192,16 +193,17 @@ async function getRouteSection(data, requestId) {
 
   const trace = Trace.init(section);
 
-  trace.deinit();
-
   self.postMessage({
     type: "ROUTE_SECTION_READY",
     id: requestId,
     section: {
       totalDistance: Number(trace.totalDistance()),
       totalElevation: Number(trace.totalElevation()),
+      totalElevationLoss: Number(trace.totalElevationLoss()),
     },
   });
+
+  trace.deinit();
 }
 
 console.log("🚀 GPS Worker: Ready for GPS processing tasks");

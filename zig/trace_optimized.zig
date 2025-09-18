@@ -11,7 +11,7 @@ const distance = @import("gpspoint.zig").distance;
 
 pub const OptimizedTrace = struct {
     // Single contiguous memory block containing all data
-    // Layout: [point0_lat, point0_lon, point0_alt, cum_dist0, cum_elev0, point1_lat, ...]
+    // Layout: [point0_lat, point0_lon, point0_alt, cum_dist0, cum_elev0, cum_elev_loss0, point1_lat, ...]
     // This improves cache locality significantly
     data_buffer: []f64,
     point_count: usize,
@@ -24,7 +24,7 @@ pub const OptimizedTrace = struct {
     cache_hits: u32 = 0,
     cache_misses: u32 = 0,
 
-    const POINT_STRIDE = 5; // lat, lon, alt, cum_dist, cum_elev per point
+    const POINT_STRIDE = 6; // lat, lon, alt, cum_dist, cum_elev, cum_elev_loss per point
     const CACHE_SIZE = 32; // Size of search cache
 
     pub fn init(allocator: std.mem.Allocator, points: []const [3]f64) !OptimizedTrace {
@@ -57,6 +57,7 @@ pub const OptimizedTrace = struct {
         // Populate data buffer with interleaved layout
         var cum_dist: f64 = 0.0;
         var cum_elev: f64 = 0.0;
+        var cum_elev_loss: f64 = 0.0;
 
         for (0..points.len) |i| {
             const base_idx = i * POINT_STRIDE;
@@ -78,11 +79,16 @@ pub const OptimizedTrace = struct {
                 cum_dist += distance(prev_point, curr_point);
 
                 const elev_delta = curr_point[2] - prev_point[2];
-                if (elev_delta > 0) cum_elev += elev_delta;
+                if (elev_delta > 0) {
+                    cum_elev += elev_delta;
+                } else if (elev_delta < 0) {
+                    cum_elev_loss += -elev_delta; // Convert negative to positive for loss
+                }
             }
 
             data_buffer[base_idx + 3] = cum_dist; // cumulative distance
-            data_buffer[base_idx + 4] = cum_elev; // cumulative elevation
+            data_buffer[base_idx + 4] = cum_elev; // cumulative elevation gain
+            data_buffer[base_idx + 5] = cum_elev_loss; // cumulative elevation loss
         }
 
         return OptimizedTrace{
@@ -108,6 +114,11 @@ pub const OptimizedTrace = struct {
     pub inline fn totalElevation(self: *const OptimizedTrace) f64 {
         if (self.point_count == 0) return 0.0;
         return self.data_buffer[(self.point_count - 1) * POINT_STRIDE + 4];
+    }
+
+    pub inline fn totalElevationLoss(self: *const OptimizedTrace) f64 {
+        if (self.point_count == 0) return 0.0;
+        return self.data_buffer[(self.point_count - 1) * POINT_STRIDE + 5];
     }
 
     // Optimized binary search with caching
@@ -298,6 +309,7 @@ pub const OptimizedTrace = struct {
     pub fn getStats(self: *const OptimizedTrace) struct {
         total_distance_km: f64,
         total_elevation_m: f64,
+        total_elevation_loss_m: f64,
         point_count: usize,
         avg_speed_kmh: ?f64, // If we have time data
         max_elevation: f64,
@@ -307,6 +319,7 @@ pub const OptimizedTrace = struct {
             return .{
                 .total_distance_km = 0.0,
                 .total_elevation_m = 0.0,
+                .total_elevation_loss_m = 0.0,
                 .point_count = 0,
                 .avg_speed_kmh = null,
                 .max_elevation = 0.0,
@@ -328,6 +341,7 @@ pub const OptimizedTrace = struct {
         return .{
             .total_distance_km = self.totalDistance() / 1000.0,
             .total_elevation_m = self.totalElevation(),
+            .total_elevation_loss_m = self.totalElevationLoss(),
             .point_count = self.point_count,
             .avg_speed_kmh = null, // Could calculate if time data available
             .max_elevation = max_elev,
@@ -356,6 +370,7 @@ test "OptimizedTrace: basic functionality" {
     // Test basic properties
     try expectApproxEqAbs(trace.totalDistance(), 222.0, 5.0);
     try expectApproxEqAbs(trace.totalElevation(), 10.0, 0.001);
+    try expectApproxEqAbs(trace.totalElevationLoss(), 0.0, 0.001);
     try expect(trace.point_count == 3);
 }
 
@@ -419,6 +434,7 @@ test "OptimizedTrace: performance and caching" {
     const bulk_stats = trace.getStats();
     try expect(bulk_stats.point_count == 100);
     try expect(bulk_stats.total_distance_km > 0);
+    try expect(bulk_stats.total_elevation_loss_m >= 0);
 }
 
 test "OptimizedTrace: memory layout verification" {
@@ -432,16 +448,17 @@ test "OptimizedTrace: memory layout verification" {
     var trace = try OptimizedTrace.init(allocator, &points);
     defer trace.deinit(allocator);
 
-    // Verify memory layout: [lat0, lon0, alt0, cum_dist0, cum_elev0, lat1, lon1, alt1, cum_dist1, cum_elev1]
+    // Verify memory layout: [lat0, lon0, alt0, cum_dist0, cum_elev0, cum_elev_loss0, lat1, lon1, alt1, cum_dist1, cum_elev1, cum_elev_loss1]
     try expect(trace.data_buffer[0] == 1.0); // lat0
     try expect(trace.data_buffer[1] == 2.0); // lon0
     try expect(trace.data_buffer[2] == 3.0); // alt0
     try expect(trace.data_buffer[3] == 0.0); // cum_dist0
     try expect(trace.data_buffer[4] == 0.0); // cum_elev0
+    try expect(trace.data_buffer[5] == 0.0); // cum_elev_loss0
 
-    try expect(trace.data_buffer[5] == 4.0); // lat1
-    try expect(trace.data_buffer[6] == 5.0); // lon1
-    try expect(trace.data_buffer[7] == 6.0); // alt1
-    // cum_dist1 and cum_elev1 should be calculated values
-    try expect(trace.data_buffer[8] > 0.0); // cum_dist1 should be > 0
+    try expect(trace.data_buffer[6] == 4.0); // lat1
+    try expect(trace.data_buffer[7] == 5.0); // lon1
+    try expect(trace.data_buffer[8] == 6.0); // alt1
+    // cum_dist1, cum_elev1, and cum_elev_loss1 should be calculated values
+    try expect(trace.data_buffer[9] > 0.0); // cum_dist1 should be > 0
 }

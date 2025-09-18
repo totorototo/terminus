@@ -45,7 +45,13 @@ function App() {
       });
       setStressTest(testInstance);
     }
-  }, [isWorkerReady, processGPSData, calculateRouteStats, findPointsAtDistances, getRouteSection]);
+  }, [
+    isWorkerReady,
+    processGPSData,
+    calculateRouteStats,
+    findPointsAtDistances,
+    getRouteSection,
+  ]);
 
   useEffect(() => {
     if (isWorkerReady && gpx.features?.[0]?.geometry?.coordinates) {
@@ -53,13 +59,15 @@ function App() {
     }
   }, [isWorkerReady]);
 
-
   const handleProcessGPS = async (startIndex, endIndex) => {
     try {
       setError(null);
       let coordinates;
       if (startIndex !== undefined && endIndex !== undefined) {
-        coordinates = gpx.features[0].geometry.coordinates.slice(startIndex, endIndex + 1);
+        coordinates = gpx.features[0].geometry.coordinates.slice(
+          startIndex,
+          endIndex + 1,
+        );
       } else {
         coordinates = gpx.features[0].geometry.coordinates;
       }
@@ -87,7 +95,7 @@ function App() {
     try {
       const coordinates = gpx.features[0].geometry.coordinates;
       const section = await getRouteSection(coordinates, start, end);
-      console.log('Section received in App:', section);
+      console.log("Section received in App:", section);
       setSection(section);
       // Optionally do something with section
     } catch (err) {
@@ -99,20 +107,22 @@ function App() {
   const handleStressBurstLoad = async () => {
     if (!stressTest || isStressTesting) return;
     setIsStressTesting(true);
-    setStressProgress('Preparing burst load test...');
+    setStressProgress("Preparing burst load test...");
     setStressResults(null);
     try {
       await stressTest.testBurstLoad({
         concurrentRequests: 8,
         pointsPerRequest: 5000,
         onProgress: (completed, total) => {
-          setStressProgress(`Burst Load: ${completed}/${total} requests completed`);
+          setStressProgress(
+            `Burst Load: ${completed}/${total} requests completed`,
+          );
         },
         onResult: (summary) => {
           setStressResults(summary);
           setStressProgress(null);
           setIsStressTesting(false);
-        }
+        },
       });
     } catch (error) {
       setError(`Burst load test failed: ${error.message}`);
@@ -124,7 +134,7 @@ function App() {
   const handleStressSustainedLoad = async () => {
     if (!stressTest || isStressTesting) return;
     setIsStressTesting(true);
-    setStressProgress('Starting sustained load test...');
+    setStressProgress("Starting sustained load test...");
     setStressResults(null);
     try {
       await stressTest.testSustainedLoad({
@@ -132,13 +142,15 @@ function App() {
         requestInterval: 2000, // Every 2 seconds
         pointsPerRequest: 4000,
         onProgress: (completed, estimated) => {
-          setStressProgress(`Sustained Load: ${completed}/${estimated} requests sent`);
+          setStressProgress(
+            `Sustained Load: ${completed}/${estimated} requests sent`,
+          );
         },
         onResult: (summary) => {
           setStressResults(summary);
           setStressProgress(null);
           setIsStressTesting(false);
-        }
+        },
       });
     } catch (error) {
       setError(`Sustained load test failed: ${error.message}`);
@@ -150,19 +162,21 @@ function App() {
   const handleStressMemoryTest = async () => {
     if (!stressTest || isStressTesting) return;
     setIsStressTesting(true);
-    setStressProgress('Starting memory stress test...');
+    setStressProgress("Starting memory stress test...");
     setStressResults(null);
     try {
       await stressTest.testMemoryStress({
         pointCounts: [25000, 50000, 100000],
         onProgress: (completed, total, currentPoints) => {
-          setStressProgress(`Memory Test: ${completed}/${total} - Processing ${currentPoints.toLocaleString()} points`);
+          setStressProgress(
+            `Memory Test: ${completed}/${total} - Processing ${currentPoints.toLocaleString()} points`,
+          );
         },
         onResult: (summary) => {
           setStressResults(summary);
           setStressProgress(null);
           setIsStressTesting(false);
-        }
+        },
       });
     } catch (error) {
       setError(`Memory stress test failed: ${error.message}`);
@@ -174,7 +188,7 @@ function App() {
   const handleStressUIResponsiveness = async () => {
     if (!stressTest || isStressTesting) return;
     setIsStressTesting(true);
-    setStressProgress('Testing UI responsiveness during heavy processing...');
+    setStressProgress("Testing UI responsiveness during heavy processing...");
     setStressResults(null);
     try {
       await stressTest.testUIResponsiveness({
@@ -182,7 +196,7 @@ function App() {
           setStressResults(summary);
           setStressProgress(null);
           setIsStressTesting(false);
-        }
+        },
       });
     } catch (error) {
       setError(`UI responsiveness test failed: ${error.message}`);
@@ -194,7 +208,7 @@ function App() {
   const handleFullStressTest = async () => {
     if (!stressTest || isStressTesting) return;
     setIsStressTesting(true);
-    setStressProgress('Starting comprehensive stress test suite...');
+    setStressProgress("Starting comprehensive stress test suite...");
     setStressResults(null);
     try {
       await stressTest.runFullStressTest(
@@ -205,7 +219,7 @@ function App() {
           setStressResults(summary);
           setStressProgress(null);
           setIsStressTesting(false);
-        }
+        },
       );
     } catch (error) {
       setError(`Full stress test failed: ${error.message}`);
@@ -224,15 +238,19 @@ function App() {
       <h1 style={{ textAlign: "center", marginBottom: "10px" }}>
         🗺️ GPS Route Processor
       </h1>
-      <div style={{
-        textAlign: "center",
-        marginBottom: "30px",
-        padding: "15px",
-        background: "linear-gradient(135deg, #1a1a2e, #16213e)",
-        borderRadius: "8px",
-        border: "1px solid #333"
-      }}>
-        <h2 style={{ margin: "0 0 10px 0", fontSize: "1.2em", color: "#87CEEB" }}>
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: "30px",
+          padding: "15px",
+          background: "linear-gradient(135deg, #1a1a2e, #16213e)",
+          borderRadius: "8px",
+          border: "1px solid #333",
+        }}
+      >
+        <h2
+          style={{ margin: "0 0 10px 0", fontSize: "1.2em", color: "#87CEEB" }}
+        >
           ⚡ Powered by Zig WebAssembly + Web Workers
         </h2>
         <p style={{ margin: "0", fontSize: "0.95em", opacity: "0.9" }}>
@@ -242,7 +260,11 @@ function App() {
       <div className="card">
         <h2>📊 GPS Processing Status</h2>
         <WorkerStatus isWorkerReady={isWorkerReady} />
-        <ProcessingStatus processing={processing} progress={progress} progressMessage={progressMessage} />
+        <ProcessingStatus
+          processing={processing}
+          progress={progress}
+          progressMessage={progressMessage}
+        />
         <ErrorDisplay error={error} />
         <Dashboard
           gpsResults={gpsResults}
@@ -255,11 +277,18 @@ function App() {
         <div style={{ height: "200px", width: "100%" }}>
           <AutoSizer>
             {({ width, height }) => (
-              <Profile gpsResults={gpsResults} width={width} height={height} handleProcessGPS={handleProcessGPS} handleGetSection={handleGetSection} section={section} />
+              <Profile
+                gpsResults={gpsResults}
+                width={width}
+                height={height}
+                handleProcessGPS={handleProcessGPS}
+                handleGetSection={handleGetSection}
+                section={section}
+                setSection={setSection}
+              />
             )}
           </AutoSizer>
         </div>
-
 
         <StressTestingSuite
           isStressTesting={isStressTesting}

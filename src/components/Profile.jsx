@@ -8,6 +8,7 @@ export default function Profile({
   height,
   handleGetSection,
   section,
+  setSection,
 }) {
   if (!gpsResults) return null;
 
@@ -130,7 +131,10 @@ export default function Profile({
       Math.max(selectionStartIndex, selectionEndIndex),
     );
 
-    if (!(i1 > i0)) return;
+    if (!(i1 > i0)) {
+      setSection(null);
+      return;
+    }
     // Optionally, trigger reprocessing of GPS data for selected range
     if (handleGetSection) {
       await handleGetSection(i0, i1);
@@ -469,6 +473,9 @@ export default function Profile({
             </span>
             <span>
               elevation gain: {section.section.totalElevation.toFixed(0)} m
+            </span>
+            <span>
+              elevation loss: {section.section.totalElevationLoss.toFixed(0)} m
             </span>
           </div>
         </div>
