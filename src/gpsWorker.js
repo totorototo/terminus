@@ -23,32 +23,31 @@ self.onmessage = async function (e) {
     await initializeZig();
 
     switch (type) {
-      case 'PROCESS_GPS_DATA':
+      case "PROCESS_GPS_DATA":
         await processGPSData(data, id);
         break;
 
-      case 'CALCULATE_ROUTE_STATS':
+      case "CALCULATE_ROUTE_STATS":
         await calculateRouteStats(data, id);
         break;
 
-      case 'FIND_POINTS_AT_DISTANCES':
+      case "FIND_POINTS_AT_DISTANCES":
         await findPointsAtDistances(data, id);
         break;
 
-      case 'GET_ROUTE_SECTION':
+      case "GET_ROUTE_SECTION":
         await getRouteSection(data, id);
         break;
 
       default:
         throw new Error(`Unknown message type: ${type}`);
     }
-
   } catch (error) {
     // Send error back to main thread
     self.postMessage({
-      type: 'ERROR',
+      type: "ERROR",
       id,
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -61,10 +60,10 @@ async function processGPSData(gpsData, requestId) {
 
   // Send progress updates during processing
   self.postMessage({
-    type: 'PROGRESS',
+    type: "PROGRESS",
     id: requestId,
     progress: 25,
-    message: 'Trace initialized...'
+    message: "Trace initialized...",
   });
 
   const updatedPoints = trace.data;
@@ -86,41 +85,43 @@ async function processGPSData(gpsData, requestId) {
     totalElevation: Number(trace.totalElevation()),
     pointCount: Number(gpsData.coordinates.length),
     points: serializedPoints,
-    peaks: serializedPeaks
+    peaks: serializedPeaks,
   };
 
   self.postMessage({
-    type: 'PROGRESS',
+    type: "PROGRESS",
     id: requestId,
     progress: 75,
-    message: 'Calculating statistics...'
+    message: "Calculating statistics...",
   });
 
   // Add some sample points for visualization
   const sampleDistances = [0, 10, 25, 50, 75, 90]; // percentages
-  const samplePoints = sampleDistances.map(percent => {
-    const distance = (results.totalDistance * percent) / 100;
-    const point = trace.pointAtDistance(distance);
+  const samplePoints = sampleDistances
+    .map((percent) => {
+      const distance = (results.totalDistance * percent) / 100;
+      const point = trace.pointAtDistance(distance);
 
-    // Convert Zig object to plain JavaScript array
-    if (point !== null) {
-      return {
-        percent: Number(percent),
-        distance: Number(distance),
-        point: [Number(point[0]), Number(point[1]), Number(point[2])] // Ensure serializable
-      };
-    }
-    return null;
-  }).filter(item => item !== null);
+      // Convert Zig object to plain JavaScript array
+      if (point !== null) {
+        return {
+          percent: Number(percent),
+          distance: Number(distance),
+          point: [Number(point[0]), Number(point[1]), Number(point[2])], // Ensure serializable
+        };
+      }
+      return null;
+    })
+    .filter((item) => item !== null);
 
   results.samplePoints = samplePoints;
 
   trace.deinit();
 
   self.postMessage({
-    type: 'GPS_DATA_PROCESSED',
+    type: "GPS_DATA_PROCESSED",
     id: requestId,
-    results
+    results,
   });
 }
 
@@ -129,7 +130,7 @@ async function calculateRouteStats(data, requestId) {
   const { coordinates, segments } = data;
   const trace = Trace.init(coordinates);
 
-  const stats = segments.map(segment => {
+  const stats = segments.map((segment) => {
     const startDist = segment.start;
     const endDist = segment.end;
     const sectionPoints = trace.sliceBetweenDistances(startDist, endDist);
@@ -140,17 +141,21 @@ async function calculateRouteStats(data, requestId) {
       segmentId: segment.id,
       distance: Number(endDist - startDist),
       pointCount: Number(sectionPoints.length),
-      startPoint: startPoint ? [Number(startPoint[0]), Number(startPoint[1]), Number(startPoint[2])] : null,
-      endPoint: endPoint ? [Number(endPoint[0]), Number(endPoint[1]), Number(endPoint[2])] : null
+      startPoint: startPoint
+        ? [Number(startPoint[0]), Number(startPoint[1]), Number(startPoint[2])]
+        : null,
+      endPoint: endPoint
+        ? [Number(endPoint[0]), Number(endPoint[1]), Number(endPoint[2])]
+        : null,
     };
   });
 
   trace.deinit();
 
   self.postMessage({
-    type: 'ROUTE_STATS_CALCULATED',
+    type: "ROUTE_STATS_CALCULATED",
     id: requestId,
-    stats
+    stats,
   });
 }
 
@@ -159,43 +164,43 @@ async function findPointsAtDistances(data, requestId) {
   const { coordinates, distances } = data;
   const trace = Trace.init(coordinates);
 
-  const points = distances.map(distance => {
-    const point = trace.pointAtDistance(distance);
-    return {
-      distance: Number(distance),
-      point: point ? [Number(point[0]), Number(point[1]), Number(point[2])] : null
-    };
-  }).filter(item => item.point !== null);
+  const points = distances
+    .map((distance) => {
+      const point = trace.pointAtDistance(distance);
+      return {
+        distance: Number(distance),
+        point: point
+          ? [Number(point[0]), Number(point[1]), Number(point[2])]
+          : null,
+      };
+    })
+    .filter((item) => item.point !== null);
 
   trace.deinit();
 
   self.postMessage({
-    type: 'POINTS_FOUND',
+    type: "POINTS_FOUND",
     id: requestId,
-    points
+    points,
   });
 }
 
 // Get route section between two points (light computation)
 async function getRouteSection(data, requestId) {
-
   const { coordinates, start, end } = data;
   const section = coordinates.slice(start, end); // Copy to avoid modifying original
 
   const trace = Trace.init(section);
 
-  // const sectionPoints = trace.sliceBetweenDistances(start, end);
-  const sectionPoints = trace.data;
-
   trace.deinit();
 
   self.postMessage({
-    type: 'ROUTE_SECTION_READY',
+    type: "ROUTE_SECTION_READY",
     id: requestId,
     section: {
       totalDistance: Number(trace.totalDistance()),
       totalElevation: Number(trace.totalElevation()),
-    }
+    },
   });
 }
 

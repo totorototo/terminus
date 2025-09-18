@@ -336,8 +336,8 @@ export default function Profile({
                   y1={y}
                   y2={y}
                   stroke="#e0e0e0"
-                  strokeDasharray="8 4 2 4"
-                  strokeWidth={1.2}
+                  strokeDasharray="2 2"
+                  strokeWidth={1}
                 />
               );
             })}
@@ -352,8 +352,8 @@ export default function Profile({
                   x1={x}
                   x2={x}
                   stroke="#e0e0e0"
-                  strokeDasharray="8 4 2 4"
-                  strokeWidth={1.2}
+                  strokeDasharray="2 2"
+                  strokeWidth={1}
                 />
               );
             })}
