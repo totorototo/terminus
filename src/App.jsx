@@ -12,6 +12,7 @@ import StressTestingSuite from "./components/StressTestingSuite.jsx";
 import PerformanceBenefits from "./components/PerformanceBenefits.jsx";
 import Profile from "./components/Profile.jsx";
 import AutoSizer from "react-virtualized-auto-sizer";
+import ThreeDimensionalProfile from "./components/3DProfile.jsx";
 
 function App() {
   const [gpsResults, setGpsResults] = useState(null);
@@ -274,7 +275,7 @@ function App() {
           handleGetSection={handleGetSection}
           handleProcessGPS={handleProcessGPS}
         />
-        <div style={{ height: "200px", width: "100%" }}>
+        <div style={{ height: "200px", width: "100%", paddingBottom:"40px", paddingTop:"40px" }}>
           <AutoSizer>
             {({ width, height }) => (
               <Profile
@@ -285,6 +286,17 @@ function App() {
                 handleGetSection={handleGetSection}
                 section={section}
                 setSection={setSection}
+              />
+            )}
+          </AutoSizer>
+        </div>
+        <div style={{ height: "400px", width: "100%" }}>
+          <AutoSizer>
+            {({ width, height }) => (
+              <ThreeDimensionalProfile
+                width={width}
+                height={height}
+                coordinates={gpx.features?.[0]?.geometry?.coordinates}
               />
             )}
           </AutoSizer>
