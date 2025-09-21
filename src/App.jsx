@@ -290,13 +290,14 @@ function App() {
             )}
           </AutoSizer>
         </div>
-        <div style={{ height: "400px", width: "100%" }}>
+        <div style={{ height: "600px", width: "100%" }}>
           <AutoSizer>
             {({ width, height }) => (
               <ThreeDimensionalProfile
                 width={width}
                 height={height}
                 coordinates={gpx.features?.[0]?.geometry?.coordinates}
+                {...(gpsResults && { checkpoints: gpsResults.samplePoints })}
               />
             )}
           </AutoSizer>
