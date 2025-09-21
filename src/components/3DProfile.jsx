@@ -95,7 +95,10 @@ export default function ThreeDimensionalProfile({ width, height, coordinates }) 
                     <GizmoViewport axisColors={['#9d4b4b', '#2f7f4f', '#3b5b9d']} labelColor="white" />
                 </GizmoHelper>
                 <Environment preset='city' background={false} />
-                <ContactShadows position={[0, -0.5, 0]} scale={20} blur={2} far={4.5} />
+
+                <AccumulativeShadows>
+                    <RandomizedLight position={[2, 1, 0]} />
+                </AccumulativeShadows>
                 <OrbitControls makeDefault enablePan enableZoom enableRotate minPolarAngle={Math.PI / 4} maxPolarAngle={Math.PI / 2} />
             </Canvas>
         </>
