@@ -1,40 +1,46 @@
-import { memo, useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import { Canvas } from "@react-three/fiber";
-import { Grid, OrbitControls, Environment, AccumulativeShadows, RandomizedLight, GizmoHelper, GizmoViewport } from '@react-three/drei';
+import { Grid, OrbitControls, Environment, AccumulativeShadows, RandomizedLight, GizmoHelper, GizmoViewport, ContactShadows, Edges, OrthographicCamera } from '@react-three/drei';
 import { scaleLinear } from "d3-scale";
 import * as THREE from 'three';
+import { de } from 'date-fns/locale';
 
 
-const gridSize = [10, 10];
+const gridSize = [100, 100];
 
 
 function ElevationProfile({ gpsPoints }) {
+    const geometryRef = useRef();
 
-    const topVertices = gpsPoints.map(([long, ele, lat]) => [long, ele, lat]);
-    const baseVertices = gpsPoints.map(([long, _ele, lat]) => [long, 0, lat]);
+    const positions = useMemo(() => {
+        const topVertices = gpsPoints.map(([long, ele, lat]) => [long, ele, lat]);
+        const baseVertices = gpsPoints.map(([long, _ele, lat]) => [long, 0, lat]);
 
-    // Build triangles between consecutive points to fill area between elevation and zero
-    const vertices = [];
-    for (let i = 0; i < gpsPoints.length - 1; i++) {
-        // Triangle 1: top current, base current, top next
-        vertices.push(
-            ...topVertices[i],
-            ...baseVertices[i],
-            ...topVertices[i + 1]
-        );
-        // Triangle 2: top next, base current, base next
-        vertices.push(
-            ...topVertices[i + 1],
-            ...baseVertices[i],
-            ...baseVertices[i + 1]
-        );
-    }
+        const verts = [];
+        for (let i = 0; i < gpsPoints.length - 1; i++) {
+            verts.push(
+                ...topVertices[i],
+                ...baseVertices[i],
+                ...topVertices[i + 1],
+                ...topVertices[i + 1],
+                ...baseVertices[i],
+                ...baseVertices[i + 1]
+            );
+        }
+        return new Float32Array(verts);
+    }, [gpsPoints]);
 
-    const positions = new Float32Array(vertices);
+    useEffect(() => {
+        if (!geometryRef.current) return;
+        const geom = geometryRef.current;
+        geom.computeVertexNormals();
+        geom.attributes.position.needsUpdate = true;
+        geom.attributes.normal.needsUpdate = true;
+    }, [positions]);
 
     return (
-        <mesh castShadow>
-            <bufferGeometry>
+        <mesh castShadow receiveShadow>
+            <bufferGeometry ref={geometryRef}>
                 <bufferAttribute
                     attach="attributes-position"
                     count={positions.length / 3}
@@ -42,22 +48,12 @@ function ElevationProfile({ gpsPoints }) {
                     itemSize={3}
                 />
             </bufferGeometry>
-            {/* <meshPhysicalMaterial
-                color="#35507a"
-                roughness={0.5}
-                metalness={0.12}
-                clearcoat={0.18}
-                clearcoatRoughness={0.25}
-                transmission={0.08}
-                thickness={0.18}
-                ior={1.18}
-                side={THREE.DoubleSide}
-            /> */}
-            <meshPhongMaterial color="#fefefeff" side={THREE.DoubleSide} />
+            <Edges linewidth={0.5} threshold={15} color="black" />
+
+            <meshStandardMaterial color="orange" side={THREE.DoubleSide} />
         </mesh>
     );
 }
-
 
 
 
@@ -86,33 +82,21 @@ export default function ThreeDimensionalProfile({ width, height, coordinates }) 
     return (
         <>
             <Canvas
-                camera={{ position: [8, 7, 10], fov: 10 }}
-                style={{ width, height }}
+
+                style={{ width, height, background: '#e8e8e8ff' }}
                 shadows
             >
 
-                <OrbitControls makeDefault enablePan enableZoom enableRotate />
-                <Environment preset='city' background={false} />
-                <Shadows />
-
-                {/* <mesh>
-                    <boxGeometry args={[2, 2, 2]} />
-                    <meshPhongMaterial />
-                </mesh> */}
-
+                <OrthographicCamera makeDefault position={[8, 7, 10]} zoom={60} />
+                <ambientLight intensity={2} />
                 <Grid position={[0, -0.01, 0]} args={gridSize} cellColor="#b3c6e0" sectionColor="#7a8fa6" fadeDistance={20} fadeStrength={1.5} />
                 {points3D && points3D.length > 0 && <ElevationProfile gpsPoints={points3D} />}
                 <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
                     <GizmoViewport axisColors={['#9d4b4b', '#2f7f4f', '#3b5b9d']} labelColor="white" />
                 </GizmoHelper>
-                <ambientLight intensity={1} />
-                <directionalLight color="white" position={[0, 0, 5]} />
-                <pointLight
-                    position={[1, 1, -3]}
-                    castShadow
-                    shadow-mapSize={[1024, 1024]}
-                />
-
+                <Environment preset='city' background={false} />
+                <ContactShadows position={[0, -0.5, 0]} scale={20} blur={2} far={4.5} />
+                <OrbitControls makeDefault enablePan enableZoom enableRotate minPolarAngle={Math.PI / 4} maxPolarAngle={Math.PI / 2} />
             </Canvas>
         </>
     );
@@ -120,8 +104,4 @@ export default function ThreeDimensionalProfile({ width, height, coordinates }) 
 
 
 
-const Shadows = memo(() => (
-    <AccumulativeShadows temporal frames={100} color="#9d4b4b" colorBlend={0.5} alphaTest={0.9} scale={20}>
-        <RandomizedLight amount={8} radius={4} position={[5, 5, -10]} />
-    </AccumulativeShadows>
-))
+
