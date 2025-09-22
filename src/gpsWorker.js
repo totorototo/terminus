@@ -27,6 +27,10 @@ self.onmessage = async function (e) {
         await processGPSData(data, id);
         break;
 
+      case "PROCESS_SECTIONS":
+        await processSections(data, id);
+        break;
+
       case "CALCULATE_ROUTE_STATS":
         await calculateRouteStats(data, id);
         break;
@@ -124,6 +128,73 @@ async function processGPSData(gpsData, requestId) {
     id: requestId,
     results,
   });
+}
+
+async function processSections(data, requestId) {
+  console.log("🔄 GPS Worker: Processing sections...");
+
+  const { coordinates, sections } = data;
+  const trace = Trace.init(coordinates);
+
+  // Send progress updates during processing
+  self.postMessage({
+    type: "PROGRESS",
+    id: requestId,
+    progress: 25,
+    message: "Trace initialized...",
+  });
+
+  const results = sections.map((section) => {
+    const {
+      startKm,
+      endKm,
+      startCheckpoint: { location: startLocation },
+      endCheckpoint: { location: endLocation },
+    } = section;
+    const sectionData = trace.sliceBetweenDistances(
+      startKm * 1000,
+      endKm * 1000,
+    );
+
+    const startPoint = trace.pointAtDistance(startKm * 1000);
+    const endPoint = trace.pointAtDistance(endKm * 1000);
+
+    // Create a new trace from the section data if needed
+    const sectionTrace = Trace.init(sectionData);
+    const updatedPoints = sectionTrace.data;
+    const { get, length } = updatedPoints;
+    const serializedPoints = Array.from({ length: length }, (_, i) => {
+      const point = get(i);
+      return [Number(point[0]), Number(point[1]), Number(point[2])]; // Ensure serializable
+    });
+
+    return {
+      segmentId: section.id,
+      pointCount: sectionData ? Number(sectionData.length) : 0,
+      startKm: startKm,
+      endKm: endKm,
+      points: serializedPoints,
+      startPoint: [
+        Number(startPoint[0]),
+        Number(startPoint[1]),
+        Number(startPoint[2]),
+      ],
+      endPoint: [Number(endPoint[0]), Number(endPoint[1]), Number(endPoint[2])],
+      startLocation: startLocation,
+      endLocation: endLocation,
+      totalDistance: Number(sectionTrace.totalDistance()),
+      totalElevation: Number(sectionTrace.totalElevation()),
+      totalElevationLoss: Number(sectionTrace.totalElevationLoss()),
+    };
+  });
+
+  self.postMessage({
+    type: "SECTIONS_PROCESSED",
+    id: requestId,
+    results,
+  });
+
+  trace.deinit();
 }
 
 // Calculate route statistics (moderate computation)

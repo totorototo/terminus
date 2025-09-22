@@ -1,5 +1,5 @@
 // Custom React hook for managing GPS Web Worker
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback, useState } from "react";
 
 export function useGPSWorker() {
   const workerRef = useRef(null);
@@ -7,25 +7,31 @@ export function useGPSWorker() {
   const [isWorkerReady, setIsWorkerReady] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [progressMessage, setProgressMessage] = useState('');
+  const [progressMessage, setProgressMessage] = useState("");
 
   // Initialize worker
   useEffect(() => {
     // Create worker using Vite's worker syntax
-    workerRef.current = new Worker(
-      new URL('./gpsWorker.js', import.meta.url),
-      { type: 'module' }
-    );
+    workerRef.current = new Worker(new URL("./gpsWorker.js", import.meta.url), {
+      type: "module",
+    });
 
     // Handle messages from worker
     workerRef.current.onmessage = (e) => {
-      const { type, id, results, error, progress: progressValue, message } = e.data;
+      const {
+        type,
+        id,
+        results,
+        error,
+        progress: progressValue,
+        message,
+      } = e.data;
       const request = requestsRef.current.get(id);
 
       if (!request) return;
 
       switch (type) {
-        case 'PROGRESS':
+        case "PROGRESS":
           setProgress(progressValue);
           setProgressMessage(message);
           if (request.onProgress) {
@@ -33,17 +39,18 @@ export function useGPSWorker() {
           }
           break;
 
-        case 'GPS_DATA_PROCESSED':
-        case 'ROUTE_STATS_CALCULATED':
-        case 'POINTS_FOUND':
-        case 'ROUTE_SECTION_READY':
+        case "GPS_DATA_PROCESSED":
+        case "SECTIONS_PROCESSED":
+        case "ROUTE_STATS_CALCULATED":
+        case "POINTS_FOUND":
+        case "ROUTE_SECTION_READY":
           requestsRef.current.delete(id);
           setProcessing(false);
           setProgress(100);
           request.resolve(results || e.data);
           break;
 
-        case 'ERROR':
+        case "ERROR":
           requestsRef.current.delete(id);
           setProcessing(false);
           setProgress(0);
@@ -54,7 +61,7 @@ export function useGPSWorker() {
 
     // Handle worker errors
     workerRef.current.onerror = (error) => {
-      console.error('GPS Worker error:', error);
+      console.error("GPS Worker error:", error);
       setIsWorkerReady(false);
     };
 
@@ -69,40 +76,69 @@ export function useGPSWorker() {
   }, []);
 
   // Send message to worker and return promise
-  const sendMessage = useCallback((type, data, onProgress) => {
-    return new Promise((resolve, reject) => {
-      if (!workerRef.current || !isWorkerReady) {
-        reject(new Error('GPS Worker not ready'));
-        return;
-      }
+  const sendMessage = useCallback(
+    (type, data, onProgress) => {
+      return new Promise((resolve, reject) => {
+        if (!workerRef.current || !isWorkerReady) {
+          reject(new Error("GPS Worker not ready"));
+          return;
+        }
 
-      const id = Date.now() + Math.random();
-      requestsRef.current.set(id, { resolve, reject, onProgress });
+        const id = Date.now() + Math.random();
+        requestsRef.current.set(id, { resolve, reject, onProgress });
 
-      setProcessing(true);
-      setProgress(0);
-      setProgressMessage('Starting...');
+        setProcessing(true);
+        setProgress(0);
+        setProgressMessage("Starting...");
 
-      workerRef.current.postMessage({ type, data, id });
-    });
-  }, [isWorkerReady]);
+        workerRef.current.postMessage({ type, data, id });
+      });
+    },
+    [isWorkerReady],
+  );
 
   // API methods
-  const processGPSData = useCallback(async (coordinates, onProgress) => {
-    return sendMessage('PROCESS_GPS_DATA', { coordinates }, onProgress);
-  }, [sendMessage]);
+  const processGPSData = useCallback(
+    async (coordinates, onProgress) => {
+      return sendMessage("PROCESS_GPS_DATA", { coordinates }, onProgress);
+    },
+    [sendMessage],
+  );
 
-  const calculateRouteStats = useCallback(async (coordinates, segments) => {
-    return sendMessage('CALCULATE_ROUTE_STATS', { coordinates, segments });
-  }, [sendMessage]);
+  const processSections = useCallback(
+    async (coordinates, sections, onProgress) => {
+      return sendMessage(
+        "PROCESS_SECTIONS",
+        { coordinates, sections },
+        onProgress,
+      );
+    },
+    [sendMessage],
+  );
 
-  const findPointsAtDistances = useCallback(async (coordinates, distances) => {
-    return sendMessage('FIND_POINTS_AT_DISTANCES', { coordinates, distances });
-  }, [sendMessage]);
+  const calculateRouteStats = useCallback(
+    async (coordinates, segments) => {
+      return sendMessage("CALCULATE_ROUTE_STATS", { coordinates, segments });
+    },
+    [sendMessage],
+  );
 
-  const getRouteSection = useCallback(async (coordinates, start, end) => {
-    return sendMessage('GET_ROUTE_SECTION', { coordinates, start, end });
-  }, [sendMessage]);
+  const findPointsAtDistances = useCallback(
+    async (coordinates, distances) => {
+      return sendMessage("FIND_POINTS_AT_DISTANCES", {
+        coordinates,
+        distances,
+      });
+    },
+    [sendMessage],
+  );
+
+  const getRouteSection = useCallback(
+    async (coordinates, start, end) => {
+      return sendMessage("GET_ROUTE_SECTION", { coordinates, start, end });
+    },
+    [sendMessage],
+  );
 
   return {
     // State
@@ -110,11 +146,12 @@ export function useGPSWorker() {
     processing,
     progress,
     progressMessage,
-    
+
     // Methods
     processGPSData,
+    processSections,
     calculateRouteStats,
     findPointsAtDistances,
-    getRouteSection
+    getRouteSection,
   };
 }
