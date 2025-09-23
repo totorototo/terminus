@@ -16,8 +16,26 @@ import {
 } from "@react-three/drei";
 import { scaleLinear } from "d3-scale";
 import * as THREE from "three";
+import { useSpring } from "@react-spring/three";
+import { useFrame } from "@react-three/fiber";
+import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 
 function Overlay({ section }) {
+  const { distance } = useSpringWeb({
+    distance: section?.totalDistance || 0,
+    config: { tension: 170, friction: 26 },
+  });
+
+  const { elevationGain } = useSpringWeb({
+    elevationGain: section?.totalElevation || 0,
+    config: { tension: 170, friction: 26 },
+  });
+
+  const { elevationLoss } = useSpringWeb({
+    elevationLoss: section?.totalElevationLoss || 0,
+    config: { tension: 170, friction: 26 },
+  });
+
   return (
     <div
       style={{
@@ -53,9 +71,15 @@ function Overlay({ section }) {
       </h1>
       {section && (
         <>
-          <div>Distance: {(section.totalDistance / 1000).toFixed(2)} km</div>
-          <div>Elevation Gain: {section.totalElevation.toFixed(0)} m</div>
-          <div>Elevation Loss: {section.totalElevationLoss.toFixed(0)} m</div>
+          <animated.div>
+            {distance.to((n) => `Distance: ${(n / 1000).toFixed(2)} km`)}
+          </animated.div>
+          <animated.div>
+            {elevationGain.to((n) => `Elevation Gain: ${n.toFixed(0)} m`)}
+          </animated.div>
+          <animated.div>
+            {elevationLoss.to((n) => `Elevation Loss: ${n.toFixed(0)} m`)}
+          </animated.div>
           <div
             style={{ marginTop: "1em", fontSize: "0.8em", color: "#707070" }}
           >
@@ -69,6 +93,16 @@ function Overlay({ section }) {
 
 function ElevationProfile({ gpsPoints, color, metaData, onClick, selected }) {
   // const geometryRef = useRef();
+
+  const materialRef = useRef();
+
+  const { opacity } = useSpring({ opacity: selected ? 1 : 0.5 });
+
+  useFrame(() => {
+    if (materialRef.current) {
+      materialRef.current.opacity = opacity.get();
+    }
+  });
 
   const positions = useMemo(() => {
     const topVertices = gpsPoints.map(([long, ele, lat]) => [long, ele, lat]);
@@ -108,8 +142,9 @@ function ElevationProfile({ gpsPoints, color, metaData, onClick, selected }) {
       </bufferGeometry>
       <Edges linewidth={0.5} threshold={15} color="black" />
       <meshStandardMaterial
+        ref={materialRef}
         transparent
-        opacity={selected ? 1 : 0.65}
+        // opacity={selected ? 1 : 0.65}
         color={color}
         side={THREE.DoubleSide}
       />
