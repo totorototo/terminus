@@ -12,6 +12,7 @@ import {
   Edges,
   OrthographicCamera,
   Html,
+  Text,
 } from "@react-three/drei";
 import { scaleLinear } from "d3-scale";
 import * as THREE from "three";
@@ -71,8 +72,6 @@ export default function ThreeDimensionalProfile({
   checkpoints,
   sections,
 }) {
-  console.log(sections);
-
   // Memoize scales and points3D for performance
   const {
     xScale,
@@ -107,12 +106,52 @@ export default function ThreeDimensionalProfile({
 
     const sectionsPoints3D =
       sections && sections.length
-        ? sections.map(({ points }) =>
-            points.map((coord) => [
-              xScale(coord[0]), // longitude → x
-              yScale(coord[2]), // elevation → y
-              zScale(coord[1]), // latitude → z
-            ]),
+        ? sections.map(
+            ({
+              points,
+              totalDistance,
+              totalElevation,
+              totalElevationLoss,
+              startPoint,
+            }) => {
+              const threeDpoints = points.map((coord) => [
+                xScale(coord[0]), // longitude → x
+                yScale(coord[2]), // elevation → y
+                zScale(coord[1]), // latitude → z
+              ]);
+
+              // compute points bounding box for label positioning
+              const bbox = threeDpoints.reduce(
+                (acc, point) => {
+                  acc.minX = Math.min(acc.minX, point[0]);
+                  acc.maxX = Math.max(acc.maxX, point[0]);
+                  // acc.minY = Math.min(acc.minY, point[1]);
+                  // acc.maxY = Math.max(acc.maxY, point[1]);
+                  acc.minZ = Math.min(acc.minZ, point[2]);
+                  acc.maxZ = Math.max(acc.maxZ, point[2]);
+                  return acc;
+                },
+                {
+                  minX: Infinity,
+                  maxX: -Infinity,
+                  // minY: Infinity,
+                  // maxY: -Infinity,
+                  minZ: Infinity,
+                  maxZ: -Infinity,
+                },
+              );
+
+              console.log("Section bbox:", bbox);
+
+              return {
+                points: threeDpoints,
+                totalDistance,
+                totalElevation,
+                totalElevationLoss,
+                startPoint,
+                bbox,
+              };
+            },
           )
         : [];
 
@@ -165,13 +204,48 @@ export default function ThreeDimensionalProfile({
         )} */}
         {sectionsPoints3D &&
           sectionsPoints3D.length > 0 &&
-          sectionsPoints3D.map((section, index) => (
-            <ElevationProfile
-              key={index}
-              gpsPoints={section}
-              color={`hsl(${(index / sectionsPoints3D.length) * 360}, 100%, 50%)`}
-            />
-          ))}
+          sectionsPoints3D.map(
+            (
+              {
+                points,
+                totalDistance,
+                totalElevation,
+                totalElevationLoss,
+                startPoint,
+                bbox,
+              },
+              index,
+            ) => (
+              <>
+                <ElevationProfile
+                  key={index}
+                  gpsPoints={points}
+                  color={`hsl(${(index / sectionsPoints3D.length) * 360}, 100%, 50%)`}
+                />
+                <Text
+                  fontSize={0.1}
+                  key={`label-${index}`}
+                  color={"black"}
+                  rotation={[-Math.PI / 2, 0, Math.PI / 2]}
+                  position={[
+                    bbox.minX !== Infinity && bbox.maxX !== -Infinity
+                      ? bbox.maxX
+                      : points.length
+                        ? points[0][0]
+                        : 0,
+                    0,
+                    bbox.minZ !== Infinity && bbox.maxZ !== -Infinity
+                      ? bbox.minZ + (bbox.maxZ - bbox.minZ) / 2
+                      : points.length
+                        ? points[0][2]
+                        : 0,
+                  ]}
+                >
+                  {`Section ${index + 1}`}
+                </Text>
+              </>
+            ),
+          )}
 
         {checkpointsPoints3D &&
           checkpointsPoints3D.length > 0 &&
