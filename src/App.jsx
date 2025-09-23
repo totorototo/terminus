@@ -296,7 +296,7 @@ function App() {
     <div
       className="App"
       style={{
-        backgroundColor: "#c9c9c9ff",
+        backgroundColor: "#262424ff",
         color: "#eee",
         width: "100%",
         minHeight: "100%",
