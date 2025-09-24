@@ -13,13 +13,14 @@ import {
 import { scaleLinear } from "d3-scale";
 import ElevationProfile from "./ElevationProfile";
 import Overlay from "./Overlay";
+import { de } from "date-fns/locale";
 
 export default function ThreeDimensionalProfile({
   width,
   height,
   coordinates,
-  checkpoints,
   sections,
+  mode = "2d",
 }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
 
@@ -38,32 +39,72 @@ export default function ThreeDimensionalProfile({
       Math.max(...coordinates.map((coord) => coord[1])),
     ]; // latitude
 
-    const xScale = scaleLinear().domain(xExtent).range([-5, 5]);
-    const yScale = scaleLinear().domain([0, yExtent[1]]).range([0, 1]);
-    const zScale = scaleLinear().domain(zExtent).range([10, -10]);
+    // keep the way it is for 3d mode, and flatten for 2d mode
+    // display the profile in the x-y plane
+    // z will be constant (0)
+    // x will item index scaled to fit -5 to 5
+    // y will be elevation scaled to fit 0 to 1
+    // z will be 0
 
-    const points3D = coordinates.map((coord) => [
-      xScale(coord[0]), // longitude → x
-      yScale(coord[2]), // elevation → y
-      zScale(coord[1]), // latitude → z
-    ]);
+    // 3D mode: use geographic coordinates, 2D mode: flatten to x-y plane with distance-based x-axis
+    const xScale =
+      mode === "3d"
+        ? scaleLinear().domain(xExtent).range([-5, 5])
+        : scaleLinear()
+            .domain([0, coordinates.length - 1])
+            .range([-5, 5]);
+
+    const yScale = scaleLinear().domain([0, yExtent[1]]).range([0, 1]);
+
+    const zScale =
+      mode === "3d" ? scaleLinear().domain(zExtent).range([10, -10]) : () => 0; // constant Z
+
+    const points3D =
+      mode === "3d"
+        ? coordinates.map((coord) => [
+            xScale(coord[0]), // longitude → x
+            yScale(coord[2]), // elevation → y
+            zScale(coord[1]), // latitude → z
+          ])
+        : coordinates.map((coord, index) => [
+            xScale(index), // point index → x
+            yScale(coord[2]), // elevation → y
+            0, // z = 0
+          ]);
 
     const sectionsPoints3D =
       sections && sections.length
         ? sections.map(
-            ({
-              points,
-              totalDistance,
-              totalElevation,
-              totalElevationLoss,
-              startPoint,
-              segmentId,
-            }) => {
-              const threeDpoints = points.map((coord) => [
-                xScale(coord[0]), // longitude → x
-                yScale(coord[2]), // elevation → y
-                zScale(coord[1]), // latitude → z
-              ]);
+            (
+              {
+                points,
+                totalDistance,
+                totalElevation,
+                totalElevationLoss,
+                startPoint,
+                segmentId,
+              },
+              sectionIndex,
+            ) => {
+              const threeDpoints =
+                mode === "3d"
+                  ? points.map((coord) => [
+                      xScale(coord[0]), // longitude → x
+                      yScale(coord[2]), // elevation → y
+                      zScale(coord[1]), // latitude → z
+                    ])
+                  : points.map((coord, index) => {
+                      // Calculate offset based on array index, not ID search
+                      const offset = sections
+                        .slice(0, sectionIndex)
+                        .reduce((acc, s) => acc + s.points.length, 0);
+
+                      return [
+                        xScale(index + offset), // point index → x -> offset added here
+                        yScale(coord[2]), // elevation → y
+                        0, // z = 0
+                      ];
+                    });
 
               return {
                 points: threeDpoints,
@@ -71,7 +112,6 @@ export default function ThreeDimensionalProfile({
                 totalElevation,
                 totalElevationLoss,
                 startPoint,
-                // bbox,
                 id: segmentId,
               };
             },
@@ -82,21 +122,45 @@ export default function ThreeDimensionalProfile({
       sections && sections.length
         ? Object.entries(
             sections.reduce(
-              (acc, { startPoint, endPoint, startLocation, endLocation }) => {
-                acc[startLocation] = startPoint;
-                acc[endLocation] = endPoint;
+              (
+                acc,
+                {
+                  startPoint,
+                  endPoint,
+                  startLocation,
+                  endLocation,
+                  startIndex,
+                  endIndex,
+                },
+              ) => {
+                acc[startLocation] = { point: startPoint, index: startIndex };
+                acc[endLocation] = { point: endPoint, index: endIndex };
                 return acc;
               },
               {},
             ),
-          ).map(([key, value]) => ({
-            name: key,
-            point3D: [
-              xScale(value[0]), // longitude → x
-              yScale(value[2]), // elevation → y
-              zScale(value[1]), // latitude → z
-            ],
-          }))
+          ).map(([key, value]) => {
+            if (mode === "3d") {
+              return {
+                name: key,
+                point3D: [
+                  xScale(value.point[0]), // longitude → x
+                  yScale(value.point[2]), // elevation → y
+                  zScale(value.point[1]), // latitude → z
+                ],
+              };
+            } else {
+              // 2D mode: use the stored index directly
+              return {
+                name: key,
+                point3D: [
+                  xScale(value.index), // use the stored cumulative index → x
+                  yScale(value.point[2]) + 0.2, // elevation → y
+                  0, // z = 0
+                ],
+              };
+            }
+          })
         : [];
 
     return {
@@ -107,7 +171,7 @@ export default function ThreeDimensionalProfile({
       sectionsPoints3D,
       checkpointsPoints3D,
     };
-  }, [coordinates, sections]);
+  }, [coordinates, sections, mode]);
 
   return (
     <>

@@ -151,6 +151,7 @@ async function processSections(data, requestId) {
       startCheckpoint: { location: startLocation },
       endCheckpoint: { location: endLocation },
     } = section;
+
     const sectionData = trace.sliceBetweenDistances(
       startKm * 1000,
       endKm * 1000,
@@ -158,6 +159,9 @@ async function processSections(data, requestId) {
 
     const startPoint = trace.pointAtDistance(startKm * 1000);
     const endPoint = trace.pointAtDistance(endKm * 1000);
+
+    const startIndex = trace.findIndexAtDistance(startKm * 1000);
+    const endIndex = trace.findIndexAtDistance(endKm * 1000);
 
     // Create a new trace from the section data if needed
     const sectionTrace = Trace.init(sectionData);
@@ -185,6 +189,8 @@ async function processSections(data, requestId) {
       totalDistance: Number(sectionTrace.totalDistance()),
       totalElevation: Number(sectionTrace.totalElevation()),
       totalElevationLoss: Number(sectionTrace.totalElevationLoss()),
+      startIndex,
+      endIndex,
     };
   });
 
