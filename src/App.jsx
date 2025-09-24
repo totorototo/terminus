@@ -309,7 +309,6 @@ function App() {
               width={width}
               height={height}
               coordinates={gpx.features?.[0]?.geometry?.coordinates}
-              {...(gpsResults && { checkpoints: gpsResults.samplePoints })}
               sections={sections}
             />
           )}
