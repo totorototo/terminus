@@ -68,6 +68,7 @@ function App() {
   const [stressResults, setStressResults] = useState(null);
   const [stressProgress, setStressProgress] = useState(null);
   const [isStressTesting, setIsStressTesting] = useState(false);
+  const [mode, setMode] = useState("2d"); // "2d" or "3d"
 
   const {
     isWorkerReady,
@@ -300,8 +301,44 @@ function App() {
         color: "#eee",
         width: "100%",
         minHeight: "100%",
+        position: "relative",
       }}
     >
+      {/* Mode Toggle Button */}
+      <button
+        onClick={() => setMode(mode === "3d" ? "2d" : "3d")}
+        style={{
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          zIndex: 1000,
+          padding: "12px 24px",
+          backgroundColor: mode === "3d" ? "#4CAF50" : "#2196F3",
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+          fontSize: "14px",
+          fontWeight: "600",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+          transition: "all 0.3s ease",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.transform = "translateY(-2px)";
+          e.target.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.4)";
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.transform = "translateY(0px)";
+          e.target.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.3)";
+        }}
+      >
+        {mode === "3d" ? "🗺️" : "📊"}
+        {mode === "3d" ? "Switch to 2D Profile" : "Switch to 3D View"}
+      </button>
+
       <div style={{ width: "100%", height: "100%", padding: "2rem" }}>
         <AutoSizer>
           {({ width, height }) => (
@@ -310,6 +347,7 @@ function App() {
               height={height}
               coordinates={gpx.features?.[0]?.geometry?.coordinates}
               sections={sections}
+              mode={mode}
             />
           )}
         </AutoSizer>

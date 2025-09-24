@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { Edges } from "@react-three/drei";
 import { useSpring } from "@react-spring/three";
 import { useFrame } from "@react-three/fiber";
@@ -6,6 +6,7 @@ import * as THREE from "three";
 
 function ElevationProfile({ points, color, onClick, selected }) {
   const materialRef = useRef();
+  const geometryRef = useRef();
 
   const { opacity } = useSpring({ opacity: selected ? 1 : 0.5 });
 
@@ -33,9 +34,30 @@ function ElevationProfile({ points, color, onClick, selected }) {
     return new Float32Array(verts);
   }, [points]);
 
+  // Create a key to force Edges re-render when geometry changes
+  const geometryKey = useMemo(() => {
+    // Create a simple hash from first few and last few positions for performance
+    const sample =
+      positions.length > 20
+        ? Array.from(positions.slice(0, 12)).concat(
+            Array.from(positions.slice(-12)),
+          )
+        : Array.from(positions);
+    return sample.join(",");
+  }, [positions]);
+
+  // Update buffer geometry when positions change
+  useEffect(() => {
+    if (!geometryRef.current) return;
+    const geom = geometryRef.current;
+    geom.attributes.position.array = positions;
+    geom.attributes.position.needsUpdate = true;
+    geom.computeVertexNormals();
+  }, [positions]);
+
   return (
     <mesh castShadow receiveShadow onClick={onClick}>
-      <bufferGeometry>
+      <bufferGeometry ref={geometryRef}>
         <bufferAttribute
           attach="attributes-position"
           count={positions.length / 3}
@@ -43,7 +65,12 @@ function ElevationProfile({ points, color, onClick, selected }) {
           itemSize={3}
         />
       </bufferGeometry>
-      <Edges linewidth={0.5} threshold={15} color="black" />
+      <Edges
+        key={geometryKey} // Force re-render when geometry changes
+        linewidth={0.5}
+        threshold={15}
+        color="black"
+      />
       <meshStandardMaterial
         ref={materialRef}
         transparent

@@ -13,7 +13,6 @@ import {
 import { scaleLinear } from "d3-scale";
 import ElevationProfile from "./ElevationProfile";
 import Overlay from "./Overlay";
-import { de } from "date-fns/locale";
 
 export default function ThreeDimensionalProfile({
   width,
