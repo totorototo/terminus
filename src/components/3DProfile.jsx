@@ -1,156 +1,18 @@
-import { useMemo, useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
-  Grid,
   OrbitControls,
   Environment,
   AccumulativeShadows,
   RandomizedLight,
   GizmoHelper,
   GizmoViewport,
-  ContactShadows,
-  Edges,
   OrthographicCamera,
   Html,
-  Text,
 } from "@react-three/drei";
 import { scaleLinear } from "d3-scale";
-import * as THREE from "three";
-import { useSpring } from "@react-spring/three";
-import { useFrame } from "@react-three/fiber";
-import { useSpring as useSpringWeb, animated } from "@react-spring/web";
-
-function Overlay({ section }) {
-  const { distance } = useSpringWeb({
-    distance: section?.totalDistance || 0,
-    config: { tension: 170, friction: 26 },
-  });
-
-  const { elevationGain } = useSpringWeb({
-    elevationGain: section?.totalElevation || 0,
-    config: { tension: 170, friction: 26 },
-  });
-
-  const { elevationLoss } = useSpringWeb({
-    elevationLoss: section?.totalElevationLoss || 0,
-    config: { tension: 170, friction: 26 },
-  });
-
-  return (
-    <div
-      style={{
-        zIndex: 10,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        justifyContent: "flex-start",
-        position: "absolute",
-        pointerEvents: "none",
-        top: 0,
-        maxWidth: "600px",
-        padding: "80px",
-        color: "#a0a0a0",
-        lineHeight: 1.2,
-        fontSize: "15px",
-        letterSpacing: "1.5px",
-        userSelect: "none",
-      }}
-    >
-      <h1
-        style={{
-          pointerEvents: "none",
-          color: "white",
-          fontSize: "2em",
-          fontWeight: "100",
-          lineHeight: "1em",
-          margin: 0,
-          marginBottom: "0.25em",
-        }}
-      >
-        Section Analytics
-      </h1>
-      {section && (
-        <>
-          <animated.div>
-            {distance.to((n) => `Distance: ${(n / 1000).toFixed(2)} km`)}
-          </animated.div>
-          <animated.div>
-            {elevationGain.to((n) => `Elevation Gain: ${n.toFixed(0)} m`)}
-          </animated.div>
-          <animated.div>
-            {elevationLoss.to((n) => `Elevation Loss: ${n.toFixed(0)} m`)}
-          </animated.div>
-          <div
-            style={{ marginTop: "1em", fontSize: "0.8em", color: "#707070" }}
-          >
-            Click on another section to see its details.
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function ElevationProfile({ gpsPoints, color, metaData, onClick, selected }) {
-  // const geometryRef = useRef();
-
-  const materialRef = useRef();
-
-  const { opacity } = useSpring({ opacity: selected ? 1 : 0.5 });
-
-  useFrame(() => {
-    if (materialRef.current) {
-      materialRef.current.opacity = opacity.get();
-    }
-  });
-
-  const positions = useMemo(() => {
-    const topVertices = gpsPoints.map(([long, ele, lat]) => [long, ele, lat]);
-    const baseVertices = gpsPoints.map(([long, _ele, lat]) => [long, 0, lat]);
-
-    const verts = [];
-    for (let i = 0; i < gpsPoints.length - 1; i++) {
-      verts.push(
-        ...topVertices[i],
-        ...baseVertices[i],
-        ...topVertices[i + 1],
-        ...topVertices[i + 1],
-        ...baseVertices[i],
-        ...baseVertices[i + 1],
-      );
-    }
-    return new Float32Array(verts);
-  }, [gpsPoints]);
-
-  // useEffect(() => {
-  //   if (!geometryRef.current) return;
-  //   const geom = geometryRef.current;
-  //   geom.computeVertexNormals();
-  //   geom.attributes.position.needsUpdate = true;
-  //   geom.attributes.normal.needsUpdate = true;
-  // }, [positions]);
-
-  return (
-    <mesh castShadow receiveShadow onClick={onClick}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={positions.length / 3}
-          array={positions}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <Edges linewidth={0.5} threshold={15} color="black" />
-      <meshStandardMaterial
-        ref={materialRef}
-        transparent
-        // opacity={selected ? 1 : 0.65}
-        color={color}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  );
-}
+import ElevationProfile from "./ElevationProfile";
+import Overlay from "./Overlay";
 
 export default function ThreeDimensionalProfile({
   width,
@@ -202,27 +64,6 @@ export default function ThreeDimensionalProfile({
                 yScale(coord[2]), // elevation → y
                 zScale(coord[1]), // latitude → z
               ]);
-
-              // // compute points bounding box for label positioning
-              // const bbox = threeDpoints.reduce(
-              //   (acc, point) => {
-              //     acc.minX = Math.min(acc.minX, point[0]);
-              //     acc.maxX = Math.max(acc.maxX, point[0]);
-              //     // acc.minY = Math.min(acc.minY, point[1]);
-              //     // acc.maxY = Math.max(acc.maxY, point[1]);
-              //     acc.minZ = Math.min(acc.minZ, point[2]);
-              //     acc.maxZ = Math.max(acc.maxZ, point[2]);
-              //     return acc;
-              //   },
-              //   {
-              //     minX: Infinity,
-              //     maxX: -Infinity,
-              //     // minY: Infinity,
-              //     // maxY: -Infinity,
-              //     minZ: Infinity,
-              //     maxZ: -Infinity,
-              //   },
-              // );
 
               return {
                 points: threeDpoints,
@@ -295,46 +136,11 @@ export default function ThreeDimensionalProfile({
             <>
               <ElevationProfile
                 key={id}
-                gpsPoints={points}
+                points={points}
                 color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
                 onClick={() => setSelectedSectionIndex(id)}
                 selected={selectedSectionIndex === id}
               />
-              {/* <Html
-                  transform
-                  rotation={[-Math.PI / 2, 0, Math.PI / 2]}
-                  style={{
-                    pointerEvents: "none",
-                    color: "black",
-                    padding: "2px 5px",
-                    borderRadius: "3px",
-
-                    fontSize: "10px",
-                    whiteSpace: "nowrap",
-
-                  }}
-                  key={`html-label-${index}`}
-                  position={[
-                    bbox.minX !== Infinity && bbox.maxX !== -Infinity
-                      ? bbox.maxX + 1.2
-                      : points.length
-                        ? points[0][0]
-                        : 0,
-                    0,
-                    bbox.minZ !== Infinity && bbox.maxZ !== -Infinity
-                      ? bbox.minZ + (bbox.maxZ - bbox.minZ) / 2
-                      : points.length
-                        ? points[0][2]
-                        : 0,
-                  ]}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', flexDirection: 'column' }}>
-                    <span>{`Section ${index + 1}`}</span>
-                    <span>{`Distance: ${(totalDistance / 1000).toFixed(1)} km`}</span>
-                    <span>{`D+: ${totalElevation.toFixed(1)} m`}</span>
-                    <span>{`D-: ${totalElevationLoss.toFixed(1)} m`}</span>
-                  </div>
-                </Html> */}
             </>
           ))}
 
