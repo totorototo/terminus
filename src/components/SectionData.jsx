@@ -1,6 +1,6 @@
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 
-function Overlay({ section }) {
+function SectionData({ section }) {
   const { opacity } = useSpringWeb({
     opacity: section ? 1 : 0,
     config: { tension: 170, friction: 26 },
@@ -31,7 +31,7 @@ function Overlay({ section }) {
         justifyContent: "flex-start",
         position: "absolute",
         pointerEvents: "none",
-        top: 0,
+        bottom: 0,
         maxWidth: "600px",
         padding: "80px",
         color: "#a0a0a0",
@@ -87,4 +87,4 @@ function Overlay({ section }) {
   );
 }
 
-export default Overlay;
+export default SectionData;
