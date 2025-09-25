@@ -348,6 +348,7 @@ function App() {
               coordinates={gpx.features?.[0]?.geometry?.coordinates}
               sections={sections}
               mode={mode}
+              gpsResults={gpsResults}
             />
           )}
         </AutoSizer>

@@ -1,19 +1,28 @@
 import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment, GizmoHelper, GizmoViewport } from "@react-three/drei";
-import Overlay from "./Overlay";
+import {
+  Environment,
+  GizmoHelper,
+  GizmoViewport,
+  Trail,
+} from "@react-three/drei";
+import SectionData from "./SectionData";
 import AnimatedOrbitControls from "./AnimatedOrbitControls";
 import TwoDimensionalProfile from "./TwoDimensionalProfile";
 import ThreeDimensionalProfile from "./ThreeDimensionalProfile";
+import TrailData from "./TrailData";
 
 export default function Scene({
   width,
   height,
   coordinates,
   sections,
+  gpsResults,
   mode = "2d",
 }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
+
+  console.log({ gpsResults });
 
   return (
     <>
@@ -74,7 +83,7 @@ export default function Scene({
           targetPosition={[0, 0, 0]}
         />
       </Canvas>
-      <Overlay
+      <SectionData
         {...(sections &&
           sections.length &&
           selectedSectionIndex !== null && {
@@ -83,6 +92,7 @@ export default function Scene({
             ),
           })}
       />
+      <TrailData gpsResults={gpsResults} />
     </>
   );
 }
