@@ -134,10 +134,10 @@ test "configuration validation" {
     var config = AMPDConfig{ .scale_max = 0 };
     try std.testing.expectError(error.InvalidScaleMax, config.validate(10));
 
-    config = AMPDConfig{ .threshold = 0 };
+    config = AMPDConfig{ .threshold_peaks = 0 };
     try std.testing.expectError(error.InvalidThreshold, config.validate(10));
 
-    config = AMPDConfig{ .threshold = 5, .scale_max = 3 };
+    config = AMPDConfig{ .threshold_peaks = 5, .scale_max = 3 };
     try std.testing.expectError(error.ThresholdExceedsScaleMax, config.validate(10));
 
     config = AMPDConfig{};
