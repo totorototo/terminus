@@ -4,11 +4,19 @@ import { useSpring } from "@react-spring/three";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-function ElevationProfile({ points, color, onClick, selected }) {
+function ElevationProfile({
+  points,
+  color,
+  onClick,
+  selected,
+  visible = false,
+}) {
   const materialRef = useRef();
   const geometryRef = useRef();
 
-  const { opacity } = useSpring({ opacity: selected ? 1 : 0.6 });
+  const { opacity } = useSpring({
+    opacity: visible ? (selected ? 1 : 0.6) : 0,
+  });
 
   useFrame(() => {
     if (materialRef.current) {

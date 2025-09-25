@@ -13,7 +13,8 @@ import { scaleLinear } from "d3-scale";
 import ElevationProfile from "./ElevationProfile";
 import Overlay from "./Overlay";
 import AnimatedOrbitControls from "./AnimatedOrbitControls";
-import DebugCamera from "./DebugCamera";
+import TwoDimensionalProfile from "./TwoDimensionalProfile";
+import ThreeDimensionalProfile from "./ThreeDimensionalProfile";
 
 export default function Scene({
   width,
@@ -197,7 +198,7 @@ export default function Scene({
         {/* {points3D && points3D.length > 0 && (
           <ElevationProfile gpsPoints={points3D} />
         )} */}
-        {sectionsPoints3D &&
+        {/* {sectionsPoints3D &&
           sectionsPoints3D.length > 0 &&
           sectionsPoints3D.map(({ points, id }) => (
             <>
@@ -209,9 +210,23 @@ export default function Scene({
                 selected={selectedSectionIndex === id}
               />
             </>
-          ))}
+          ))} */}
+        <TwoDimensionalProfile
+          coordinates={coordinates}
+          sections={sections}
+          setSelectedSectionIndex={setSelectedSectionIndex}
+          selectedSectionIndex={selectedSectionIndex}
+          visible={mode === "2d"}
+        />
+        <ThreeDimensionalProfile
+          coordinates={coordinates}
+          sections={sections}
+          setSelectedSectionIndex={setSelectedSectionIndex}
+          selectedSectionIndex={selectedSectionIndex}
+          visible={mode === "3d"}
+        />
 
-        {checkpointsPoints3D &&
+        {/* {checkpointsPoints3D &&
           checkpointsPoints3D.length > 0 &&
           checkpointsPoints3D.map((cp, index) => (
             <Html
@@ -232,7 +247,7 @@ export default function Scene({
                 {cp.name}
               </div>
             </Html>
-          ))}
+          ))} */}
 
         <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
           <GizmoViewport
