@@ -15,7 +15,7 @@ function ElevationProfile({
   const geometryRef = useRef();
 
   const { opacity } = useSpring({
-    opacity: visible ? (selected ? 1 : 0.6) : 0,
+    opacity: visible ? (selected ? 1 : 0.8) : 0,
   });
 
   useFrame(() => {
@@ -106,7 +106,7 @@ function ElevationProfile({
         <Edges
           key={geometryKey} // Force re-render when geometry changes
           linewidth={0.5}
-          threshold={60}
+          threshold={40}
           color="black"
         />
       )}
