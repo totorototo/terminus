@@ -309,34 +309,41 @@ function App() {
         onClick={() => setMode(mode === "3d" ? "2d" : "3d")}
         style={{
           position: "absolute",
-          top: "20px",
-          right: "20px",
+          top: "80px",
+          right: "80px",
           zIndex: 1000,
-          padding: "12px 24px",
-          backgroundColor: mode === "3d" ? "#4CAF50" : "#2196F3",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
+          padding: "16px 24px",
+          backgroundColor: "transparent",
+          color: "#a0a0a0",
+          border: "1px solid #404040",
+          borderRadius: "4px",
           cursor: "pointer",
-          fontSize: "14px",
-          fontWeight: "600",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-          transition: "all 0.3s ease",
+          fontSize: "15px",
+          fontWeight: "100",
+          letterSpacing: "1.5px",
+          lineHeight: 1.2,
+          userSelect: "none",
+          pointerEvents: "auto",
+          transition: "all 0.2s ease",
           display: "flex",
           alignItems: "center",
-          gap: "8px",
+          gap: "12px",
+          backdropFilter: "blur(8px)",
+          backgroundColor: "rgba(0, 0, 0, 0.2)",
         }}
         onMouseEnter={(e) => {
-          e.target.style.transform = "translateY(-2px)";
-          e.target.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.4)";
+          e.target.style.color = "white";
+          e.target.style.borderColor = "#606060";
+          e.target.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
         }}
         onMouseLeave={(e) => {
-          e.target.style.transform = "translateY(0px)";
-          e.target.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.3)";
+          e.target.style.color = "#a0a0a0";
+          e.target.style.borderColor = "#404040";
+          e.target.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
         }}
       >
-        {mode === "3d" ? "🗺️" : "📊"}
-        {mode === "3d" ? "Switch to 2D Profile" : "Switch to 3D View"}
+        {/* {mode === "3d" ? "📊" : "🗺️"} */}
+        {mode === "2d" ? "2D Profile" : "3D View"}
       </button>
 
       <div style={{ width: "100%", height: "100%", padding: "2rem" }}>
