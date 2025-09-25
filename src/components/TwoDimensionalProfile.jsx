@@ -1,6 +1,7 @@
-import React, { useMemo } from "react";
+import React, { Fragment, useMemo } from "react";
 import { scaleLinear } from "d3-scale";
 import ElevationProfile from "./ElevationProfile";
+import { Html } from "@react-three/drei";
 
 export default function TwoDimensionalProfile({
   coordinates,
@@ -113,7 +114,7 @@ export default function TwoDimensionalProfile({
               point3D: [
                 xScale(value.index), // use the stored cumulative index → x
                 yScale(value.point[2]) + 0.5, // elevation → y
-                1, // z = 0
+                0, // z = 0
               ],
             };
           })
@@ -133,7 +134,7 @@ export default function TwoDimensionalProfile({
     sectionsPoints3D &&
     sectionsPoints3D.length > 0 &&
     sectionsPoints3D.map(({ points, id }) => (
-      <>
+      <Fragment key={id}>
         <ElevationProfile
           key={id}
           points={points}
@@ -142,7 +143,31 @@ export default function TwoDimensionalProfile({
           selected={selectedSectionIndex === id}
           visible={visible}
         />
-      </>
+
+        {visible &&
+          checkpointsPoints3D &&
+          checkpointsPoints3D.length > 0 &&
+          checkpointsPoints3D.map((cp, index) => (
+            <Html
+              key={index}
+              position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
+              style={{ pointerEvents: "none" }}
+            >
+              <div
+                style={{
+                  backgroundColor: "grey",
+                  padding: "2px 5px",
+                  borderRadius: "3px",
+                  border: "1px solid #ccc",
+                  fontSize: "10px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {cp.name}
+              </div>
+            </Html>
+          ))}
+      </Fragment>
     ))
   );
 }
