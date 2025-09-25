@@ -1,0 +1,9 @@
+location,label,km,kind,cutoffTime
+Station Lioran,Départ,0.0,Depart,2026-05-13 10:00:00
+Col d'Eylac,CP1,33.5,life base,2026-05-13 20:00:00
+Candat,CP2,74.0,life base,2026-05-14 06:20:00
+Pertuyzat,CP3,109.5,life base,2026-05-14 16:35:00
+Mont-Dore,CP4,134.5,life base,2026-05-14 23:40:00
+Montlosier,CP5,188.0,life base,2026-05-15 14:25:00
+Col de Ceyssat,CP6,204.0,life base,2026-05-15 19:00:00
+Volvic,CP7,224.0,Arrivée,2026-05-16 00:00:00
