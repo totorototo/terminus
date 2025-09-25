@@ -20,7 +20,12 @@ function ElevationProfile({
 
   useFrame(() => {
     if (materialRef.current) {
-      materialRef.current.opacity = opacity.get();
+      const currentOpacity = opacity.get();
+      materialRef.current.opacity = currentOpacity;
+      // Disable depth write when nearly invisible to prevent z-fighting
+      materialRef.current.depthWrite = currentOpacity > 0.01;
+      // Update material to trigger re-render if needed
+      materialRef.current.needsUpdate = true;
     }
   });
 
@@ -42,7 +47,7 @@ function ElevationProfile({
     return new Float32Array(verts);
   }, [points]);
 
-  // Create a key to force Edges re-render when geometry changes
+  // Create a key to force Edges re-render when geometry changes or visibility changes
   const geometryKey = useMemo(() => {
     // Create a simple hash from first few and last few positions for performance
     const sample =
@@ -51,8 +56,9 @@ function ElevationProfile({
             Array.from(positions.slice(-12)),
           )
         : Array.from(positions);
-    return sample.join(",");
-  }, [positions]);
+    // Include visible state to force refresh when visibility changes
+    return `${sample.join(",")}-visible:${visible}`;
+  }, [positions, visible]);
 
   // Update buffer geometry when positions change
   useEffect(() => {
@@ -93,13 +99,17 @@ function ElevationProfile({
         transparent
         color={color}
         side={THREE.DoubleSide}
+        depthWrite={opacity.get() > 0.01} // Disable depth write when nearly invisible
+        alphaTest={0.001} // Skip rendering pixels below this alpha threshold
       />
-      <Edges
-        key={geometryKey} // Force re-render when geometry changes
-        linewidth={0.5}
-        threshold={15}
-        color="black"
-      />
+      {visible && (
+        <Edges
+          key={geometryKey} // Force re-render when geometry changes
+          linewidth={0.5}
+          threshold={60}
+          color="black"
+        />
+      )}
     </mesh>
   );
 }

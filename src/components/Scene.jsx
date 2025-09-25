@@ -187,14 +187,14 @@ export default function Scene({
         }}
       >
         <ambientLight intensity={2} />
-        <Grid
+        {/* <Grid
           position={[0, -0.01, 0]}
           args={[10, 10]}
           cellColor="#b3c6e0"
           sectionColor="#7a8fa6"
           fadeDistance={20}
           fadeStrength={1.5}
-        />
+        /> */}
         {/* {points3D && points3D.length > 0 && (
           <ElevationProfile gpsPoints={points3D} />
         )} */}
@@ -211,6 +211,7 @@ export default function Scene({
               />
             </>
           ))} */}
+
         <TwoDimensionalProfile
           coordinates={coordinates}
           sections={sections}
