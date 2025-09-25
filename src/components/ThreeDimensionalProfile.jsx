@@ -1,6 +1,7 @@
-import React, { useMemo } from "react";
+import React, { Fragment, useMemo } from "react";
 import { scaleLinear } from "d3-scale";
 import ElevationProfile from "./ElevationProfile";
+import { Html } from "@react-three/drei";
 
 export default function ThreeDimensionalProfile({
   coordinates,
@@ -24,14 +25,28 @@ export default function ThreeDimensionalProfile({
       Math.max(...coordinates.map((coord) => coord[1])),
     ]; // latitude
 
-    // keep the way it is for 3d mode, and flatten for 2d mode
-    // display the profile in the x-y plane
-    // z will be constant (0)
-    // x will item index scaled to fit -5 to 5
-    // y will be elevation scaled to fit 0 to 1
-    // z will be 0
+    // get logitude delta
+    const lonDelta = xExtent[1] - xExtent[0];
+    const latDelta = zExtent[1] - zExtent[0];
 
-    // 3D mode: use geographic coordinates, 2D mode: flatten to x-y plane with distance-based x-axis
+    // compute aspect ratio
+    const aspectRatio = lonDelta / latDelta;
+
+    // adjust range based on aspect ratio
+    if (aspectRatio > 1) {
+      // wider than tall
+      xExtent[0] -= lonDelta * 0.1;
+      xExtent[1] += lonDelta * 0.1;
+      zExtent[0] -= latDelta * aspectRatio * 0.1;
+      zExtent[1] += latDelta * aspectRatio * 0.1;
+    } else {
+      // taller than wide
+      xExtent[0] -= (lonDelta / aspectRatio) * 0.1;
+      xExtent[1] += (lonDelta / aspectRatio) * 0.1;
+      zExtent[0] -= latDelta * 0.1;
+      zExtent[1] += latDelta * 0.1;
+    }
+
     const xScale = scaleLinear().domain(xExtent).range([-2, 2]);
 
     const yScale = scaleLinear().domain([0, yExtent[1]]).range([0, 1]);
@@ -123,7 +138,7 @@ export default function ThreeDimensionalProfile({
     sectionsPoints3D &&
     sectionsPoints3D.length > 0 &&
     sectionsPoints3D.map(({ points, id }) => (
-      <>
+      <Fragment key={id}>
         <ElevationProfile
           key={id}
           points={points}
@@ -132,7 +147,31 @@ export default function ThreeDimensionalProfile({
           selected={selectedSectionIndex === id}
           visible={visible}
         />
-      </>
+
+        {visible &&
+          checkpointsPoints3D &&
+          checkpointsPoints3D.length > 0 &&
+          checkpointsPoints3D.map((cp, index) => (
+            <Html
+              key={index}
+              position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
+              style={{ pointerEvents: "none" }}
+            >
+              <div
+                style={{
+                  backgroundColor: "grey",
+                  padding: "2px 5px",
+                  borderRadius: "3px",
+                  border: "1px solid #ccc",
+                  fontSize: "12px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {cp.name}
+              </div>
+            </Html>
+          ))}
+      </Fragment>
     ))
   );
 }
