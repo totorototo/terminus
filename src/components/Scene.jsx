@@ -1,20 +1,21 @@
 import { useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
-  OrbitControls,
   Environment,
   AccumulativeShadows,
   RandomizedLight,
   GizmoHelper,
   GizmoViewport,
-  OrthographicCamera,
   Html,
+  Grid,
 } from "@react-three/drei";
 import { scaleLinear } from "d3-scale";
 import ElevationProfile from "./ElevationProfile";
 import Overlay from "./Overlay";
+import AnimatedOrbitControls from "./AnimatedOrbitControls";
+import DebugCamera from "./DebugCamera";
 
-export default function ThreeDimensionalProfile({
+export default function Scene({
   width,
   height,
   coordinates,
@@ -48,7 +49,7 @@ export default function ThreeDimensionalProfile({
     // 3D mode: use geographic coordinates, 2D mode: flatten to x-y plane with distance-based x-axis
     const xScale =
       mode === "3d"
-        ? scaleLinear().domain(xExtent).range([-5, 5])
+        ? scaleLinear().domain(xExtent).range([-2, 2])
         : scaleLinear()
             .domain([0, coordinates.length - 1])
             .range([-5, 5]);
@@ -56,7 +57,7 @@ export default function ThreeDimensionalProfile({
     const yScale = scaleLinear().domain([0, yExtent[1]]).range([0, 1]);
 
     const zScale =
-      mode === "3d" ? scaleLinear().domain(zExtent).range([10, -10]) : () => 0; // constant Z
+      mode === "3d" ? scaleLinear().domain(zExtent).range([5, -5]) : () => 0; // constant Z
 
     const points3D =
       mode === "3d"
@@ -154,8 +155,8 @@ export default function ThreeDimensionalProfile({
                 name: key,
                 point3D: [
                   xScale(value.index), // use the stored cumulative index → x
-                  yScale(value.point[2]) + 0.2, // elevation → y
-                  0, // z = 0
+                  yScale(value.point[2]) + 0.5, // elevation → y
+                  1, // z = 0
                 ],
               };
             }
@@ -174,22 +175,25 @@ export default function ThreeDimensionalProfile({
 
   return (
     <>
-      <Canvas style={{ width, height }} shadows>
-        <OrthographicCamera
-          makeDefault
-          position={[0, 4, 10]}
-          zoom={60}
-          fov={75}
-        />
+      <Canvas
+        style={{ width, height }}
+        shadows
+        camera={{
+          fov: 75,
+          near: 0.1,
+          far: 1000,
+          position: [0, 3, 6],
+        }}
+      >
         <ambientLight intensity={2} />
-        {/* <Grid
+        <Grid
           position={[0, -0.01, 0]}
-          args={gridSize}
+          args={[10, 10]}
           cellColor="#b3c6e0"
           sectionColor="#7a8fa6"
           fadeDistance={20}
           fadeStrength={1.5}
-        /> */}
+        />
         {/* {points3D && points3D.length > 0 && (
           <ElevationProfile gpsPoints={points3D} />
         )} */}
@@ -238,16 +242,18 @@ export default function ThreeDimensionalProfile({
         </GizmoHelper>
         <Environment preset="city" background={false} />
 
-        <AccumulativeShadows>
+        {/* <AccumulativeShadows>
           <RandomizedLight position={[2, 1, 0]} />
-        </AccumulativeShadows>
-        <OrbitControls
+        </AccumulativeShadows> */}
+        <AnimatedOrbitControls
           makeDefault
           enablePan
           enableZoom
           enableRotate
-          minPolarAngle={Math.PI / 4}
-          maxPolarAngle={Math.PI / 2}
+          minPolarAngle={mode === "2d" ? Math.PI / 6 : Math.PI / 4} // 30° in 2D, 45° in 3D
+          maxPolarAngle={mode === "2d" ? (Math.PI * 5) / 6 : Math.PI / 2} // 150° in 2D, 90° in 3D
+          cameraPosition={mode === "3d" ? [0, 3, 12] : [0, 2, 12]}
+          targetPosition={[0, 0, 0]}
         />
       </Canvas>
       <Overlay

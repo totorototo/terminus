@@ -8,7 +8,7 @@ function ElevationProfile({ points, color, onClick, selected }) {
   const materialRef = useRef();
   const geometryRef = useRef();
 
-  const { opacity } = useSpring({ opacity: selected ? 1 : 0.5 });
+  const { opacity } = useSpring({ opacity: selected ? 1 : 0.6 });
 
   useFrame(() => {
     if (materialRef.current) {
@@ -56,7 +56,22 @@ function ElevationProfile({ points, color, onClick, selected }) {
   }, [positions]);
 
   return (
-    <mesh castShadow receiveShadow onClick={onClick}>
+    <mesh
+      castShadow
+      receiveShadow
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick && onClick(e);
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = "default";
+      }}
+    >
       <bufferGeometry ref={geometryRef}>
         <bufferAttribute
           attach="attributes-position"
@@ -65,17 +80,17 @@ function ElevationProfile({ points, color, onClick, selected }) {
           itemSize={3}
         />
       </bufferGeometry>
-      <Edges
-        key={geometryKey} // Force re-render when geometry changes
-        linewidth={0.5}
-        threshold={15}
-        color="black"
-      />
       <meshStandardMaterial
         ref={materialRef}
         transparent
         color={color}
         side={THREE.DoubleSide}
+      />
+      <Edges
+        key={geometryKey} // Force re-render when geometry changes
+        linewidth={0.5}
+        threshold={15}
+        color="black"
       />
     </mesh>
   );

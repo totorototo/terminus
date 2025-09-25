@@ -13,7 +13,7 @@ import StressTestingSuite from "./components/StressTestingSuite.jsx";
 import PerformanceBenefits from "./components/PerformanceBenefits.jsx";
 import Profile from "./components/Profile.jsx";
 import AutoSizer from "react-virtualized-auto-sizer";
-import ThreeDimensionalProfile from "./components/3DProfile.jsx";
+import Scene from "./components/Scene.jsx";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
@@ -68,7 +68,7 @@ function App() {
   const [stressResults, setStressResults] = useState(null);
   const [stressProgress, setStressProgress] = useState(null);
   const [isStressTesting, setIsStressTesting] = useState(false);
-  const [mode, setMode] = useState("2d"); // "2d" or "3d"
+  const [mode, setMode] = useState("3d"); // "2d" or "3d"
 
   const {
     isWorkerReady,
@@ -342,7 +342,7 @@ function App() {
       <div style={{ width: "100%", height: "100%", padding: "2rem" }}>
         <AutoSizer>
           {({ width, height }) => (
-            <ThreeDimensionalProfile
+            <Scene
               width={width}
               height={height}
               coordinates={gpx.features?.[0]?.geometry?.coordinates}
