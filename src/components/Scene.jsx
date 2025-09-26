@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import {
-  Environment,
-  GizmoHelper,
-  GizmoViewport,
-  Trail,
-} from "@react-three/drei";
+import { Environment, GizmoHelper, GizmoViewport } from "@react-three/drei";
 import SectionData from "./SectionData";
 import AnimatedOrbitControls from "./AnimatedOrbitControls";
 import TwoDimensionalProfile from "./TwoDimensionalProfile";
@@ -21,9 +16,6 @@ export default function Scene({
   mode = "2d",
 }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
-
-  console.log({ gpsResults });
-
   return (
     <>
       <Canvas

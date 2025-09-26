@@ -25,14 +25,6 @@ export default function TwoDimensionalProfile({
       Math.max(...coordinates.map((coord) => coord[1])),
     ]; // latitude
 
-    // keep the way it is for 3d mode, and flatten for 2d mode
-    // display the profile in the x-y plane
-    // z will be constant (0)
-    // x will item index scaled to fit -5 to 5
-    // y will be elevation scaled to fit 0 to 1
-    // z will be 0
-
-    // 3D mode: use geographic coordinates, 2D mode: flatten to x-y plane with distance-based x-axis
     const xScale = scaleLinear()
       .domain([0, coordinates.length - 1])
       .range([-5, 5]);
