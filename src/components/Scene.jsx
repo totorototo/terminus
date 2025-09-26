@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment, GizmoHelper, GizmoViewport } from "@react-three/drei";
+import {
+  Environment,
+  GizmoHelper,
+  GizmoViewport,
+  Grid,
+} from "@react-three/drei";
 import SectionData from "./SectionData";
 import AnimatedOrbitControls from "./AnimatedOrbitControls";
 import TwoDimensionalProfile from "./TwoDimensionalProfile";
 import ThreeDimensionalProfile from "./ThreeDimensionalProfile";
 import TrailData from "./TrailData";
+import Runner from "./Runner";
 
 export default function Scene({
   width,
@@ -29,14 +35,14 @@ export default function Scene({
         }}
       >
         <ambientLight intensity={2} />
-        {/* <Grid
+        <Grid
           position={[0, -0.01, 0]}
           args={[10, 10]}
           cellColor="#b3c6e0"
           sectionColor="#7a8fa6"
           fadeDistance={20}
           fadeStrength={1.5}
-        /> */}
+        />
 
         <TwoDimensionalProfile
           coordinates={coordinates}
@@ -60,11 +66,12 @@ export default function Scene({
           />
         </GizmoHelper>
         <Environment preset="city" background={false} />
+        <Runner coordinates={coordinates} lerpFactor={2} />
 
         {/* <AccumulativeShadows>
           <RandomizedLight position={[2, 1, 0]} />
         </AccumulativeShadows> */}
-        <AnimatedOrbitControls
+        {/* <AnimatedOrbitControls
           makeDefault
           enablePan
           enableZoom
@@ -73,7 +80,7 @@ export default function Scene({
           maxPolarAngle={mode === "2d" ? (Math.PI * 5) / 6 : Math.PI / 2} // 150° in 2D, 90° in 3D
           cameraPosition={mode === "3d" ? [0, 3, 12] : [0, 2, 12]}
           targetPosition={[0, 0, 0]}
-        />
+        /> */}
       </Canvas>
       <SectionData
         {...(sections &&
