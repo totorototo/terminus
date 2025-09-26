@@ -19,6 +19,14 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 - Performance stress testing suite
 - Non-blocking processing with progress indicators
 
+## Prerequisites
+
+- **Node.js**: v18+ (recommended v20+)
+- **Zig**: v0.14.0 for WASM compilation
+- **npm**: Latest version
+
+Install Zig from [ziglang.org](https://ziglang.org/download/)
+
 ## Run
 
 ```bash
