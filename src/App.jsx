@@ -1,17 +1,9 @@
-import { use, useEffect, useState } from "react";
-import viteLogo from "/vite.svg";
+import { useEffect, useState } from "react";
 import "./App.css";
 import { useGPSWorker } from "./useGPSWorker.js";
 import { GPSStressTest } from "./stressTest.js";
 import gpx from "./assets/vvx-xgtv-2026.gpx";
 import csv from "./assets/vvx-xgtv-2026.csv";
-import WorkerStatus from "./components/WorkerStatus.jsx";
-import ProcessingStatus from "./components/ProcessingStatus.jsx";
-import ErrorDisplay from "./components/ErrorDisplay.jsx";
-import Dashboard from "./components/Dashboard.jsx";
-import StressTestingSuite from "./components/StressTestingSuite.jsx";
-import PerformanceBenefits from "./components/PerformanceBenefits.jsx";
-import Profile from "./components/Profile.jsx";
 import AutoSizer from "react-virtualized-auto-sizer";
 import Scene from "./components/Scene.jsx";
 
@@ -361,96 +353,6 @@ function App() {
         </AutoSizer>
       </div>
     </div>
-    // <>
-    //   <div>
-    //     <a href="https://vite.dev" target="_blank">
-    //       <img src={viteLogo} className="logo" alt="Vite logo" />
-    //     </a>
-    //   </div>
-    //   <h1 style={{ textAlign: "center", marginBottom: "10px" }}>
-    //     🗺️ GPS Route Processor
-    //   </h1>
-    //   <div
-    //     style={{
-    //       textAlign: "center",
-    //       marginBottom: "30px",
-    //       padding: "15px",
-    //       background: "linear-gradient(135deg, #1a1a2e, #16213e)",
-    //       borderRadius: "8px",
-    //       border: "1px solid #333",
-    //     }}
-    //   >
-    //     <h2
-    //       style={{ margin: "0 0 10px 0", fontSize: "1.2em", color: "#87CEEB" }}
-    //     >
-    //       ⚡ Powered by Zig WebAssembly + Web Workers
-    //     </h2>
-    //     <p style={{ margin: "0", fontSize: "0.95em", opacity: "0.9" }}>
-    //       Non-blocking GPS processing using Web Workers for responsive UI
-    //     </p>
-    //   </div>
-    //   <div className="card">
-    //     <h2>📊 GPS Processing Status</h2>
-    //     <WorkerStatus isWorkerReady={isWorkerReady} />
-    //     <ProcessingStatus
-    //       processing={processing}
-    //       progress={progress}
-    //       progressMessage={progressMessage}
-    //     />
-    //     <ErrorDisplay error={error} />
-    //     <Dashboard
-    //       gpsResults={gpsResults}
-    //       selectedPoints={selectedPoints}
-    //       processing={processing}
-    //       handleFindPointsAt={handleFindPointsAt}
-    //       handleGetSection={handleGetSection}
-    //       handleProcessGPS={handleProcessGPS}
-    //     />
-    //     <div style={{ height: "200px", width: "100%", paddingBottom:"40px", paddingTop:"40px" }}>
-    //       <AutoSizer>
-    //         {({ width, height }) => (
-    //           <Profile
-    //             gpsResults={gpsResults}
-    //             width={width}
-    //             height={height}
-    //             handleProcessGPS={handleProcessGPS}
-    //             handleGetSection={handleGetSection}
-    //             section={section}
-    //             setSection={setSection}
-    //           />
-    //         )}
-    //       </AutoSizer>
-    //     </div>
-    //      <div style={{ height: "600px", width: "100%" }}>
-    //       <AutoSizer>
-    //         {({ width, height }) => (
-    //           <ThreeDimensionalProfile
-    //             width={width}
-    //             height={height}
-    //             coordinates={gpx.features?.[0]?.geometry?.coordinates}
-    //             {...(gpsResults && { checkpoints: gpsResults.samplePoints })}
-    //           />
-    //         )}
-    //       </AutoSizer>
-    //     </div>
-
-    //     <StressTestingSuite
-    //       isStressTesting={isStressTesting}
-    //       stressProgress={stressProgress}
-    //       stressResults={stressResults}
-    //       processing={processing}
-    //       handleStressBurstLoad={handleStressBurstLoad}
-    //       handleStressSustainedLoad={handleStressSustainedLoad}
-    //       handleStressMemoryTest={handleStressMemoryTest}
-    //       handleStressUIResponsiveness={handleStressUIResponsiveness}
-    //       handleFullStressTest={handleFullStressTest}
-    //     />
-    //     <PerformanceBenefits />
-    //   </div>
-    //   <p className="read-the-docs">
-    //     Click on the Vite and React logos to learn more
-    //   </p>
-    // </>
   );
 }
 
