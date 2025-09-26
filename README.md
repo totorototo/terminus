@@ -7,6 +7,7 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 **Web App**: React + Vite frontend with React Three Fiber for 3D visualization  
 **Web Workers**: Background GPS processing to maintain responsive UI  
 **Zig WASM**: Compiled Zig code for high-performance route calculations and geometry processing  
+**Vite Plugin**: Custom GPX file loader for seamless route data import  
 **React Spring**: Smooth animations and transitions between data states
 
 ## Features
