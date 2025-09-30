@@ -6,6 +6,7 @@ import gpx from "./assets/vvx-xgtv-2026.gpx";
 import csv from "./assets/vvx-xgtv-2026.csv";
 import AutoSizer from "react-virtualized-auto-sizer";
 import Scene from "./components/scene/Scene.jsx";
+import style from "./App.style.js";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
@@ -49,7 +50,7 @@ function computeSectionsFromCheckpoints(checkpoints) {
   });
 }
 
-function App() {
+function App({ className }) {
   const [gpsResults, setGpsResults] = useState(null);
   const [section, setSection] = useState(null);
   const [sections, setSections] = useState(); // Store computed sections
@@ -286,16 +287,7 @@ function App() {
   };
 
   return (
-    <div
-      className="App"
-      style={{
-        backgroundColor: "#262424ff",
-        color: "#eee",
-        width: "100%",
-        minHeight: "100%",
-        position: "relative",
-      }}
-    >
+    <div className={className}>
       {/* Mode Toggle Button */}
       <button
         onClick={() => setMode(mode === "3d" ? "2d" : "3d")}
@@ -356,4 +348,4 @@ function App() {
   );
 }
 
-export default App;
+export default style(App);

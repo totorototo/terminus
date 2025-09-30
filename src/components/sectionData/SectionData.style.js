@@ -17,6 +17,24 @@ const style = (Component) => styled(Component)`
   letter-spacing: 1.5px;
   user-select: none;
 
+  /* Mobile responsiveness */
+  @media (max-width: 768px) {
+    padding: 20px;
+    max-width: calc(100vw - 40px);
+    font-size: 13px;
+    letter-spacing: 1px;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 15px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    max-width: calc(100vw - 30px);
+  }
+
   h1 {
     pointer-events: none;
     color: white;
@@ -25,7 +43,16 @@ const style = (Component) => styled(Component)`
     line-height: 1em;
     margin: 0;
     margin-bottom: 0.25em;
+
+    @media (max-width: 768px) {
+      font-size: 1.5em;
+      margin-bottom: 0.2em;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 1.3em;
+      margin-bottom: 0.15em;
+    }
   }
 `;
-
 export default style;
