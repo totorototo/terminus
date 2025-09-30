@@ -28,6 +28,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-virtualized-auto-sizer": "^1.0.26",
+    "styled-components": "^6.1.19",
     "three": "^0.180.0",
     "xmldom": "^0.6.0"
   },

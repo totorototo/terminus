@@ -5,7 +5,7 @@ import { GPSStressTest } from "./stressTest.js";
 import gpx from "./assets/vvx-xgtv-2026.gpx";
 import csv from "./assets/vvx-xgtv-2026.csv";
 import AutoSizer from "react-virtualized-auto-sizer";
-import Scene from "./components/Scene.jsx";
+import Scene from "./components/scene/Scene.jsx";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
