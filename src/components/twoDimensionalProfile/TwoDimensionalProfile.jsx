@@ -1,13 +1,13 @@
 import React, { Fragment, useMemo } from "react";
 import { scaleLinear } from "d3-scale";
-import ElevationProfile from "./ElevationProfile";
+import ElevationProfile from "../elevationProfile/ElevationProfile";
 import { Html } from "@react-three/drei";
 
-export default function ThreeDimensionalProfile({
+export default function TwoDimensionalProfile({
   coordinates,
   sections,
-  selectedSectionIndex,
   setSelectedSectionIndex,
+  selectedSectionIndex,
   visible,
 }) {
   // Memoize scales and points3D for performance
@@ -25,38 +25,18 @@ export default function ThreeDimensionalProfile({
       Math.max(...coordinates.map((coord) => coord[1])),
     ]; // latitude
 
-    // get logitude delta
-    const lonDelta = xExtent[1] - xExtent[0];
-    const latDelta = zExtent[1] - zExtent[0];
-
-    // compute aspect ratio
-    const aspectRatio = lonDelta / latDelta;
-
-    // adjust range based on aspect ratio
-    if (aspectRatio > 1) {
-      // wider than tall
-      xExtent[0] -= lonDelta * 0.1;
-      xExtent[1] += lonDelta * 0.1;
-      zExtent[0] -= latDelta * aspectRatio * 0.1;
-      zExtent[1] += latDelta * aspectRatio * 0.1;
-    } else {
-      // taller than wide
-      xExtent[0] -= (lonDelta / aspectRatio) * 0.1;
-      xExtent[1] += (lonDelta / aspectRatio) * 0.1;
-      zExtent[0] -= latDelta * 0.1;
-      zExtent[1] += latDelta * 0.1;
-    }
-
-    const xScale = scaleLinear().domain(xExtent).range([-2, 2]);
+    const xScale = scaleLinear()
+      .domain([0, coordinates.length - 1])
+      .range([-5, 5]);
 
     const yScale = scaleLinear().domain([0, yExtent[1]]).range([0, 1]);
 
-    const zScale = scaleLinear().domain(zExtent).range([5, -5]);
+    const zScale = () => 0; // constant Z
 
-    const points3D = coordinates.map((coord) => [
-      xScale(coord[0]), // longitude → x
+    const points3D = coordinates.map((coord, index) => [
+      xScale(index), // point index → x
       yScale(coord[2]), // elevation → y
-      zScale(coord[1]), // latitude → z
+      0, // z = 0
     ]);
 
     const sectionsPoints3D =
@@ -73,11 +53,18 @@ export default function ThreeDimensionalProfile({
               },
               sectionIndex,
             ) => {
-              const threeDpoints = points.map((coord) => [
-                xScale(coord[0]), // longitude → x
-                yScale(coord[2]), // elevation → y
-                zScale(coord[1]), // latitude → z
-              ]);
+              const threeDpoints = points.map((coord, index) => {
+                // Calculate offset based on array index, not ID search
+                const offset = sections
+                  .slice(0, sectionIndex)
+                  .reduce((acc, s) => acc + s.points.length, 0);
+
+                return [
+                  xScale(index + offset), // point index → x -> offset added here
+                  yScale(coord[2]), // elevation → y
+                  0, // z = 0
+                ];
+              });
 
               return {
                 points: threeDpoints,
@@ -113,12 +100,13 @@ export default function ThreeDimensionalProfile({
               {},
             ),
           ).map(([key, value]) => {
+            // 2D mode: use the stored index directly
             return {
               name: key,
               point3D: [
-                xScale(value.point[0]), // longitude → x
-                yScale(value.point[2]), // elevation → y
-                zScale(value.point[1]), // latitude → z
+                xScale(value.index), // use the stored cumulative index → x
+                yScale(value.point[2]) + 0.5, // elevation → y
+                0, // z = 0
               ],
             };
           })
@@ -163,7 +151,7 @@ export default function ThreeDimensionalProfile({
                   padding: "2px 5px",
                   borderRadius: "3px",
                   border: "1px solid #ccc",
-                  fontSize: "12px",
+                  fontSize: "10px",
                   whiteSpace: "nowrap",
                 }}
               >
