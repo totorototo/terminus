@@ -12,6 +12,7 @@ import TwoDimensionalProfile from "../twoDimensionalProfile/TwoDimensionalProfil
 import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensionalProfile";
 import TrailData from "../trailData/TrailData";
 import style from "./Scene.style";
+import TrailFollower from "../trailFollower/TrailFollower";
 // import Runner from "./Runner";
 
 function Scene({
@@ -60,6 +61,14 @@ function Scene({
           setSelectedSectionIndex={setSelectedSectionIndex}
           selectedSectionIndex={selectedSectionIndex}
           visible={mode === "3d"}
+        />
+
+        <TrailFollower
+          coordinates={coordinates} // Your GPS coordinate array
+          speed={0.002} // Movement speed (default: 0.02)
+          height={0.08} // Height above terrain (default: 0.5)
+          scale={0.1} // Box scale (default: 0.1)
+          color="red" // Box color (default: "red")
         />
 
         <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
