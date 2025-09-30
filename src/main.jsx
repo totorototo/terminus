@@ -18,6 +18,10 @@ const GlobalStyle = createGlobalStyle`
   -moz-osx-font-smoothing: grayscale;
 }
 
+html{
+   min-height: calc(100% + env(safe-area-inset-top));
+}
+
 body {
   margin: 0;
   display: flex;
