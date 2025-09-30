@@ -77,6 +77,28 @@ async function processGPSData(gpsData, requestId) {
     return [Number(point[0]), Number(point[1]), Number(point[2])]; // Ensure serializable
   });
 
+  const updatedCumulativeDistances = trace.cumulativeDistances;
+  const { get: getDist, length: distLength } = updatedCumulativeDistances;
+  const serializedDistances = Array.from({ length: distLength }, (_, i) => {
+    return Number(getDist(i));
+  });
+
+  const updatedCumultativeElevations = trace.cumulativeElevations;
+  const { get: getElev, length: elevLength } = updatedCumultativeElevations;
+  const serializedElevations = Array.from({ length: elevLength }, (_, i) => {
+    return Number(getElev(i));
+  });
+
+  const updatedCumulativeElevationLosses = trace.cumulativeElevationLoss;
+  const { get: getElevLoss, length: elevLossLength } =
+    updatedCumulativeElevationLosses;
+  const serializedElevationLosses = Array.from(
+    { length: elevLossLength },
+    (_, i) => {
+      return Number(getElevLoss(i));
+    },
+  );
+
   const peaks = trace.peaks;
   const { get: getPeak, length: peaksLength } = peaks;
   const serializedPeaks = Array.from({ length: peaksLength }, (_, i) => {
@@ -91,6 +113,9 @@ async function processGPSData(gpsData, requestId) {
     pointCount: Number(gpsData.coordinates.length),
     points: serializedPoints,
     peaks: serializedPeaks,
+    cumulativeDistances: serializedDistances,
+    cumulativeElevations: serializedElevations,
+    cumulativeElevationLosses: serializedElevationLosses,
   };
 
   self.postMessage({
