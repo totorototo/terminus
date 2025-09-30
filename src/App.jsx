@@ -6,7 +6,7 @@ import gpx from "./assets/vvx-xgtv-2026.gpx";
 import csv from "./assets/vvx-xgtv-2026.csv";
 import AutoSizer from "react-virtualized-auto-sizer";
 import Scene from "./components/scene/Scene.jsx";
-import style from "./App.style.js";
+import style, { StyledButton } from "./App.style.js";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
@@ -289,32 +289,8 @@ function App({ className }) {
   return (
     <div className={className}>
       {/* Mode Toggle Button */}
-      <button
+      <StyledButton
         onClick={() => setMode(mode === "3d" ? "2d" : "3d")}
-        style={{
-          position: "absolute",
-          top: "80px",
-          right: "80px",
-          zIndex: 1000,
-          padding: "16px 24px",
-          backgroundColor: "transparent",
-          color: "#a0a0a0",
-          border: "1px solid #404040",
-          borderRadius: "4px",
-          cursor: "pointer",
-          fontSize: "15px",
-          fontWeight: "100",
-          letterSpacing: "1.5px",
-          lineHeight: 1.2,
-          userSelect: "none",
-          pointerEvents: "auto",
-          transition: "all 0.2s ease",
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          backdropFilter: "blur(8px)",
-          backgroundColor: "rgba(0, 0, 0, 0.2)",
-        }}
         onMouseEnter={(e) => {
           e.target.style.color = "white";
           e.target.style.borderColor = "#606060";
@@ -328,7 +304,7 @@ function App({ className }) {
       >
         {/* {mode === "3d" ? "📊" : "🗺️"} */}
         {mode === "2d" ? "2D Profile" : "3D View"}
-      </button>
+      </StyledButton>
 
       <div style={{ width: "100%", height: "100%", padding: "2rem" }}>
         <AutoSizer>
