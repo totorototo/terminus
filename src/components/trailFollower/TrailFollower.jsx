@@ -4,6 +4,7 @@ import { Vector3 } from "three";
 import { scaleLinear } from "d3-scale";
 import { Box, Html } from "@react-three/drei";
 import { useAnimations, useGLTF } from "@react-three/drei";
+import style from "./TrailFollower.style.js";
 
 export default function TrailFollower({
   coordinates,
@@ -13,6 +14,7 @@ export default function TrailFollower({
   color = "red",
   lerpFactor = 0.05,
   showIndex = true,
+  gpsResults,
   ...props
 }) {
   const group = useRef();
@@ -134,6 +136,7 @@ export default function TrailFollower({
     );
     group.current.lookAt(newLookAt);
   });
+  // debugger
 
   return (
     <group ref={group} scale={scale} {...props} dispose={null}>
@@ -148,22 +151,53 @@ export default function TrailFollower({
       />
       {showIndex && (
         <Html
-          position={[0, 2, 0]}
+          position={[0, 7, 0]}
           center
           style={{
+            zIndex: 1000,
             pointerEvents: "none",
             userSelect: "none",
-            fontSize: "12px",
-            fontWeight: "bold",
-            color: "white",
-            background: "rgba(0, 0, 0, 0.7)",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            textAlign: "center",
-            minWidth: "40px",
           }}
         >
-          {currentIndex}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              justifyContent: "flex-start",
+              gap: "0.15em",
+              fontSize: "15px",
+              fontWeight: "100",
+              color: "#262424ff",
+              background: "rgba(160, 160, 160, 0.8)",
+              padding: "12px 16px",
+              borderRadius: "4px",
+              textAlign: "left",
+              minWidth: "120px",
+              lineHeight: "1.2",
+              letterSpacing: "1.5px",
+              userSelect: "none",
+              pointerEvents: "none",
+              border: "1px solid #808080",
+            }}
+          >
+            {gpsResults?.cumulativeDistances?.[currentIndex] !== undefined && (
+              <div>
+                {`${(gpsResults.cumulativeDistances[currentIndex] / 1000).toFixed(2)} km`}
+              </div>
+            )}
+            {gpsResults?.cumulativeElevations?.[currentIndex] !== undefined && (
+              <div>
+                {`↗ ${gpsResults.cumulativeElevations[currentIndex].toFixed(0)} m`}
+              </div>
+            )}
+            {gpsResults?.cumulativeElevationLosses?.[currentIndex] !==
+              undefined && (
+              <div>
+                {`↘ ${gpsResults.cumulativeElevationLosses[currentIndex].toFixed(0)} m`}
+              </div>
+            )}
+          </div>
         </Html>
       )}
     </group>
