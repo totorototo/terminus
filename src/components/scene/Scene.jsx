@@ -67,7 +67,7 @@ function Scene({
           coordinates={coordinates} // Your GPS coordinate array
           speed={0.002} // Movement speed (default: 0.02)
           height={0.08} // Height above terrain (default: 0.5)
-          scale={0.1} // Box scale (default: 0.1)
+          scale={0.05} // Box scale (default: 0.1)
           color="red" // Box color (default: "red")
         />
 
