@@ -6,25 +6,28 @@ import {
   GizmoViewport,
   Grid,
 } from "@react-three/drei";
-import SectionData from "./SectionData";
-import AnimatedOrbitControls from "./AnimatedOrbitControls";
-import TwoDimensionalProfile from "./TwoDimensionalProfile";
-import ThreeDimensionalProfile from "./ThreeDimensionalProfile";
-import TrailData from "./TrailData";
-import Runner from "./Runner";
+import SectionData from "../sectionData/SectionData";
+import AnimatedOrbitControls from "../orbitControls/AnimatedOrbitControls";
+import TwoDimensionalProfile from "../twoDimensionalProfile/TwoDimensionalProfile";
+import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensionalProfile";
+import TrailData from "../trailData/TrailData";
+import style from "./Scene.style";
+// import Runner from "./Runner";
 
-export default function Scene({
+function Scene({
   width,
   height,
   coordinates,
   sections,
   gpsResults,
   mode = "2d",
+  className,
 }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   return (
     <>
       <Canvas
+        className={className}
         style={{ width, height }}
         shadows
         camera={{
@@ -66,12 +69,12 @@ export default function Scene({
           />
         </GizmoHelper>
         <Environment preset="city" background={false} />
-        <Runner coordinates={coordinates} lerpFactor={2} />
+        {/* <Runner coordinates={coordinates} lerpFactor={2} /> */}
 
         {/* <AccumulativeShadows>
           <RandomizedLight position={[2, 1, 0]} />
         </AccumulativeShadows> */}
-        {/* <AnimatedOrbitControls
+        <AnimatedOrbitControls
           makeDefault
           enablePan
           enableZoom
@@ -80,7 +83,7 @@ export default function Scene({
           maxPolarAngle={mode === "2d" ? (Math.PI * 5) / 6 : Math.PI / 2} // 150° in 2D, 90° in 3D
           cameraPosition={mode === "3d" ? [0, 3, 12] : [0, 2, 12]}
           targetPosition={[0, 0, 0]}
-        /> */}
+        />
       </Canvas>
       <SectionData
         {...(sections &&
@@ -95,3 +98,5 @@ export default function Scene({
     </>
   );
 }
+
+export default style(Scene);

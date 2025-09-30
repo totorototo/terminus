@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useId } from "react";
 import { extent } from "d3-array";
-import { createXScale, createYScale, getArea, getLine } from "../d3";
+import { createXScale, createYScale, getArea, getLine } from "../../d3";
 
 export default function Profile({
   gpsResults,
