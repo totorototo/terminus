@@ -169,7 +169,7 @@ export default function TrailFollower({
               fontSize: "15px",
               fontWeight: "100",
               color: "#262424ff",
-              background: "rgba(160, 160, 160, 0.8)",
+              background: "rgba(160, 160, 160, 1)",
               padding: "12px 16px",
               borderRadius: "4px",
               textAlign: "left",
