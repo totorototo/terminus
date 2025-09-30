@@ -1,13 +1,14 @@
 import React, { Fragment, useMemo } from "react";
 import { scaleLinear } from "d3-scale";
-import ElevationProfile from "./ElevationProfile";
+import ElevationProfile from "../elevationProfile/ElevationProfile";
 import { Html } from "@react-three/drei";
+import style from "./ThreeDimensionalProfile.style.js";
 
-export default function TwoDimensionalProfile({
+function ThreeDimensionalProfile({
   coordinates,
   sections,
-  setSelectedSectionIndex,
   selectedSectionIndex,
+  setSelectedSectionIndex,
   visible,
 }) {
   // Memoize scales and points3D for performance
@@ -25,18 +26,38 @@ export default function TwoDimensionalProfile({
       Math.max(...coordinates.map((coord) => coord[1])),
     ]; // latitude
 
-    const xScale = scaleLinear()
-      .domain([0, coordinates.length - 1])
-      .range([-5, 5]);
+    // get logitude delta
+    const lonDelta = xExtent[1] - xExtent[0];
+    const latDelta = zExtent[1] - zExtent[0];
+
+    // compute aspect ratio
+    const aspectRatio = lonDelta / latDelta;
+
+    // adjust range based on aspect ratio
+    if (aspectRatio > 1) {
+      // wider than tall
+      xExtent[0] -= lonDelta * 0.1;
+      xExtent[1] += lonDelta * 0.1;
+      zExtent[0] -= latDelta * aspectRatio * 0.1;
+      zExtent[1] += latDelta * aspectRatio * 0.1;
+    } else {
+      // taller than wide
+      xExtent[0] -= (lonDelta / aspectRatio) * 0.1;
+      xExtent[1] += (lonDelta / aspectRatio) * 0.1;
+      zExtent[0] -= latDelta * 0.1;
+      zExtent[1] += latDelta * 0.1;
+    }
+
+    const xScale = scaleLinear().domain(xExtent).range([-2, 2]);
 
     const yScale = scaleLinear().domain([0, yExtent[1]]).range([0, 1]);
 
-    const zScale = () => 0; // constant Z
+    const zScale = scaleLinear().domain(zExtent).range([5, -5]);
 
-    const points3D = coordinates.map((coord, index) => [
-      xScale(index), // point index → x
+    const points3D = coordinates.map((coord) => [
+      xScale(coord[0]), // longitude → x
       yScale(coord[2]), // elevation → y
-      0, // z = 0
+      zScale(coord[1]), // latitude → z
     ]);
 
     const sectionsPoints3D =
@@ -53,18 +74,11 @@ export default function TwoDimensionalProfile({
               },
               sectionIndex,
             ) => {
-              const threeDpoints = points.map((coord, index) => {
-                // Calculate offset based on array index, not ID search
-                const offset = sections
-                  .slice(0, sectionIndex)
-                  .reduce((acc, s) => acc + s.points.length, 0);
-
-                return [
-                  xScale(index + offset), // point index → x -> offset added here
-                  yScale(coord[2]), // elevation → y
-                  0, // z = 0
-                ];
-              });
+              const threeDpoints = points.map((coord) => [
+                xScale(coord[0]), // longitude → x
+                yScale(coord[2]), // elevation → y
+                zScale(coord[1]), // latitude → z
+              ]);
 
               return {
                 points: threeDpoints,
@@ -100,13 +114,12 @@ export default function TwoDimensionalProfile({
               {},
             ),
           ).map(([key, value]) => {
-            // 2D mode: use the stored index directly
             return {
               name: key,
               point3D: [
-                xScale(value.index), // use the stored cumulative index → x
-                yScale(value.point[2]) + 0.5, // elevation → y
-                0, // z = 0
+                xScale(value.point[0]), // longitude → x
+                yScale(value.point[2]), // elevation → y
+                zScale(value.point[1]), // latitude → z
               ],
             };
           })
@@ -145,21 +158,12 @@ export default function TwoDimensionalProfile({
               position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
               style={{ pointerEvents: "none" }}
             >
-              <div
-                style={{
-                  backgroundColor: "grey",
-                  padding: "2px 5px",
-                  borderRadius: "3px",
-                  border: "1px solid #ccc",
-                  fontSize: "10px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {cp.name}
-              </div>
+              <div className="checkpoint-label">{cp.name}</div>
             </Html>
           ))}
       </Fragment>
     ))
   );
 }
+
+export default style(ThreeDimensionalProfile);

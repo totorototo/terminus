@@ -1,24 +1,33 @@
 import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment, GizmoHelper, GizmoViewport } from "@react-three/drei";
-import SectionData from "./SectionData";
-import AnimatedOrbitControls from "./AnimatedOrbitControls";
-import TwoDimensionalProfile from "./TwoDimensionalProfile";
-import ThreeDimensionalProfile from "./ThreeDimensionalProfile";
-import TrailData from "./TrailData";
+import {
+  Environment,
+  GizmoHelper,
+  GizmoViewport,
+  Grid,
+} from "@react-three/drei";
+import SectionData from "../sectionData/SectionData";
+import AnimatedOrbitControls from "../orbitControls/AnimatedOrbitControls";
+import TwoDimensionalProfile from "../twoDimensionalProfile/TwoDimensionalProfile";
+import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensionalProfile";
+import TrailData from "../trailData/TrailData";
+import style from "./Scene.style";
+// import Runner from "./Runner";
 
-export default function Scene({
+function Scene({
   width,
   height,
   coordinates,
   sections,
   gpsResults,
   mode = "2d",
+  className,
 }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   return (
     <>
       <Canvas
+        className={className}
         style={{ width, height }}
         shadows
         camera={{
@@ -60,17 +69,20 @@ export default function Scene({
           />
         </GizmoHelper>
         <Environment preset="city" background={false} />
+        {/* <Runner coordinates={coordinates} lerpFactor={2} /> */}
 
         {/* <AccumulativeShadows>
           <RandomizedLight position={[2, 1, 0]} />
         </AccumulativeShadows> */}
         <AnimatedOrbitControls
           makeDefault
-          enablePan
+          enablePan={mode === "3d"} // Disable panning in 2D mode
           enableZoom
           enableRotate
-          minPolarAngle={mode === "2d" ? Math.PI / 6 : Math.PI / 4} // 30° in 2D, 45° in 3D
-          maxPolarAngle={mode === "2d" ? (Math.PI * 5) / 6 : Math.PI / 2} // 150° in 2D, 90° in 3D
+          minPolarAngle={mode === "2d" ? Math.PI / 2 : -Math.PI / 4} // 90° in 2D (horizontal), -45° in 3D
+          maxPolarAngle={mode === "2d" ? Math.PI / 2 : Math.PI / 2} // 90° in 2D (horizontal), 90° in 3D
+          minAzimuthAngle={mode === "2d" ? 0 : -Math.PI / 2} // 0° in 2D (no rotation), -90° in 3D
+          maxAzimuthAngle={mode === "2d" ? 0 : Math.PI / 2} // 0° in 2D (no rotation), 90° in 3D
           cameraPosition={mode === "3d" ? [0, 3, 12] : [0, 2, 12]}
           targetPosition={[0, 0, 0]}
         />
@@ -88,3 +100,5 @@ export default function Scene({
     </>
   );
 }
+
+export default style(Scene);

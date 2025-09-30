@@ -1,7 +1,8 @@
 import React from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
+import style from "./TrailData.style.js";
 
-export default function TrailData({ gpsResults }) {
+function TrailData({ gpsResults, className }) {
   const { distance } = useSpringWeb({
     distance: gpsResults?.totalDistance || 0,
     config: { tension: 170, friction: 26 },
@@ -23,38 +24,8 @@ export default function TrailData({ gpsResults }) {
   });
 
   return (
-    <div
-      style={{
-        zIndex: 10,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        justifyContent: "flex-start",
-        position: "absolute",
-        pointerEvents: "none",
-        top: 0,
-        maxWidth: "600px",
-        padding: "80px",
-        color: "#a0a0a0",
-        lineHeight: 1.2,
-        fontSize: "15px",
-        letterSpacing: "1.5px",
-        userSelect: "none",
-      }}
-    >
-      <h1
-        style={{
-          pointerEvents: "none",
-          color: "white",
-          fontSize: "2em",
-          fontWeight: "100",
-          lineHeight: "1em",
-          margin: 0,
-          marginBottom: "0.25em",
-        }}
-      >
-        Trail Analytics
-      </h1>
+    <div className={className}>
+      <h1>Trail Analytics</h1>
       <animated.div>
         {distance.to((n) => `Distance: ${(n / 1000).toFixed(2)} km`)}
       </animated.div>
@@ -70,3 +41,5 @@ export default function TrailData({ gpsResults }) {
     </div>
   );
 }
+
+export default style(TrailData);
