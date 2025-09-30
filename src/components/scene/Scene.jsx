@@ -62,14 +62,15 @@ function Scene({
           selectedSectionIndex={selectedSectionIndex}
           visible={mode === "3d"}
         />
-
-        <TrailFollower
-          coordinates={coordinates} // Your GPS coordinate array
-          speed={0.002} // Movement speed (default: 0.02)
-          height={0.08} // Height above terrain (default: 0.5)
-          scale={0.05} // Box scale (default: 0.1)
-          color="red" // Box color (default: "red")
-        />
+        {mode === "3d" && coordinates && coordinates.length > 0 && (
+          <TrailFollower
+            coordinates={coordinates} // Your GPS coordinate array
+            speed={0.002} // Movement speed (default: 0.02)
+            height={0.08} // Height above terrain (default: 0.5)
+            scale={0.05} // Box scale (default: 0.1)
+            color="red" // Box color (default: "red")
+          />
+        )}
 
         <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
           <GizmoViewport
