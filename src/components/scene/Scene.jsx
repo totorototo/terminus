@@ -69,6 +69,7 @@ function Scene({
             height={0.08} // Height above terrain (default: 0.5)
             scale={0.05} // Box scale (default: 0.1)
             color="red" // Box color (default: "red")
+            gpsResults={gpsResults}
           />
         )}
 
