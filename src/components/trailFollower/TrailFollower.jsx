@@ -2,9 +2,8 @@ import { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Vector3 } from "three";
 import { scaleLinear } from "d3-scale";
-import { Box, Html } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import { useAnimations, useGLTF } from "@react-three/drei";
-import style from "./TrailFollower.style.js";
 
 export default function TrailFollower({
   coordinates,
