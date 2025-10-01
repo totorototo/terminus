@@ -11,6 +11,7 @@ const style = (Component) => styled(Component)`
   bottom: 0;
   max-width: 600px;
   padding: 80px;
+  padding-bottom: max(80px, env(safe-area-inset-bottom, 0px) + 80px);
   color: #a0a0a0;
   line-height: 1.2;
   font-size: 15px;
@@ -20,6 +21,7 @@ const style = (Component) => styled(Component)`
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     padding: 20px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 0px) + 30px);
     max-width: calc(100vw - 40px);
     font-size: 13px;
     letter-spacing: 1px;
@@ -30,6 +32,7 @@ const style = (Component) => styled(Component)`
 
   @media (max-width: 480px) {
     padding: 15px;
+    padding-bottom: max(15px, env(safe-area-inset-bottom, 0px) + 5px);
     font-size: 12px;
     letter-spacing: 0.5px;
     max-width: calc(100vw - 30px);
