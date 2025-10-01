@@ -22,7 +22,7 @@ export default function TrailFollower({
   const [scaledPath, setScaledPath] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const { nodes, materials, animations } = useGLTF("/Parrot.glb");
+  const { nodes, animations } = useGLTF("/cartoon_plane.glb");
   const { actions } = useAnimations(animations, group);
 
   // Scale coordinates to match elevation profile (same scaling as Runner)
@@ -72,8 +72,14 @@ export default function TrailFollower({
   }, [coordinates, height]);
 
   useEffect(() => {
-    group.current.updateMatrix();
-    actions["KeyAction"].setEffectiveTimeScale(2.5).play();
+    if (group.current) {
+      group.current.updateMatrix();
+    }
+    // Start animation if available
+    if (actions && Object.keys(actions).length > 0) {
+      const firstAction = Object.values(actions)[0];
+      firstAction.setEffectiveTimeScale(2.5).play();
+    }
   }, [actions]);
 
   useFrame((state, delta) => {
@@ -136,18 +142,13 @@ export default function TrailFollower({
     );
     group.current.lookAt(newLookAt);
   });
-  // debugger
 
   return (
     <group ref={group} scale={scale} {...props} dispose={null}>
-      <mesh
+      <primitive
+        object={nodes.Sketchfab_Scene}
+        rotation={[0, 0, 0]}
         castShadow
-        name="Object_0"
-        geometry={nodes.Object_0.geometry}
-        material={materials.Material_0_COLOR_0}
-        morphTargetDictionary={nodes.Object_0.morphTargetDictionary}
-        morphTargetInfluences={nodes.Object_0.morphTargetInfluences}
-        rotation={[Math.PI / 2, 0, 0]}
       />
       {showIndex && (
         <Html
@@ -211,4 +212,4 @@ export default function TrailFollower({
   );
 }
 
-useGLTF.preload("/Parrot.glb");
+useGLTF.preload("/cartoon_plane.glb");
