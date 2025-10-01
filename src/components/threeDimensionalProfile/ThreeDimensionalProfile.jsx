@@ -193,13 +193,6 @@ function ThreeDimensionalProfile({
           checkpointsPoints3D &&
           checkpointsPoints3D.length > 0 &&
           checkpointsPoints3D.map((cp, index) => (
-            // <Html
-            //   key={index}
-            //   position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
-            //   style={{ pointerEvents: "none" }}
-            // >
-            //   <div className="checkpoint-label">{cp.name}</div>
-            // </Html>
             <Marker
               key={index}
               position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
