@@ -13,6 +13,7 @@ import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensional
 import TrailData from "../trailData/TrailData";
 import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
+import { Perf } from "r3f-perf";
 // import Runner from "./Runner";
 
 function Scene({
@@ -38,6 +39,7 @@ function Scene({
           position: [0, 3, 6],
         }}
       >
+        <Perf minimal position="bottom-right" />
         <ambientLight intensity={2} />
         {/* <Grid
           position={[0, -0.01, 0]}
@@ -73,12 +75,12 @@ function Scene({
           />
         )}
 
-        <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
+        {/* <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
           <GizmoViewport
             axisColors={["#9d4b4b", "#2f7f4f", "#3b5b9d"]}
             labelColor="white"
           />
-        </GizmoHelper>
+        </GizmoHelper> */}
         <Environment preset="city" background={false} />
         {/* <Runner coordinates={coordinates} lerpFactor={2} /> */}
 
