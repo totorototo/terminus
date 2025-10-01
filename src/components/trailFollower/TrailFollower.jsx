@@ -151,12 +151,15 @@ export default function TrailFollower({
       />
       {showIndex && (
         <Html
-          position={[0, 7, 0]}
+          position={[0, 15, 0]}
           center
+          transform={false}
+          sprite={true}
           style={{
-            zIndex: 1000,
+            zIndex: 10000,
             pointerEvents: "none",
             userSelect: "none",
+            transform: "translate3d(-50%, -100%, 0)",
           }}
         >
           <div
@@ -166,19 +169,23 @@ export default function TrailFollower({
               alignItems: "flex-start",
               justifyContent: "flex-start",
               gap: "0.15em",
-              fontSize: "15px",
+              fontSize: "12px",
               fontWeight: "100",
               color: "#262424ff",
-              background: "rgba(160, 160, 160, 1)",
-              padding: "12px 16px",
-              borderRadius: "4px",
+              background: "rgba(255, 255, 255, 0.95)",
+              padding: "8px 12px",
+              borderRadius: "6px",
               textAlign: "left",
-              minWidth: "120px",
+              minWidth: "100px",
               lineHeight: "1.2",
-              letterSpacing: "1.5px",
+              letterSpacing: "1px",
               userSelect: "none",
               pointerEvents: "none",
               border: "1px solid #808080",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+              backdropFilter: "blur(4px)",
+              maxWidth: "150px",
+              whiteSpace: "nowrap",
             }}
           >
             {gpsResults?.cumulativeDistances?.[currentIndex] !== undefined && (
