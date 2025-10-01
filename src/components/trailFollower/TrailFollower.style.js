@@ -7,7 +7,7 @@ const style = (Component) => styled(Component)`
     font-size: 12px;
     font-weight: bold;
     color: white;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 1);
     padding: 4px 8px;
     border-radius: 4px;
     text-align: center;
