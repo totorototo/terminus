@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import "./App.css";
 import { useGPSWorker } from "./useGPSWorker.js";
 import { GPSStressTest } from "./stressTest.js";
 import gpx from "./assets/vvx-xgtv-2026.gpx";
