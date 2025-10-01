@@ -14,6 +14,8 @@ import TrailData from "../trailData/TrailData";
 import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
 import { Perf } from "r3f-perf";
+import { useControls } from "leva";
+
 // import Runner from "./Runner";
 
 function Scene({
@@ -22,10 +24,20 @@ function Scene({
   coordinates,
   sections,
   gpsResults,
-  mode = "2d",
+
   className,
 }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
+  const [mode, setMode] = useState("3d");
+
+  useControls({
+    mode: {
+      value: "3d",
+      options: ["2d", "3d"],
+      onChange: (value) => setMode(value),
+    },
+  });
+
   return (
     <>
       <Canvas

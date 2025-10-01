@@ -5,7 +5,7 @@ import gpx from "./assets/vvx-xgtv-2026.gpx";
 import csv from "./assets/vvx-xgtv-2026.csv";
 import AutoSizer from "react-virtualized-auto-sizer";
 import Scene from "./components/scene/Scene.jsx";
-import style, { StyledButton } from "./App.style.js";
+import style from "./App.style.js";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
@@ -60,7 +60,6 @@ function App({ className }) {
   const [stressResults, setStressResults] = useState(null);
   const [stressProgress, setStressProgress] = useState(null);
   const [isStressTesting, setIsStressTesting] = useState(false);
-  const [mode, setMode] = useState("3d"); // "2d" or "3d"
 
   const {
     isWorkerReady,
@@ -287,24 +286,6 @@ function App({ className }) {
 
   return (
     <div className={className}>
-      {/* Mode Toggle Button */}
-      <StyledButton
-        onClick={() => setMode(mode === "3d" ? "2d" : "3d")}
-        onMouseEnter={(e) => {
-          e.target.style.color = "white";
-          e.target.style.borderColor = "#606060";
-          e.target.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.color = "#a0a0a0";
-          e.target.style.borderColor = "#404040";
-          e.target.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
-        }}
-      >
-        {/* {mode === "3d" ? "📊" : "🗺️"} */}
-        {mode === "2d" ? "2D Profile" : "3D View"}
-      </StyledButton>
-
       <div style={{ width: "100%", height: "100%", padding: "2rem" }}>
         <AutoSizer>
           {({ width, height }) => (
@@ -313,7 +294,6 @@ function App({ className }) {
               height={height}
               coordinates={gpx.features?.[0]?.geometry?.coordinates}
               sections={sections}
-              mode={mode}
               gpsResults={gpsResults}
             />
           )}
