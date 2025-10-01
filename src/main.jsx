@@ -18,6 +18,7 @@ const GlobalStyle = createGlobalStyle`
   -moz-osx-font-smoothing: grayscale;
 }
 
+
 /* Apply safe-area insets when supported */
 body {
   margin: 0;
