@@ -50,6 +50,7 @@ function ThreeDimensionalProfile({
   selectedSectionIndex,
   setSelectedSectionIndex,
   visible,
+  gpsResults, // Add gpsResults prop for slopes
 }) {
   // Memoize scales and points3D for performance
   const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
@@ -187,6 +188,7 @@ function ThreeDimensionalProfile({
           onClick={() => setSelectedSectionIndex(id)}
           selected={selectedSectionIndex === id}
           visible={visible}
+          gpsResults={gpsResults}
         />
 
         {/* {visible &&

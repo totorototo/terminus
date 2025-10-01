@@ -68,6 +68,7 @@ function Scene({
           setSelectedSectionIndex={setSelectedSectionIndex}
           selectedSectionIndex={selectedSectionIndex}
           visible={mode === "2d"}
+          gpsResults={gpsResults}
         />
         <ThreeDimensionalProfile
           coordinates={coordinates}
@@ -75,6 +76,7 @@ function Scene({
           setSelectedSectionIndex={setSelectedSectionIndex}
           selectedSectionIndex={selectedSectionIndex}
           visible={mode === "3d"}
+          gpsResults={gpsResults}
         />
         {mode === "3d" && coordinates && coordinates.length > 0 && (
           <TrailFollower

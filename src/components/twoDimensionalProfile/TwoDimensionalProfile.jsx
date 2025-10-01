@@ -9,6 +9,7 @@ export default function TwoDimensionalProfile({
   setSelectedSectionIndex,
   selectedSectionIndex,
   visible,
+  gpsResults, // Add gpsResults prop for slopes
 }) {
   // Memoize scales and points3D for performance
   const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
@@ -134,6 +135,7 @@ export default function TwoDimensionalProfile({
           onClick={() => setSelectedSectionIndex(id)}
           selected={selectedSectionIndex === id}
           visible={visible}
+          gpsResults={gpsResults}
         />
 
         {visible &&
