@@ -21,7 +21,7 @@ const style = (Component) => styled(Component)`
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     padding: 20px;
-    padding-bottom: max(20px, env(safe-area-inset-bottom, 0px) + 30px);
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 0px) + 40px);
     max-width: calc(100vw - 40px);
     font-size: 13px;
     letter-spacing: 1px;
@@ -32,7 +32,7 @@ const style = (Component) => styled(Component)`
 
   @media (max-width: 480px) {
     padding: 15px;
-    padding-bottom: max(15px, env(safe-area-inset-bottom, 0px) + 5px);
+    padding-bottom: max(15px, env(safe-area-inset-bottom, 0px) + 15px);
     font-size: 12px;
     letter-spacing: 0.5px;
     max-width: calc(100vw - 30px);
