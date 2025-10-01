@@ -16,6 +16,19 @@ const GlobalStyle = createGlobalStyle`
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* Define safe area custom properties */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+}
+
+html {
+  height: 100%;
+  /* Prevent iOS bounce scrolling */
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 
@@ -26,20 +39,39 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-
-  /* Safe area insets for iOS notch devices */
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
+  height: 100vh;
+  
+  /* Use CSS custom properties for better compatibility */
+  padding-top: var(--safe-area-inset-top);
+  padding-right: var(--safe-area-inset-right);
+  padding-bottom: var(--safe-area-inset-bottom);
+  padding-left: var(--safe-area-inset-left);
+  
+  /* Ensure full coverage */
+  background-color: #262424ff;
+  
+  /* iOS PWA specific fixes */
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-text-size-adjust: none;
 }
 
-@supports(padding: env(safe-area-inset-top)) {
+/* Main app container should respect safe areas */
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Specific iOS PWA safe area handling */
+@supports(padding: max(0px)) {
   body {
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-right: env(safe-area-inset-right, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    padding-left: env(safe-area-inset-left, 0px);
+    /* Use max() to ensure minimum padding even when safe-area is 0 */
+    padding-top: max(var(--safe-area-inset-top), 0px);
+    padding-right: max(var(--safe-area-inset-right), 0px);
+    padding-bottom: max(var(--safe-area-inset-bottom), 0px);
+    padding-left: max(var(--safe-area-inset-left), 0px);
   }
 }
 

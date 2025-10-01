@@ -17,9 +17,9 @@ export const StyledButton = styled.button`
   align-items: center;
   backdrop-filter: blur(8px);
 
-  /* Mobile first - base styles for 0-480px */
-  top: 15px;
-  right: 15px;
+  /* Mobile first - base styles for 0-480px with safe area support */
+  top: max(15px, env(safe-area-inset-top, 0px) + 15px);
+  right: max(15px, env(safe-area-inset-right, 0px) + 15px);
   padding: 10px 16px;
   font-size: 13px;
   letter-spacing: 0.5px;
@@ -35,8 +35,8 @@ export const StyledButton = styled.button`
 
   /* Tablet portrait: 481px and up */
   @media (min-width: 481px) {
-    top: 20px;
-    right: 20px;
+    top: max(20px, env(safe-area-inset-top, 0px) + 20px);
+    right: max(20px, env(safe-area-inset-right, 0px) + 20px);
     padding: 12px 20px;
     font-size: 14px;
     letter-spacing: 1px;
@@ -45,8 +45,8 @@ export const StyledButton = styled.button`
 
   /* Tablet landscape: 769px and up */
   @media (min-width: 769px) {
-    top: 60px;
-    right: 60px;
+    top: max(60px, env(safe-area-inset-top, 0px) + 60px);
+    right: max(60px, env(safe-area-inset-right, 0px) + 60px);
     padding: 14px 22px;
     font-size: 14px;
     letter-spacing: 1.2px;
@@ -55,8 +55,8 @@ export const StyledButton = styled.button`
 
   /* Desktop: 1200px and up */
   @media (min-width: 1200px) {
-    top: 80px;
-    right: 80px;
+    top: max(80px, env(safe-area-inset-top, 0px) + 80px);
+    right: max(80px, env(safe-area-inset-right, 0px) + 80px);
     padding: 16px 24px;
     font-size: 15px;
     letter-spacing: 1.5px;
