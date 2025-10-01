@@ -99,6 +99,12 @@ async function processGPSData(gpsData, requestId) {
     },
   );
 
+  const slopes = trace.slopes;
+  const { get: getSlope, length: slopesLength } = slopes;
+  const serializedSlopes = Array.from({ length: slopesLength }, (_, i) => {
+    return Number(getSlope(i));
+  });
+
   const peaks = trace.peaks;
   const { get: getPeak, length: peaksLength } = peaks;
   const serializedPeaks = Array.from({ length: peaksLength }, (_, i) => {
@@ -116,6 +122,7 @@ async function processGPSData(gpsData, requestId) {
     cumulativeDistances: serializedDistances,
     cumulativeElevations: serializedElevations,
     cumulativeElevationLosses: serializedElevationLosses,
+    slopes: serializedSlopes,
   };
 
   self.postMessage({
