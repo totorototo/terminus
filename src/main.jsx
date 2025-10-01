@@ -31,6 +31,7 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
+
 /* Apply safe-area insets when supported */
 body {
   margin: 0;
