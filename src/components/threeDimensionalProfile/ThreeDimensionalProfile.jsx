@@ -189,7 +189,7 @@ function ThreeDimensionalProfile({
           visible={visible}
         />
 
-        {visible &&
+        {/* {visible &&
           checkpointsPoints3D &&
           checkpointsPoints3D.length > 0 &&
           checkpointsPoints3D.map((cp, index) => (
@@ -199,7 +199,7 @@ function ThreeDimensionalProfile({
             >
               <div className="checkpoint-label">{cp.name}</div>
             </Marker>
-          ))}
+          ))} */}
       </Fragment>
     ))
   );
