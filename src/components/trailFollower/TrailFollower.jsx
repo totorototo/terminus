@@ -11,9 +11,10 @@ export default function TrailFollower({
   height = 0.01,
   scale = 0.01,
   color = "red",
-  lerpFactor = 0.05,
+  lerpFactor = 0.02,
   showIndex = true,
   gpsResults,
+  tracking,
   ...props
 }) {
   const group = useRef();
@@ -114,6 +115,24 @@ export default function TrailFollower({
 
     // Smooth position transition using lerp
     group.current.position.lerp(targetPosition, lerpFactor);
+
+    // Tracking mode: update camera position behind and above the plane
+    if (tracking) {
+      // Get forward direction of the plane
+      const forward = new Vector3();
+      group.current.getWorldDirection(forward);
+      // Camera offset: behind (-forward) and above (+y)
+      const cameraDistance = 0.5; // distance behind
+      const cameraYOffset = 0.2; // height above
+      const desiredCameraPos = new Vector3()
+        .copy(group.current.position)
+        .add(forward.clone().multiplyScalar(-cameraDistance))
+        .add(new Vector3(0, cameraYOffset, 0));
+      // Smoothly move camera to desired position
+      state.camera.position.lerp(desiredCameraPos, lerpFactor);
+      // Camera looks at the plane
+      state.camera.lookAt(targetPosition);
+    }
 
     // Calculate look-at target for smooth rotation
     const lookAtTarget = new Vector3(

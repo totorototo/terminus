@@ -30,6 +30,7 @@ function Scene({
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const [mode, setMode] = useState("3d");
   const [showSlopeColors, setShowSlopeColors] = useState(false);
+  const [tracking, setTracking] = useState(false);
 
   useControls({
     mode: {
@@ -41,6 +42,7 @@ function Scene({
       value: showSlopeColors,
       onChange: (value) => setShowSlopeColors(value),
     },
+    tracking: { value: tracking, onChange: (value) => setTracking(value) },
   });
 
   return (
@@ -93,6 +95,7 @@ function Scene({
             scale={0.05} // Box scale (default: 0.1)
             color="red" // Box color (default: "red")
             gpsResults={gpsResults}
+            tracking={tracking}
           />
         )}
 
