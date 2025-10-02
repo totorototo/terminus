@@ -60,6 +60,7 @@ function ElevationProfile({
   selected,
   visible = false,
   gpsResults, // Add gpsResults prop for slopes
+  showSlopeColors = false, // New prop to toggle slope colors
 }) {
   const materialRef = useRef();
   const geometryRef = useRef();
@@ -99,10 +100,15 @@ function ElevationProfile({
 
   // Create vertex colors based on slopes
   const colors = useMemo(() => {
-    if (!gpsResults?.slopes || gpsResults.slopes.length === 0) {
-      // Fallback to uniform color if no slopes data
-      const colorCount = (points.length - 1) * 6; // 6 vertices per segment
-      return new Float32Array(colorCount * 3).fill(1); // White color
+    const colorCount = (points.length - 1) * 6; // 6 vertices per segment
+
+    // If slope colors are disabled or no slopes data, return null (use material color)
+    if (
+      !showSlopeColors ||
+      !gpsResults?.slopes ||
+      gpsResults.slopes.length === 0
+    ) {
+      return null;
     }
 
     const slopes = gpsResults.slopes;
@@ -134,7 +140,7 @@ function ElevationProfile({
     }
 
     return new Float32Array(colorArray);
-  }, [points, gpsResults?.slopes]);
+  }, [points, gpsResults?.slopes, showSlopeColors]);
 
   // Create a key to force Edges re-render when geometry changes or visibility changes
   const geometryKey = useMemo(() => {
@@ -145,12 +151,12 @@ function ElevationProfile({
             Array.from(positions.slice(-12)),
           )
         : Array.from(positions);
-    // Include visible state and slopes to force refresh when data changes
+    // Include visible state, slopes, and showSlopeColors to force refresh when data changes
     const slopesHash = gpsResults?.slopes
       ? gpsResults.slopes.slice(0, 5).join(",")
       : "no-slopes";
-    return `${sample.join(",")}-visible:${visible}-slopes:${slopesHash}`;
-  }, [positions, visible, gpsResults?.slopes]);
+    return `${sample.join(",")}-visible:${visible}-slopes:${slopesHash}-showColors:${showSlopeColors}`;
+  }, [positions, visible, gpsResults?.slopes, showSlopeColors]);
 
   // Update buffer geometry when positions change
   useEffect(() => {
@@ -204,8 +210,8 @@ function ElevationProfile({
       <meshStandardMaterial
         ref={materialRef}
         transparent
-        color={gpsResults?.slopes ? "white" : color} // Use white when vertex colors are present
-        vertexColors={gpsResults?.slopes ? true : false} // Enable vertex colors when slopes are available
+        color={showSlopeColors && colors ? "white" : color} // Use white when vertex colors are present, otherwise use prop color
+        vertexColors={showSlopeColors && colors ? true : false} // Enable vertex colors when slope colors are enabled and available
         side={THREE.DoubleSide}
         depthWrite={opacity.get() > 0.01} // Disable depth write when nearly invisible
         alphaTest={0.001} // Skip rendering pixels below this alpha threshold
