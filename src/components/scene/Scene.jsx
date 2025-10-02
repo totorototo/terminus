@@ -29,12 +29,17 @@ function Scene({
 }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const [mode, setMode] = useState("3d");
+  const [showSlopeColors, setShowSlopeColors] = useState(false);
 
   useControls({
     mode: {
       value: "3d",
       options: ["2d", "3d"],
       onChange: (value) => setMode(value),
+    },
+    showSlopeColors: {
+      value: showSlopeColors,
+      onChange: (value) => setShowSlopeColors(value),
     },
   });
 
@@ -69,6 +74,7 @@ function Scene({
           selectedSectionIndex={selectedSectionIndex}
           visible={mode === "2d"}
           gpsResults={gpsResults}
+          showSlopeColors={showSlopeColors}
         />
         <ThreeDimensionalProfile
           coordinates={coordinates}
@@ -77,6 +83,7 @@ function Scene({
           selectedSectionIndex={selectedSectionIndex}
           visible={mode === "3d"}
           gpsResults={gpsResults}
+          showSlopeColors={showSlopeColors}
         />
         {mode === "3d" && coordinates && coordinates.length > 0 && (
           <TrailFollower
