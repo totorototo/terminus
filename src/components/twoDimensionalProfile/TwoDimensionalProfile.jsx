@@ -1,7 +1,7 @@
 import React, { Fragment, useMemo } from "react";
 import { scaleLinear } from "d3-scale";
 import ElevationProfile from "../elevationProfile/ElevationProfile";
-import { Html } from "@react-three/drei";
+import Marker from "../marker/Marker";
 
 export default function TwoDimensionalProfile({
   coordinates,
@@ -10,6 +10,7 @@ export default function TwoDimensionalProfile({
   selectedSectionIndex,
   visible,
   gpsResults, // Add gpsResults prop for slopes
+  showSlopeColors = false, // New prop to toggle slope colors
 }) {
   // Memoize scales and points3D for performance
   const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
@@ -136,30 +137,20 @@ export default function TwoDimensionalProfile({
           selected={selectedSectionIndex === id}
           visible={visible}
           gpsResults={gpsResults}
+          showSlopeColors={showSlopeColors}
         />
 
         {visible &&
           checkpointsPoints3D &&
           checkpointsPoints3D.length > 0 &&
           checkpointsPoints3D.map((cp, index) => (
-            <Html
+            <Marker
               key={index}
               position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
               style={{ pointerEvents: "none" }}
             >
-              <div
-                style={{
-                  backgroundColor: "grey",
-                  padding: "2px 5px",
-                  borderRadius: "3px",
-                  border: "1px solid #ccc",
-                  fontSize: "10px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {cp.name}
-              </div>
-            </Html>
+              <div className="checkpoint-label">{cp.name}</div>
+            </Marker>
           ))}
       </Fragment>
     ))
