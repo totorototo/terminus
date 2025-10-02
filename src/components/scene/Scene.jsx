@@ -127,13 +127,15 @@ function Scene({
         />
       </Canvas>
       <SectionData
-        {...(sections &&
-          sections.length &&
-          selectedSectionIndex !== null && {
-            section: sections.find(
-              (section) => section.segmentId === selectedSectionIndex,
-            ),
-          })}
+        {...(sections && sections.length && currentPositionIndex !== null
+          ? {
+              section: sections.find(
+                (section) =>
+                  currentPositionIndex >= section.startIndex &&
+                  currentPositionIndex <= section.endIndex,
+              ),
+            }
+          : {})}
       />
       <TrailData gpsResults={gpsResults} />
       <LiveTracking
