@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   Environment,
@@ -46,6 +46,18 @@ function Scene({
     tracking: { value: tracking, onChange: (value) => setTracking(value) },
   });
 
+  // Memoize section for SectionData
+  const section = useMemo(() => {
+    if (sections && sections.length && currentPositionIndex !== null) {
+      return sections.find(
+        (section) =>
+          currentPositionIndex >= section.startIndex &&
+          currentPositionIndex <= section.endIndex,
+      );
+    }
+    return undefined;
+  }, [sections, currentPositionIndex]);
+
   return (
     <>
       <Canvas
@@ -61,15 +73,7 @@ function Scene({
       >
         <Perf minimal position="bottom-right" />
         <ambientLight intensity={2} />
-        {/* <Grid
-          position={[0, -0.01, 0]}
-          args={[10, 10]}
-          cellColor="#b3c6e0"
-          sectionColor="#7a8fa6"
-          fadeDistance={20}
-          fadeStrength={1.5}
-        /> */}
-
+        {/* ...existing code... */}
         <TwoDimensionalProfile
           coordinates={coordinates}
           sections={sections}
@@ -90,53 +94,31 @@ function Scene({
         />
         {mode === "3d" && coordinates && coordinates.length > 0 && (
           <TrailFollower
-            coordinates={coordinates} // Your GPS coordinate array
-            speed={0.002} // Movement speed (default: 0.02)
-            height={0.08} // Height above terrain (default: 0.5)
-            scale={0.05} // Box scale (default: 0.1)
-            color="red" // Box color (default: "red")
+            coordinates={coordinates}
+            speed={0.002}
+            height={0.08}
+            scale={0.05}
+            color="red"
             gpsResults={gpsResults}
             tracking={tracking}
             setCurrentPositionIndex={setCurrentPositionIndex}
           />
         )}
-
-        {/* <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
-          <GizmoViewport
-            axisColors={["#9d4b4b", "#2f7f4f", "#3b5b9d"]}
-            labelColor="white"
-          />
-        </GizmoHelper> */}
-        <Environment preset="city" background={false} />
-        {/* <Runner coordinates={coordinates} lerpFactor={2} /> */}
-
-        {/* <AccumulativeShadows>
-          <RandomizedLight position={[2, 1, 0]} />
-        </AccumulativeShadows> */}
+        {/* ...existing code... */}
         <AnimatedOrbitControls
           makeDefault
-          enablePan={mode === "3d"} // Disable panning in 2D mode
+          enablePan={mode === "3d"}
           enableZoom
           enableRotate
-          minPolarAngle={mode === "2d" ? Math.PI / 2 : -Math.PI / 4} // 90° in 2D (horizontal), -45° in 3D
-          maxPolarAngle={mode === "2d" ? Math.PI / 2 : Math.PI / 2} // 90° in 2D (horizontal), 90° in 3D
-          minAzimuthAngle={mode === "2d" ? 0 : -Math.PI / 2} // 0° in 2D (no rotation), -90° in 3D
-          maxAzimuthAngle={mode === "2d" ? 0 : Math.PI / 2} // 0° in 2D (no rotation), 90° in 3D
+          minPolarAngle={mode === "2d" ? Math.PI / 2 : -Math.PI / 4}
+          maxPolarAngle={mode === "2d" ? Math.PI / 2 : Math.PI / 2}
+          minAzimuthAngle={mode === "2d" ? 0 : -Math.PI / 2}
+          maxAzimuthAngle={mode === "2d" ? 0 : Math.PI / 2}
           cameraPosition={mode === "3d" ? [0, 3, 12] : [0, 2, 12]}
           targetPosition={[0, 0, 0]}
         />
       </Canvas>
-      <SectionData
-        {...(sections && sections.length && currentPositionIndex !== null
-          ? {
-              section: sections.find(
-                (section) =>
-                  currentPositionIndex >= section.startIndex &&
-                  currentPositionIndex <= section.endIndex,
-              ),
-            }
-          : {})}
-      />
+      <SectionData section={section} />
       <TrailData gpsResults={gpsResults} />
       <LiveTracking
         gpsResults={gpsResults}
