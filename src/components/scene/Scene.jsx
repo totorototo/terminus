@@ -39,7 +39,7 @@ function Scene({
       options: ["2d", "3d"],
       onChange: (value) => setMode(value),
     },
-    showSlopeColors: {
+    slopes: {
       value: showSlopeColors,
       onChange: (value) => setShowSlopeColors(value),
     },
