@@ -1,0 +1,29 @@
+import style from "./LiveTracking.style";
+
+function LiveTracking({ gpsResults, currentPositionIndex, className }) {
+  return (
+    <div className={className}>
+      <h1>Live Tracking</h1>
+      {gpsResults?.cumulativeDistances?.[currentPositionIndex] !==
+        undefined && (
+        <div>
+          {`${(gpsResults.cumulativeDistances[currentPositionIndex] / 1000).toFixed(2)} km`}
+        </div>
+      )}
+      {gpsResults?.cumulativeElevations?.[currentPositionIndex] !==
+        undefined && (
+        <div>
+          {`↗ ${gpsResults.cumulativeElevations[currentPositionIndex].toFixed(0)} m`}
+        </div>
+      )}
+      {gpsResults?.cumulativeElevationLosses?.[currentPositionIndex] !==
+        undefined && (
+        <div>
+          {`↘ ${gpsResults.cumulativeElevationLosses[currentPositionIndex].toFixed(0)} m`}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default style(LiveTracking);
