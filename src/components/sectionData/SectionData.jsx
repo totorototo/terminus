@@ -50,9 +50,7 @@ const SectionData = memo(function SectionData({ section, className }) {
               color: "#707070",
               opacity,
             }}
-          >
-            Click on another section to see its details.
-          </animated.div>
+          ></animated.div>
         </>
       )}
     </div>

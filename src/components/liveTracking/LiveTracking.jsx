@@ -22,6 +22,14 @@ function LiveTracking({ gpsResults, currentPositionIndex, className }) {
           {`↘ ${gpsResults.cumulativeElevationLosses[currentPositionIndex].toFixed(0)} m`}
         </div>
       )}
+      {gpsResults?.points?.[currentPositionIndex] && (
+        <div>
+          {`${gpsResults.points[currentPositionIndex][2].toFixed(0)} m`}
+        </div>
+      )}
+      {gpsResults?.slopes?.[currentPositionIndex] && (
+        <div>{`${gpsResults.slopes[currentPositionIndex].toFixed(0)} %`}</div>
+      )}
     </div>
   );
 }
