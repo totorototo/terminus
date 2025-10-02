@@ -1,8 +1,8 @@
-import React from "react";
+import { memo } from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 
-function TrailData({ gpsResults, className }) {
+const TrailData = memo(function TrailData({ gpsResults, className }) {
   const { distance } = useSpringWeb({
     distance: gpsResults?.totalDistance || 0,
     config: { tension: 170, friction: 26 },
@@ -40,6 +40,6 @@ function TrailData({ gpsResults, className }) {
       </animated.div>
     </div>
   );
-}
+});
 
 export default style(TrailData);

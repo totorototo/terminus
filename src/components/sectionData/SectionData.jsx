@@ -1,7 +1,8 @@
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
+import { memo } from "react";
 import style from "./SectionData.style.js";
 
-function SectionData({ section, className }) {
+const SectionData = memo(function SectionData({ section, className }) {
   const { opacity } = useSpringWeb({
     opacity: section ? 1 : 0,
     config: { tension: 170, friction: 26 },
@@ -56,6 +57,6 @@ function SectionData({ section, className }) {
       )}
     </div>
   );
-}
+});
 
 export default style(SectionData);
