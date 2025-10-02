@@ -30,7 +30,7 @@ function Scene({
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const [mode, setMode] = useState("3d");
   const [showSlopeColors, setShowSlopeColors] = useState(false);
-  const [tracking, setTracking] = useState(false);
+  const [tracking, setTracking] = useState(true);
   const [currentPositionIndex, setCurrentPositionIndex] = useState(0);
 
   useControls({
@@ -71,7 +71,7 @@ function Scene({
           position: [0, 3, 6],
         }}
       >
-        <Perf minimal position="bottom-right" />
+        {/* <Perf minimal position="bottom-right" /> */}
         <ambientLight intensity={2} />
         {/* ...existing code... */}
         <TwoDimensionalProfile
