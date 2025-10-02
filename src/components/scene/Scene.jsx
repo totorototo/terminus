@@ -15,6 +15,7 @@ import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
 import { Perf } from "r3f-perf";
 import { useControls } from "leva";
+import LiveTracking from "../liveTracking/LiveTracking";
 
 // import Runner from "./Runner";
 
@@ -24,13 +25,13 @@ function Scene({
   coordinates,
   sections,
   gpsResults,
-
   className,
 }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const [mode, setMode] = useState("3d");
   const [showSlopeColors, setShowSlopeColors] = useState(false);
   const [tracking, setTracking] = useState(false);
+  const [currentPositionIndex, setCurrentPositionIndex] = useState(0);
 
   useControls({
     mode: {
@@ -96,6 +97,7 @@ function Scene({
             color="red" // Box color (default: "red")
             gpsResults={gpsResults}
             tracking={tracking}
+            setCurrentPositionIndex={setCurrentPositionIndex}
           />
         )}
 
@@ -134,6 +136,10 @@ function Scene({
           })}
       />
       <TrailData gpsResults={gpsResults} />
+      <LiveTracking
+        gpsResults={gpsResults}
+        currentPositionIndex={currentPositionIndex}
+      />
     </>
   );
 }

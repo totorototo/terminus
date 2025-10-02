@@ -4,6 +4,7 @@ import { Vector3 } from "three";
 import { scaleLinear } from "d3-scale";
 import { Html } from "@react-three/drei";
 import { useAnimations, useGLTF } from "@react-three/drei";
+import { set } from "date-fns";
 
 export default function TrailFollower({
   coordinates,
@@ -15,12 +16,13 @@ export default function TrailFollower({
   showIndex = true,
   gpsResults,
   tracking,
+  setCurrentPositionIndex,
   ...props
 }) {
   const group = useRef();
   const progress = useRef(0);
   const [scaledPath, setScaledPath] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // const [currentIndex, setCurrentIndex] = useState(0);
 
   const { nodes, animations } = useGLTF("/cartoon_plane.glb");
   const { actions } = useAnimations(animations, group);
@@ -98,7 +100,8 @@ export default function TrailFollower({
     const nextIndex = Math.min(currentIndex + 1, scaledPath.length - 1);
 
     // Update current index state for display
-    setCurrentIndex(currentIndex);
+    // setCurrentIndex(currentIndex);
+    setCurrentPositionIndex(currentIndex);
 
     const currentPoint = scaledPath[currentIndex];
     const nextPoint = scaledPath[nextIndex];
@@ -168,7 +171,7 @@ export default function TrailFollower({
         rotation={[0, 0, 0]}
         castShadow
       />
-      {showIndex && (
+      {/* {showIndex && (
         <Html
           position={[0, 15, 0]}
           center
@@ -225,7 +228,7 @@ export default function TrailFollower({
             )}
           </div>
         </Html>
-      )}
+      )} */}
     </group>
   );
 }
