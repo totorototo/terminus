@@ -17,12 +17,17 @@ export default function TrailFollower({
   gpsResults,
   tracking,
   setCurrentPositionIndex,
+  maxRollAngle = Math.PI / 12, // Maximum 15 degrees roll
+  rollSensitivity = 1.5, // How sensitive the roll is to direction changes
   ...props
 }) {
   const group = useRef();
   const progress = useRef(0);
   const [scaledPath, setScaledPath] = useState([]);
-  // const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Store previous direction for banking calculation
+  const previousDirection = useRef(new Vector3(0, 0, -1));
+  const currentRoll = useRef(0);
 
   const { nodes, animations } = useGLTF("/cartoon_plane.glb");
   const { actions } = useAnimations(animations, group);
@@ -100,7 +105,6 @@ export default function TrailFollower({
     const nextIndex = Math.min(currentIndex + 1, scaledPath.length - 1);
 
     // Update current index state for display
-    // setCurrentIndex(currentIndex);
     setCurrentPositionIndex(currentIndex);
 
     const currentPoint = scaledPath[currentIndex];
@@ -153,6 +157,23 @@ export default function TrailFollower({
       .subVectors(lookAtTarget, group.current.position)
       .normalize();
 
+    // Calculate banking/roll angle based on direction change
+    const turnVector = new Vector3().crossVectors(
+      previousDirection.current,
+      desiredDirection,
+    );
+    const turnRate = turnVector.y; // Y component indicates left/right turn
+
+    // Calculate target roll angle
+    // Positive turnRate = left turn = bank left (positive roll)
+    // Negative turnRate = right turn = bank right (negative roll)
+    const targetRoll =
+      Math.sign(turnRate) *
+      Math.min(Math.abs(turnRate) * rollSensitivity, maxRollAngle);
+
+    // Smooth roll transition
+    currentRoll.current += (targetRoll - currentRoll.current) * lerpFactor * 3;
+
     // Lerp between current and desired direction
     currentDirection.lerp(desiredDirection, lerpFactor);
 
@@ -162,6 +183,18 @@ export default function TrailFollower({
       currentDirection,
     );
     group.current.lookAt(newLookAt);
+
+    // Apply banking/roll rotation around the Z-axis (roll)
+    // Store current rotation and only modify the roll (Z) component
+    const currentRotation = group.current.rotation.clone();
+    group.current.rotation.set(
+      currentRotation.x,
+      currentRotation.y,
+      currentRotation.z + currentRoll.current,
+    );
+
+    // Update previous direction for next frame
+    previousDirection.current.copy(desiredDirection);
   });
 
   return (
@@ -171,64 +204,6 @@ export default function TrailFollower({
         rotation={[0, 0, 0]}
         castShadow
       />
-      {/* {showIndex && (
-        <Html
-          position={[0, 15, 0]}
-          center
-          transform={false}
-          sprite={true}
-          style={{
-            zIndex: 10000,
-            pointerEvents: "none",
-            userSelect: "none",
-            transform: "translate3d(-50%, -100%, 0)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              justifyContent: "flex-start",
-              gap: "0.15em",
-              fontSize: "12px",
-              fontWeight: "100",
-              color: "#262424ff",
-              background: "rgba(255, 255, 255, 0.95)",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              textAlign: "left",
-              minWidth: "100px",
-              lineHeight: "1.2",
-              letterSpacing: "1px",
-              userSelect: "none",
-              pointerEvents: "none",
-              border: "1px solid #808080",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-              backdropFilter: "blur(4px)",
-              maxWidth: "150px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {gpsResults?.cumulativeDistances?.[currentIndex] !== undefined && (
-              <div>
-                {`${(gpsResults.cumulativeDistances[currentIndex] / 1000).toFixed(2)} km`}
-              </div>
-            )}
-            {gpsResults?.cumulativeElevations?.[currentIndex] !== undefined && (
-              <div>
-                {`↗ ${gpsResults.cumulativeElevations[currentIndex].toFixed(0)} m`}
-              </div>
-            )}
-            {gpsResults?.cumulativeElevationLosses?.[currentIndex] !==
-              undefined && (
-              <div>
-                {`↘ ${gpsResults.cumulativeElevationLosses[currentIndex].toFixed(0)} m`}
-              </div>
-            )}
-          </div>
-        </Html>
-      )} */}
     </group>
   );
 }
