@@ -36,7 +36,9 @@
   "devDependencies": {
     "@eslint/js": "^9.19.0",
     "@originjs/vite-plugin-content": "^1.0.0",
+    "@playwright/test": "^1.55.1",
     "@rollup/plugin-dsv": "^3.0.5",
+    "@types/node": "^24.6.2",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
