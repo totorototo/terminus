@@ -30,6 +30,11 @@ function LiveTracking({ gpsResults, currentPositionIndex, className }) {
       {gpsResults?.slopes?.[currentPositionIndex] && (
         <div>{`${gpsResults.slopes[currentPositionIndex].toFixed(0)} %`}</div>
       )}
+      {gpsResults?.points &&
+        currentPositionIndex &&
+        gpsResults?.points[currentPositionIndex] && (
+          <div>{`${((currentPositionIndex * 100) / gpsResults.points.length).toFixed(2)} %`}</div>
+        )}
     </div>
   );
 }

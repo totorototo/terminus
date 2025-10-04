@@ -18,7 +18,7 @@ export default function TrailFollower({
   tracking,
   setCurrentPositionIndex,
   maxRollAngle = Math.PI / 12, // Maximum 15 degrees roll
-  rollSensitivity = 1.5, // How sensitive the roll is to direction changes
+  rollSensitivity = 5.5, // How sensitive the roll is to direction changes
   ...props
 }) {
   const group = useRef();
