@@ -286,19 +286,17 @@ function App({ className }) {
 
   return (
     <div className={className}>
-      <div style={{ width: "100%", height: "100%", padding: "2rem" }}>
-        <AutoSizer>
-          {({ width, height }) => (
-            <Scene
-              width={width}
-              height={height}
-              coordinates={gpx.features?.[0]?.geometry?.coordinates}
-              sections={sections}
-              gpsResults={gpsResults}
-            />
-          )}
-        </AutoSizer>
-      </div>
+      <AutoSizer>
+        {({ width, height }) => (
+          <Scene
+            width={width}
+            height={height}
+            coordinates={gpx.features?.[0]?.geometry?.coordinates}
+            sections={sections}
+            gpsResults={gpsResults}
+          />
+        )}
+      </AutoSizer>
     </div>
   );
 }
