@@ -5,6 +5,7 @@ import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import style from "./ThreeDimensionalProfile.style.js";
+import useStore from "../../store/store.js";
 
 function Marker({ children, ...props }) {
   const ref = useRef();
@@ -45,14 +46,15 @@ function Marker({ children, ...props }) {
 }
 
 function ThreeDimensionalProfile({
-  coordinates,
-  sections,
   selectedSectionIndex,
   setSelectedSectionIndex,
   showSlopeColors,
   visible,
-  gpsResults,
 }) {
+  const sections = useStore((state) => state.sections);
+  const coordinates = useStore((state) => state.gpsData);
+  const slopes = useStore((state) => state.slopes);
+
   // Memoize scales and points3D for performance
   const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
     const xExtent = [
@@ -190,7 +192,7 @@ function ThreeDimensionalProfile({
           selected={selectedSectionIndex === id}
           visible={visible}
           showSlopeColors={showSlopeColors}
-          gpsResults={gpsResults}
+          slopes={slopes}
         />
 
         {/* {visible &&
