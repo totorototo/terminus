@@ -1,9 +1,10 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, use } from "react";
 import { Edges } from "@react-three/drei";
 import { useSpring } from "@react-spring/three";
 import { useFrame } from "@react-three/fiber";
 import { scaleThreshold } from "d3-scale";
 import * as THREE from "three";
+import useStore from "../../store/store.js";
 
 // Elevation grade constants
 const ELEVATION_GRADE = {
@@ -58,8 +59,8 @@ function ElevationProfile({
   color,
   onClick,
   selected,
+  slopes,
   visible = false,
-  gpsResults, // Add gpsResults prop for slopes
   showSlopeColors = false, // New prop to toggle slope colors
 }) {
   const materialRef = useRef();
@@ -103,15 +104,10 @@ function ElevationProfile({
     const colorCount = (points.length - 1) * 6; // 6 vertices per segment
 
     // If slope colors are disabled or no slopes data, return null (use material color)
-    if (
-      !showSlopeColors ||
-      !gpsResults?.slopes ||
-      gpsResults.slopes.length === 0
-    ) {
+    if (!showSlopeColors || !slopes || slopes.length === 0) {
       return null;
     }
 
-    const slopes = gpsResults.slopes;
     const colorScale = createColorScale();
     const colorArray = [];
 
@@ -140,7 +136,7 @@ function ElevationProfile({
     }
 
     return new Float32Array(colorArray);
-  }, [points, gpsResults?.slopes, showSlopeColors]);
+  }, [points, slopes, showSlopeColors]);
 
   // Create a key to force Edges re-render when geometry changes or visibility changes
   const geometryKey = useMemo(() => {
@@ -152,11 +148,9 @@ function ElevationProfile({
           )
         : Array.from(positions);
     // Include visible state, slopes, and showSlopeColors to force refresh when data changes
-    const slopesHash = gpsResults?.slopes
-      ? gpsResults.slopes.slice(0, 5).join(",")
-      : "no-slopes";
+    const slopesHash = slopes ? slopes.slice(0, 5).join(",") : "no-slopes";
     return `${sample.join(",")}-visible:${visible}-slopes:${slopesHash}-showColors:${showSlopeColors}`;
-  }, [positions, visible, gpsResults?.slopes, showSlopeColors]);
+  }, [positions, visible, slopes, showSlopeColors]);
 
   // Update buffer geometry when positions change
   useEffect(() => {
