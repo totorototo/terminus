@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, use } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   Environment,
@@ -17,21 +17,11 @@ import { Perf } from "r3f-perf";
 import { useControls } from "leva";
 import LiveTracking from "../liveTracking/LiveTracking";
 
-// import Runner from "./Runner";
-
-function Scene({
-  width,
-  height,
-  coordinates,
-  sections,
-  gpsResults,
-  className,
-}) {
+function Scene({ width, height, coordinates, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const [mode, setMode] = useState("3d");
   const [showSlopeColors, setShowSlopeColors] = useState(false);
   const [tracking, setTracking] = useState(true);
-  const [currentPositionIndex, setCurrentPositionIndex] = useState(0);
 
   useControls({
     mode: {
@@ -46,18 +36,6 @@ function Scene({
     tracking: { value: tracking, onChange: (value) => setTracking(value) },
   });
 
-  // Memoize section for SectionData
-  const section = useMemo(() => {
-    if (sections && sections.length && currentPositionIndex !== null) {
-      return sections.find(
-        (section) =>
-          currentPositionIndex >= section.startIndex &&
-          currentPositionIndex <= section.endIndex,
-      );
-    }
-    return undefined;
-  }, [sections, currentPositionIndex]);
-
   return (
     <>
       <Canvas
@@ -71,37 +49,30 @@ function Scene({
           position: [0, 3, 6],
         }}
       >
-        {/* <Perf minimal position="bottom-right" /> */}
+        <Perf minimal position="bottom-right" />
         <ambientLight intensity={2} />
         {/* ...existing code... */}
         <TwoDimensionalProfile
           coordinates={coordinates}
-          sections={sections}
           setSelectedSectionIndex={setSelectedSectionIndex}
           selectedSectionIndex={selectedSectionIndex}
           visible={mode === "2d"}
-          gpsResults={gpsResults}
           showSlopeColors={showSlopeColors}
         />
         <ThreeDimensionalProfile
           coordinates={coordinates}
-          sections={sections}
           setSelectedSectionIndex={setSelectedSectionIndex}
           selectedSectionIndex={selectedSectionIndex}
           visible={mode === "3d"}
-          gpsResults={gpsResults}
           showSlopeColors={showSlopeColors}
         />
         {mode === "3d" && coordinates && coordinates.length > 0 && (
           <TrailFollower
-            coordinates={coordinates}
             speed={0.002}
             height={0.08}
             scale={0.05}
             color="red"
-            gpsResults={gpsResults}
             tracking={tracking}
-            setCurrentPositionIndex={setCurrentPositionIndex}
           />
         )}
         {/* ...existing code... */}
@@ -118,12 +89,9 @@ function Scene({
           targetPosition={[0, 0, 0]}
         />
       </Canvas>
-      <SectionData section={section} />
-      <TrailData gpsResults={gpsResults} />
-      <LiveTracking
-        gpsResults={gpsResults}
-        currentPositionIndex={currentPositionIndex}
-      />
+      <SectionData />
+      <TrailData />
+      <LiveTracking />
     </>
   );
 }

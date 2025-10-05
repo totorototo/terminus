@@ -1,8 +1,24 @@
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
-import { memo } from "react";
 import style from "./SectionData.style.js";
+import useStore from "../../store/store.js";
+import { useMemo } from "react";
 
-const SectionData = memo(function SectionData({ section, className }) {
+const SectionData = function SectionData({ className }) {
+  const currentPositionIndex = useStore((state) => state.currentPositionIndex);
+  const sections = useStore((state) => state.sections);
+
+  // Memoize section for SectionData
+  const section = useMemo(() => {
+    if (sections && sections.length && currentPositionIndex !== null) {
+      return sections.find(
+        (section) =>
+          currentPositionIndex >= section.startIndex &&
+          currentPositionIndex <= section.endIndex,
+      );
+    }
+    return undefined;
+  }, [sections, currentPositionIndex]);
+
   const { opacity } = useSpringWeb({
     opacity: section ? 1 : 0,
     config: { tension: 170, friction: 26 },
@@ -55,6 +71,6 @@ const SectionData = memo(function SectionData({ section, className }) {
       )}
     </div>
   );
-});
+};
 
 export default style(SectionData);

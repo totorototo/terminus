@@ -1,22 +1,32 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, use, useCallback } from "react";
 import { useFrame } from "@react-three/fiber";
+
 import { Vector3 } from "three";
 import { scaleLinear } from "d3-scale";
 import { Html } from "@react-three/drei";
 import { useAnimations, useGLTF } from "@react-three/drei";
-import { set } from "date-fns";
+import useStore from "../../store/store";
+
+function throttle(fn, delay) {
+  let timeout = null;
+  return (...args) => {
+    if (!timeout) {
+      fn(...args);
+      timeout = setTimeout(() => {
+        timeout = null;
+      }, delay);
+    }
+  };
+}
 
 export default function TrailFollower({
-  coordinates,
   speed = 0.02,
   height = 0.01,
   scale = 0.01,
   color = "red",
   lerpFactor = 0.02,
   showIndex = true,
-  gpsResults,
   tracking,
-  setCurrentPositionIndex,
   maxRollAngle = Math.PI / 12, // Maximum 15 degrees roll
   rollSensitivity = 5.5, // How sensitive the roll is to direction changes
   ...props
@@ -24,6 +34,13 @@ export default function TrailFollower({
   const group = useRef();
   const progress = useRef(0);
   const [scaledPath, setScaledPath] = useState([]);
+
+  const setCurrentPositionIndex = useStore(
+    (state) => state.setCurrentPositionIndex,
+  );
+  const coordinates = useStore((state) => state.gpsData);
+
+  const throttledSetIndex = useRef(throttle(setCurrentPositionIndex, 1000));
 
   // Store previous direction for banking calculation
   const previousDirection = useRef(new Vector3(0, 0, -1));
@@ -104,8 +121,8 @@ export default function TrailFollower({
     const currentIndex = Math.floor(progress.current * (scaledPath.length - 1));
     const nextIndex = Math.min(currentIndex + 1, scaledPath.length - 1);
 
-    // Update current index state for display
-    setCurrentPositionIndex(currentIndex);
+    // Update position index with throttling
+    throttledSetIndex.current(currentIndex);
 
     const currentPoint = scaledPath[currentIndex];
     const nextPoint = scaledPath[nextIndex];
