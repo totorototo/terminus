@@ -1,25 +1,28 @@
 import { memo } from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
+import useStore from "../../store/store.js";
 
 const TrailData = memo(function TrailData({ gpsResults, className }) {
+  const stats = useStore((state) => state.stats);
+
   const { distance } = useSpringWeb({
-    distance: gpsResults?.totalDistance || 0,
+    distance: stats.distance || 0,
     config: { tension: 170, friction: 26 },
   });
 
   const { elevationGain } = useSpringWeb({
-    elevationGain: gpsResults?.totalElevation || 0,
+    elevationGain: stats.elevationGain || 0,
     config: { tension: 170, friction: 26 },
   });
 
   const { elevationLoss } = useSpringWeb({
-    elevationLoss: gpsResults?.totalElevationLoss || 0,
+    elevationLoss: stats.elevationLoss || 0,
     config: { tension: 170, friction: 26 },
   });
 
   const { pointCount } = useSpringWeb({
-    pointCount: gpsResults?.pointCount || 0,
+    pointCount: stats.pointCount || 0,
     config: { tension: 170, friction: 26 },
   });
 

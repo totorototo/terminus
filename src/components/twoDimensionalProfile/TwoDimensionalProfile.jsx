@@ -2,16 +2,18 @@ import React, { Fragment, useMemo } from "react";
 import { scaleLinear } from "d3-scale";
 import ElevationProfile from "../elevationProfile/ElevationProfile";
 import Marker from "../marker/Marker";
+import useStore from "../../store/store.js";
 
 export default function TwoDimensionalProfile({
-  coordinates,
-  sections,
   setSelectedSectionIndex,
   selectedSectionIndex,
   visible,
-  gpsResults, // Add gpsResults prop for slopes
   showSlopeColors = false, // New prop to toggle slope colors
 }) {
+  const sections = useStore((state) => state.sections);
+  const coordinates = useStore((state) => state.gpsData);
+  const slopes = useStore((state) => state.slopes);
+
   // Memoize scales and points3D for performance
   const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
     const xExtent = [
@@ -136,8 +138,8 @@ export default function TwoDimensionalProfile({
           onClick={() => setSelectedSectionIndex(id)}
           selected={selectedSectionIndex === id}
           visible={visible}
-          gpsResults={gpsResults}
           showSlopeColors={showSlopeColors}
+          slopes={slopes}
         />
 
         {visible &&
