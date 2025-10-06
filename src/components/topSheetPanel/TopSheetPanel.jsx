@@ -5,7 +5,7 @@ import { useDrag } from "@use-gesture/react";
 const COLLAPSED_HEIGHT = 100;
 const EXPANDED_HEIGHT = 300;
 
-function ExpandablePanel({ children }) {
+function ExpandablePanel({ children, className }) {
   const [{ height }, api] = useSpring(() => ({ height: COLLAPSED_HEIGHT }));
 
   const expand = ({ canceled }) => {
@@ -64,13 +64,15 @@ function ExpandablePanel({ children }) {
 
   return (
     <a.div
+      className={className}
       {...bind()}
       style={{
         height,
-        background: "#f0f0f0",
+        opacity: 0.9,
+        background: "#474646ff",
         overflow: "hidden",
-        borderRadius: "12px",
-        border: "1px solid #ccc",
+        borderRadius: "24px",
+        border: "1px solid #2d2c2cff",
         cursor: "ns-resize",
         userSelect: "none",
         touchAction: "none",
@@ -83,7 +85,7 @@ function ExpandablePanel({ children }) {
         containerType: "size",
       }}
     >
-      <div style={{ padding: 20 }}>{children}</div>
+      {children}
     </a.div>
   );
 }

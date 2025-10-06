@@ -14,7 +14,45 @@ const style = (Component) => styled(Component)`
   font-size: 15px;
   letter-spacing: 1.5px;
   user-select: none;
+  padding: 1rem;
 
+  .live-tracking-header {
+    width: 100%;
+    display: flex;
+  }
+
+  .distance {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 66px;
+    // background-color: rgba(255, 255, 255, 0.1);
+    width: 100%;
+    padding-left: 0.4rem;
+    font-size: 1.5rem;
+    font-weight: 300;
+  }
+
+  .distance svg {
+    color: #f2af29;
+    stroke-width: 1.5px;
+    fill: #f2af29;
+  }
+
+  // // todo: draw line  below the icon and text
+  // .distance::after {
+  //   content: "";
+  //   position: absolute;
+  //   bottom: 0.6rem;
+  //   left: 50%;
+  //   width: 20%;
+  //   height: 2px;
+  //   transform: translateX(-50%);
+  //   border-radius: 1rem;
+  //   background-color: rgba(255, 255, 255, 0.2);
+  // }
+
+  //Todo: use useChain to stagger the animation of the items
   /* Default: show only first child (km left) when collapsed */
   > div:not(:first-child) {
     display: none;
@@ -25,16 +63,6 @@ const style = (Component) => styled(Component)`
     > div:not(:first-child) {
       display: block;
     }
-  }
-
-  h1 {
-    pointer-events: none;
-    color: white;
-    font-size: 2em;
-    font-weight: 100;
-    line-height: 1em;
-    margin: 0;
-    margin-bottom: 0.25em;
   }
 `;
 

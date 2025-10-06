@@ -1,6 +1,7 @@
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./LiveTracking.style";
 import useStore from "../../store/store.js";
+import { Navigation } from "@styled-icons/feather/Navigation";
 
 function LiveTracking({ className }) {
   const cumulativeDistances = useStore((state) => state.cumulativeDistances);
@@ -10,21 +11,25 @@ function LiveTracking({ className }) {
   );
   const gpsData = useStore((state) => state.gpsData);
   const currentPositionIndex = useStore((state) => state.currentPositionIndex);
+  const stats = useStore((state) => state.stats);
 
   const springConfig = { tension: 170, friction: 26 };
 
   const { distance } = useSpringWeb({
-    distance: cumulativeDistances?.[currentPositionIndex] || 0,
+    distance: stats.distance - cumulativeDistances?.[currentPositionIndex] || 0,
     config: springConfig,
   });
 
   const { elevation } = useSpringWeb({
-    elevation: cumulativeElevations?.[currentPositionIndex] || 0,
+    elevation:
+      stats.elevationGain - cumulativeElevations?.[currentPositionIndex] || 0,
     config: springConfig,
   });
 
   const { elevationLoss } = useSpringWeb({
-    elevationLoss: cumulativeElevationLosses?.[currentPositionIndex] || 0,
+    elevationLoss:
+      stats.elevationLoss - cumulativeElevationLosses?.[currentPositionIndex] ||
+      0,
     config: springConfig,
   });
 
@@ -36,16 +41,21 @@ function LiveTracking({ className }) {
   const { progress } = useSpringWeb({
     progress:
       gpsData && currentPositionIndex
-        ? (currentPositionIndex * 100) / gpsData.length
+        ? 100 - (currentPositionIndex * 100) / gpsData.length
         : 0,
     config: springConfig,
   });
 
   return (
     <div className={className}>
-      <animated.div>
-        {distance.to((n) => `${(n / 1000).toFixed(2)} km`)}
-      </animated.div>
+      <div className="live-tracking-header">
+        <div className={"distance"}>
+          <Navigation size="24" />
+          <animated.div>
+            {distance.to((n) => `${(n / 1000).toFixed(1)} km`)}
+          </animated.div>
+        </div>
+      </div>
 
       <animated.div>{elevation.to((n) => `↗ ${n.toFixed(0)} m`)}</animated.div>
 
@@ -53,9 +63,9 @@ function LiveTracking({ className }) {
         {elevationLoss.to((n) => `↘ ${n.toFixed(0)} m`)}
       </animated.div>
 
-      <animated.div>{altitude.to((n) => `${n.toFixed(0)} m`)}</animated.div>
-
       <animated.div>{progress.to((n) => `${n.toFixed(2)} %`)}</animated.div>
+
+      <animated.div>{altitude.to((n) => `${n.toFixed(0)} m`)}</animated.div>
     </div>
   );
 }

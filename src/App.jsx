@@ -151,10 +151,10 @@ function App({ className }) {
       <TopSheetPanel>
         <LiveTracking />
       </TopSheetPanel>
-      <BottomSheetPanel>
+      {/* <BottomSheetPanel>
         <TrailData />
         <SectionData />
-      </BottomSheetPanel>
+      </BottomSheetPanel> */}
     </div>
   );
 }

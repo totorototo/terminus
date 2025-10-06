@@ -21,6 +21,7 @@
     "@react-spring/web": "^10.0.3",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.3.0",
+    "@styled-icons/feather": "^10.47.0",
     "@xmldom/xmldom": "^0.9.8",
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
@@ -32,6 +33,7 @@
     "react-dom": "^19.0.0",
     "react-virtualized-auto-sizer": "^1.0.26",
     "styled-components": "^6.1.19",
+    "styled-icons": "^10.47.1",
     "three": "^0.180.0",
     "xmldom": "^0.6.0",
     "zustand": "^5.0.8"
