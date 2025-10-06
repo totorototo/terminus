@@ -15,6 +15,18 @@ const style = (Component) => styled(Component)`
   letter-spacing: 1.5px;
   user-select: none;
 
+  /* Default: show only first child (km left) when collapsed */
+  > div:not(:first-child) {
+    display: none;
+  }
+
+  /* When parent container is expanded (height > 150px), show all data */
+  @container (min-height: 150px) {
+    > div:not(:first-child) {
+      display: block;
+    }
+  }
+
   h1 {
     pointer-events: none;
     color: white;
