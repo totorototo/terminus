@@ -7,7 +7,11 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import Scene from "./components/scene/Scene.jsx";
 import style from "./App.style.js";
 import useStore from "./store/store.js";
-import { distance } from "three/tsl";
+import SectionData from "./components/sectionData/SectionData.jsx";
+import TrailData from "./components/trailData/TrailData.jsx";
+import LiveTracking from "./components/liveTracking/LiveTracking.jsx";
+import BottomSheetPanel from "./components/bottomSheetPanel/BottomSheetPanel.jsx";
+import TopSheetPanel from "./components/topSheetPanel/TopSheetPanel.jsx";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
@@ -144,6 +148,13 @@ function App({ className }) {
           />
         )}
       </AutoSizer>
+      <TopSheetPanel>
+        <LiveTracking />
+      </TopSheetPanel>
+      {/* <BottomSheetPanel>
+        <TrailData />
+        <SectionData />
+      </BottomSheetPanel> */}
     </div>
   );
 }
