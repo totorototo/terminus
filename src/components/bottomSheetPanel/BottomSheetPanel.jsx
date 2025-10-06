@@ -5,8 +5,6 @@ import { useDrag } from "@use-gesture/react";
 const height = 350;
 
 export default function BottomSheetPanel({ children }) {
-  console.log("BottomSheetPanel rendered");
-
   const [{ y }, api] = useSpring(() => ({ y: height }));
 
   const open = ({ canceled }) => {
