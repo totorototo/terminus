@@ -43,7 +43,6 @@ function LiveTracking({ className }) {
 
   return (
     <div className={className}>
-      <h1>Live Tracking</h1>
       <animated.div>
         {distance.to((n) => `${(n / 1000).toFixed(2)} km`)}
       </animated.div>

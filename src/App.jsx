@@ -148,11 +148,12 @@ function App({ className }) {
           />
         )}
       </AutoSizer>
-      <TopSheetPanel />
+      <TopSheetPanel>
+        <LiveTracking />
+      </TopSheetPanel>
       <BottomSheetPanel>
         <TrailData />
         <SectionData />
-        <LiveTracking />
       </BottomSheetPanel>
     </div>
   );
