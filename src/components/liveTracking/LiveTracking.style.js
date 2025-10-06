@@ -6,55 +6,62 @@ const style = (Component) => styled(Component)`
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  position: absolute;
+
   pointer-events: none;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  max-width: 600px;
-  padding: 80px;
+
   color: #a0a0a0;
   line-height: 1.2;
   font-size: 15px;
   letter-spacing: 1.5px;
   user-select: none;
+  padding: 1rem;
 
-  /* Mobile responsiveness */
-  @media (max-width: 768px) {
-    padding: 20px;
-    max-width: calc(100vw - 40px);
-    font-size: 13px;
-    letter-spacing: 1px;
-    top: 50%;
-    right: 10px;
-    left: auto;
-    transform: translateY(-50%);
+  .live-tracking-header {
+    width: 100%;
+    display: flex;
   }
 
-  @media (max-width: 480px) {
-    padding: 15px;
-    font-size: 12px;
-    letter-spacing: 0.5px;
-    max-width: calc(100vw - 30px);
+  .distance {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 66px;
+    // background-color: rgba(255, 255, 255, 0.1);
+    width: 100%;
+    padding-left: 0.4rem;
+    font-size: 1.5rem;
+    font-weight: 300;
   }
 
-  h1 {
-    pointer-events: none;
-    color: white;
-    font-size: 2em;
-    font-weight: 100;
-    line-height: 1em;
-    margin: 0;
-    margin-bottom: 0.25em;
+  .distance svg {
+    color: #f2af29;
+    stroke-width: 1.5px;
+    fill: #f2af29;
+  }
 
-    @media (max-width: 768px) {
-      font-size: 1.5em;
-      margin-bottom: 0.2em;
-    }
+  // // todo: draw line  below the icon and text
+  // .distance::after {
+  //   content: "";
+  //   position: absolute;
+  //   bottom: 0.6rem;
+  //   left: 50%;
+  //   width: 20%;
+  //   height: 2px;
+  //   transform: translateX(-50%);
+  //   border-radius: 1rem;
+  //   background-color: rgba(255, 255, 255, 0.2);
+  // }
 
-    @media (max-width: 480px) {
-      font-size: 1.3em;
-      margin-bottom: 0.15em;
+  //Todo: use useChain to stagger the animation of the items
+  /* Default: show only first child (km left) when collapsed */
+  > div:not(:first-child) {
+    display: none;
+  }
+
+  /* When parent container is expanded (height > 150px), show all data */
+  @container (min-height: 150px) {
+    > div:not(:first-child) {
+      display: block;
     }
   }
 `;
