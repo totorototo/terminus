@@ -40,10 +40,16 @@ const style = (Component) => styled(Component)`
       height: 2px;
       background-color: rgba(255, 255, 255, 0.1);
     }
-    padding-right: 0.4rem;
-    // border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    
+    padding-right: 0.4rem;    
   }
+
+  .location-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    margin-left: 1rem;
+}
 
   .location {
     flex: 1;
@@ -54,22 +60,24 @@ const style = (Component) => styled(Component)`
 
   .distance-container {
     display: flex;
-    align-items: center;
-    min-width: 80px;
+    flex: 1;
+    align-items: center;  
+    width: 100%;  
   }
 
   .elevation-container {
     display: flex;
     align-items: center;
-    min-width: 80px;
-    margin-left: 1rem;
-    gap:0.4rem;
+    min-width: 80px;    
+    gap:0.8rem;
+    margin-left: auto;
   }
 
   .distance {
     display: flex;
-    align-items: center;
-    gap: 4px;
+    align-items: flex-start;
+   
+    
 
     span {
       min-width: 40px;
