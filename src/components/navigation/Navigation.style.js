@@ -56,6 +56,10 @@ const style = (Component) => styled(Component)`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 1.1em;
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: 0.02em;
   }
 
   .distance-container {

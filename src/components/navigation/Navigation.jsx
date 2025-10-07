@@ -71,7 +71,10 @@ function Navigation({ className }) {
                 </div>
               )}
             </div>
-            <div className="location">{section.endLocation}</div>
+            <div className="location">
+              <span className="label">Next: </span>
+              <span className="value">{section.endLocation}</span>
+            </div>
           </div>
 
           <div className="elevation-container">
