@@ -12,6 +12,7 @@ import TrailData from "./components/trailData/TrailData.jsx";
 import LiveTracking from "./components/liveTracking/LiveTracking.jsx";
 import BottomSheetPanel from "./components/bottomSheetPanel/BottomSheetPanel.jsx";
 import TopSheetPanel from "./components/topSheetPanel/TopSheetPanel.jsx";
+import Navigation from "./components/navigation/Navigation.jsx";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
@@ -149,7 +150,7 @@ function App({ className }) {
         )}
       </AutoSizer>
       <TopSheetPanel>
-        <LiveTracking />
+        <Navigation />
       </TopSheetPanel>
       {/* <BottomSheetPanel>
         <TrailData />
