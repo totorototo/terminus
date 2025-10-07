@@ -1,4 +1,8 @@
-import { useSpring as useSpringWeb, animated } from "@react-spring/web";
+import {
+  useSpring as useSpringWeb,
+  animated,
+  useTransition,
+} from "@react-spring/web";
 import style from "./Navigation.style.js";
 import useStore from "../../store/store.js";
 import { CornerUpRight } from "@styled-icons/feather/CornerUpRight";
@@ -39,27 +43,37 @@ function Navigation({ className }) {
     config: springConfig,
   });
 
+  const transitions = useTransition(remaningSections || [], {
+    from: { opacity: 0, height: 0 },
+    enter: { opacity: 1, height: 66 },
+    leave: { opacity: 0, height: 0 },
+    keys: (section) => section.segmentId,
+  });
+
   return (
     <div className={className}>
-      {remaningSections?.map((section, index) => (
-        <div className="section" key={section.segmentId}>
+      {transitions((style, section, _, index) => (
+        <animated.div className="section" style={style}>
           <CornerUpRight size={32} />
-          <div className="location">{section.endLocation}</div>
-          <div className="distance-container">
-            {index === 0 ? (
-              <animated.div className="distance">
-                <animated.span>
-                  {distance.to((n) => (n / 1000).toFixed(1))}
-                </animated.span>
-                <span className="unit">km</span>
-              </animated.div>
-            ) : (
-              <div className="distance">
-                <span>{(section.totalDistance / 1000).toFixed(2)}</span>
-                <span className="unit">km</span>
-              </div>
-            )}
+          <div className="location-container">
+            <div className="distance-container">
+              {index === 0 ? (
+                <animated.div className="distance">
+                  <animated.span>
+                    {distance.to((n) => (n / 1000).toFixed(1))}
+                  </animated.span>
+                  <span className="unit">km</span>
+                </animated.div>
+              ) : (
+                <div className="distance">
+                  <span>{(section.totalDistance / 1000).toFixed(2)}</span>
+                  <span className="unit">km</span>
+                </div>
+              )}
+            </div>
+            <div className="location">{section.endLocation}</div>
           </div>
+
           <div className="elevation-container">
             {index === 0 ? (
               <animated.div className="elevation gain">
@@ -88,7 +102,7 @@ function Navigation({ className }) {
               </div>
             )}
           </div>
-        </div>
+        </animated.div>
       ))}
     </div>
   );
