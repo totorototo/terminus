@@ -64,11 +64,13 @@ export default function BottomSheetPanel({ children }) {
         zIndex: 1000,
         position: "fixed",
         bottom: `calc(-100vh + ${height}px)`,
+        opacity: 0.9,
         left: "2vw",
         width: "96vw",
+        overflow: "hidden",
         height: "calc(100vh + 100px)",
-        background: "#fff",
-        borderRadius: "12px 12px 0 0",
+        background: "#474646ff",
+        borderRadius: "24px",
         color: "#222",
         touchAction: "none",
         y,
@@ -76,6 +78,7 @@ export default function BottomSheetPanel({ children }) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "flex-start",
+        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
       }}
     >
       {children}

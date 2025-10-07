@@ -3,9 +3,18 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   z-index: 10;
   display: flex;
-  flex-direction: column;
+  padding-top: 2rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+
+  //
+ // flex: 1;
+  flex-direction: row;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: space-around;
+  width: 100%;
+  height: 20rem
+
 
   pointer-events: none;
 
@@ -15,15 +24,11 @@ const style = (Component) => styled(Component)`
   letter-spacing: 1.5px;
   user-select: none;
 
-  h1 {
-    pointer-events: none;
-    color: white;
-    font-size: 2em;
-    font-weight: 100;
-    line-height: 1em;
-    margin: 0;
-    margin-bottom: 0.25em;
-  }
+  .item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
 `;
 
 export default style;
