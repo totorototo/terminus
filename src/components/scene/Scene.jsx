@@ -42,7 +42,7 @@ function Scene({ width, height, className }) {
         position: [0, 3, 6],
       }}
     >
-      <Perf minimal position="bottom-right" />
+      {/* <Perf minimal position="bottom-right" /> */}
       <ambientLight intensity={2} />
       {/* ...existing code... */}
       <TwoDimensionalProfile
