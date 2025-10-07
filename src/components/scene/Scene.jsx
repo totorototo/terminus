@@ -1,23 +1,12 @@
-import { useState, useMemo, use } from "react";
+import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import {
-  Environment,
-  GizmoHelper,
-  GizmoViewport,
-  Grid,
-} from "@react-three/drei";
-import SectionData from "../sectionData/SectionData";
 import AnimatedOrbitControls from "../orbitControls/AnimatedOrbitControls";
 import TwoDimensionalProfile from "../twoDimensionalProfile/TwoDimensionalProfile";
 import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensionalProfile";
-import TrailData from "../trailData/TrailData";
 import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
 import { Perf } from "r3f-perf";
-import { useControls } from "leva";
-import LiveTracking from "../liveTracking/LiveTracking";
 import useStore from "../../store/store.js";
-import BottomSheetPanel from "../bottomSheetPanel/BottomSheetPanel.jsx";
 
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
@@ -27,18 +16,19 @@ function Scene({ width, height, className }) {
 
   const coordinates = useStore((state) => state.gpsData);
 
-  useControls({
-    mode: {
-      value: "3d",
-      options: ["2d", "3d"],
-      onChange: (value) => setMode(value),
-    },
-    slopes: {
-      value: showSlopeColors,
-      onChange: (value) => setShowSlopeColors(value),
-    },
-    tracking: { value: tracking, onChange: (value) => setTracking(value) },
-  });
+  // TODO: implement UI controls for mode, slopes, and tracking (Action Buttons?)
+  // useControls({
+  //   mode: {
+  //     value: "3d",
+  //     options: ["2d", "3d"],
+  //     onChange: (value) => setMode(value),
+  //   },
+  //   slopes: {
+  //     value: showSlopeColors,
+  //     onChange: (value) => setShowSlopeColors(value),
+  //   },
+  //   tracking: { value: tracking, onChange: (value) => setTracking(value) },
+  // });
 
   return (
     <Canvas
