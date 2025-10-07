@@ -57,7 +57,6 @@ function computeSectionsFromCheckpoints(checkpoints) {
 }
 
 function App({ className }) {
-  //const [sections, setSections] = useState(); // Store computed sections
   const [error, setError] = useState(null);
 
   const setGpsData = useStore((state) => state.setGpsData);
@@ -152,10 +151,9 @@ function App({ className }) {
       <TopSheetPanel>
         <Navigation />
       </TopSheetPanel>
-      {/* <BottomSheetPanel>
+      <BottomSheetPanel>
         <TrailData />
-        <SectionData />
-      </BottomSheetPanel> */}
+      </BottomSheetPanel>
     </div>
   );
 }
