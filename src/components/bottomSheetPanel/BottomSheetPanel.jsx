@@ -79,6 +79,10 @@ export default function BottomSheetPanel({ children }) {
         alignItems: "center",
         justifyContent: "flex-start",
         boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+        maxWidth: "600px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        // backdrop filter requires some transparency in the background color
       }}
     >
       {children}
