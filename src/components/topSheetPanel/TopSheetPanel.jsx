@@ -83,6 +83,9 @@ function ExpandablePanel({ children, className }) {
         boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
         zIndex: 1000,
         containerType: "size",
+        maxWidth: "600px",
+        left: "50%",
+        transform: "translateX(-50%)",
       }}
     >
       {children}

@@ -1,15 +1,9 @@
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { devtools } from "zustand/middleware";
 
 const useStore = create(
   devtools(
     (set) => ({
-      theme: "light",
-      toggleTheme: () =>
-        set((state) => ({ theme: state.theme === "light" ? "dark" : "light" })),
-
-      checkpoints: [],
-      setCheckpoints: (checkpoints) => set({ checkpoints }),
       sections: [],
       setSections: (sections) => set({ sections }),
       gpsData: [],
