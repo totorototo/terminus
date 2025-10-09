@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import AnimatedOrbitControls from "../orbitControls/AnimatedOrbitControls";
-import TwoDimensionalProfile from "../twoDimensionalProfile/TwoDimensionalProfile";
 import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensionalProfile";
 import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
-import { Perf } from "r3f-perf";
 import useStore from "../../store/store.js";
-import { truncateSync } from "node:fs";
 
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
