@@ -54,7 +54,7 @@ function Navigation({ className }) {
     <div className={className}>
       {transitions((style, section, _, index) => (
         <animated.div className="section" style={style}>
-          <CornerUpRight size={32} />
+          <CornerUpRight size={40} />
           <div className="location-container">
             <div className="distance-container">
               {index === 0 ? (
@@ -72,7 +72,6 @@ function Navigation({ className }) {
               )}
             </div>
             <div className="location">
-              <span className="label">Next: </span>
               <span className="value">{section.endLocation}</span>
             </div>
           </div>
