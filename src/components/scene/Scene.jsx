@@ -10,7 +10,7 @@ function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const [mode, setMode] = useState("3d");
   const [showSlopeColors, setShowSlopeColors] = useState(false);
-  const [tracking, setTracking] = useState(truncateSync);
+  const [tracking, setTracking] = useState(true);
 
   const coordinates = useStore((state) => state.gpsData);
 
