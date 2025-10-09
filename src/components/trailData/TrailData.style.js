@@ -10,14 +10,13 @@ const style = (Component) => styled(Component)`
   align-items: flex-start;
   justify-content: space-around;
   width: 100%;
-  height: 20rem
-
+  height: 20rem;
 
   pointer-events: none;
 
-  color: #a0a0a0;
+  color: ${(props) => props.theme.colors.dark["--color-text"]};
   line-height: 1.2;
-  font-size: 15px;
+  font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
   letter-spacing: 1.5px;
   user-select: none;
 
@@ -28,8 +27,10 @@ const style = (Component) => styled(Component)`
     justify-content: flex-start;
   }
 
-  .value{
-    font-size: 1.5rem;
+  .value {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    color: ${(props) => props.theme.colors.dark["--color-primary"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
   }
 `;
 
