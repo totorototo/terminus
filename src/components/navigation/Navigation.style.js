@@ -28,17 +28,23 @@ const style = (Component) => styled(Component)`
     padding-left: 0.4rem;
     position: relative;
 
-    &::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 40%;
-      height: 2px;
-      background-color: ${(props) => props.theme.colors.dark["--color-text"]}20;
-    }
+    // &::after {
+    //   content: "";
+    //   position: absolute;
+    //   bottom: 0;
+    //   left: 50%;
+    //   transform: translateX(-50%);
+    //   width: 40%;
+    //   height: 2px;
+    //   background-color: ${(props) =>
+      props.theme.colors.dark["--color-text"]}20;
+    // }
     padding-right: 0.4rem;
+  }
+
+  .section > svg {
+    stroke: ${({ theme }) => theme.colors.dark["--colors-secondary"]};
+    stroke-width: 2;
   }
 
   .location-container {
@@ -58,6 +64,7 @@ const style = (Component) => styled(Component)`
     font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: 0.02em;
+    opacity: 0.8;
   }
 
   .distance-container {
@@ -73,17 +80,15 @@ const style = (Component) => styled(Component)`
     min-width: 80px;
     gap: 0.8rem;
     margin-left: auto;
+    flex-direction: column;
   }
 
   .distance {
     display: flex;
     align-items: flex-start;
-
-    span {
-      min-width: 40px;
-      text-align: right;
-      color: ${(props) => props.theme.colors.dark["--color-text"]};
-    }
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) => props.theme.colors.dark["--color-text"]};
 
     .unit {
       opacity: 0.7;
