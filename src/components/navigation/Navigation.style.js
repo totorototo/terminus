@@ -9,14 +9,13 @@ const style = (Component) => styled(Component)`
 
   pointer-events: none;
 
-  color: #a0a0a0;
+  color: ${(props) => props.theme.colors.dark["--color-text"]};
   line-height: 1.2;
-  font-size: 15px;
+  font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
   letter-spacing: 1.5px;
   user-select: none;
   padding: 1rem;
   gap: 0.5rem;
-
 
   .section {
     display: flex;
@@ -28,19 +27,18 @@ const style = (Component) => styled(Component)`
     width: 100%;
     padding-left: 0.4rem;
     position: relative;
-    
+
     &::after {
-      content: '';
+      content: "";
       position: absolute;
       bottom: 0;
-      left: 0;
-      width: 40%;
       left: 50%;
       transform: translateX(-50%);
+      width: 40%;
       height: 2px;
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: ${(props) => props.theme.colors.dark["--color-text"]}20;
     }
-    padding-right: 0.4rem;    
+    padding-right: 0.4rem;
   }
 
   .location-container {
@@ -49,50 +47,50 @@ const style = (Component) => styled(Component)`
     align-items: flex-start;
     justify-content: center;
     margin-left: 1rem;
-}
+  }
 
   .location {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 1.1em;
-    font-weight: 300;
-    color: #fff;
+    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: 0.02em;
   }
 
   .distance-container {
     display: flex;
     flex: 1;
-    align-items: center;  
-    width: 100%;  
+    align-items: center;
+    width: 100%;
   }
 
   .elevation-container {
     display: flex;
     align-items: center;
-    min-width: 80px;    
-    gap:0.8rem;
+    min-width: 80px;
+    gap: 0.8rem;
     margin-left: auto;
   }
 
   .distance {
     display: flex;
     align-items: flex-start;
-   
-    
 
     span {
       min-width: 40px;
       text-align: right;
+      color: ${(props) => props.theme.colors.dark["--color-text"]};
     }
 
     .unit {
       opacity: 0.7;
       min-width: unset;
+      color: ${(props) => props.theme.colors.dark["--color-text"]};
     }
   }
-}`;
+`;
 
 export default style;
