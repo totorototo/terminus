@@ -29,21 +29,21 @@ const TrailData = memo(function TrailData({ className }) {
     <div className={className}>
       <div className="item">
         <animated.div className="value">
-          {remainingDistance.to((n) => `${(n / 1000).toFixed(1)} km`)}
+          {remainingDistance.to((n) => `${(n / 1000).toFixed(1)}`)}
         </animated.div>
         <div className="label">km</div>
       </div>
       <div className="item">
         <animated.div className="value">
-          {remainingElevation.to((n) => `↗ ${n.toFixed(0)} m`)}
+          {remainingElevation.to((n) => `${n.toFixed(0)}`)}
         </animated.div>
-        <div className="label">elevation gain</div>
+        <div className="label">↗ m</div>
       </div>
       <div className="item">
         <animated.div className="value">
-          {remainingElevationLoss.to((n) => `↘ ${n.toFixed(0)} m`)}
+          {remainingElevationLoss.to((n) => `${n.toFixed(0)}`)}
         </animated.div>
-        <div className="label">elevation loss</div>
+        <div className="label">↘ m </div>
       </div>
     </div>
   );
