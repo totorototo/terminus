@@ -7,14 +7,13 @@ import { useFrame } from "@react-three/fiber";
 import style from "./ThreeDimensionalProfile.style.js";
 import useStore from "../../store/store.js";
 
-function Marker({ children, ...props }) {
+const Marker = React.memo(function Marker({ children, ...props }) {
   const ref = useRef();
-  // This holds the local occluded state
+
   const [isOccluded, setOccluded] = useState();
   const [isInRange, setInRange] = useState();
   const isVisible = isInRange && !isOccluded;
 
-  // Test distance
   const vec = new THREE.Vector3();
   useFrame((state) => {
     const range =
@@ -43,7 +42,7 @@ function Marker({ children, ...props }) {
       </Html>
     </group>
   );
-}
+});
 
 function ThreeDimensionalProfile({
   selectedSectionIndex,
@@ -51,6 +50,13 @@ function ThreeDimensionalProfile({
   showSlopeColors,
   visible,
 }) {
+  // reuse stable handlers per section id to avoid creating new functions each render
+  const handlersRef = useRef(new Map());
+  const getHandler = (id) => {
+    const map = handlersRef.current;
+    if (!map.has(id)) map.set(id, () => setSelectedSectionIndex(id));
+    return map.get(id);
+  };
   const sections = useStore((state) => state.sections);
   const coordinates = useStore((state) => state.gpsData);
   const slopes = useStore((state) => state.slopes);
@@ -179,35 +185,52 @@ function ThreeDimensionalProfile({
     };
   }, [coordinates, sections]);
 
-  return (
-    sectionsPoints3D &&
-    sectionsPoints3D.length > 0 &&
-    sectionsPoints3D.map(({ points, id }) => (
+  // Memoize the rendered section components so we only rebuild them when
+  // the underlying section data or relevant props change.
+  const sectionElements = useMemo(() => {
+    if (!sectionsPoints3D || sectionsPoints3D.length === 0) return null;
+    return sectionsPoints3D.map(({ points, id }, idx) => (
       <Fragment key={id}>
         <ElevationProfile
           key={id}
           points={points}
-          color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
-          onClick={() => setSelectedSectionIndex(id)}
+          color={`hsl(${(idx / sectionsPoints3D.length) * 360}, 100%, 50%)`}
+          onClick={getHandler(id)}
           selected={selectedSectionIndex === id}
           visible={visible}
           showSlopeColors={showSlopeColors}
           slopes={slopes}
         />
-
-        {/* {visible &&
-          checkpointsPoints3D &&
-          checkpointsPoints3D.length > 0 &&
-          checkpointsPoints3D.map((cp, index) => (
-            <Marker
-              key={index}
-              position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
-            >
-              <div className="checkpoint-label">{cp.name}</div>
-            </Marker>
-          ))} */}
       </Fragment>
-    ))
+    ));
+  }, [
+    sectionsPoints3D,
+    selectedSectionIndex,
+    visible,
+    showSlopeColors,
+    slopes,
+    setSelectedSectionIndex,
+  ]);
+
+  // Markers are independent of each section — render them once, memoized.
+  const markerElements = useMemo(() => {
+    if (!visible || !checkpointsPoints3D || checkpointsPoints3D.length === 0)
+      return null;
+    return checkpointsPoints3D.map((cp, index) => (
+      <Marker
+        key={cp.name || index}
+        position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
+      >
+        <div className="checkpoint-label">{cp.name}</div>
+      </Marker>
+    ));
+  }, [checkpointsPoints3D, visible]);
+
+  return (
+    <>
+      {sectionElements}
+      {markerElements}
+    </>
   );
 }
 
