@@ -7,12 +7,13 @@ import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
 import { Perf } from "r3f-perf";
 import useStore from "../../store/store.js";
+import { truncateSync } from "node:fs";
 
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const [mode, setMode] = useState("3d");
   const [showSlopeColors, setShowSlopeColors] = useState(false);
-  const [tracking, setTracking] = useState(true);
+  const [tracking, setTracking] = useState(truncateSync);
 
   const coordinates = useStore((state) => state.gpsData);
 
@@ -45,13 +46,13 @@ function Scene({ width, height, className }) {
       {/* <Perf minimal position="bottom-right" /> */}
       <ambientLight intensity={2} />
       {/* ...existing code... */}
-      <TwoDimensionalProfile
+      {/* <TwoDimensionalProfile
         coordinates={coordinates}
         setSelectedSectionIndex={setSelectedSectionIndex}
         selectedSectionIndex={selectedSectionIndex}
         visible={mode === "2d"}
         showSlopeColors={showSlopeColors}
-      />
+      /> */}
       <ThreeDimensionalProfile
         coordinates={coordinates}
         setSelectedSectionIndex={setSelectedSectionIndex}

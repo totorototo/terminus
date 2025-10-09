@@ -13,7 +13,7 @@ const style = (Component) => styled(Component)`
     white-space: nowrap;
     user-select: none;
     pointer-events: none;
-    opacity: 0.5;
+    opacity: 1;
   }
 `;
 
