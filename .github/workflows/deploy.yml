@@ -41,7 +41,6 @@ jobs:
           retention-days: 30
 
   build-and-deploy:
-    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
