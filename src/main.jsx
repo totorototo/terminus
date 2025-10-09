@@ -28,6 +28,9 @@ const GlobalStyle = createGlobalStyle`
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
 
+  ${setDefaultColors()};    
+  ${setFonts()}; 
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -38,9 +41,6 @@ const GlobalStyle = createGlobalStyle`
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
-
-  ${setDefaultColors()};    
-  ${setFonts()}; 
 }
 
 html {
