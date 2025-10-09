@@ -1,10 +1,11 @@
 import React from "react";
 import { useSpring, a, config } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
+import style from "./BottomSheetPanel.style.js";
 
 const height = 350;
 
-export default function BottomSheetPanel({ children }) {
+function BottomSheetPanel({ children, className }) {
   const [{ y }, api] = useSpring(() => ({ y: height }));
 
   const open = ({ canceled }) => {
@@ -59,33 +60,21 @@ export default function BottomSheetPanel({ children }) {
 
   return (
     <a.div
+      className={className}
       {...bind()}
       style={{
-        zIndex: 1000,
-        position: "fixed",
         bottom: `calc(-100vh + ${height}px)`,
-        opacity: 0.9,
-        left: "2vw",
         width: "96vw",
-        overflow: "hidden",
         height: "calc(100vh + 100px)",
-        background: "#474646ff",
-        borderRadius: "24px",
-        color: "#222",
-        touchAction: "none",
         y,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
         maxWidth: "600px",
         left: "50%",
         transform: "translateX(-50%)",
-        // backdrop filter requires some transparency in the background color
       }}
     >
       {children}
     </a.div>
   );
 }
+
+export default style(BottomSheetPanel);

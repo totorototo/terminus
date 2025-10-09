@@ -1,6 +1,7 @@
 import React from "react";
 import { useSpring, a, config } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
+import style from "./TopSheetPanel.style.js";
 
 const COLLAPSED_HEIGHT = 100;
 const EXPANDED_HEIGHT = 300;
@@ -68,24 +69,6 @@ function ExpandablePanel({ children, className }) {
       {...bind()}
       style={{
         height,
-        opacity: 0.9,
-        background: "#474646ff",
-        overflow: "hidden",
-        borderRadius: "24px",
-        border: "1px solid #2d2c2cff",
-        cursor: "ns-resize",
-        userSelect: "none",
-        touchAction: "none",
-        position: "absolute",
-        top: 20,
-        left: "2vw",
-        width: "96vw",
-        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-        zIndex: 1000,
-        containerType: "size",
-        maxWidth: "600px",
-        left: "50%",
-        transform: "translateX(-50%)",
       }}
     >
       {children}
@@ -93,4 +76,4 @@ function ExpandablePanel({ children, className }) {
   );
 }
 
-export default ExpandablePanel;
+export default style(ExpandablePanel);

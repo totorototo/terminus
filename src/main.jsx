@@ -1,7 +1,23 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createGlobalStyle } from "styled-components";
+import { createGlobalStyle, ThemeProvider } from "styled-components";
 import App from "./App.jsx";
+import THEME from "./theme/Theme";
+
+const setDefaultColors = (variant = "dark") => {
+  return Object.entries(THEME.colors[variant]).reduce((accu, [rule, value]) => {
+    return `${rule}:${value}; ${accu}`;
+  }, "");
+};
+
+const setFonts = () => {
+  const strings = Object.entries(THEME.font).map(([_, category]) => {
+    return Object.entries(category).reduce((accu, [rule, value]) => {
+      return `${rule}:${value}; ${accu}`;
+    }, "");
+  });
+  return strings.join(";");
+};
 
 const GlobalStyle = createGlobalStyle`
  :root {
@@ -22,6 +38,9 @@ const GlobalStyle = createGlobalStyle`
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
+
+  ${setDefaultColors()};    
+  ${setFonts()}; 
 }
 
 html {
@@ -86,7 +105,9 @@ body *:after {
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <App />
-    <GlobalStyle />
+    <ThemeProvider theme={THEME}>
+      <App />
+      <GlobalStyle />
+    </ThemeProvider>
   </StrictMode>,
 );

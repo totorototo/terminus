@@ -6,9 +6,6 @@ const style = (Component) => styled(Component)`
   padding-top: 2rem;
   padding-left: 1rem;
   padding-right: 1rem;
-
-  //
- // flex: 1;
   flex-direction: row;
   align-items: flex-start;
   justify-content: space-around;
@@ -29,6 +26,11 @@ const style = (Component) => styled(Component)`
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+  }
+
+  .value{
+    font-size: 1.5rem;
+  }
 `;
 
 export default style;

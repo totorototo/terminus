@@ -1,15 +1,12 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useGPSWorker } from "./useGPSWorker.js";
-import { GPSStressTest } from "./stressTest.js";
 import gpx from "./assets/vvx-xgtv-2026.gpx";
 import csv from "./assets/vvx-xgtv-2026.csv";
 import AutoSizer from "react-virtualized-auto-sizer";
 import Scene from "./components/scene/Scene.jsx";
 import style from "./App.style.js";
 import useStore from "./store/store.js";
-import SectionData from "./components/sectionData/SectionData.jsx";
 import TrailData from "./components/trailData/TrailData.jsx";
-import LiveTracking from "./components/liveTracking/LiveTracking.jsx";
 import BottomSheetPanel from "./components/bottomSheetPanel/BottomSheetPanel.jsx";
 import TopSheetPanel from "./components/topSheetPanel/TopSheetPanel.jsx";
 import Navigation from "./components/navigation/Navigation.jsx";
