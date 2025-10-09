@@ -194,7 +194,7 @@ function ThreeDimensionalProfile({
         <ElevationProfile
           key={id}
           points={points}
-          color={`hsl(${(idx / sectionsPoints3D.length) * 360}, 100%, 50%)`}
+          color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
           onClick={getHandler(id)}
           selected={selectedSectionIndex === id}
           visible={visible}
