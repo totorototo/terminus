@@ -21,6 +21,7 @@ function Navigation({ className }) {
   const remaningSections = sections?.filter(
     (section) => section.endIndex >= currentPositionIndex,
   );
+
   const currentSection =
     remaningSections?.length > 0 ? remaningSections[0] : null;
 
@@ -44,16 +45,20 @@ function Navigation({ className }) {
   });
 
   const transitions = useTransition(remaningSections || [], {
-    from: { opacity: 0, height: 0 },
-    enter: { opacity: 1, height: 66 },
-    leave: { opacity: 0, height: 0 },
+    // animate height (and a subtle translate) only — leave opacity to CSS classes
+    from: { height: 0, transform: "translateY(-6px)" },
+    enter: { height: 66, transform: "translateY(0px)" },
+    leave: { height: 0, transform: "translateY(-6px)" },
     keys: (section) => section.segmentId,
   });
 
   return (
     <div className={className}>
       {transitions((style, section, _, index) => (
-        <animated.div className="section" style={style}>
+        <animated.div
+          className={`section${index === 0 ? " current" : ""}`}
+          style={style}
+        >
           <CornerUpRight size={40} />
           <div className="location-container">
             <div className="distance-container">

@@ -28,18 +28,16 @@ const style = (Component) => styled(Component)`
     padding-left: 0.4rem;
     position: relative;
 
-    // &::after {
-    //   content: "";
-    //   position: absolute;
-    //   bottom: 0;
-    //   left: 50%;
-    //   transform: translateX(-50%);
-    //   width: 40%;
-    //   height: 2px;
-    //   background-color: ${(props) =>
-      props.theme.colors.dark["--color-text"]}20;
-    // }
     padding-right: 0.4rem;
+  }
+
+  /* Apply opacity to children so inline animated styles on the root don't override it */
+  .section:not(.current) > * {
+    opacity: 0.8;
+  }
+
+  .section.current > * {
+    opacity: 1;
   }
 
   .section > svg {
@@ -60,7 +58,7 @@ const style = (Component) => styled(Component)`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: 0.02em;
@@ -91,8 +89,9 @@ const style = (Component) => styled(Component)`
     color: ${(props) => props.theme.colors.dark["--color-text"]};
 
     .unit {
-      opacity: 0.7;
+      // opacity: 0.7;
       min-width: unset;
+      padding-left: 0.4rem;
       color: ${(props) => props.theme.colors.dark["--color-text"]};
     }
   }
