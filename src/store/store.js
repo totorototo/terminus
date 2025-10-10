@@ -4,6 +4,12 @@ import { devtools } from "zustand/middleware";
 const useStore = create(
   devtools(
     (set) => ({
+      trackingMode: true,
+      toggleTrackingMode: () =>
+        set((state) => ({ trackingMode: !state.trackingMode })),
+      displaySlopes: false,
+      toggleSlopesMode: () =>
+        set((state) => ({ displaySlopes: !state.displaySlopes })),
       sections: [],
       setSections: (sections) => set({ sections }),
       gpsData: [],

@@ -9,8 +9,8 @@ import useStore from "../../store/store.js";
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const [mode, setMode] = useState("3d");
-  const [showSlopeColors, setShowSlopeColors] = useState(false);
-  const [tracking, setTracking] = useState(true);
+  const trackingMode = useStore((state) => state.trackingMode);
+  const displaySlopes = useStore((state) => state.displaySlopes);
 
   const coordinates = useStore((state) => state.gpsData);
 
@@ -55,7 +55,7 @@ function Scene({ width, height, className }) {
         setSelectedSectionIndex={setSelectedSectionIndex}
         selectedSectionIndex={selectedSectionIndex}
         visible={mode === "3d"}
-        showSlopeColors={showSlopeColors}
+        showSlopeColors={displaySlopes}
       />
       {mode === "3d" && coordinates && coordinates.length > 0 && (
         <TrailFollower
@@ -63,7 +63,7 @@ function Scene({ width, height, className }) {
           height={0.08}
           scale={0.05}
           color="red"
-          tracking={tracking}
+          tracking={trackingMode}
         />
       )}
       {/* ...existing code... */}

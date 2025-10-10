@@ -10,6 +10,7 @@ import TrailData from "./components/trailData/TrailData.jsx";
 import BottomSheetPanel from "./components/bottomSheetPanel/BottomSheetPanel.jsx";
 import TopSheetPanel from "./components/topSheetPanel/TopSheetPanel.jsx";
 import Navigation from "./components/navigation/Navigation.jsx";
+import Commands from "./components/commands/Commands.jsx";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
@@ -151,6 +152,7 @@ function App({ className }) {
       <BottomSheetPanel>
         <TrailData />
       </BottomSheetPanel>
+      <Commands />
     </div>
   );
 }
