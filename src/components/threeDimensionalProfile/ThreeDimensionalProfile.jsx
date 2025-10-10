@@ -6,10 +6,12 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import style from "./ThreeDimensionalProfile.style.js";
 import useStore from "../../store/store.js";
+import { useTheme } from "styled-components";
 
 const Marker = React.memo(function Marker({ children, position, ...props }) {
   const ref = useRef();
   const textRef = useRef();
+  const theme = useTheme();
 
   const [isOccluded, setOccluded] = useState(false);
   const [isInRange, setInRange] = useState(false);
@@ -52,11 +54,11 @@ const Marker = React.memo(function Marker({ children, position, ...props }) {
         <Text
           ref={textRef}
           fontSize={0.04}
-          color="#f4f7f5"
+          color={theme.colors.dark["--color-text"]}
           anchorX="center"
           anchorY="middle"
-          outlineWidth={0.003}
-          outlineColor="#262424"
+          outlineWidth={0.001}
+          outlineColor={theme.colors.dark["--color-background"]}
           {...props}
         >
           {children}
