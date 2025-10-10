@@ -1,45 +1,67 @@
 import React, { Fragment, useMemo, useRef, useState } from "react";
 import { scaleLinear } from "d3-scale";
 import ElevationProfile from "../elevationProfile/ElevationProfile";
-import { Html } from "@react-three/drei";
+import { Text, Billboard } from "@react-three/drei";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import style from "./ThreeDimensionalProfile.style.js";
 import useStore from "../../store/store.js";
 
-const Marker = React.memo(function Marker({ children, ...props }) {
+const Marker = React.memo(function Marker({ children, position, ...props }) {
   const ref = useRef();
+  const textRef = useRef();
 
-  const [isOccluded, setOccluded] = useState();
-  const [isInRange, setInRange] = useState();
+  const [isOccluded, setOccluded] = useState(false);
+  const [isInRange, setInRange] = useState(false);
   const isVisible = isInRange && !isOccluded;
 
   const vec = new THREE.Vector3();
+  const raycaster = new THREE.Raycaster();
+
   useFrame((state) => {
-    const range =
-      state.camera.position.distanceTo(ref.current.getWorldPosition(vec)) <= 10;
+    if (!ref.current || !textRef.current) return;
+
+    // Check distance range
+    const distance = state.camera.position.distanceTo(
+      ref.current.getWorldPosition(vec),
+    );
+    const range = distance <= 10;
     if (range !== isInRange) setInRange(range);
+
+    // Check occlusion with simple raycasting
+    const worldPos = ref.current.getWorldPosition(vec);
+    const direction = worldPos.clone().sub(state.camera.position).normalize();
+    raycaster.set(state.camera.position, direction);
+
+    // Simple occlusion check - you might want to make this more sophisticated
+    const intersects = raycaster.intersectObjects(state.scene.children, true);
+    const occluded =
+      intersects.length > 0 && intersects[0].distance < distance - 0.1;
+    if (occluded !== isOccluded) setOccluded(occluded);
+
+    // Update text opacity and scale based on visibility
+    if (textRef.current.material) {
+      textRef.current.material.opacity = isVisible ? 1 : 0;
+      textRef.current.scale.setScalar(isVisible ? 1 : 0.25);
+    }
   });
 
   return (
-    <group ref={ref}>
-      <Html
-        // 3D-transform contents
-        // transform
-        // Hide contents "behind" other meshes
-        occlude
-        // Tells us when contents are occluded (or not)
-        onOcclude={setOccluded}
-        // We just interpolate the visible state into css opacity and transforms
-        style={{
-          transition: "all 0.2s",
-          opacity: isVisible ? 1 : 0,
-          transform: `scale(${isVisible ? 1 : 0.25})`,
-        }}
-        {...props}
-      >
-        {children}
-      </Html>
+    <group ref={ref} position={position}>
+      <Billboard follow={true} lockX={true} lockY={false} lockZ={true}>
+        <Text
+          ref={textRef}
+          fontSize={0.04}
+          color="#f4f7f5"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.003}
+          outlineColor="#262424"
+          {...props}
+        >
+          {children}
+        </Text>
+      </Billboard>
     </group>
   );
 });
@@ -221,7 +243,7 @@ function ThreeDimensionalProfile({
         key={cp.name || index}
         position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
       >
-        <div className="checkpoint-label">{cp.name}</div>
+        {cp.name}
       </Marker>
     ));
   }, [checkpointsPoints3D, visible]);
