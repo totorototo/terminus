@@ -23,6 +23,9 @@ const Marker = React.memo(function Marker({ children, position, ...props }) {
   useFrame((state) => {
     if (!ref.current || !textRef.current) return;
 
+    // Manual billboard behavior - always face camera
+    textRef.current.lookAt(state.camera.position);
+
     // Check distance range
     const distance = state.camera.position.distanceTo(
       ref.current.getWorldPosition(vec),
@@ -50,20 +53,18 @@ const Marker = React.memo(function Marker({ children, position, ...props }) {
 
   return (
     <group ref={ref} position={position}>
-      <Billboard follow={true} lockX={true} lockY={false} lockZ={true}>
-        <Text
-          ref={textRef}
-          fontSize={0.04}
-          color={theme.colors.dark["--color-text"]}
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.001}
-          outlineColor={theme.colors.dark["--color-background"]}
-          {...props}
-        >
-          {children}
-        </Text>
-      </Billboard>
+      <Text
+        ref={textRef}
+        fontSize={0.04}
+        color={theme.colors.dark["--color-text"]}
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.001}
+        outlineColor={theme.colors.dark["--color-background"]}
+        {...props}
+      >
+        {children}
+      </Text>
     </group>
   );
 });

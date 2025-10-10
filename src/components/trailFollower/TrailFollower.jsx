@@ -152,10 +152,11 @@ export default function TrailFollower({
         .copy(group.current.position)
         .add(forward.clone().multiplyScalar(-cameraDistance))
         .add(new Vector3(0, cameraYOffset, 0));
+
       // Smoothly move camera to desired position
       state.camera.position.lerp(desiredCameraPos, lerpFactor);
       // Camera looks at the plane
-      state.camera.lookAt(targetPosition);
+      state.camera.lookAt(group.current.position);
     }
 
     // Calculate look-at target for smooth rotation
