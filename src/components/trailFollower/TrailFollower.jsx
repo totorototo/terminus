@@ -40,6 +40,10 @@ export default function TrailFollower({
   const tmpDesired = useRef(new Vector3());
   const tmpNewLookAt = useRef(new Vector3());
   const tmpTurnVec = useRef(new Vector3());
+  const tmpDesiredDir = useRef(new Vector3());
+  const tmpOffset = useRef(new Vector3());
+  const tmpCameraPos = useRef(new Vector3());
+  const tmpUp = useRef(new Vector3(0, 0.2, 0));
 
   const setCurrentPositionIndex = useStore(
     (state) => state.setCurrentPositionIndex,
@@ -158,13 +162,17 @@ export default function TrailFollower({
       // Camera offset: behind (-forward) and above (+y)
       const cameraDistance = 0.5; // distance behind
       const cameraYOffset = 0.2; // height above
-      const desiredCameraPos = tmpTurnVec.current
-        .copy(group.current.position)
-        .add(tmpForward.current.clone().multiplyScalar(-cameraDistance))
-        .add(new Vector3(0, cameraYOffset, 0));
+      // tmpOffset = forward * -cameraDistance
+      tmpOffset.current
+        .copy(tmpForward.current)
+        .multiplyScalar(-cameraDistance);
+      // tmpCameraPos = group.position + tmpOffset + up
+      tmpCameraPos.current.copy(group.current.position).add(tmpOffset.current);
+      tmpUp.current.set(0, cameraYOffset, 0);
+      tmpCameraPos.current.add(tmpUp.current);
 
       // Smoothly move camera to desired position using alpha
-      state.camera.position.lerp(desiredCameraPos, alpha);
+      state.camera.position.lerp(tmpCameraPos.current, alpha);
       // Camera looks at the plane
       state.camera.lookAt(group.current.position);
     }
@@ -175,15 +183,15 @@ export default function TrailFollower({
     // Get current forward direction into tmpForward
     group.current.getWorldDirection(tmpForward.current);
 
-    // Calculate desired direction into tmpNewLookAt (reuse)
-    tmpNewLookAt.current
+    // Calculate desired direction into tmpDesiredDir (reuse)
+    tmpDesiredDir.current
       .subVectors(tmpDesired.current, group.current.position)
       .normalize();
 
     // Calculate banking/roll angle based on direction change into tmpTurnVec
     tmpTurnVec.current.crossVectors(
       previousDirection.current,
-      tmpNewLookAt.current,
+      tmpDesiredDir.current,
     );
     const turnRate = tmpTurnVec.current.y;
 
@@ -196,7 +204,7 @@ export default function TrailFollower({
     currentRoll.current += (targetRoll - currentRoll.current) * alpha * 3;
 
     // Lerp between current forward and desired direction using alpha
-    tmpForward.current.lerp(tmpNewLookAt.current, alpha);
+    tmpForward.current.lerp(tmpDesiredDir.current, alpha);
 
     // Build lookAt point and apply
     tmpNewLookAt.current.addVectors(group.current.position, tmpForward.current);
@@ -209,8 +217,8 @@ export default function TrailFollower({
       group.current.rotation.z + currentRoll.current,
     );
 
-    // Update previous direction for next frame
-    previousDirection.current.copy(tmpNewLookAt.current);
+    // Update previous direction for next frame (store normalized direction)
+    previousDirection.current.copy(tmpDesiredDir.current);
   });
 
   return (
