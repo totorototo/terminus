@@ -60,7 +60,7 @@ function ElevationProfile({
   onClick,
   selected,
   slopes,
-  visible = false,
+  visible = true,
   showSlopeColors = false, // New prop to toggle slope colors
 }) {
   const materialRef = useRef();

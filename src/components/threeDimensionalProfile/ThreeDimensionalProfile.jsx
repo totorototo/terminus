@@ -73,7 +73,6 @@ function ThreeDimensionalProfile({
   selectedSectionIndex,
   setSelectedSectionIndex,
   showSlopeColors,
-  visible,
 }) {
   // reuse stable handlers per section id to avoid creating new functions each render
   const handlersRef = useRef(new Map());
@@ -222,7 +221,6 @@ function ThreeDimensionalProfile({
           color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
           onClick={getHandler(id)}
           selected={selectedSectionIndex === id}
-          visible={visible}
           showSlopeColors={showSlopeColors}
           slopes={slopes}
         />
@@ -231,7 +229,6 @@ function ThreeDimensionalProfile({
   }, [
     sectionsPoints3D,
     selectedSectionIndex,
-    visible,
     showSlopeColors,
     slopes,
     setSelectedSectionIndex,
@@ -239,8 +236,7 @@ function ThreeDimensionalProfile({
 
   // Markers are independent of each section — render them once, memoized.
   const markerElements = useMemo(() => {
-    if (!visible || !checkpointsPoints3D || checkpointsPoints3D.length === 0)
-      return null;
+    if (!checkpointsPoints3D || checkpointsPoints3D.length === 0) return null;
     return checkpointsPoints3D.map((cp, index) => (
       <Marker
         key={cp.name || index}
@@ -249,7 +245,7 @@ function ThreeDimensionalProfile({
         {cp.name}
       </Marker>
     ));
-  }, [checkpointsPoints3D, visible]);
+  }, [checkpointsPoints3D]);
 
   return (
     <>

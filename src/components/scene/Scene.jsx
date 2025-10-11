@@ -5,28 +5,14 @@ import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensional
 import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
 import useStore from "../../store/store.js";
+import { OrbitControls } from "@react-three/drei";
 
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
-  const [mode, setMode] = useState("3d");
   const trackingMode = useStore((state) => state.trackingMode);
   const displaySlopes = useStore((state) => state.displaySlopes);
 
   const coordinates = useStore((state) => state.gpsData);
-
-  // TODO: implement UI controls for mode, slopes, and tracking (Action Buttons?)
-  // useControls({
-  //   mode: {
-  //     value: "3d",
-  //     options: ["2d", "3d"],
-  //     onChange: (value) => setMode(value),
-  //   },
-  //   slopes: {
-  //     value: showSlopeColors,
-  //     onChange: (value) => setShowSlopeColors(value),
-  //   },
-  //   tracking: { value: tracking, onChange: (value) => setTracking(value) },
-  // });
 
   return (
     <Canvas
@@ -42,22 +28,13 @@ function Scene({ width, height, className }) {
     >
       {/* <Perf minimal position="bottom-right" /> */}
       <ambientLight intensity={2} />
-      {/* ...existing code... */}
-      {/* <TwoDimensionalProfile
-        coordinates={coordinates}
-        setSelectedSectionIndex={setSelectedSectionIndex}
-        selectedSectionIndex={selectedSectionIndex}
-        visible={mode === "2d"}
-        showSlopeColors={showSlopeColors}
-      /> */}
       <ThreeDimensionalProfile
         coordinates={coordinates}
         setSelectedSectionIndex={setSelectedSectionIndex}
         selectedSectionIndex={selectedSectionIndex}
-        visible={mode === "3d"}
         showSlopeColors={displaySlopes}
       />
-      {mode === "3d" && coordinates && coordinates.length > 0 && (
+      {coordinates && coordinates.length > 0 && (
         <TrailFollower
           speed={0.002}
           height={0.08}
@@ -66,18 +43,14 @@ function Scene({ width, height, className }) {
           tracking={trackingMode}
         />
       )}
-      {/* ...existing code... */}
-      <AnimatedOrbitControls
+      <OrbitControls
         makeDefault
-        enablePan={mode === "3d"}
-        enableZoom
-        enableRotate
-        minPolarAngle={mode === "2d" ? Math.PI / 2 : -Math.PI / 4}
-        maxPolarAngle={mode === "2d" ? Math.PI / 2 : Math.PI / 2}
-        minAzimuthAngle={mode === "2d" ? 0 : -Math.PI / 2}
-        maxAzimuthAngle={mode === "2d" ? 0 : Math.PI / 2}
-        cameraPosition={mode === "3d" ? [0, 3, 12] : [0, 2, 12]}
-        targetPosition={[0, 0, 0]}
+        enabled={!trackingMode}
+        minPolarAngle={-Math.PI / 4}
+        maxPolarAngle={Math.PI / 2}
+        minAzimuthAngle={-Math.PI / 2}
+        maxAzimuthAngle={Math.PI / 2}
+        {...(!trackingMode && { cameraPosition: [0, 10, 0] })}
       />
     </Canvas>
   );
