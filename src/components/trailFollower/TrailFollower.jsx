@@ -35,6 +35,12 @@ export default function TrailFollower({
   const progress = useRef(0);
   const [scaledPath, setScaledPath] = useState([]);
 
+  // Temp vectors to avoid per-frame allocations
+  const tmpForward = useRef(new Vector3());
+  const tmpDesired = useRef(new Vector3());
+  const tmpNewLookAt = useRef(new Vector3());
+  const tmpTurnVec = useRef(new Vector3());
+
   const setCurrentPositionIndex = useStore(
     (state) => state.setCurrentPositionIndex,
   );
@@ -131,88 +137,80 @@ export default function TrailFollower({
 
     // Interpolate between current and next point for smooth movement
     const t = (progress.current * (scaledPath.length - 1)) % 1;
-    const targetPosition = new Vector3(
+    const targetPosition = tmpNewLookAt.current.set(
       currentPoint[0] + (nextPoint[0] - currentPoint[0]) * t,
       currentPoint[1] + (nextPoint[1] - currentPoint[1]) * t + height,
       currentPoint[2] + (nextPoint[2] - currentPoint[2]) * t,
     );
 
-    // Smooth position transition using lerp
-    group.current.position.lerp(targetPosition, lerpFactor);
+    // Compute delta-aware alpha from lerpFactor
+    // Convert lerpFactor (roughly per-frame) into an exponential smoothing alpha
+    const responsiveness = Math.max(0.0001, lerpFactor * 60); // tuned to typical 60FPS baseline
+    const alpha = 1 - Math.exp(-responsiveness * delta);
+
+    // Smooth position transition using lerp with alpha
+    group.current.position.lerp(targetPosition, alpha);
 
     // Tracking mode: update camera position behind and above the plane
     if (tracking) {
       // Get forward direction of the plane
-      const forward = new Vector3();
-      group.current.getWorldDirection(forward);
+      group.current.getWorldDirection(tmpForward.current);
       // Camera offset: behind (-forward) and above (+y)
       const cameraDistance = 0.5; // distance behind
       const cameraYOffset = 0.2; // height above
-      const desiredCameraPos = new Vector3()
+      const desiredCameraPos = tmpTurnVec.current
         .copy(group.current.position)
-        .add(forward.clone().multiplyScalar(-cameraDistance))
+        .add(tmpForward.current.clone().multiplyScalar(-cameraDistance))
         .add(new Vector3(0, cameraYOffset, 0));
 
-      // Smoothly move camera to desired position
-      state.camera.position.lerp(desiredCameraPos, lerpFactor);
+      // Smoothly move camera to desired position using alpha
+      state.camera.position.lerp(desiredCameraPos, alpha);
       // Camera looks at the plane
       state.camera.lookAt(group.current.position);
     }
 
-    // Calculate look-at target for smooth rotation
-    const lookAtTarget = new Vector3(
-      nextPoint[0],
-      nextPoint[1] + height,
-      nextPoint[2],
-    );
+    // Calculate look-at target for smooth rotation (reuse tmpDesired)
+    tmpDesired.current.set(nextPoint[0], nextPoint[1] + height, nextPoint[2]);
 
-    // Get current forward direction
-    const currentDirection = new Vector3();
-    group.current.getWorldDirection(currentDirection);
+    // Get current forward direction into tmpForward
+    group.current.getWorldDirection(tmpForward.current);
 
-    // Calculate desired direction
-    const desiredDirection = new Vector3()
-      .subVectors(lookAtTarget, group.current.position)
+    // Calculate desired direction into tmpNewLookAt (reuse)
+    tmpNewLookAt.current
+      .subVectors(tmpDesired.current, group.current.position)
       .normalize();
 
-    // Calculate banking/roll angle based on direction change
-    const turnVector = new Vector3().crossVectors(
+    // Calculate banking/roll angle based on direction change into tmpTurnVec
+    tmpTurnVec.current.crossVectors(
       previousDirection.current,
-      desiredDirection,
+      tmpNewLookAt.current,
     );
-    const turnRate = turnVector.y; // Y component indicates left/right turn
+    const turnRate = tmpTurnVec.current.y;
 
     // Calculate target roll angle
-    // Positive turnRate = left turn = bank left (positive roll)
-    // Negative turnRate = right turn = bank right (negative roll)
     const targetRoll =
       Math.sign(turnRate) *
       Math.min(Math.abs(turnRate) * rollSensitivity, maxRollAngle);
 
-    // Smooth roll transition
-    currentRoll.current += (targetRoll - currentRoll.current) * lerpFactor * 3;
+    // Smooth roll transition (use alpha)
+    currentRoll.current += (targetRoll - currentRoll.current) * alpha * 3;
 
-    // Lerp between current and desired direction
-    currentDirection.lerp(desiredDirection, lerpFactor);
+    // Lerp between current forward and desired direction using alpha
+    tmpForward.current.lerp(tmpNewLookAt.current, alpha);
 
-    // Apply the lerped direction as lookAt
-    const newLookAt = new Vector3().addVectors(
-      group.current.position,
-      currentDirection,
-    );
-    group.current.lookAt(newLookAt);
+    // Build lookAt point and apply
+    tmpNewLookAt.current.addVectors(group.current.position, tmpForward.current);
+    group.current.lookAt(tmpNewLookAt.current);
 
-    // Apply banking/roll rotation around the Z-axis (roll)
-    // Store current rotation and only modify the roll (Z) component
-    const currentRotation = group.current.rotation.clone();
+    // Apply banking/roll rotation around the Z-axis (roll) without cloning
     group.current.rotation.set(
-      currentRotation.x,
-      currentRotation.y,
-      currentRotation.z + currentRoll.current,
+      group.current.rotation.x,
+      group.current.rotation.y,
+      group.current.rotation.z + currentRoll.current,
     );
 
     // Update previous direction for next frame
-    previousDirection.current.copy(desiredDirection);
+    previousDirection.current.copy(tmpNewLookAt.current);
   });
 
   return (
