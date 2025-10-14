@@ -10,6 +10,7 @@ import BottomSheetPanel from "./components/bottomSheetPanel/BottomSheetPanel.jsx
 import TopSheetPanel from "./components/topSheetPanel/TopSheetPanel.jsx";
 import Navigation from "./components/navigation/Navigation.jsx";
 import Commands from "./components/commands/Commands.jsx";
+import { useShallow } from "zustand/react/shallow";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
@@ -54,13 +55,26 @@ function computeSectionsFromCheckpoints(checkpoints) {
 }
 
 function App({ className }) {
-  const initGPSWorker = useStore((state) => state.initGPSWorker);
-  const isWorkerReady = useStore((state) => state.isWorkerReady);
-  const processGPSData = useStore((state) => state.processGPSData);
-  const processSections = useStore((state) => state.processSections);
+  const {
+    initGPSWorker,
+    terminateGPSWorker,
+    isWorkerReady,
+    processGPSData,
+    processSections,
+  } = useStore(
+    useShallow((state) => ({
+      initGPSWorker: state.initGPSWorker,
+      terminateGPSWorker: state.terminateGPSWorker,
+      isWorkerReady: state.isWorkerReady,
+      processGPSData: state.processGPSData,
+      processSections: state.processSections,
+    })),
+  );
 
   useEffect(() => {
     initGPSWorker();
+
+    return () => terminateGPSWorker();
   }, []);
 
   useEffect(() => {
