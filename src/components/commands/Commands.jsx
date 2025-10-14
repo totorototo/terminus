@@ -1,4 +1,4 @@
-import { Map } from "@styled-icons/feather/Map";
+import { MapPin } from "@styled-icons/feather/MapPin";
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import useStore from "../../store/store";
 import style from "./Commands.style";
@@ -15,7 +15,7 @@ function Commands({ className }) {
         className={trackingMode ? "on" : "off"}
         onClick={toggleTrackingMode}
       >
-        <Map size={24} />
+        <MapPin size={24} />
       </button>
       <button
         className={displaySlopes ? "on" : "off"}
