@@ -8,6 +8,10 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # Needed for push/tag permission
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,7 +35,6 @@ jobs:
         run: npm run build
 
       - name: Create and push git tag for the build number
-        # Setup git config for tagging
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
