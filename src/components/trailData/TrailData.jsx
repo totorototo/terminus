@@ -27,23 +27,29 @@ const TrailData = memo(function TrailData({ className }) {
 
   return (
     <div className={className}>
-      <div className="item">
-        <animated.div className="value">
-          {remainingDistance.to((n) => `${(n / 1000).toFixed(1)}`)}
-        </animated.div>
-        <div className="label">km</div>
+      <div className="data-container">
+        <div className="item">
+          <animated.div className="value">
+            {remainingDistance.to((n) => `${(n / 1000).toFixed(1)}`)}
+          </animated.div>
+          <div className="label">km</div>
+        </div>
+        <div className="item">
+          <animated.div className="value">
+            {remainingElevation.to((n) => `${n.toFixed(0)}`)}
+          </animated.div>
+          <div className="label">↗ m</div>
+        </div>
+        <div className="item">
+          <animated.div className="value">
+            {remainingElevationLoss.to((n) => `${n.toFixed(0)}`)}
+          </animated.div>
+          <div className="label">↘ m </div>
+        </div>
       </div>
-      <div className="item">
-        <animated.div className="value">
-          {remainingElevation.to((n) => `${n.toFixed(0)}`)}
-        </animated.div>
-        <div className="label">↗ m</div>
-      </div>
-      <div className="item">
-        <animated.div className="value">
-          {remainingElevationLoss.to((n) => `${n.toFixed(0)}`)}
-        </animated.div>
-        <div className="label">↘ m </div>
+
+      <div className="build-number">
+        <span>Build Number: {import.meta.env.VITE_BUILD_NUMBER || "dev"}</span>
       </div>
     </div>
   );
