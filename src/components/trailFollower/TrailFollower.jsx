@@ -1,9 +1,8 @@
-import { useRef, useEffect, useState, use, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 
 import { Vector3 } from "three";
 import { scaleLinear } from "d3-scale";
-import { Html } from "@react-three/drei";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import useStore from "../../store/store";
 
@@ -25,13 +24,11 @@ export default function TrailFollower({
   scale = 0.01,
   color = "red",
   lerpFactor = 0.02,
-  showIndex = true,
-  tracking,
   maxRollAngle = Math.PI / 12, // Maximum 15 degrees roll
   rollSensitivity = 5.5, // How sensitive the roll is to direction changes
+  modelRef = null,
   ...props
 }) {
-  const group = useRef();
   const progress = useRef(0);
   const [scaledPath, setScaledPath] = useState([]);
 
@@ -41,9 +38,10 @@ export default function TrailFollower({
   const tmpNewLookAt = useRef(new Vector3());
   const tmpTurnVec = useRef(new Vector3());
   const tmpDesiredDir = useRef(new Vector3());
-  const tmpOffset = useRef(new Vector3());
-  const tmpCameraPos = useRef(new Vector3());
-  const tmpUp = useRef(new Vector3(0, 0.2, 0));
+
+  // Store previous direction for banking calculation
+  const previousDirection = useRef(new Vector3(0, 0, -1));
+  const currentRoll = useRef(0);
 
   const setCurrentPositionIndex = useStore(
     (state) => state.setCurrentPositionIndex,
@@ -52,12 +50,8 @@ export default function TrailFollower({
 
   const throttledSetIndex = useRef(throttle(setCurrentPositionIndex, 1000));
 
-  // Store previous direction for banking calculation
-  const previousDirection = useRef(new Vector3(0, 0, -1));
-  const currentRoll = useRef(0);
-
   const { nodes, animations } = useGLTF("/cartoon_plane.glb");
-  const { actions } = useAnimations(animations, group);
+  const { actions } = useAnimations(animations, modelRef);
 
   // Scale coordinates to match elevation profile (same scaling as Runner)
   useEffect(() => {
@@ -106,8 +100,8 @@ export default function TrailFollower({
   }, [coordinates, height]);
 
   useEffect(() => {
-    if (group.current) {
-      group.current.updateMatrix();
+    if (modelRef.current) {
+      modelRef.current.updateMatrix();
     }
     // Start animation if available
     if (actions && Object.keys(actions).length > 0) {
@@ -117,7 +111,7 @@ export default function TrailFollower({
   }, [actions]);
 
   useFrame((state, delta) => {
-    if (!scaledPath || scaledPath.length === 0 || !group.current) return;
+    if (!scaledPath || scaledPath.length === 0 || !modelRef.current) return;
 
     // Increment progress to move along the trail
     progress.current += speed * delta;
@@ -153,39 +147,17 @@ export default function TrailFollower({
     const alpha = 1 - Math.exp(-responsiveness * delta);
 
     // Smooth position transition using lerp with alpha
-    group.current.position.lerp(targetPosition, alpha);
-
-    // Tracking mode: update camera position behind and above the plane
-    if (tracking) {
-      // Get forward direction of the plane
-      group.current.getWorldDirection(tmpForward.current);
-      // Camera offset: behind (-forward) and above (+y)
-      const cameraDistance = 0.5; // distance behind
-      const cameraYOffset = 0.2; // height above
-      // tmpOffset = forward * -cameraDistance
-      tmpOffset.current
-        .copy(tmpForward.current)
-        .multiplyScalar(-cameraDistance);
-      // tmpCameraPos = group.position + tmpOffset + up
-      tmpCameraPos.current.copy(group.current.position).add(tmpOffset.current);
-      tmpUp.current.set(0, cameraYOffset, 0);
-      tmpCameraPos.current.add(tmpUp.current);
-
-      // Smoothly move camera to desired position using alpha
-      state.camera.position.lerp(tmpCameraPos.current, alpha);
-      // Camera looks at the plane
-      state.camera.lookAt(group.current.position);
-    }
+    modelRef.current.position.lerp(targetPosition, alpha);
 
     // Calculate look-at target for smooth rotation (reuse tmpDesired)
     tmpDesired.current.set(nextPoint[0], nextPoint[1] + height, nextPoint[2]);
 
     // Get current forward direction into tmpForward
-    group.current.getWorldDirection(tmpForward.current);
+    modelRef.current.getWorldDirection(tmpForward.current);
 
     // Calculate desired direction into tmpDesiredDir (reuse)
     tmpDesiredDir.current
-      .subVectors(tmpDesired.current, group.current.position)
+      .subVectors(tmpDesired.current, modelRef.current.position)
       .normalize();
 
     // Calculate banking/roll angle based on direction change into tmpTurnVec
@@ -207,14 +179,18 @@ export default function TrailFollower({
     tmpForward.current.lerp(tmpDesiredDir.current, alpha);
 
     // Build lookAt point and apply
-    tmpNewLookAt.current.addVectors(group.current.position, tmpForward.current);
-    group.current.lookAt(tmpNewLookAt.current);
+    tmpNewLookAt.current.addVectors(
+      modelRef.current.position,
+      tmpForward.current,
+    );
+
+    modelRef.current.lookAt(tmpNewLookAt.current);
 
     // Apply banking/roll rotation around the Z-axis (roll) without cloning
-    group.current.rotation.set(
-      group.current.rotation.x,
-      group.current.rotation.y,
-      group.current.rotation.z + currentRoll.current,
+    modelRef.current.rotation.set(
+      modelRef.current.rotation.x,
+      modelRef.current.rotation.y,
+      modelRef.current.rotation.z + currentRoll.current,
     );
 
     // Update previous direction for next frame (store normalized direction)
@@ -222,7 +198,7 @@ export default function TrailFollower({
   });
 
   return (
-    <group ref={group} scale={scale} {...props} dispose={null}>
+    <group ref={modelRef} scale={scale} {...props} dispose={null}>
       <primitive
         object={nodes.Sketchfab_Scene}
         rotation={[0, 0, 0]}
