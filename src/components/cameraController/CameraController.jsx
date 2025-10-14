@@ -22,11 +22,12 @@ export default function CameraController({
 
   useEffect(() => {
     if (cameraControlsRef.current) {
-      // Set initial camera position when not tracking
+      // Only reset camera position when switching OFF tracking mode
       if (!trackingMode) {
         cameraControlsRef.current.setPosition(0, 3, 6, true);
         cameraControlsRef.current.setTarget(0, 0, 0, true);
       }
+      // When switching ON tracking mode, let useFrame handle the smooth transition
     }
   }, [trackingMode]);
 
@@ -53,19 +54,31 @@ export default function CameraController({
       const responsiveness = Math.max(0.0001, lerpFactor * 60);
       const alpha = 1 - Math.exp(-responsiveness * delta);
 
-      // Smoothly move camera to follow the airplane
+      // Get current camera position for smooth interpolation
+      const currentCameraPos = new Vector3();
+      const currentTarget = new Vector3();
+      cameraControlsRef.current.getPosition(currentCameraPos);
+      cameraControlsRef.current.getTarget(currentTarget);
+
+      // Smoothly interpolate camera position and target
+      const newCameraPos = currentCameraPos.lerp(
+        tmpCameraPosition.current,
+        alpha,
+      );
+      const newTarget = currentTarget.lerp(tmpModelPosition.current, alpha);
+
+      // Apply the smoothly interpolated position and target
       cameraControlsRef.current.setPosition(
-        tmpCameraPosition.current.x,
-        tmpCameraPosition.current.y,
-        tmpCameraPosition.current.z,
+        newCameraPos.x,
+        newCameraPos.y,
+        newCameraPos.z,
         false,
       );
 
-      // Make camera look at the airplane
       cameraControlsRef.current.setTarget(
-        tmpModelPosition.current.x,
-        tmpModelPosition.current.y,
-        tmpModelPosition.current.z,
+        newTarget.x,
+        newTarget.y,
+        newTarget.z,
         false,
       );
 
