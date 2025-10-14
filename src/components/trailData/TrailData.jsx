@@ -3,6 +3,8 @@ import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore from "../../store/store.js";
 
+console.log("Vite Env:", import.meta.env);
+
 const TrailData = memo(function TrailData({ className }) {
   const currentPositionIndex = useStore((state) => state.currentPositionIndex);
   const cumulativeDistances = useStore((state) => state.cumulativeDistances);
