@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write # Needed for push/tag permission
+      contents: write # Allows pushing tags
 
     steps:
       - name: Checkout code
@@ -32,8 +32,8 @@ jobs:
       - name: Build with build number env
         env:
           VITE_BUILD_NUMBER: ${{ github.run_number }}
-
-        run: echo "Building with VITE_BUILD_NUMBER=$VITE_BUILD_NUMBER"
+        run: |
+          echo "Building with VITE_BUILD_NUMBER=$VITE_BUILD_NUMBER"
           npm run build
 
       - name: Create and push git tag for the build number
