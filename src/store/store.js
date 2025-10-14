@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
-// Non-serializable (not in zustand state) references:
+// Non-serializable references outside store state:
 let worker = null;
 const requests = new Map();
 
@@ -12,7 +12,7 @@ function createGPSWorker() {
   });
 }
 
-// Zustand store
+// Create store
 const useStore = create(
   devtools(
     (set, get) => ({
@@ -38,8 +38,9 @@ const useStore = create(
       processing: false,
       progress: 0,
       progressMessage: "",
+      errorMessage: "", // Added for error feedback
 
-      // --- App Mutations ---
+      // --- Mutations ---
       toggleTrackingMode: () =>
         set((state) => ({ trackingMode: !state.trackingMode })),
       toggleSlopesMode: () =>
@@ -63,6 +64,7 @@ const useStore = create(
       setCumulativeElevationLosses: (elevations) =>
         set({ cumulativeElevationLosses: elevations }),
       setCurrentPositionIndex: (index) => set({ currentPositionIndex: index }),
+      setErrorMessage: (message) => set({ errorMessage: message }),
 
       // --- Worker Lifecycle ---
       initGPSWorker: () => {
@@ -92,12 +94,16 @@ const useStore = create(
             case "POINTS_FOUND":
             case "ROUTE_SECTION_READY":
               requests.delete(id);
-              set({ processing: false, progress: 100 });
+              set({ processing: false, progress: 100, errorMessage: "" });
               request.resolve(results ?? e.data);
               break;
             case "ERROR":
               requests.delete(id);
-              set({ processing: false, progress: 0 });
+              set({
+                processing: false,
+                progress: 0,
+                errorMessage: error ?? "Unknown worker error",
+              });
               request.reject(new Error(error));
               break;
           }
@@ -105,7 +111,7 @@ const useStore = create(
 
         worker.onerror = (error) => {
           console.error("GPS Worker error:", error);
-          set({ isWorkerReady: false });
+          set({ isWorkerReady: false, errorMessage: "Worker error detected" });
         };
 
         set({ isWorkerReady: true });
@@ -132,90 +138,141 @@ const useStore = create(
             processing: true,
             progress: 0,
             progressMessage: "Starting...",
+            errorMessage: "",
           });
           worker.postMessage({ type, data, id });
         });
       },
 
-      // --- Worker APIs Exposed as Actions with state updates ---
+      // --- Worker API Actions with error handling and state updates ---
       processGPSData: async (coordinates, onProgress) => {
-        const results = await get().sendWorkerMessage(
-          "PROCESS_GPS_DATA",
-          { coordinates },
-          onProgress,
-        );
-        set({
-          gpsData: results.points,
-          slopes: results.slopes,
-          cumulativeDistances: results.cumulativeDistances,
-          cumulativeElevations: results.cumulativeElevations,
-          cumulativeElevationLosses: results.cumulativeElevationLosses,
-          stats: {
-            distance: results.totalDistance ?? 0,
-            elevationGain: results.totalElevation ?? 0,
-            elevationLoss: results.totalElevationLoss ?? 0,
-            pointCount: results.pointCount ?? 0,
-          },
-        });
-        return results;
+        try {
+          const results = await get().sendWorkerMessage(
+            "PROCESS_GPS_DATA",
+            { coordinates },
+            onProgress,
+          );
+          set({
+            gpsData: results.points,
+            slopes: results.slopes,
+            cumulativeDistances: results.cumulativeDistances,
+            cumulativeElevations: results.cumulativeElevations,
+            cumulativeElevationLosses: results.cumulativeElevationLosses,
+            stats: {
+              distance: results.totalDistance ?? 0,
+              elevationGain: results.totalElevation ?? 0,
+              elevationLoss: results.totalElevationLoss ?? 0,
+              pointCount: results.pointCount ?? 0,
+            },
+            errorMessage: "",
+          });
+          return results;
+        } catch (error) {
+          set({
+            processing: false,
+            progress: 0,
+            errorMessage: error.message || "Failed to process GPS Data",
+          });
+          throw error;
+        }
       },
 
       processSections: async (coordinates, sections, onProgress) => {
-        const results = await get().sendWorkerMessage(
-          "PROCESS_SECTIONS",
-          { coordinates, sections },
-          onProgress,
-        );
-
-        set({
-          sections: results ?? get().sections,
-          stats: {
-            distance: results.totalDistance ?? get().stats.distance,
-            elevationGain:
-              results.totalElevationGain ?? get().stats.elevationGain,
-            elevationLoss:
-              results.totalElevationLoss ?? get().stats.elevationLoss,
-            pointCount: results.pointCount ?? get().stats.pointCount,
-          },
-        });
-        return results;
+        try {
+          const results = await get().sendWorkerMessage(
+            "PROCESS_SECTIONS",
+            { coordinates, sections },
+            onProgress,
+          );
+          set({
+            sections: results ?? get().sections,
+            stats: {
+              distance: results.totalDistance ?? get().stats.distance,
+              elevationGain:
+                results.totalElevationGain ?? get().stats.elevationGain,
+              elevationLoss:
+                results.totalElevationLoss ?? get().stats.elevationLoss,
+              pointCount: results.pointCount ?? get().stats.pointCount,
+            },
+            errorMessage: "",
+          });
+          return results;
+        } catch (error) {
+          set({
+            processing: false,
+            progress: 0,
+            errorMessage: error.message || "Failed to process Sections",
+          });
+          throw error;
+        }
       },
 
       calculateRouteStats: async (coordinates, segments) => {
-        const results = await get().sendWorkerMessage("CALCULATE_ROUTE_STATS", {
-          coordinates,
-          segments,
-        });
-        set({
-          stats: {
-            distance: results.distance ?? get().stats.distance,
-            elevationGain: results.elevationGain ?? get().stats.elevationGain,
-            elevationLoss: results.elevationLoss ?? get().stats.elevationLoss,
-            pointCount: results.pointCount ?? get().stats.pointCount,
-          },
-        });
-        return results;
+        try {
+          const results = await get().sendWorkerMessage(
+            "CALCULATE_ROUTE_STATS",
+            {
+              coordinates,
+              segments,
+            },
+          );
+          set({
+            stats: {
+              distance: results.distance ?? get().stats.distance,
+              elevationGain: results.elevationGain ?? get().stats.elevationGain,
+              elevationLoss: results.elevationLoss ?? get().stats.elevationLoss,
+              pointCount: results.pointCount ?? get().stats.pointCount,
+            },
+            errorMessage: "",
+          });
+          return results;
+        } catch (error) {
+          set({
+            processing: false,
+            progress: 0,
+            errorMessage: error.message || "Failed to calculate Route Stats",
+          });
+          throw error;
+        }
       },
 
       findPointsAtDistances: async (coordinates, distances) => {
-        const results = await get().sendWorkerMessage(
-          "FIND_POINTS_AT_DISTANCES",
-          { coordinates, distances },
-        );
-        // Update your store if needed, e.g.:
-        // set({ pointsAtDistances: results.points ?? get().pointsAtDistances });
-        return results;
+        try {
+          const results = await get().sendWorkerMessage(
+            "FIND_POINTS_AT_DISTANCES",
+            { coordinates, distances },
+          );
+          // Update store if needed here
+          set({ errorMessage: "" });
+          return results;
+        } catch (error) {
+          set({
+            processing: false,
+            progress: 0,
+            errorMessage: error.message || "Failed to find points at distances",
+          });
+          throw error;
+        }
       },
 
       getRouteSection: async (coordinates, start, end) => {
-        const results = await get().sendWorkerMessage("GET_ROUTE_SECTION", {
-          coordinates,
-          start,
-          end,
-        });
-        // Optionally update store, e.g.:
-        // set({ currentRouteSection: results.section ?? get().currentRouteSection });
-        return results;
+        try {
+          const results = await get().sendWorkerMessage("GET_ROUTE_SECTION", {
+            coordinates,
+            start,
+            end,
+          });
+          // Update store if needed here
+          set({ errorMessage: "" });
+          return results;
+        } catch (error) {
+          set({
+            processing: false,
+            progress: 0,
+            errorMessage: error.message || "Failed to get route section",
+          });
+          throw error;
+        }
       },
     }),
     { name: "Terminus Store", enabled: true },
