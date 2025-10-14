@@ -8,10 +8,10 @@ const style = (Component) => styled(Component)`
   padding-right: 1rem;
   flex-direction: row;
   align-items: flex-start;
-  justify-content: space-around;
+  justify-content: flex-start;
+  flex-direction: column;
   width: 100%;
   height: 20rem;
-
   pointer-events: none;
 
   color: ${(props) => props.theme.colors.dark["--color-text"]};
@@ -19,6 +19,24 @@ const style = (Component) => styled(Component)`
   font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
   letter-spacing: 1.5px;
   user-select: none;
+
+  .data-container {
+    display: flex;
+    width: 100%;
+    justify-content: space-around;
+    flex: 1;
+  }
+
+  .build-number {
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+
+    span > {
+      margin-left: auto;
+    }
+  }
 
   .item {
     display: flex;
