@@ -1,16 +1,13 @@
 import { useState, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
-import AnimatedOrbitControls from "../orbitControls/AnimatedOrbitControls";
 import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensionalProfile";
 import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
 import useStore from "../../store/store.js";
-import { OrbitControls } from "@react-three/drei";
 import CameraController from "../cameraController/CameraController.jsx";
 
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
-  const trackingMode = useStore((state) => state.trackingMode);
   const displaySlopes = useStore((state) => state.displaySlopes);
 
   const coordinates = useStore((state) => state.gpsData);

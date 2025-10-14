@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useGPSWorker } from "./useGPSWorker.js";
+import { useEffect } from "react";
 import gpx from "./assets/vvx-xgtv-2026.gpx";
 import csv from "./assets/vvx-xgtv-2026.csv";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -55,85 +54,38 @@ function computeSectionsFromCheckpoints(checkpoints) {
 }
 
 function App({ className }) {
-  const [error, setError] = useState(null);
-
-  const setGpsData = useStore((state) => state.setGpsData);
-  const gpsData = useStore((state) => state.gpsData);
-  const setSections = useStore((state) => state.setSections);
-  const setSlopes = useStore((state) => state.setSlopes);
-  const setStats = useStore((state) => state.setStats);
-  const setCumulativeDistances = useStore(
-    (state) => state.setCumulativeDistances,
-  );
-  const setCumulativeElevations = useStore(
-    (state) => state.setCumulativeElevations,
-  );
-  const setCumulativeElevationLosses = useStore(
-    (state) => state.setCumulativeElevationLosses,
-  );
-
-  const {
-    isWorkerReady,
-    processing,
-    progress,
-    progressMessage,
-    processSections,
-    processGPSData,
-  } = useGPSWorker();
+  const initGPSWorker = useStore((state) => state.initGPSWorker);
+  const isWorkerReady = useStore((state) => state.isWorkerReady);
+  const processGPSData = useStore((state) => state.processGPSData);
+  const processSections = useStore((state) => state.processSections);
 
   useEffect(() => {
-    if (isWorkerReady && gpx.features?.[0]?.geometry?.coordinates) {
-      handleProcessGPS();
+    initGPSWorker();
+  }, []);
+
+  useEffect(() => {
+    if (!isWorkerReady) return;
+
+    async function processGPSThenSections() {
+      const coordinates = gpx.features[0].geometry.coordinates;
+      await processGPSData(coordinates, (progress, message) => {
+        // optional
+      });
+
+      if (csv.length) {
+        const computedSections = computeSectionsFromCheckpoints(csv);
+        await processSections(
+          coordinates,
+          computedSections,
+          (progress, message) => {
+            // optional
+          },
+        );
+      }
     }
+
+    processGPSThenSections();
   }, [isWorkerReady]);
-
-  useEffect(() => {
-    if (csv.length) {
-      const computedSections = computeSectionsFromCheckpoints(csv);
-      handleProcessSections(computedSections);
-    }
-  }, [gpsData]);
-
-  const handleProcessGPS = async () => {
-    try {
-      setError(null);
-
-      const coordinates = gpx.features[0].geometry.coordinates;
-      const results = await processGPSData(coordinates, (progress, message) => {
-        // Optionally handle progress
-      });
-      setGpsData(results.points);
-      setSlopes(results.slopes);
-      setCumulativeDistances(results.cumulativeDistances);
-      setCumulativeElevations(results.cumulativeElevations);
-      setCumulativeElevationLosses(results.cumulativeElevationLosses);
-      setStats({
-        distance: results.totalDistance || 0,
-        elevationGain: results.totalElevation || 0,
-        elevationLoss: results.totalElevationLoss || 0,
-        pointCount: results.pointCount || 0,
-      });
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleProcessSections = async (sections) => {
-    try {
-      setError(null);
-      const coordinates = gpx.features[0].geometry.coordinates;
-      const results = await processSections(
-        coordinates,
-        sections,
-        (progress, message) => {
-          // Optionally handle progress
-        },
-      );
-      setSections(results);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
   return (
     <div className={className}>
