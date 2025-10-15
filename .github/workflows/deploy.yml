@@ -30,19 +30,27 @@ jobs:
         run: npm ci
 
       - name: Build with build number env
-        env:
-          VITE_BUILD_NUMBER: ${{ github.run_number }}
         run: |
+          export VITE_BUILD_NUMBER=${{ github.run_number }}
           echo "Building with VITE_BUILD_NUMBER=$VITE_BUILD_NUMBER"
           echo "Environment variables containing VITE:"
           env | grep VITE || echo "No VITE environment variables found"
           echo "Testing Vite env var processing:"
           node -e "console.log('import.meta.env.VITE_BUILD_NUMBER would be:', process.env.VITE_BUILD_NUMBER)"
+          echo "Current working directory contents:"
+          ls -la
+          echo "Building with npm run build..."
           npm run build
-          echo "Checking if build number is in built files:"
+          echo "Build completed. Checking dist directory:"
+          ls -la dist/
+          echo "Checking if build number ${{ github.run_number }} is in built files:"
           grep -r "${{ github.run_number }}" dist/ || echo "GitHub run number not found in dist"
+          echo "Checking for literal string 'dev' in built files:"
+          grep -r '"dev"' dist/ || echo "No literal 'dev' string found"
           echo "Checking for 'import.meta.env' in built files:"
           grep -r "import\.meta\.env" dist/ || echo "No import.meta.env found"
+          echo "Checking for VITE_BUILD_NUMBER references in built files:"
+          grep -r "VITE_BUILD_NUMBER" dist/ || echo "No VITE_BUILD_NUMBER references found"
 
       - name: Create and push git tag for the build number
         run: |
