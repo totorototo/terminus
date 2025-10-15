@@ -7,12 +7,6 @@ import dsv from "@rollup/plugin-dsv";
 
 // https://vite.dev/config/
 export default defineConfig({
-  define: {
-    // Explicitly define the environment variable if it exists
-    "import.meta.env.VITE_BUILD_NUMBER": JSON.stringify(
-      process.env.VITE_BUILD_NUMBER || "dev",
-    ),
-  },
   plugins: [
     react(),
     VitePWA({
