@@ -31,8 +31,8 @@ jobs:
 
       - name: Build with build number env
         run: |
-          echo "Creating .env file with VITE_BUILD_NUMBER=${{ github.run_number }}"
-          echo "VITE_BUILD_NUMBER=${{ github.run_number }}" > .env
+          echo "Creating .env file with VITE_NUMBER=${{ github.run_number }}"
+          echo "VITE_NUMBER=${{ github.run_number }}" > .env
           cat .env
           echo "Building with npm run build..."
           npm run build

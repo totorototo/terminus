@@ -3,8 +3,6 @@ import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore from "../../store/store.js";
 
-console.log(import.meta.env.VITE_BUILD_NUMBER);
-
 const TrailData = memo(function TrailData({ className }) {
   const currentPositionIndex = useStore(
     (state) => state.app.currentPositionIndex,
@@ -57,7 +55,7 @@ const TrailData = memo(function TrailData({ className }) {
       </div>
 
       <div className="build-number">
-        <span>Build Number: {import.meta.env.VITE_BUILD_NUMBER || "dev"}</span>
+        <span>Build Number: {import.meta.env.VITE_NUMBER || "dev"}</span>
       </div>
     </div>
   );
