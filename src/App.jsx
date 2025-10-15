@@ -65,7 +65,7 @@ function App({ className }) {
     useShallow((state) => ({
       initGPSWorker: state.initGPSWorker,
       terminateGPSWorker: state.terminateGPSWorker,
-      isWorkerReady: state.isWorkerReady,
+      isWorkerReady: state.worker.isReady,
       processGPSData: state.processGPSData,
       processSections: state.processSections,
     })),
@@ -104,13 +104,7 @@ function App({ className }) {
   return (
     <div className={className}>
       <AutoSizer>
-        {({ width, height }) => (
-          <Scene
-            width={width}
-            height={height}
-            coordinates={gpx.features?.[0]?.geometry?.coordinates}
-          />
-        )}
+        {({ width, height }) => <Scene width={width} height={height} />}
       </AutoSizer>
       <TopSheetPanel>
         <Navigation />

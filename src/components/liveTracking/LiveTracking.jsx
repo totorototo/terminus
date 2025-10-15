@@ -4,13 +4,19 @@ import useStore from "../../store/store.js";
 import { Navigation } from "@styled-icons/feather/Navigation";
 
 function LiveTracking({ className }) {
-  const cumulativeDistances = useStore((state) => state.cumulativeDistances);
-  const cumulativeElevations = useStore((state) => state.cumulativeElevations);
-  const cumulativeElevationLosses = useStore(
-    (state) => state.cumulativeElevationLosses,
+  const cumulativeDistances = useStore(
+    (state) => state.gps.cumulativeDistances,
   );
-  const gpsData = useStore((state) => state.gpsData);
-  const currentPositionIndex = useStore((state) => state.currentPositionIndex);
+  const cumulativeElevations = useStore(
+    (state) => state.gps.cumulativeElevations,
+  );
+  const cumulativeElevationLosses = useStore(
+    (state) => state.gps.cumulativeElevationLosses,
+  );
+  const gpsData = useStore((state) => state.gps.data);
+  const currentPositionIndex = useStore(
+    (state) => state.app.currentPositionIndex,
+  );
   const stats = useStore((state) => state.stats);
 
   const springConfig = { tension: 170, friction: 26 };

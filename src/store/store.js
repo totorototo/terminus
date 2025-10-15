@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
 
 // Non-serializable references outside store state:
 let worker = null;
@@ -14,269 +14,557 @@ function createGPSWorker() {
 
 // Create store
 const useStore = create(
-  devtools(
-    (set, get) => ({
-      // --- App State ---
-      trackingMode: true,
-      displaySlopes: false,
-      sections: [],
-      gpsData: [],
-      stats: {
-        distance: 0,
-        elevationGain: 0,
-        elevationLoss: 0,
-        pointCount: 0,
-      },
-      slopes: [],
-      cumulativeDistances: [],
-      cumulativeElevations: [],
-      cumulativeElevationLosses: [],
-      currentPositionIndex: 0,
+  subscribeWithSelector(
+    devtools(
+      (set, get) => ({
+        // --- App State ---
+        app: {
+          trackingMode: true,
+          displaySlopes: false,
+          currentPositionIndex: 0,
+        },
 
-      // --- Worker State ---
-      isWorkerReady: false,
-      processing: false,
-      progress: 0,
-      progressMessage: "",
-      errorMessage: "", // Added for error feedback
+        // --- GPS Data ---
+        gps: {
+          data: [],
+          slopes: [],
+          sections: [],
+          cumulativeDistances: [],
+          cumulativeElevations: [],
+          cumulativeElevationLosses: [],
+        },
 
-      // --- Mutations ---
-      toggleTrackingMode: () =>
-        set((state) => ({ trackingMode: !state.trackingMode })),
-      toggleSlopesMode: () =>
-        set((state) => ({ displaySlopes: !state.displaySlopes })),
-      setSections: (sections) => set({ sections }),
-      setGpsData: (data) => set({ gpsData: data }),
-      setStats: (stats) =>
-        set((state) => ({
-          stats: {
-            distance: stats.distance ?? state.stats.distance,
-            elevationGain: stats.elevationGain ?? state.stats.elevationGain,
-            elevationLoss: stats.elevationLoss ?? state.stats.elevationLoss,
-            pointCount: stats.pointCount ?? state.stats.pointCount,
-          },
-        })),
-      setSlopes: (slopes) => set({ slopes }),
-      setCumulativeDistances: (distances) =>
-        set({ cumulativeDistances: distances }),
-      setCumulativeElevations: (elevations) =>
-        set({ cumulativeElevations: elevations }),
-      setCumulativeElevationLosses: (elevations) =>
-        set({ cumulativeElevationLosses: elevations }),
-      setCurrentPositionIndex: (index) => set({ currentPositionIndex: index }),
-      setErrorMessage: (message) => set({ errorMessage: message }),
+        // --- Statistics ---
+        stats: {
+          distance: 0,
+          elevationGain: 0,
+          elevationLoss: 0,
+          pointCount: 0,
+        },
 
-      // --- Worker Lifecycle ---
-      initGPSWorker: () => {
-        if (worker) return;
-        worker = createGPSWorker();
+        // --- Worker State ---
+        worker: {
+          isReady: false,
+          processing: false,
+          progress: 0,
+          progressMessage: "",
+          errorMessage: "",
+        },
 
-        worker.onmessage = (e) => {
-          const {
-            type,
-            id,
-            results,
-            error,
-            progress: progressValue,
-            message,
-          } = e.data;
-          const request = requests.get(id);
-          if (!request) return;
+        // --- App Actions ---
+        toggleTrackingMode: () =>
+          set((state) => ({
+            ...state,
+            app: {
+              ...state.app,
+              trackingMode: !state.app.trackingMode,
+            },
+          })),
 
-          switch (type) {
-            case "PROGRESS":
-              set({ progress: progressValue, progressMessage: message });
-              request.onProgress?.(progressValue, message);
-              break;
-            case "GPS_DATA_PROCESSED":
-            case "SECTIONS_PROCESSED":
-            case "ROUTE_STATS_CALCULATED":
-            case "POINTS_FOUND":
-            case "ROUTE_SECTION_READY":
-              requests.delete(id);
-              set({ processing: false, progress: 100, errorMessage: "" });
-              request.resolve(results ?? e.data);
-              break;
-            case "ERROR":
-              requests.delete(id);
-              set({
+        toggleSlopesMode: () =>
+          set((state) => ({
+            ...state,
+            app: {
+              ...state.app,
+              displaySlopes: !state.app.displaySlopes,
+            },
+          })),
+
+        setCurrentPositionIndex: (index) =>
+          set((state) => ({
+            ...state,
+            app: {
+              ...state.app,
+              currentPositionIndex: index,
+            },
+          })),
+
+        // --- GPS Data Actions ---
+        setGpsData: (data) =>
+          set((state) => ({
+            ...state,
+            gps: {
+              ...state.gps,
+              data,
+            },
+          })),
+
+        setSlopes: (slopes) =>
+          set((state) => ({
+            ...state,
+            gps: {
+              ...state.gps,
+              slopes,
+            },
+          })),
+
+        setSections: (sections) =>
+          set((state) => ({
+            ...state,
+            gps: {
+              ...state.gps,
+              sections,
+            },
+          })),
+
+        setCumulativeDistances: (distances) =>
+          set((state) => ({
+            ...state,
+            gps: {
+              ...state.gps,
+              cumulativeDistances: distances,
+            },
+          })),
+
+        setCumulativeElevations: (elevations) =>
+          set((state) => ({
+            ...state,
+            gps: {
+              ...state.gps,
+              cumulativeElevations: elevations,
+            },
+          })),
+
+        setCumulativeElevationLosses: (elevations) =>
+          set((state) => ({
+            ...state,
+            gps: {
+              ...state.gps,
+              cumulativeElevationLosses: elevations,
+            },
+          })),
+
+        // --- Stats Actions ---
+        setStats: (newStats) =>
+          set((state) => ({
+            ...state,
+            stats: {
+              ...state.stats,
+              ...newStats,
+            },
+          })),
+
+        updateStats: (partialStats) =>
+          set((state) => {
+            const updatedStats = { ...state.stats };
+            Object.entries(partialStats).forEach(([key, value]) => {
+              if (value !== undefined && value !== null) {
+                updatedStats[key] = value;
+              }
+            });
+            return {
+              ...state,
+              stats: updatedStats,
+            };
+          }),
+
+        // --- Worker Actions ---
+        setWorkerState: (partialState) =>
+          set((state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              ...partialState,
+            },
+          })),
+
+        clearError: () =>
+          set((state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              errorMessage: "",
+            },
+          })),
+
+        // --- Worker Lifecycle ---
+        initGPSWorker: () => {
+          if (worker) return;
+
+          try {
+            worker = createGPSWorker();
+
+            worker.onmessage = (e) => {
+              const {
+                type,
+                id,
+                results,
+                error,
+                progress: progressValue,
+                message,
+              } = e.data;
+              const request = requests.get(id);
+              if (!request) return;
+
+              switch (type) {
+                case "PROGRESS":
+                  set((state) => ({
+                    ...state,
+                    worker: {
+                      ...state.worker,
+                      progress: progressValue,
+                      progressMessage: message,
+                    },
+                  }));
+                  request.onProgress?.(progressValue, message);
+                  break;
+
+                case "GPS_DATA_PROCESSED":
+                case "SECTIONS_PROCESSED":
+                case "ROUTE_STATS_CALCULATED":
+                case "POINTS_FOUND":
+                case "ROUTE_SECTION_READY":
+                  requests.delete(id);
+                  set((state) => ({
+                    ...state,
+                    worker: {
+                      ...state.worker,
+                      processing: false,
+                      progress: 100,
+                      errorMessage: "",
+                    },
+                  }));
+                  request.resolve(results ?? e.data);
+                  break;
+
+                case "ERROR":
+                  requests.delete(id);
+                  set((state) => ({
+                    ...state,
+                    worker: {
+                      ...state.worker,
+                      processing: false,
+                      progress: 0,
+                      errorMessage: error ?? "Unknown worker error",
+                    },
+                  }));
+                  request.reject(new Error(error));
+                  break;
+              }
+            };
+
+            worker.onerror = (error) => {
+              console.error("GPS Worker error:", error);
+              set((state) => ({
+                ...state,
+                worker: {
+                  ...state.worker,
+                  isReady: false,
+                  errorMessage: "Worker initialization failed",
+                },
+              }));
+            };
+
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                isReady: true,
+                errorMessage: "",
+              },
+            }));
+          } catch (error) {
+            console.error("Failed to create GPS Worker:", error);
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                errorMessage: "Failed to initialize worker",
+              },
+            }));
+          }
+        },
+
+        terminateGPSWorker: () => {
+          if (worker) {
+            worker.terminate();
+            worker = null;
+          }
+          requests.clear();
+          set((state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              isReady: false,
+              processing: false,
+              progress: 0,
+              progressMessage: "",
+            },
+          }));
+        },
+
+        // --- Worker Communication ---
+        sendWorkerMessage: (type, data, onProgress) => {
+          return new Promise((resolve, reject) => {
+            const state = get();
+            if (!worker || !state.worker.isReady) {
+              reject(new Error("Worker not ready"));
+              return;
+            }
+
+            const id = Date.now() + Math.random();
+            requests.set(id, { resolve, reject, onProgress });
+
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                processing: true,
+                progress: 0,
+                progressMessage: "Starting...",
+                errorMessage: "",
+              },
+            }));
+
+            worker.postMessage({ type, data, id });
+          });
+        },
+
+        // --- Worker API Actions ---
+        processGPSData: async (coordinates, onProgress) => {
+          try {
+            const results = await get().sendWorkerMessage(
+              "PROCESS_GPS_DATA",
+              { coordinates },
+              onProgress,
+            );
+
+            set((state) => ({
+              ...state,
+              gps: {
+                ...state.gps,
+                data: results.points,
+                slopes: results.slopes,
+                cumulativeDistances: results.cumulativeDistances,
+                cumulativeElevations: results.cumulativeElevations,
+                cumulativeElevationLosses: results.cumulativeElevationLosses,
+              },
+              stats: {
+                distance: results.totalDistance ?? 0,
+                elevationGain: results.totalElevation ?? 0,
+                elevationLoss: results.totalElevationLoss ?? 0,
+                pointCount: results.pointCount ?? 0,
+              },
+              worker: {
+                ...state.worker,
+                errorMessage: "",
+              },
+            }));
+
+            return results;
+          } catch (error) {
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
                 processing: false,
                 progress: 0,
-                errorMessage: error ?? "Unknown worker error",
-              });
-              request.reject(new Error(error));
-              break;
+                errorMessage: error.message || "Failed to process GPS Data",
+              },
+            }));
+            throw error;
           }
-        };
+        },
 
-        worker.onerror = (error) => {
-          console.error("GPS Worker error:", error);
-          set({ isWorkerReady: false, errorMessage: "Worker error detected" });
-        };
+        processSections: async (coordinates, sections, onProgress) => {
+          try {
+            const results = await get().sendWorkerMessage(
+              "PROCESS_SECTIONS",
+              { coordinates, sections },
+              onProgress,
+            );
 
-        set({ isWorkerReady: true });
-      },
+            set((state) => ({
+              ...state,
+              gps: {
+                ...state.gps,
+                sections: results ?? state.gps.sections,
+              },
+              stats: {
+                ...state.stats,
+                ...(results?.totalDistance !== undefined && {
+                  distance: results.totalDistance,
+                }),
+                ...(results?.totalElevationGain !== undefined && {
+                  elevationGain: results.totalElevationGain,
+                }),
+                ...(results?.totalElevationLoss !== undefined && {
+                  elevationLoss: results.totalElevationLoss,
+                }),
+                ...(results?.pointCount !== undefined && {
+                  pointCount: results.pointCount,
+                }),
+              },
+              worker: {
+                ...state.worker,
+                errorMessage: "",
+              },
+            }));
 
-      terminateGPSWorker: () => {
-        if (worker) {
-          worker.terminate();
-          worker = null;
-        }
-        set({ isWorkerReady: false });
-      },
-
-      // --- Worker Communication ---
-      sendWorkerMessage: (type, data, onProgress) => {
-        return new Promise((resolve, reject) => {
-          if (!worker || !get().isWorkerReady) {
-            reject(new Error("Worker not ready"));
-            return;
+            return results;
+          } catch (error) {
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                processing: false,
+                progress: 0,
+                errorMessage: error.message || "Failed to process Sections",
+              },
+            }));
+            throw error;
           }
-          const id = Date.now() + Math.random();
-          requests.set(id, { resolve, reject, onProgress });
-          set({
-            processing: true,
-            progress: 0,
-            progressMessage: "Starting...",
-            errorMessage: "",
-          });
-          worker.postMessage({ type, data, id });
-        });
-      },
+        },
 
-      // --- Worker API Actions with error handling and state updates ---
-      processGPSData: async (coordinates, onProgress) => {
-        try {
-          const results = await get().sendWorkerMessage(
-            "PROCESS_GPS_DATA",
-            { coordinates },
-            onProgress,
-          );
-          set({
-            gpsData: results.points,
-            slopes: results.slopes,
-            cumulativeDistances: results.cumulativeDistances,
-            cumulativeElevations: results.cumulativeElevations,
-            cumulativeElevationLosses: results.cumulativeElevationLosses,
-            stats: {
-              distance: results.totalDistance ?? 0,
-              elevationGain: results.totalElevation ?? 0,
-              elevationLoss: results.totalElevationLoss ?? 0,
-              pointCount: results.pointCount ?? 0,
-            },
-            errorMessage: "",
-          });
-          return results;
-        } catch (error) {
-          set({
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to process GPS Data",
-          });
-          throw error;
-        }
-      },
+        calculateRouteStats: async (coordinates, segments) => {
+          try {
+            const results = await get().sendWorkerMessage(
+              "CALCULATE_ROUTE_STATS",
+              { coordinates, segments },
+            );
 
-      processSections: async (coordinates, sections, onProgress) => {
-        try {
-          const results = await get().sendWorkerMessage(
-            "PROCESS_SECTIONS",
-            { coordinates, sections },
-            onProgress,
-          );
-          set({
-            sections: results ?? get().sections,
-            stats: {
-              distance: results.totalDistance ?? get().stats.distance,
-              elevationGain:
-                results.totalElevationGain ?? get().stats.elevationGain,
-              elevationLoss:
-                results.totalElevationLoss ?? get().stats.elevationLoss,
-              pointCount: results.pointCount ?? get().stats.pointCount,
-            },
-            errorMessage: "",
-          });
-          return results;
-        } catch (error) {
-          set({
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to process Sections",
-          });
-          throw error;
-        }
-      },
+            set((state) => ({
+              ...state,
+              stats: {
+                ...state.stats,
+                ...(results?.distance !== undefined && {
+                  distance: results.distance,
+                }),
+                ...(results?.elevationGain !== undefined && {
+                  elevationGain: results.elevationGain,
+                }),
+                ...(results?.elevationLoss !== undefined && {
+                  elevationLoss: results.elevationLoss,
+                }),
+                ...(results?.pointCount !== undefined && {
+                  pointCount: results.pointCount,
+                }),
+              },
+              worker: {
+                ...state.worker,
+                errorMessage: "",
+              },
+            }));
 
-      calculateRouteStats: async (coordinates, segments) => {
-        try {
-          const results = await get().sendWorkerMessage(
-            "CALCULATE_ROUTE_STATS",
-            {
+            return results;
+          } catch (error) {
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                processing: false,
+                progress: 0,
+                errorMessage:
+                  error.message || "Failed to calculate Route Stats",
+              },
+            }));
+            throw error;
+          }
+        },
+
+        findPointsAtDistances: async (coordinates, distances) => {
+          try {
+            const results = await get().sendWorkerMessage(
+              "FIND_POINTS_AT_DISTANCES",
+              { coordinates, distances },
+            );
+
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                errorMessage: "",
+              },
+            }));
+
+            return results;
+          } catch (error) {
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                processing: false,
+                progress: 0,
+                errorMessage:
+                  error.message || "Failed to find points at distances",
+              },
+            }));
+            throw error;
+          }
+        },
+
+        getRouteSection: async (coordinates, start, end) => {
+          try {
+            const results = await get().sendWorkerMessage("GET_ROUTE_SECTION", {
               coordinates,
-              segments,
-            },
-          );
-          set({
-            stats: {
-              distance: results.distance ?? get().stats.distance,
-              elevationGain: results.elevationGain ?? get().stats.elevationGain,
-              elevationLoss: results.elevationLoss ?? get().stats.elevationLoss,
-              pointCount: results.pointCount ?? get().stats.pointCount,
-            },
-            errorMessage: "",
-          });
-          return results;
-        } catch (error) {
-          set({
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to calculate Route Stats",
-          });
-          throw error;
-        }
-      },
+              start,
+              end,
+            });
 
-      findPointsAtDistances: async (coordinates, distances) => {
-        try {
-          const results = await get().sendWorkerMessage(
-            "FIND_POINTS_AT_DISTANCES",
-            { coordinates, distances },
-          );
-          // Update store if needed here
-          set({ errorMessage: "" });
-          return results;
-        } catch (error) {
-          set({
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to find points at distances",
-          });
-          throw error;
-        }
-      },
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                errorMessage: "",
+              },
+            }));
 
-      getRouteSection: async (coordinates, start, end) => {
-        try {
-          const results = await get().sendWorkerMessage("GET_ROUTE_SECTION", {
-            coordinates,
-            start,
-            end,
-          });
-          // Update store if needed here
-          set({ errorMessage: "" });
-          return results;
-        } catch (error) {
-          set({
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to get route section",
-          });
-          throw error;
-        }
+            return results;
+          } catch (error) {
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                processing: false,
+                progress: 0,
+                errorMessage: error.message || "Failed to get route section",
+              },
+            }));
+            throw error;
+          }
+        },
+
+        // --- Computed Selectors ---
+        getTrackingMode: () => get().app.trackingMode,
+        getDisplaySlopes: () => get().app.displaySlopes,
+        getCurrentPositionIndex: () => get().app.currentPositionIndex,
+        getGpsData: () => get().gps.data,
+        getSlopes: () => get().gps.slopes,
+        getSections: () => get().gps.sections,
+        getStats: () => get().stats,
+        getWorkerStatus: () => get().worker,
+        getIsProcessing: () => get().worker.processing,
+        getHasError: () => Boolean(get().worker.errorMessage),
+      }),
+      {
+        name: "Terminus Store",
+        enabled: process.env.NODE_ENV === "development",
       },
-    }),
-    { name: "Terminus Store", enabled: true },
+    ),
   ),
 );
+
+// --- Selector Hooks for Performance ---
+// These hooks prevent unnecessary re-renders by selecting only specific slices
+export const useAppState = () => useStore((state) => state.app);
+export const useGpsData = () => useStore((state) => state.gps);
+export const useStats = () => useStore((state) => state.stats);
+export const useWorkerState = () => useStore((state) => state.worker);
+
+// Specific selectors for common use cases
+export const useTrackingMode = () =>
+  useStore((state) => state.app.trackingMode);
+export const useDisplaySlopes = () =>
+  useStore((state) => state.app.displaySlopes);
+export const useCurrentPosition = () =>
+  useStore((state) => state.app.currentPositionIndex);
+export const useGpsCoordinates = () => useStore((state) => state.gps.data);
+export const useProcessingState = () =>
+  useStore((state) => ({
+    isProcessing: state.worker.processing,
+    progress: state.worker.progress,
+    message: state.worker.progressMessage,
+    error: state.worker.errorMessage,
+  }));
 
 export default useStore;

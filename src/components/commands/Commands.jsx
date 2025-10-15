@@ -4,9 +4,9 @@ import useStore from "../../store/store";
 import style from "./Commands.style";
 
 function Commands({ className }) {
-  const trackingMode = useStore((state) => state.trackingMode);
+  const trackingMode = useStore((state) => state.app.trackingMode);
   const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
-  const displaySlopes = useStore((state) => state.displaySlopes);
+  const displaySlopes = useStore((state) => state.app.displaySlopes);
   const toggleSlopesMode = useStore((state) => state.toggleSlopesMode);
 
   return (

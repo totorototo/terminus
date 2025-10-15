@@ -81,12 +81,17 @@ function ThreeDimensionalProfile({
     if (!map.has(id)) map.set(id, () => setSelectedSectionIndex(id));
     return map.get(id);
   };
-  const sections = useStore((state) => state.sections);
-  const coordinates = useStore((state) => state.gpsData);
-  const slopes = useStore((state) => state.slopes);
+  const sections = useStore((state) => state.gps.sections);
+  const coordinates = useStore((state) => state.gps.data);
+  const slopes = useStore((state) => state.gps.slopes);
 
   // Memoize scales and points3D for performance
   const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
+    // Safety check: return empty arrays if coordinates are not available
+    if (!coordinates || coordinates.length === 0) {
+      return { sectionsPoints3D: [], checkpointsPoints3D: [] };
+    }
+
     const xExtent = [
       Math.min(...coordinates.map((coord) => coord[0])),
       Math.max(...coordinates.map((coord) => coord[0])),
