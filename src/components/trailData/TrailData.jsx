@@ -3,14 +3,18 @@ import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore from "../../store/store.js";
 
-console.log("Vite Env:", import.meta.env);
-
 const TrailData = memo(function TrailData({ className }) {
-  const currentPositionIndex = useStore((state) => state.currentPositionIndex);
-  const cumulativeDistances = useStore((state) => state.cumulativeDistances);
-  const cumulativeElevations = useStore((state) => state.cumulativeElevations);
+  const currentPositionIndex = useStore(
+    (state) => state.app.currentPositionIndex,
+  );
+  const cumulativeDistances = useStore(
+    (state) => state.gps.cumulativeDistances,
+  );
+  const cumulativeElevations = useStore(
+    (state) => state.gps.cumulativeElevations,
+  );
   const cumulativeElevationLosses = useStore(
-    (state) => state.cumulativeElevationLosses,
+    (state) => state.gps.cumulativeElevationLosses,
   );
 
   const stats = useStore((state) => state.stats);

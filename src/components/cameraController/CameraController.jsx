@@ -12,7 +12,7 @@ export default function CameraController({
   enabled = true,
 }) {
   const cameraControlsRef = useRef();
-  const trackingMode = useStore((state) => state.trackingMode);
+  const trackingMode = useStore((state) => state.app.trackingMode);
 
   // Temp vectors to avoid per-frame allocations
   const tmpModelPosition = useRef(new Vector3());

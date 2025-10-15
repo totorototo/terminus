@@ -8,12 +8,18 @@ import useStore from "../../store/store.js";
 import { CornerUpRight } from "@styled-icons/feather/CornerUpRight";
 
 function Navigation({ className }) {
-  const sections = useStore((state) => state.sections);
-  const currentPositionIndex = useStore((state) => state.currentPositionIndex);
-  const cumulativeDistances = useStore((state) => state.cumulativeDistances);
-  const cumulativeElevations = useStore((state) => state.cumulativeElevations);
+  const sections = useStore((state) => state.gps.sections);
+  const currentPositionIndex = useStore(
+    (state) => state.app.currentPositionIndex,
+  );
+  const cumulativeDistances = useStore(
+    (state) => state.gps.cumulativeDistances,
+  );
+  const cumulativeElevations = useStore(
+    (state) => state.gps.cumulativeElevations,
+  );
   const cumulativeElevationLosses = useStore(
-    (state) => state.cumulativeElevationLosses,
+    (state) => state.gps.cumulativeElevationLosses,
   );
 
   const springConfig = { tension: 170, friction: 26 };

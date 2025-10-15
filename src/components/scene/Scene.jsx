@@ -8,9 +8,9 @@ import CameraController from "../cameraController/CameraController.jsx";
 
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
-  const displaySlopes = useStore((state) => state.displaySlopes);
+  const displaySlopes = useStore((state) => state.app.displaySlopes);
 
-  const coordinates = useStore((state) => state.gpsData);
+  const coordinates = useStore((state) => state.gps.data);
   const modelRef = useRef();
 
   return (
