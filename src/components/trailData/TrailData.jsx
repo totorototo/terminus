@@ -3,6 +3,8 @@ import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore from "../../store/store.js";
 
+console.log(import.meta.env.VITE_BUILD_NUMBER);
+
 const TrailData = memo(function TrailData({ className }) {
   const currentPositionIndex = useStore(
     (state) => state.app.currentPositionIndex,
