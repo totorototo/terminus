@@ -34,7 +34,11 @@ jobs:
           VITE_BUILD_NUMBER: ${{ github.run_number }}
         run: |
           echo "Building with VITE_BUILD_NUMBER=$VITE_BUILD_NUMBER"
+          echo "Environment variables containing VITE:"
+          env | grep VITE || echo "No VITE environment variables found"
           npm run build
+          echo "Checking if build number is in built files:"
+          grep -r "${{ github.run_number }}" dist/ || echo "GitHub run number not found in dist"
 
       - name: Create and push git tag for the build number
         run: |
