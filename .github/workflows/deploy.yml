@@ -36,9 +36,13 @@ jobs:
           echo "Building with VITE_BUILD_NUMBER=$VITE_BUILD_NUMBER"
           echo "Environment variables containing VITE:"
           env | grep VITE || echo "No VITE environment variables found"
+          echo "Testing Vite env var processing:"
+          node -e "console.log('import.meta.env.VITE_BUILD_NUMBER would be:', process.env.VITE_BUILD_NUMBER)"
           npm run build
           echo "Checking if build number is in built files:"
           grep -r "${{ github.run_number }}" dist/ || echo "GitHub run number not found in dist"
+          echo "Checking for 'import.meta.env' in built files:"
+          grep -r "import\.meta\.env" dist/ || echo "No import.meta.env found"
 
       - name: Create and push git tag for the build number
         run: |
