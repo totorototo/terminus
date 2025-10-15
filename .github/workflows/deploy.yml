@@ -30,21 +30,20 @@ jobs:
         run: npm ci
 
       - name: Build with build number env
+        env:
+          VITE_BUILD_NUMBER: ${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          echo "Creating .env file with VITE_BUILD_NUMBER=${{ github.run_number }}"
-          echo "VITE_BUILD_NUMBER=${{ github.run_number }}" > .env
-          cat .env
-          echo "Building with npm run build..."
+          echo "Building with build number: $VITE_BUILD_NUMBER"
           npm run build
-          echo "Build completed. Checking if build number ${{ github.run_number }} is in built files:"
-          grep -r "${{ github.run_number }}" dist/ > /dev/null && echo "GitHub run number found in dist" || echo "GitHub run number not found in dist"
+          echo "Build completed. Checking if build number $VITE_BUILD_NUMBER is in built files:"
+          grep -r "$VITE_BUILD_NUMBER" dist/ > /dev/null && echo "✅ GitHub run ID with attempt found in dist" || echo "❌ GitHub run ID with attempt not found in dist"
 
       - name: Create and push git tag for the build number
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "build-${{ github.run_number }}" -m "Build ${{ github.run_number }}"
-          git push origin "build-${{ github.run_number }}"
+          git tag -a "build-${{ github.run_id }}-${{ github.run_attempt }}" -m "Build ${{ github.run_id }}-${{ github.run_attempt }}"
+          git push origin "build-${{ github.run_id }}-${{ github.run_attempt }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
