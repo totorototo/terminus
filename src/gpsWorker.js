@@ -43,6 +43,10 @@ self.onmessage = async function (e) {
         await getRouteSection(data, id);
         break;
 
+      case "FIND_CLOSEST_POINT":
+        await findClosestLocation(data, id);
+        break;
+
       default:
         throw new Error(`Unknown message type: ${type}`);
     }
@@ -313,6 +317,33 @@ async function getRouteSection(data, requestId) {
   });
 
   trace.deinit();
+}
+
+// find closest point to target
+async function findClosestLocation(data, requestId) {
+  const { coordinates, target } = data;
+  const trace = Trace.init(coordinates);
+
+  const closest = trace.findClosestPoint(target);
+
+  const closestLocation = closest.point
+    ? [
+        Number(closest.point[0]),
+        Number(closest.point[1]),
+        Number(closest.point[2]),
+      ]
+    : null;
+
+  const closestIndex = closest.index;
+
+  trace.deinit();
+
+  self.postMessage({
+    type: "CLOSEST_POINT_FOUND",
+    id: requestId,
+    closestLocation,
+    closestIndex,
+  });
 }
 
 console.log("🚀 GPS Worker: Ready for GPS processing tasks");
