@@ -6,6 +6,7 @@ import TrailFollower from "../trailFollower/TrailFollower";
 import useStore from "../../store/store.js";
 import CameraController from "../cameraController/CameraController.jsx";
 import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
+import Runner from "../runner/runner.jsx";
 
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
@@ -48,6 +49,8 @@ function Scene({ width, height, className }) {
         modelRef={modelRef}
         coordinateScales={coordinateScales}
       />
+
+      <Runner coordinateScales={coordinateScales} />
 
       <CameraController modelRef={modelRef} />
     </Canvas>
