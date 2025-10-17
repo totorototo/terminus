@@ -13,10 +13,7 @@ function Commands({ className }) {
 
   return (
     <div className={className}>
-      <button
-        // className={!trackingMode ? "on" : "off"}
-        onClick={findClosestLocation}
-      >
+      <button className={"off"} onClick={findClosestLocation}>
         <MapPin size={24} />
       </button>
       <button
