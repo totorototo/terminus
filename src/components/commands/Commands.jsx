@@ -1,4 +1,5 @@
 import { MapPin } from "@styled-icons/feather/MapPin";
+import { Film } from "@styled-icons/feather/Film";
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import useStore from "../../store/store";
 import style from "./Commands.style";
@@ -8,12 +9,13 @@ function Commands({ className }) {
   const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
   const displaySlopes = useStore((state) => state.app.displaySlopes);
   const toggleSlopesMode = useStore((state) => state.toggleSlopesMode);
+  const findClosestLocation = useStore((state) => state.findClosestLocation);
 
   return (
     <div className={className}>
       <button
-        className={trackingMode ? "on" : "off"}
-        onClick={toggleTrackingMode}
+        // className={!trackingMode ? "on" : "off"}
+        onClick={findClosestLocation}
       >
         <MapPin size={24} />
       </button>
@@ -22,6 +24,12 @@ function Commands({ className }) {
         onClick={toggleSlopesMode}
       >
         <BarChart2 size={24} />
+      </button>
+      <button
+        className={trackingMode ? "on" : "off"}
+        onClick={toggleTrackingMode}
+      >
+        <Film size={24} />
       </button>
     </div>
   );

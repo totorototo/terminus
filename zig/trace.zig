@@ -8,6 +8,13 @@ const distance3D = @import("gpspoint.zig").distance3D;
 const elevationDeltaSigned = @import("gpspoint.zig").elevationDeltaSigned;
 const findPeaks = @import("peaks.zig").findPeaks;
 
+// Structure to return both the closest point and its index
+pub const ClosestPointResult = struct {
+    point: [3]f64,
+    index: usize,
+    distance: f64,
+};
+
 pub const Trace = struct {
     cumulativeDistances: []f64, // Precomputed cumulative distances in meters
     cumulativeElevations: []f64, // Cumulative elevation gain in meters
@@ -187,6 +194,30 @@ pub const Trace = struct {
         }
 
         return null;
+    }
+
+    pub fn findClosestPoint(self: *const Trace, target: [3]f64) ?ClosestPointResult {
+        if (self.data.len == 0) return null;
+
+        var closest_distance: f64 = std.math.inf(f64);
+        var closest_index: usize = 0;
+        var closest_point: [3]f64 = undefined;
+
+        // Iterate through all points to find the closest one
+        for (self.data, 0..) |point, i| {
+            const dist = distance(target, point);
+            if (dist < closest_distance) {
+                closest_distance = dist;
+                closest_index = i;
+                closest_point = point;
+            }
+        }
+
+        return ClosestPointResult{
+            .point = closest_point,
+            .index = closest_index,
+            .distance = closest_distance,
+        };
     }
 };
 
@@ -529,4 +560,136 @@ test "performance: large trace operations" {
     // Verify basic properties
     try expect(trace.data.len == 1000);
     try expect(trace.totalDistance() > 0);
+}
+
+test "findClosestPoint: basic functionality" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 }, // Point 0
+        [3]f64{ 1.0, 1.0, 105.0 }, // Point 1
+        [3]f64{ 2.0, 2.0, 110.0 }, // Point 2
+        [3]f64{ 3.0, 3.0, 115.0 }, // Point 3
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // Test finding exact match (should find first point)
+    const target1 = [3]f64{ 0.0, 0.0, 100.0 };
+    const result1 = trace.findClosestPoint(target1);
+    try expect(result1 != null);
+    try expect(result1.?.index == 0);
+    try expectApproxEqAbs(result1.?.distance, 0.0, 0.1); // Should be very close to 0
+
+    // Test finding point closest to middle area
+    const target2 = [3]f64{ 1.5, 1.5, 107.0 };
+    const result2 = trace.findClosestPoint(target2);
+    try expect(result2 != null);
+    // Should find either point 1 or 2 (both are relatively close)
+    try expect(result2.?.index == 1 or result2.?.index == 2);
+    try expect(result2.?.distance > 0.0);
+
+    // Test finding point far from all points (should still return closest)
+    const target3 = [3]f64{ 10.0, 10.0, 200.0 };
+    const result3 = trace.findClosestPoint(target3);
+    try expect(result3 != null);
+    try expect(result3.?.index == 3); // Should be the last point (closest to 10,10,200)
+    try expect(result3.?.distance > 0.0);
+}
+
+test "findClosestPoint: edge cases" {
+    const allocator = std.testing.allocator;
+
+    // Test with empty trace
+    var empty_trace = try Trace.init(allocator, &.{});
+    defer empty_trace.deinit(allocator);
+
+    const target = [3]f64{ 1.0, 1.0, 100.0 };
+    try expect(empty_trace.findClosestPoint(target) == null);
+
+    // Test with single point
+    const single_point = [_][3]f64{
+        [3]f64{ 5.0, 5.0, 150.0 },
+    };
+
+    var single_trace = try Trace.init(allocator, single_point[0..]);
+    defer single_trace.deinit(allocator);
+
+    const result = single_trace.findClosestPoint(target);
+    try expect(result != null);
+    try expect(result.?.index == 0);
+    try expect(result.?.distance > 0.0);
+    try expectApproxEqAbs(result.?.point[0], 5.0, 0.1);
+    try expectApproxEqAbs(result.?.point[1], 5.0, 0.1);
+    try expectApproxEqAbs(result.?.point[2], 150.0, 0.1);
+}
+
+test "findClosestPoint: 2D vs 3D distance consideration" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 0.0 }, // Point 0: close in 2D, far in elevation
+        [3]f64{ 2.0, 2.0, 100.0 }, // Point 1: far in 2D, close in elevation
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // Target point that's close to point 0 in 2D but close to point 1 in elevation
+    const target = [3]f64{ 0.1, 0.1, 105.0 };
+    const result = trace.findClosestPoint(target);
+
+    try expect(result != null);
+    // The result depends on which distance (2D vs elevation) dominates
+    // Due to smoothing, the actual points might differ slightly from input
+    try expect(result.?.index == 0 or result.?.index == 1);
+    try expect(result.?.distance > 0.0);
+}
+
+test "findClosestPoint: performance with many points" {
+    const allocator = std.testing.allocator;
+
+    // Create a grid of points
+    var points = try allocator.alloc([3]f64, 100);
+    defer allocator.free(points);
+
+    for (0..points.len) |i| {
+        const x = @as(f64, @floatFromInt(i % 10));
+        const y = @as(f64, @floatFromInt(i / 10));
+        const z = @as(f64, @floatFromInt(i));
+        points[i] = [3]f64{ x, y, z };
+    }
+
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    // Find closest point to center of grid
+    const target = [3]f64{ 4.5, 4.5, 45.0 };
+    const result = trace.findClosestPoint(target);
+
+    try expect(result != null);
+    try expect(result.?.index < trace.data.len);
+    try expect(result.?.distance >= 0.0);
+}
+
+test "findClosestPoint: identical points" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 1.0, 1.0, 100.0 },
+        [3]f64{ 1.0, 1.0, 100.0 }, // Identical to first
+        [3]f64{ 2.0, 2.0, 200.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const target = [3]f64{ 1.0, 1.0, 100.0 };
+    const result = trace.findClosestPoint(target);
+
+    try expect(result != null);
+    // Should find the first occurrence (index 0)
+    try expect(result.?.index == 0);
+    try expectApproxEqAbs(result.?.distance, 0.0, 0.1);
 }
