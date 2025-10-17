@@ -4,10 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { Vector3 } from "three";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import useStore from "../../store/store";
-import {
-  createCoordinateScales,
-  transformCoordinates,
-} from "../../utils/coordinateTransforms";
+import { transformCoordinates } from "../../utils/coordinateTransforms";
 
 function throttle(fn, delay) {
   let timeout = null;
@@ -30,6 +27,7 @@ export default function TrailFollower({
   maxRollAngle = Math.PI / 12, // Maximum 15 degrees roll
   rollSensitivity = 5.5, // How sensitive the roll is to direction changes
   modelRef = null,
+  coordinateScales,
   ...props
 }) {
   const progress = useRef(0);
@@ -58,12 +56,11 @@ export default function TrailFollower({
 
   // Scale coordinates to match elevation profile (same scaling as Runner)
   useEffect(() => {
-    if (!coordinates || coordinates.length === 0) return;
+    if (!coordinates || coordinates.length === 0 || !coordinateScales) return;
 
-    const scales = createCoordinateScales(coordinates);
-    const points3D = transformCoordinates(coordinates, scales);
+    const points3D = transformCoordinates(coordinates, coordinateScales);
     setScaledPath(points3D);
-  }, [coordinates, height]);
+  }, [coordinates, coordinateScales, height]);
 
   useEffect(() => {
     if (modelRef.current) {

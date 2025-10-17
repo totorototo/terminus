@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensionalProfile";
 import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
 import useStore from "../../store/store.js";
 import CameraController from "../cameraController/CameraController.jsx";
+import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
@@ -12,6 +13,11 @@ function Scene({ width, height, className }) {
 
   const coordinates = useStore((state) => state.gps.data);
   const modelRef = useRef();
+
+  // Compute coordinate scales once and pass to children to avoid duplicate computations
+  const coordinateScales = useMemo(() => {
+    return createCoordinateScales(coordinates);
+  }, [coordinates]);
 
   return (
     <Canvas
@@ -28,10 +34,10 @@ function Scene({ width, height, className }) {
       {/* <Perf minimal position="bottom-right" /> */}
       <ambientLight intensity={2} />
       <ThreeDimensionalProfile
-        coordinates={coordinates}
         setSelectedSectionIndex={setSelectedSectionIndex}
         selectedSectionIndex={selectedSectionIndex}
         showSlopeColors={displaySlopes}
+        coordinateScales={coordinateScales}
       />
 
       <TrailFollower
@@ -40,6 +46,7 @@ function Scene({ width, height, className }) {
         scale={0.05}
         color="red"
         modelRef={modelRef}
+        coordinateScales={coordinateScales}
       />
 
       <CameraController modelRef={modelRef} />

@@ -7,7 +7,6 @@ import style from "./ThreeDimensionalProfile.style.js";
 import useStore from "../../store/store.js";
 import { useTheme } from "styled-components";
 import {
-  createCoordinateScales,
   transformSections,
   createCheckpoints,
 } from "../../utils/coordinateTransforms.js";
@@ -77,6 +76,7 @@ function ThreeDimensionalProfile({
   selectedSectionIndex,
   setSelectedSectionIndex,
   showSlopeColors,
+  coordinateScales,
 }) {
   // reuse stable handlers per section id to avoid creating new functions each render
   const handlersRef = useRef(new Map());
@@ -89,22 +89,19 @@ function ThreeDimensionalProfile({
   const coordinates = useStore((state) => state.gps.data);
   const slopes = useStore((state) => state.gps.slopes);
 
-  // Memoize scales and points3D for performance
+  // Memoize transformed data for performance
   const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
-    // Create coordinate scales
-    const scales = createCoordinateScales(coordinates);
+    // Transform sections to 3D using provided scales
+    const sectionsPoints3D = transformSections(sections, coordinateScales);
 
-    // Transform sections to 3D
-    const sectionsPoints3D = transformSections(sections, scales);
-
-    // Create checkpoints from sections
-    const checkpointsPoints3D = createCheckpoints(sections, scales);
+    // Create checkpoints from sections using provided scales
+    const checkpointsPoints3D = createCheckpoints(sections, coordinateScales);
 
     return {
       sectionsPoints3D,
       checkpointsPoints3D,
     };
-  }, [coordinates, sections]);
+  }, [sections, coordinateScales]);
 
   // Memoize the rendered section components so we only rebuild them when
   // the underlying section data or relevant props change.
