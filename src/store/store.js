@@ -19,7 +19,7 @@ const useStore = create(
       (set, get) => ({
         // --- App State ---
         app: {
-          trackingMode: true,
+          trackingMode: false,
           displaySlopes: false,
           currentPositionIndex: 0,
           currentLocation: null,

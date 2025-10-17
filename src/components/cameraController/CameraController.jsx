@@ -24,7 +24,7 @@ export default function CameraController({
     if (cameraControlsRef.current) {
       // Only reset camera position when switching OFF tracking mode
       if (!trackingMode) {
-        cameraControlsRef.current.setPosition(0, 3, 6, true);
+        cameraControlsRef.current.setPosition(15, 0, 0, true);
         cameraControlsRef.current.setTarget(0, 0, 0, true);
       }
       // When switching ON tracking mode, let useFrame handle the smooth transition
