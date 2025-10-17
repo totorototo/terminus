@@ -22,7 +22,7 @@ function Scene({ width, height, className }) {
         fov: 75,
         near: 0.1,
         far: 1000,
-        position: [0, 3, 6],
+        position: [15, 0, 0],
       }}
     >
       {/* <Perf minimal position="bottom-right" /> */}
@@ -33,15 +33,15 @@ function Scene({ width, height, className }) {
         selectedSectionIndex={selectedSectionIndex}
         showSlopeColors={displaySlopes}
       />
-      {coordinates && coordinates.length > 0 && (
-        <TrailFollower
-          speed={0.002}
-          height={0.08}
-          scale={0.05}
-          color="red"
-          modelRef={modelRef}
-        />
-      )}
+
+      <TrailFollower
+        speed={0.002}
+        height={0.08}
+        scale={0.05}
+        color="red"
+        modelRef={modelRef}
+      />
+
       <CameraController modelRef={modelRef} />
     </Canvas>
   );
