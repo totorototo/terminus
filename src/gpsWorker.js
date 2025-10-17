@@ -43,7 +43,7 @@ self.onmessage = async function (e) {
         await getRouteSection(data, id);
         break;
 
-      case "FIND_CLOSEST_POINT":
+      case "FIND_CLOSEST_LOCATION":
         await findClosestLocation(data, id);
         break;
 

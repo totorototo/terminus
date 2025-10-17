@@ -22,7 +22,7 @@ const useStore = create(
           trackingMode: true,
           displaySlopes: false,
           currentPositionIndex: 0,
-          location: null,
+          currentLocation: null,
           currentClosestLocation: null,
         },
 
@@ -67,17 +67,18 @@ const useStore = create(
               navigator.geolocation.getCurrentPosition(resolve, reject);
             });
 
-            const coords = {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            };
+            const coords = [
+              position.coords.longitude,
+              position.coords.latitude,
+              0,
+            ];
 
             // Update Zustand state
             set((state) => ({
               ...state,
               app: {
                 ...state.app,
-                location: coords,
+                currentLocation: coords,
                 loading: false,
               },
             }));
@@ -571,7 +572,7 @@ const useStore = create(
             // get current location first (using store action)
             // and gps data
             await get().getCurrentLocation();
-            const point = get().app.location;
+            const point = get().app.currentLocation;
             const coordinates = get().gps.data;
 
             // safety check
@@ -591,10 +592,10 @@ const useStore = create(
             }
 
             const results = await get().sendWorkerMessage(
-              "FIND_CLOSEST_POINT",
+              "FIND_CLOSEST_LOCATION",
               {
                 coordinates,
-                target: [point.longitude, point.latitude, 0],
+                target: point,
               },
             );
 
