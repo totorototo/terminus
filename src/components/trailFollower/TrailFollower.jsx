@@ -2,9 +2,12 @@ import { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 
 import { Vector3 } from "three";
-import { scaleLinear } from "d3-scale";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import useStore from "../../store/store";
+import {
+  createCoordinateScales,
+  transformCoordinates,
+} from "../../utils/coordinateTransforms";
 
 function throttle(fn, delay) {
   let timeout = null;
@@ -57,46 +60,9 @@ export default function TrailFollower({
   useEffect(() => {
     if (!coordinates || coordinates.length === 0) return;
 
-    const xExtent = [
-      Math.min(...coordinates.map((coord) => coord[0])),
-      Math.max(...coordinates.map((coord) => coord[0])),
-    ];
-    const yExtent = [
-      Math.min(...coordinates.map((coord) => coord[2])),
-      Math.max(...coordinates.map((coord) => coord[2])),
-    ];
-    const zExtent = [
-      Math.min(...coordinates.map((coord) => coord[1])),
-      Math.max(...coordinates.map((coord) => coord[1])),
-    ];
-
-    const lonDelta = xExtent[1] - xExtent[0];
-    const latDelta = zExtent[1] - zExtent[0];
-    const aspectRatio = lonDelta / latDelta;
-
-    if (aspectRatio > 1) {
-      xExtent[0] -= lonDelta * 0.1;
-      xExtent[1] += lonDelta * 0.1;
-      zExtent[0] -= latDelta * aspectRatio * 0.1;
-      zExtent[1] += latDelta * aspectRatio * 0.1;
-    } else {
-      xExtent[0] -= (lonDelta / aspectRatio) * 0.1;
-      xExtent[1] += (lonDelta / aspectRatio) * 0.1;
-      zExtent[0] -= latDelta * 0.1;
-      zExtent[1] += latDelta * 0.1;
-    }
-
-    const xScale = scaleLinear().domain(xExtent).range([-2, 2]);
-    const yScale = scaleLinear().domain([0, yExtent[1]]).range([0, 1]);
-    const zScale = scaleLinear().domain(zExtent).range([5, -5]);
-
-    const scaled = coordinates.map((coord) => [
-      xScale(coord[0]), // longitude → x
-      yScale(coord[2]), // elevation + height → y
-      zScale(coord[1]), // latitude → z
-    ]);
-
-    setScaledPath(scaled);
+    const scales = createCoordinateScales(coordinates);
+    const points3D = transformCoordinates(coordinates, scales);
+    setScaledPath(points3D);
   }, [coordinates, height]);
 
   useEffect(() => {
