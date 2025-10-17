@@ -22,6 +22,8 @@ const useStore = create(
           trackingMode: true,
           displaySlopes: false,
           currentPositionIndex: 0,
+          currentLocation: null,
+          currentClosestLocation: null,
         },
 
         // --- GPS Data ---
@@ -52,6 +54,46 @@ const useStore = create(
         },
 
         // --- App Actions ---
+        getCurrentLocation: async () => {
+          set((state) => ({
+            ...state,
+            app: {
+              ...state.app,
+              loading: true,
+            },
+          }));
+          try {
+            const position = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+
+            const coords = [
+              position.coords.longitude,
+              position.coords.latitude,
+              0,
+            ];
+
+            // Update Zustand state
+            set((state) => ({
+              ...state,
+              app: {
+                ...state.app,
+                currentLocation: coords,
+                loading: false,
+              },
+            }));
+          } catch (error) {
+            set((state) => ({
+              ...state,
+              app: {
+                ...state.app,
+                error: error.message,
+                loading: false,
+              },
+            }));
+          }
+        },
+
         toggleTrackingMode: () =>
           set((state) => ({
             ...state,
@@ -214,6 +256,7 @@ const useStore = create(
                 case "ROUTE_STATS_CALCULATED":
                 case "POINTS_FOUND":
                 case "ROUTE_SECTION_READY":
+                case "CLOSEST_POINT_FOUND":
                   requests.delete(id);
                   set((state) => ({
                     ...state,
@@ -518,6 +561,66 @@ const useStore = create(
                 processing: false,
                 progress: 0,
                 errorMessage: error.message || "Failed to get route section",
+              },
+            }));
+            throw error;
+          }
+        },
+
+        findClosestLocation: async () => {
+          try {
+            // get current location first (using store action)
+            // and gps data
+            await get().getCurrentLocation();
+            const point = get().app.currentLocation;
+            const coordinates = get().gps.data;
+
+            // safety check
+            if (!point || !coordinates || coordinates.length === 0) {
+              // set error in state
+              set((state) => ({
+                ...state,
+                worker: {
+                  ...state.worker,
+                  processing: false,
+                  progress: 0,
+                  errorMessage: "No location or GPS data available",
+                },
+              }));
+              // and return null
+              return null;
+            }
+
+            const results = await get().sendWorkerMessage(
+              "FIND_CLOSEST_LOCATION",
+              {
+                coordinates,
+                target: point,
+              },
+            );
+
+            // update closest location in app state
+            if (results && results.closestLocation) {
+              const closestCoord = results.closestLocation;
+
+              set((state) => ({
+                ...state,
+                app: {
+                  ...state.app,
+                  currentClosestLocation: closestCoord,
+                },
+              }));
+            }
+
+            return results;
+          } catch (error) {
+            set((state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                processing: false,
+                progress: 0,
+                errorMessage: error.message || "Failed to find closest point",
               },
             }));
             throw error;
