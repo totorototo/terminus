@@ -49,6 +49,7 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    min-width: 4rem;
   }
 `;
 
