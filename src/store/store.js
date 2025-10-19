@@ -21,9 +21,10 @@ const useStore = create(
         app: {
           trackingMode: false,
           displaySlopes: false,
-          currentPositionIndex: 0,
+          currentPositionIndex: { index: 0, date: 0 },
           currentLocation: null,
           currentClosestLocation: null,
+          startingDate: 0, //Unix timestampjs
         },
 
         // --- GPS Data ---
@@ -63,6 +64,7 @@ const useStore = create(
             },
           }));
           try {
+            //TODO: get unix timestamp as well
             const position = await new Promise((resolve, reject) => {
               navigator.geolocation.getCurrentPosition(resolve, reject);
             });
@@ -112,14 +114,24 @@ const useStore = create(
             },
           })),
 
-        setCurrentPositionIndex: (index) =>
+        setCurrentPositionIndex: (value) =>
           set((state) => ({
             ...state,
             app: {
               ...state.app,
-              currentPositionIndex: index,
+              currentPositionIndex: value,
             },
           })),
+
+        setStartingDate: (date) => {
+          set((state) => ({
+            ...state,
+            app: {
+              ...state.app,
+              startingDate: date,
+            },
+          }));
+        },
 
         // --- GPS Data Actions ---
         setGpsData: (data) =>
@@ -628,6 +640,7 @@ const useStore = create(
         },
 
         // --- Computed Selectors ---
+        getStartingDate: () => get.app.startingDate,
         getTrackingMode: () => get().app.trackingMode,
         getDisplaySlopes: () => get().app.displaySlopes,
         getCurrentPositionIndex: () => get().app.currentPositionIndex,

@@ -47,6 +47,7 @@ export default function TrailFollower({
   const setCurrentPositionIndex = useStore(
     (state) => state.setCurrentPositionIndex,
   );
+  const setStartingDate = useStore((state) => state.setStartingDate);
   const coordinates = useStore((state) => state.gps.data);
 
   const throttledSetIndex = useRef(throttle(setCurrentPositionIndex, 1000));
@@ -73,6 +74,10 @@ export default function TrailFollower({
     }
   }, [actions]);
 
+  useEffect(() => {
+    setStartingDate(Date.now());
+  }, []);
+
   useFrame((state, delta) => {
     if (!scaledPath || scaledPath.length === 0 || !modelRef.current) return;
 
@@ -82,6 +87,7 @@ export default function TrailFollower({
     // Loop back to start when reaching the end
     if (progress.current >= 1) {
       progress.current = 0;
+      setStartingDate(Date.now());
     }
 
     // Compute current point index
@@ -89,7 +95,10 @@ export default function TrailFollower({
     const nextIndex = Math.min(currentIndex + 1, scaledPath.length - 1);
 
     // Update position index with throttling
-    throttledSetIndex.current(currentIndex);
+    throttledSetIndex.current({
+      index: currentIndex,
+      date: Date.now(),
+    });
 
     const currentPoint = scaledPath[currentIndex];
     const nextPoint = scaledPath[nextIndex];
