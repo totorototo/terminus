@@ -25,7 +25,7 @@ function Navigation({ className }) {
   const springConfig = { tension: 170, friction: 26 };
 
   const remaningSections = sections?.filter(
-    (section) => section.endIndex >= currentPositionIndex,
+    (section) => section.endIndex >= currentPositionIndex.index,
   );
 
   const currentSection =
@@ -35,17 +35,17 @@ function Navigation({ className }) {
     distance:
       currentSection && cumulativeDistances
         ? cumulativeDistances[currentSection.endIndex] -
-          cumulativeDistances[currentPositionIndex]
+          cumulativeDistances[currentPositionIndex.index]
         : 0,
     elevation:
       currentSection && cumulativeElevations
         ? cumulativeElevations[currentSection.endIndex] -
-          cumulativeElevations[currentPositionIndex]
+          cumulativeElevations[currentPositionIndex.index]
         : 0,
     elevationLoss:
       currentSection && cumulativeElevationLosses
         ? cumulativeElevationLosses[currentSection.endIndex] -
-          cumulativeElevationLosses[currentPositionIndex]
+          cumulativeElevationLosses[currentPositionIndex.index]
         : 0,
     config: springConfig,
   });
