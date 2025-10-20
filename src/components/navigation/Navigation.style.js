@@ -84,8 +84,9 @@ const style = (Component) => styled(Component)`
   .distance {
     display: flex;
     align-items: flex-start;
-    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    // font-weight: ${(props) =>
+      props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
 
     .unit {
