@@ -6,6 +6,8 @@ import {
 import style from "./Navigation.style.js";
 import useStore from "../../store/store.js";
 import { CornerUpRight } from "@styled-icons/feather/CornerUpRight";
+import { ArrowUp } from "@styled-icons/feather";
+import { CornerUpLeft } from "@styled-icons/feather";
 
 function Navigation({ className }) {
   const sections = useStore((state) => state.gps.sections);
@@ -65,7 +67,9 @@ function Navigation({ className }) {
           className={`section${index === 0 ? " current" : ""}`}
           style={style}
         >
-          <CornerUpRight size={40} />
+          {index % 3 === 0 && <CornerUpLeft size={40} />}
+          {index % 3 === 1 && <ArrowUp size={40} />}
+          {index % 3 === 2 && <CornerUpRight size={40} />}
           <div className="location-container">
             <div className="distance-container">
               {index === 0 ? (
