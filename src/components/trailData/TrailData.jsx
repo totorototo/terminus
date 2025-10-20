@@ -1,7 +1,7 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
-import useStore from "../../store/store.js";
+import useStore, { useCurrentPosition, useStats } from "../../store/store.js";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 
 const customLocale = {
@@ -16,33 +16,23 @@ const customLocale = {
   },
 };
 
-const TrailData = memo(function TrailData({ className }) {
-  const currentPositionIndex = useStore(
-    (state) => state.app.currentPositionIndex,
-  );
-  const cumulativeDistances = useStore(
-    (state) => state.gps.cumulativeDistances,
-  );
-  const cumulativeElevations = useStore(
-    (state) => state.gps.cumulativeElevations,
-  );
-  const cumulativeElevationLosses = useStore(
-    (state) => state.gps.cumulativeElevationLosses,
-  );
-  const startingDate = useStore((state) => state.app.startingDate);
-
-  const stats = useStore((state) => state.stats);
-
+// Helper function to calculate ETA and remaining time
+const calculateTimeMetrics = (
+  currentPositionIndex,
+  cumulativeDistances,
+  startingDate,
+) => {
   const distanceDone = cumulativeDistances[currentPositionIndex.index] || 0;
-  const totalDistance = cumulativeDistances[cumulativeDistances.length - 1];
-  const ellaspedDuration = currentPositionIndex.date - startingDate;
+  const totalDistance =
+    cumulativeDistances[cumulativeDistances.length - 1] || 1;
+  const elapsedDuration = currentPositionIndex.date - startingDate;
 
   // Avoid division by zero
-  const estiamtedTotalDuration =
-    distanceDone > 0 ? (ellaspedDuration * totalDistance) / distanceDone : 0;
+  const estimatedTotalDuration =
+    distanceDone > 0 ? (elapsedDuration * totalDistance) / distanceDone : 0;
 
   const now = Date.now();
-  const eta = startingDate + Math.round(estiamtedTotalDuration);
+  const eta = startingDate + Math.round(estimatedTotalDuration);
 
   // Format ETA as a readable date string
   const etaDateStr = format(new Date(eta), "HH:mm");
@@ -56,16 +46,72 @@ const TrailData = memo(function TrailData({ className }) {
     locale: customLocale,
   });
 
+  return { etaDateStr, remainingStr, distanceDone, totalDistance };
+};
+
+const TrailData = memo(function TrailData({ className }) {
+  // Use optimized selectors for better performance
+  const currentPositionIndex = useCurrentPosition();
+  const stats = useStats();
+  const cumulativeDistances = useStore(
+    (state) => state.gps.cumulativeDistances,
+  );
+  const cumulativeElevations = useStore(
+    (state) => state.gps.cumulativeElevations,
+  );
+  const cumulativeElevationLosses = useStore(
+    (state) => state.gps.cumulativeElevationLosses,
+  );
+  const startingDate = useStore((state) => state.app.startingDate);
+
+  // Memoize expensive time calculations
+  const timeMetrics = useMemo(() => {
+    if (!cumulativeDistances.length || !startingDate) {
+      return {
+        etaDateStr: "--:--",
+        remainingStr: "--",
+        distanceDone: 0,
+        totalDistance: 0,
+      };
+    }
+    return calculateTimeMetrics(
+      currentPositionIndex,
+      cumulativeDistances,
+      startingDate,
+    );
+  }, [currentPositionIndex, cumulativeDistances, startingDate]);
+
+  // Memoize remaining values for spring animation
+  const remainingValues = useMemo(
+    () => ({
+      remainingDistance: Math.max(
+        0,
+        stats.distance -
+          (cumulativeDistances?.[currentPositionIndex.index] || 0),
+      ),
+      remainingElevation: Math.max(
+        0,
+        stats.elevationGain -
+          (cumulativeElevations?.[currentPositionIndex.index] || 0),
+      ),
+      remainingElevationLoss: Math.max(
+        0,
+        stats.elevationLoss -
+          (cumulativeElevationLosses?.[currentPositionIndex.index] || 0),
+      ),
+    }),
+    [
+      stats,
+      cumulativeDistances,
+      cumulativeElevations,
+      cumulativeElevationLosses,
+      currentPositionIndex.index,
+    ],
+  );
+
   const { remainingDistance, remainingElevation, remainingElevationLoss } =
     useSpringWeb({
-      remainingDistance:
-        stats.distance - cumulativeDistances?.[currentPositionIndex.index] || 0,
-      remainingElevation:
-        stats.elevationGain -
-          cumulativeElevations?.[currentPositionIndex.index] || 0,
-      remainingElevationLoss:
-        stats.elevationLoss -
-          cumulativeElevationLosses?.[currentPositionIndex.index] || 0,
+      ...remainingValues,
       config: { tension: 170, friction: 26 },
     });
 
@@ -79,11 +125,11 @@ const TrailData = memo(function TrailData({ className }) {
           <div className="label">km</div>
         </div>
         <div className="item">
-          <div className="value"> {etaDateStr}</div>
+          <div className="value">{timeMetrics.etaDateStr}</div>
           <div className="label">eta</div>
         </div>
         <div className="item">
-          <div className="value">{remainingStr}</div>
+          <div className="value">{timeMetrics.remainingStr}</div>
           <div className="label">remaining</div>
         </div>
         {/* <div className="item">
