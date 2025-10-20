@@ -33,7 +33,7 @@ const style = (Component) => styled(Component)`
     align-items: flex-end;
     justify-content: flex-end;
 
-    span > {
+    span {
       margin-left: auto;
     }
   }
