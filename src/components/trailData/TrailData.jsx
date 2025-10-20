@@ -10,6 +10,7 @@ const customLocale = {
       xSeconds: `${count} sec`,
       xMinutes: `${count} min`,
       xHours: `${count} h`,
+      xDays: `${count} d`,
       // include other units as needed
     };
     return units[token] || "";
@@ -42,7 +43,7 @@ const calculateTimeMetrics = (
 
   // Format remaining duration as a human-friendly string
   const remainingStr = formatDuration(remainingDuration, {
-    format: ["hours", "minutes", "seconds"],
+    format: ["days", "hours", "minutes", "seconds"],
     locale: customLocale,
   });
 
