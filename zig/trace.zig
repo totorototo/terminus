@@ -20,16 +20,16 @@ pub const Trace = struct {
     cumulativeElevations: []f64, // Cumulative elevation gain in meters
     cumulativeElevationLoss: []f64, // Cumulative elevation loss in meters
     slopes: []f64, // Slope percentages between consecutive points
-    data: [][3]f64,
+    points: [][3]f64,
     peaks: []usize, // Indices of detected peaks in smoothed elevation
     totalDistance: f64, // Total distance in meters
     totalElevation: f64, // Total elevation gain in meters
     totalElevationLoss: f64, // Total elevation loss in meters
 
-    pub fn init(allocator: std.mem.Allocator, points: []const [3]f64) !Trace {
-        if (points.len == 0) {
+    pub fn init(allocator: std.mem.Allocator, coordinates: []const [3]f64) !Trace {
+        if (coordinates.len == 0) {
             return Trace{
-                .data = @as([][3]f64, &.{}),
+                .points = @as([][3]f64, &.{}),
                 .cumulativeDistances = @as([]f64, &.{}),
                 .cumulativeElevations = @as([]f64, &.{}),
                 .cumulativeElevationLoss = @as([]f64, &.{}),
@@ -42,13 +42,11 @@ pub const Trace = struct {
         }
 
         // Allocate and compute cumulative distances in one pass
-        const data = try allocator.alloc([3]f64, points.len);
-        const cumulativeDistances = try allocator.alloc(f64, points.len);
-        const cumulativeElevations = try allocator.alloc(f64, points.len);
-        const cumulativeElevationLoss = try allocator.alloc(f64, points.len);
-        const slopes = try allocator.alloc(f64, points.len);
+        const cumulativeDistances = try allocator.alloc(f64, coordinates.len);
+        const cumulativeElevations = try allocator.alloc(f64, coordinates.len);
+        const cumulativeElevationLoss = try allocator.alloc(f64, coordinates.len);
+        const slopes = try allocator.alloc(f64, coordinates.len);
         errdefer {
-            allocator.free(data);
             allocator.free(cumulativeDistances);
             allocator.free(cumulativeElevations);
             allocator.free(cumulativeElevationLoss);
@@ -59,12 +57,12 @@ pub const Trace = struct {
         cumulativeElevations[0] = 0.0;
         cumulativeElevationLoss[0] = 0.0;
         slopes[0] = 0.0; // First point has no slope
-        const window: usize = if (points.len < 15) @max(1, points.len / 3) else 15; // Adaptive window size
+        const window: usize = if (coordinates.len < 15) @max(1, coordinates.len / 3) else 15; // Adaptive window size
 
         // Windowed moving average for elevation
-        var smoothed_points = try allocator.alloc([3]f64, points.len);
+        var smoothed_points = try allocator.alloc([3]f64, coordinates.len);
         errdefer allocator.free(smoothed_points); // Clean up on error
-        smoothed_points[0] = points[0];
+        smoothed_points[0] = coordinates[0];
         cumulativeDistances[0] = 0.0;
         cumulativeElevations[0] = 0.0;
         cumulativeElevationLoss[0] = 0.0;
@@ -72,21 +70,21 @@ pub const Trace = struct {
         var cum_dist: f64 = 0.0;
         var cum_elev: f64 = 0.0;
         var cum_elev_loss: f64 = 0.0;
-        var smoothed_elevations = try allocator.alloc(f32, points.len);
+        var smoothed_elevations = try allocator.alloc(f32, coordinates.len);
         errdefer allocator.free(smoothed_elevations); // Clean up on error
         defer allocator.free(smoothed_elevations);
-        for (0..points.len) |i| {
+        for (0..coordinates.len) |i| {
             // Compute moving average for elevation
             var sum: f64 = 0.0;
             var count: usize = 0;
             const start = if (i < window / 2) 0 else i - window / 2;
-            const end = @min(points.len, i + window / 2 + 1);
+            const end = @min(coordinates.len, i + window / 2 + 1);
             for (start..end) |j| {
-                sum += points[j][2];
+                sum += coordinates[j][2];
                 count += 1;
             }
             const smoothed_elev = sum / @as(f64, @floatFromInt(count));
-            smoothed_points[i] = points[i];
+            smoothed_points[i] = coordinates[i];
             smoothed_points[i][2] = smoothed_elev;
             smoothed_elevations[i] = @floatCast(smoothed_elev);
             if (i > 0) {
@@ -112,18 +110,18 @@ pub const Trace = struct {
             }
         }
         // Find peaks using peaks.zig (only if we have enough points)
-        const peaks = if (points.len >= 3)
+        const peaks = if (coordinates.len >= 3)
             try findPeaks(allocator, smoothed_elevations)
         else
-            try allocator.alloc(usize, 0); // Empty peaks array for small datasets
+            try allocator.alloc(usize, 0); // Empty peaks array for small pointssets
         errdefer allocator.free(peaks); // Clean up peaks on error
 
         return Trace{
-            .data = smoothed_points[0..points.len],
-            .cumulativeDistances = cumulativeDistances[0..points.len],
-            .cumulativeElevations = cumulativeElevations[0..points.len],
-            .cumulativeElevationLoss = cumulativeElevationLoss[0..points.len],
-            .slopes = slopes[0..points.len],
+            .points = smoothed_points[0..coordinates.len],
+            .cumulativeDistances = cumulativeDistances[0..coordinates.len],
+            .cumulativeElevations = cumulativeElevations[0..coordinates.len],
+            .cumulativeElevationLoss = cumulativeElevationLoss[0..coordinates.len],
+            .slopes = slopes[0..coordinates.len],
             .peaks = peaks,
             .totalDistance = cum_dist,
             .totalElevation = cum_elev,
@@ -132,7 +130,7 @@ pub const Trace = struct {
     }
 
     pub fn deinit(self: *Trace, allocator: std.mem.Allocator) void {
-        if (self.data.len != 0) allocator.free(self.data);
+        if (self.points.len != 0) allocator.free(self.points);
         if (self.cumulativeDistances.len != 0) allocator.free(self.cumulativeDistances);
         if (self.cumulativeElevations.len != 0) allocator.free(self.cumulativeElevations);
         if (self.cumulativeElevationLoss.len != 0) allocator.free(self.cumulativeElevationLoss);
@@ -141,12 +139,12 @@ pub const Trace = struct {
     }
 
     pub fn pointAtDistance(self: *const Trace, targetDistance: f64) ?[3]f64 {
-        if (targetDistance < 0 or self.data.len == 0) return null;
+        if (targetDistance < 0 or self.points.len == 0) return null;
 
         const targetDistanceMeters = targetDistance;
         const index = self.findIndexAtDistance(targetDistanceMeters);
 
-        return if (index < self.data.len) self.data[index] else null;
+        return if (index < self.points.len) self.points[index] else null;
     }
 
     // Helper function for binary search to find index at distance
@@ -166,12 +164,12 @@ pub const Trace = struct {
             }
         }
 
-        return @min(low, self.data.len - 1);
+        return @min(low, self.points.len - 1);
     }
 
     pub fn sliceBetweenDistances(self: *const Trace, start: f64, end: f64) ?[][3]f64 {
         // Early validation
-        if (self.data.len == 0) return null;
+        if (self.points.len == 0) return null;
         if (start < 0 or end < 0 or start > end) return null;
 
         // Use the helper function for both searches
@@ -179,22 +177,22 @@ pub const Trace = struct {
         const endIndex = self.findIndexAtDistance(end);
 
         // Ensure valid slice bounds
-        if (startIndex <= endIndex and endIndex < self.data.len) {
-            return self.data[startIndex .. endIndex + 1];
+        if (startIndex <= endIndex and endIndex < self.points.len) {
+            return self.points[startIndex .. endIndex + 1];
         }
 
         return null;
     }
 
     pub fn findClosestPoint(self: *const Trace, target: [3]f64) ?ClosestPointResult {
-        if (self.data.len == 0) return null;
+        if (self.points.len == 0) return null;
 
         var closest_distance: f64 = std.math.inf(f64);
         var closest_index: usize = 0;
         var closest_point: [3]f64 = undefined;
 
         // Iterate through all points to find the closest one
-        for (self.data, 0..) |point, i| {
+        for (self.points, 0..) |point, i| {
             const dist = distance(target, point);
             if (dist < closest_distance) {
                 closest_distance = dist;
@@ -211,24 +209,24 @@ pub const Trace = struct {
     }
 };
 
-test "Trace initialization with empty data" {
+test "Trace initialization with empty points" {
     const allocator = std.testing.allocator;
     var trace = try Trace.init(allocator, &.{});
     defer trace.deinit(allocator);
 
-    try std.testing.expectEqual(@as(usize, 0), trace.data.len);
+    try std.testing.expectEqual(@as(usize, 0), trace.points.len);
     try std.testing.expectEqual(@as(usize, 0), trace.cumulativeDistances.len);
     try std.testing.expectEqual(@as(usize, 0), trace.cumulativeElevations.len);
-    try std.testing.expectEqual(@as(f64, 0.0), trace.totalDistance());
+    try std.testing.expectEqual(@as(f64, 0.0), trace.totalDistance);
     try std.testing.expectEqual(@as(usize, 0), trace.cumulativeElevationLoss.len);
-    try std.testing.expectEqual(@as(f64, 0.0), trace.totalElevationLoss());
+    try std.testing.expectEqual(@as(f64, 0.0), trace.totalElevationLoss);
     try std.testing.expectEqual(@as(usize, 0), trace.slopes.len);
 }
 
 test "Trace initialization and basic properties" {
     const allocator = std.testing.allocator;
 
-    // Test data: 3 points in a straight line
+    // Test points: 3 points in a straight line
     const points = [_][3]f64{
         [3]f64{ 0.0, 0.0, 100.0 },
         [3]f64{ 0.0, 0.001, 105.0 }, // ~111m north, +5m elevation
@@ -239,13 +237,13 @@ test "Trace initialization and basic properties" {
     defer trace.deinit(allocator);
 
     // Test total distance (should be approximately 222m)
-    try expectApproxEqAbs(trace.totalDistance(), 222.0, 5.0);
+    try expectApproxEqAbs(trace.totalDistance, 222.0, 5.0);
 
     // Test elevation gain (should be 10m total)
-    try expect(trace.totalElevation() >= 0.0); // Due to smoothing, this may vary
+    try expect(trace.totalElevation >= 0.0); // Due to smoothing, this may vary
 
     // Test point count
-    try expect(trace.data.len == 3);
+    try expect(trace.points.len == 3);
 }
 
 test "pointAtDistance: exact and approximate matches" {
@@ -321,7 +319,7 @@ test "sliceBetweenDistances: valid ranges" {
     try expect(fullSlice != null);
     try expect(fullSlice.?.len == 4);
 
-    // Test partial range - use realistic distances for our test data
+    // Test partial range - use realistic distances for our test points
     const midSlice = trace.sliceBetweenDistances(50, 200); // More appropriate for ~333m total distance
     try expect(midSlice != null);
     try expect(midSlice.?.len >= 1);
@@ -332,8 +330,8 @@ test "sliceBetweenDistances: valid ranges" {
         defer sliceTrace.deinit(allocator);
 
         // Verify the slice trace has valid properties
-        try expect(sliceTrace.data.len == midSlice.?.len);
-        try expect(sliceTrace.totalDistance() >= 0);
+        try expect(sliceTrace.points.len == midSlice.?.len);
+        try expect(sliceTrace.totalDistance >= 0);
     }
 
     // Should include the first few points
@@ -370,7 +368,7 @@ test "sliceBetweenDistances: edge cases" {
 test "slope calculations between consecutive points" {
     const allocator = std.testing.allocator;
 
-    // Test data: more points to work better with smoothing
+    // Test points: more points to work better with smoothing
     const points = [_][3]f64{
         [3]f64{ 0.0, 0.0, 100.0 }, // Start point
         [3]f64{ 0.0, 0.001, 102.0 }, // +2m elevation
@@ -391,7 +389,7 @@ test "slope calculations between consecutive points" {
     // First point should have 0% slope (no previous point)
     try expectApproxEqAbs(trace.slopes[0], 0.0, 0.001);
 
-    // Test that slope magnitudes are reasonable (within -10% to 10% range for this data)
+    // Test that slope magnitudes are reasonable (within -10% to 10% range for this points)
     for (trace.slopes) |slope| {
         try expect(slope >= -10.0 and slope <= 10.0);
     }
@@ -454,8 +452,8 @@ test "elevation gain: complex scenario" {
     // Only uphill segments count for gain: smoothed elevation may vary
     // Only downhill segments count for loss: smoothed elevation may vary
     // Due to windowing, exact values depend on smoothing algorithm
-    try expect(trace.totalElevation() >= 0);
-    try expect(trace.totalElevationLoss() >= 0);
+    try expect(trace.totalElevation >= 0);
+    try expect(trace.totalElevationLoss >= 0);
 }
 
 test "empty trace handling" {
@@ -466,9 +464,9 @@ test "empty trace handling" {
     var trace = try Trace.init(allocator, emptyPoints[0..]);
     defer trace.deinit(allocator);
 
-    try expect(trace.totalDistance() == 0.0);
-    try expect(trace.totalElevation() == 0.0);
-    try expect(trace.totalElevationLoss() == 0.0);
+    try expect(trace.totalDistance == 0.0);
+    try expect(trace.totalElevation == 0.0);
+    try expect(trace.totalElevationLoss == 0.0);
     try expect(trace.pointAtDistance(0.0) == null);
     try expect(trace.sliceBetweenDistances(0.0, 1.0) == null);
 }
@@ -483,9 +481,9 @@ test "single point trace" {
     var trace = try Trace.init(allocator, singlePoint[0..]);
     defer trace.deinit(allocator);
 
-    try expectApproxEqAbs(trace.totalDistance(), 0.0, 0.001);
-    try expectApproxEqAbs(trace.totalElevation(), 0.0, 0.001);
-    try expectApproxEqAbs(trace.totalElevationLoss(), 0.0, 0.001);
+    try expectApproxEqAbs(trace.totalDistance, 0.0, 0.001);
+    try expectApproxEqAbs(trace.totalElevation, 0.0, 0.001);
+    try expectApproxEqAbs(trace.totalElevationLoss, 0.0, 0.001);
 
     const point = trace.pointAtDistance(0.0);
     try expect(point != null);
@@ -542,14 +540,14 @@ test "performance: large trace operations" {
     defer trace.deinit(allocator);
 
     // Test that operations complete without error
-    _ = trace.totalDistance();
-    _ = trace.totalElevation();
+    _ = trace.totalDistance;
+    _ = trace.totalElevation;
     _ = trace.pointAtDistance(50.0);
     _ = trace.sliceBetweenDistances(10.0, 50.0);
 
     // Verify basic properties
-    try expect(trace.data.len == 1000);
-    try expect(trace.totalDistance() > 0);
+    try expect(trace.points.len == 1000);
+    try expect(trace.totalDistance > 0);
 }
 
 test "findClosestPoint: basic functionality" {
@@ -659,7 +657,7 @@ test "findClosestPoint: performance with many points" {
     const result = trace.findClosestPoint(target);
 
     try expect(result != null);
-    try expect(result.?.index < trace.data.len);
+    try expect(result.?.index < trace.points.len);
     try expect(result.?.distance >= 0.0);
 }
 
