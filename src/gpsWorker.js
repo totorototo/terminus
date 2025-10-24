@@ -145,12 +145,8 @@ async function processSections(data, requestId) {
       startKm: startKm,
       endKm: endKm,
       points: sectionTrace.data.valueOf(),
-      startPoint: [
-        Number(startPoint[0]),
-        Number(startPoint[1]),
-        Number(startPoint[2]),
-      ],
-      endPoint: [Number(endPoint[0]), Number(endPoint[1]), Number(endPoint[2])],
+      startPoint: startPoint.valueOf(),
+      endPoint: endPoint.valueOf(),
       startLocation: startLocation,
       endLocation: endLocation,
       totalDistance: Number(sectionTrace.totalDistance()),
@@ -186,12 +182,8 @@ async function calculateRouteStats(data, requestId) {
       segmentId: segment.id,
       distance: Number(endDist - startDist),
       pointCount: Number(sectionPoints.length),
-      startPoint: startPoint
-        ? [Number(startPoint[0]), Number(startPoint[1]), Number(startPoint[2])]
-        : null,
-      endPoint: endPoint
-        ? [Number(endPoint[0]), Number(endPoint[1]), Number(endPoint[2])]
-        : null,
+      startPoint: startPoint ? startPoint.valueOf() : null,
+      endPoint: endPoint ? endPoint.valueOf() : null,
     };
   });
 
@@ -214,9 +206,7 @@ async function findPointsAtDistances(data, requestId) {
       const point = trace.pointAtDistance(distance);
       return {
         distance: Number(distance),
-        point: point
-          ? [Number(point[0]), Number(point[1]), Number(point[2])]
-          : null,
+        point: point ? point.valueOf() : null,
       };
     })
     .filter((item) => item.point !== null);
@@ -257,13 +247,7 @@ async function findClosestLocation(data, requestId) {
 
   const closest = trace.findClosestPoint(target);
 
-  const closestLocation = closest.point
-    ? [
-        Number(closest.point[0]),
-        Number(closest.point[1]),
-        Number(closest.point[2]),
-      ]
-    : null;
+  const closestLocation = closest.point ? closest.point.valueOf() : null;
 
   const closestIndex = closest.index;
 
