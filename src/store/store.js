@@ -392,7 +392,7 @@ const useStore = create(
                 slopes: results.slopes,
                 cumulativeDistances: results.cumulativeDistances,
                 cumulativeElevations: results.cumulativeElevations,
-                cumulativeElevationLosses: results.cumulativeElevationLosses,
+                cumulativeElevationLosses: results.cumulativeElevationLoss,
               },
               stats: {
                 distance: results.totalDistance ?? 0,
