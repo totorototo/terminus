@@ -35,11 +35,8 @@ pub const Trace = struct {
             };
         }
 
-        // Allocate and copy points to own the data (fastest approach)
-        const data = try allocator.alloc([3]f64, points.len);
-        @memcpy(data, points); // ~2-5x faster than manual loops
-
         // Allocate and compute cumulative distances in one pass
+        const data = try allocator.alloc([3]f64, points.len);
         const cumulativeDistances = try allocator.alloc(f64, points.len);
         const cumulativeElevations = try allocator.alloc(f64, points.len);
         const cumulativeElevationLoss = try allocator.alloc(f64, points.len);
@@ -114,8 +111,7 @@ pub const Trace = struct {
         else
             try allocator.alloc(usize, 0); // Empty peaks array for small datasets
         errdefer allocator.free(peaks); // Clean up peaks on error
-        // Free the original data allocation, use smoothed_points as the trace data
-        allocator.free(data);
+
         return Trace{
             .data = smoothed_points[0..points.len],
             .cumulativeDistances = cumulativeDistances[0..points.len],
