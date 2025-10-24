@@ -74,19 +74,6 @@ async function processGPSData(gpsData, requestId) {
     message: "Trace initialized...",
   });
 
-  const results = {
-    totalDistance: Number(trace.totalDistance),
-    totalElevation: Number(trace.totalElevation),
-    totalElevationLoss: Number(trace.totalElevationLoss),
-    pointCount: Number(gpsData.coordinates.length),
-    points: trace.data.valueOf(),
-    peaks: trace.peaks.valueOf(),
-    cumulativeDistances: trace.cumulativeDistances.valueOf(),
-    cumulativeElevations: trace.cumulativeElevations.valueOf(),
-    cumulativeElevationLosses: trace.cumulativeElevationLoss.valueOf(),
-    slopes: trace.slopes.valueOf(),
-  };
-
   self.postMessage({
     type: "PROGRESS",
     id: requestId,
@@ -99,7 +86,7 @@ async function processGPSData(gpsData, requestId) {
   self.postMessage({
     type: "GPS_DATA_PROCESSED",
     id: requestId,
-    results,
+    results: trace.valueOf(),
   });
 }
 
@@ -144,14 +131,14 @@ async function processSections(data, requestId) {
       pointCount: sectionData ? Number(sectionData.length) : 0,
       startKm: startKm,
       endKm: endKm,
-      points: sectionTrace.data.valueOf(),
+      points: sectionTrace.points.valueOf(),
       startPoint: startPoint.valueOf(),
       endPoint: endPoint.valueOf(),
       startLocation: startLocation,
       endLocation: endLocation,
-      totalDistance: Number(sectionTrace.totalDistance),
-      totalElevation: Number(sectionTrace.totalElevation),
-      totalElevationLoss: Number(sectionTrace.totalElevationLoss),
+      totalDistance: sectionTrace.totalDistance,
+      totalElevation: sectionTrace.totalElevation,
+      totalElevationLoss: sectionTrace.totalElevationLoss,
       startIndex,
       endIndex,
     };
@@ -231,9 +218,9 @@ async function getRouteSection(data, requestId) {
     type: "ROUTE_SECTION_READY",
     id: requestId,
     section: {
-      totalDistance: Number(trace.totalDistance),
-      totalElevation: Number(trace.totalElevation),
-      totalElevationLoss: Number(trace.totalElevationLoss),
+      totalDistance: trace.totalDistance,
+      totalElevation: trace.totalElevation,
+      totalElevationLoss: trace.totalElevationLoss,
     },
   });
 

@@ -52,7 +52,7 @@ pub fn main() !void {
 
     var trace = try Trace.init(allocator, &points);
     // Print total distance
-    const totalDistanceKm = trace.totalDistance() / 1000.0;
+    const totalDistanceKm = trace.totalDistance / 1000.0;
     std.debug.print("Total Distance: {:.2} km\n", .{totalDistanceKm});
 
     const totalElevationGain = trace.totalElevationGain();

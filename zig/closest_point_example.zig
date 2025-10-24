@@ -20,7 +20,7 @@ pub fn main() !void {
     defer trace.deinit(allocator);
 
     std.debug.print("Trace initialized with {} points\n", .{trace.data.len});
-    std.debug.print("Total distance: {d:.2} meters\n", .{trace.totalDistance()});
+    std.debug.print("Total distance: {d:.2} meters\n", .{trace.totalDistance});
 
     // Target point we want to find the closest point to
     const target_point = [3]f64{ -122.4044, 37.7899, 25.0 };
@@ -47,12 +47,12 @@ pub fn main() !void {
     // Example of using the result for further processing
     if (result) |closest| {
         // Get a slice of the trace starting from the closest point
-        const remaining_distance = trace.totalDistance() - trace.cumulativeDistances[closest.index];
+        const remaining_distance = trace.totalDistance - trace.cumulativeDistances[closest.index];
         std.debug.print("\nRemaining distance from closest point: {d:.2} meters\n", .{remaining_distance});
 
         // You could slice the trace from this point forward
         const slice_start_distance = trace.cumulativeDistances[closest.index];
-        const slice_end_distance = trace.totalDistance();
+        const slice_end_distance = trace.totalDistance;
         const slice = trace.sliceBetweenDistances(slice_start_distance, slice_end_distance);
 
         if (slice) |s| {
