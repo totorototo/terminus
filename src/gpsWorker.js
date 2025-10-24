@@ -75,9 +75,9 @@ async function processGPSData(gpsData, requestId) {
   });
 
   const results = {
-    totalDistance: Number(trace.totalDistance()),
-    totalElevation: Number(trace.totalElevation()),
-    totalElevationLoss: Number(trace.totalElevationLoss()),
+    totalDistance: Number(trace.totalDistance),
+    totalElevation: Number(trace.totalElevation),
+    totalElevationLoss: Number(trace.totalElevationLoss),
     pointCount: Number(gpsData.coordinates.length),
     points: trace.data.valueOf(),
     peaks: trace.peaks.valueOf(),
@@ -149,9 +149,9 @@ async function processSections(data, requestId) {
       endPoint: endPoint.valueOf(),
       startLocation: startLocation,
       endLocation: endLocation,
-      totalDistance: Number(sectionTrace.totalDistance()),
-      totalElevation: Number(sectionTrace.totalElevation()),
-      totalElevationLoss: Number(sectionTrace.totalElevationLoss()),
+      totalDistance: Number(sectionTrace.totalDistance),
+      totalElevation: Number(sectionTrace.totalElevation),
+      totalElevationLoss: Number(sectionTrace.totalElevationLoss),
       startIndex,
       endIndex,
     };
@@ -231,9 +231,9 @@ async function getRouteSection(data, requestId) {
     type: "ROUTE_SECTION_READY",
     id: requestId,
     section: {
-      totalDistance: Number(trace.totalDistance()),
-      totalElevation: Number(trace.totalElevation()),
-      totalElevationLoss: Number(trace.totalElevationLoss()),
+      totalDistance: Number(trace.totalDistance),
+      totalElevation: Number(trace.totalElevation),
+      totalElevationLoss: Number(trace.totalElevationLoss),
     },
   });
 
