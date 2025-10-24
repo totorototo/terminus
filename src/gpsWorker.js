@@ -74,59 +74,17 @@ async function processGPSData(gpsData, requestId) {
     message: "Trace initialized...",
   });
 
-  const updatedPoints = trace.data;
-  const { get, length } = updatedPoints;
-  const serializedPoints = Array.from({ length: length }, (_, i) => {
-    const point = get(i);
-    return [Number(point[0]), Number(point[1]), Number(point[2])]; // Ensure serializable
-  });
-
-  const updatedCumulativeDistances = trace.cumulativeDistances;
-  const { get: getDist, length: distLength } = updatedCumulativeDistances;
-  const serializedDistances = Array.from({ length: distLength }, (_, i) => {
-    return Number(getDist(i));
-  });
-
-  const updatedCumultativeElevations = trace.cumulativeElevations;
-  const { get: getElev, length: elevLength } = updatedCumultativeElevations;
-  const serializedElevations = Array.from({ length: elevLength }, (_, i) => {
-    return Number(getElev(i));
-  });
-
-  const updatedCumulativeElevationLosses = trace.cumulativeElevationLoss;
-  const { get: getElevLoss, length: elevLossLength } =
-    updatedCumulativeElevationLosses;
-  const serializedElevationLosses = Array.from(
-    { length: elevLossLength },
-    (_, i) => {
-      return Number(getElevLoss(i));
-    },
-  );
-
-  const slopes = trace.slopes;
-  const { get: getSlope, length: slopesLength } = slopes;
-  const serializedSlopes = Array.from({ length: slopesLength }, (_, i) => {
-    return Number(getSlope(i));
-  });
-
-  const peaks = trace.peaks;
-  const { get: getPeak, length: peaksLength } = peaks;
-  const serializedPeaks = Array.from({ length: peaksLength }, (_, i) => {
-    const idx = getPeak(i);
-    return Number(idx);
-  });
-
   const results = {
     totalDistance: Number(trace.totalDistance()),
     totalElevation: Number(trace.totalElevation()),
     totalElevationLoss: Number(trace.totalElevationLoss()),
     pointCount: Number(gpsData.coordinates.length),
-    points: serializedPoints,
-    peaks: serializedPeaks,
-    cumulativeDistances: serializedDistances,
-    cumulativeElevations: serializedElevations,
-    cumulativeElevationLosses: serializedElevationLosses,
-    slopes: serializedSlopes,
+    points: trace.data.valueOf(),
+    peaks: trace.peaks.valueOf(),
+    cumulativeDistances: trace.cumulativeDistances.valueOf(),
+    cumulativeElevations: trace.cumulativeElevations.valueOf(),
+    cumulativeElevationLosses: trace.cumulativeElevationLoss.valueOf(),
+    slopes: trace.slopes.valueOf(),
   };
 
   self.postMessage({
@@ -135,27 +93,6 @@ async function processGPSData(gpsData, requestId) {
     progress: 75,
     message: "Calculating statistics...",
   });
-
-  // Add some sample points for visualization
-  const sampleDistances = [0, 10, 25, 50, 75, 90]; // percentages
-  const samplePoints = sampleDistances
-    .map((percent) => {
-      const distance = (results.totalDistance * percent) / 100;
-      const point = trace.pointAtDistance(distance);
-
-      // Convert Zig object to plain JavaScript array
-      if (point !== null) {
-        return {
-          percent: Number(percent),
-          distance: Number(distance),
-          point: [Number(point[0]), Number(point[1]), Number(point[2])], // Ensure serializable
-        };
-      }
-      return null;
-    })
-    .filter((item) => item !== null);
-
-  results.samplePoints = samplePoints;
 
   trace.deinit();
 
@@ -201,19 +138,13 @@ async function processSections(data, requestId) {
 
     // Create a new trace from the section data if needed
     const sectionTrace = Trace.init(sectionData);
-    const updatedPoints = sectionTrace.data;
-    const { get, length } = updatedPoints;
-    const serializedPoints = Array.from({ length: length }, (_, i) => {
-      const point = get(i);
-      return [Number(point[0]), Number(point[1]), Number(point[2])]; // Ensure serializable
-    });
 
     return {
       segmentId: section.id,
       pointCount: sectionData ? Number(sectionData.length) : 0,
       startKm: startKm,
       endKm: endKm,
-      points: serializedPoints,
+      points: sectionTrace.data.valueOf(),
       startPoint: [
         Number(startPoint[0]),
         Number(startPoint[1]),
