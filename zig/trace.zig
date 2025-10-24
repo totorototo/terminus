@@ -22,6 +22,9 @@ pub const Trace = struct {
     slopes: []f64, // Slope percentages between consecutive points
     data: [][3]f64,
     peaks: []usize, // Indices of detected peaks in smoothed elevation
+    totalDistance: f64, // Total distance in meters
+    totalElevation: f64, // Total elevation gain in meters
+    totalElevationLoss: f64, // Total elevation loss in meters
 
     pub fn init(allocator: std.mem.Allocator, points: []const [3]f64) !Trace {
         if (points.len == 0) {
@@ -32,6 +35,9 @@ pub const Trace = struct {
                 .cumulativeElevationLoss = @as([]f64, &.{}),
                 .slopes = @as([]f64, &.{}),
                 .peaks = @as([]usize, &.{}),
+                .totalDistance = 0.0,
+                .totalElevation = 0.0,
+                .totalElevationLoss = 0.0,
             };
         }
 
@@ -119,22 +125,10 @@ pub const Trace = struct {
             .cumulativeElevationLoss = cumulativeElevationLoss[0..points.len],
             .slopes = slopes[0..points.len],
             .peaks = peaks,
+            .totalDistance = cum_dist,
+            .totalElevation = cum_elev,
+            .totalElevationLoss = cum_elev_loss,
         };
-    }
-
-    pub fn totalDistance(self: *const Trace) f64 {
-        if (self.cumulativeDistances.len == 0) return 0.0;
-        return self.cumulativeDistances[self.cumulativeDistances.len - 1];
-    }
-
-    pub fn totalElevation(self: *const Trace) f64 {
-        if (self.cumulativeElevations.len == 0) return 0.0;
-        return self.cumulativeElevations[self.cumulativeElevations.len - 1];
-    }
-
-    pub fn totalElevationLoss(self: *const Trace) f64 {
-        if (self.cumulativeElevationLoss.len == 0) return 0.0;
-        return self.cumulativeElevationLoss[self.cumulativeElevationLoss.len - 1];
     }
 
     pub fn deinit(self: *Trace, allocator: std.mem.Allocator) void {
