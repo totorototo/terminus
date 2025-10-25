@@ -53,10 +53,6 @@ pub const Trace = struct {
             allocator.free(slopes);
         }
 
-        cumulativeDistances[0] = 0.0;
-        cumulativeElevations[0] = 0.0;
-        cumulativeElevationLoss[0] = 0.0;
-        slopes[0] = 0.0; // First point has no slope
         const window: usize = if (coordinates.len < 15) @max(1, coordinates.len / 3) else 15; // Adaptive window size
 
         // Windowed moving average for elevation
@@ -66,7 +62,7 @@ pub const Trace = struct {
         cumulativeDistances[0] = 0.0;
         cumulativeElevations[0] = 0.0;
         cumulativeElevationLoss[0] = 0.0;
-        slopes[0] = 0.0;
+        slopes[0] = 0.0; // First point has no slope
         var cum_dist: f64 = 0.0;
         var cum_elev: f64 = 0.0;
         var cum_elev_loss: f64 = 0.0;
@@ -113,15 +109,15 @@ pub const Trace = struct {
         const peaks = if (coordinates.len >= 3)
             try findPeaks(allocator, smoothed_elevations)
         else
-            try allocator.alloc(usize, 0); // Empty peaks array for small pointssets
+            try allocator.alloc(usize, 0); // Empty peaks array for small datasets
         errdefer allocator.free(peaks); // Clean up peaks on error
 
         return Trace{
-            .points = smoothed_points[0..coordinates.len],
-            .cumulativeDistances = cumulativeDistances[0..coordinates.len],
-            .cumulativeElevations = cumulativeElevations[0..coordinates.len],
-            .cumulativeElevationLoss = cumulativeElevationLoss[0..coordinates.len],
-            .slopes = slopes[0..coordinates.len],
+            .points = smoothed_points,
+            .cumulativeDistances = cumulativeDistances,
+            .cumulativeElevations = cumulativeElevations,
+            .cumulativeElevationLoss = cumulativeElevationLoss,
+            .slopes = slopes,
             .peaks = peaks,
             .totalDistance = cum_dist,
             .totalElevation = cum_elev,
