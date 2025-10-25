@@ -63,8 +63,20 @@ self.onmessage = async function (e) {
 
 async function processGPSData(gpsData, requestId) {
   console.log("🔄 GPS Worker: Processing GPS data...");
+  console.log(`📊 Input: ${gpsData.coordinates.length} GPS points`);
 
   const trace = Trace.init(gpsData.coordinates);
+
+  console.log(`📊 After processing: ${trace.points.length} points in trace`);
+  if (gpsData.coordinates.length > trace.points.length) {
+    const reduction_pct = (
+      (1.0 - trace.points.length / gpsData.coordinates.length) *
+      100
+    ).toFixed(1);
+    console.log(
+      `✂️ Simplified: ${gpsData.coordinates.length} → ${trace.points.length} points (${reduction_pct}% reduction)`,
+    );
+  }
 
   self.postMessage({
     type: "PROGRESS",
@@ -124,29 +136,37 @@ async function processSections(data, requestId) {
     const startIndex = trace.findIndexAtDistance(startKm * 1000);
     const endIndex = trace.findIndexAtDistance(endKm * 1000);
 
-    // Create a new trace from the section data
-    const sectionTrace = Trace.init(sectionData);
+    // Copy sectionData to avoid issues with Zig slice references
+    //  Convert to plain JS array before creating new trace
+    const sectionDataCopy = sectionData
+      ? Array.from(sectionData.valueOf())
+      : null;
+
+    // Create a new trace from the copied section data (or handle null case)
+    const sectionTrace = sectionDataCopy ? Trace.init(sectionDataCopy) : null;
 
     // Extract data before cleanup
     const result = {
       segmentId: section.id,
-      pointCount: sectionData?.length ?? 0,
+      pointCount: sectionDataCopy?.length ?? 0,
       startKm,
       endKm,
-      points: sectionTrace.points.valueOf(),
-      startPoint: startPoint.valueOf(),
-      endPoint: endPoint.valueOf(),
+      points: sectionTrace?.points.valueOf() ?? [],
+      startPoint: startPoint?.valueOf() ?? null,
+      endPoint: endPoint?.valueOf() ?? null,
       startLocation,
       endLocation,
-      totalDistance: sectionTrace.totalDistance,
-      totalElevation: sectionTrace.totalElevation,
-      totalElevationLoss: sectionTrace.totalElevationLoss,
+      totalDistance: sectionTrace?.totalDistance ?? 0,
+      totalElevation: sectionTrace?.totalElevation ?? 0,
+      totalElevationLoss: sectionTrace?.totalElevationLoss ?? 0,
       startIndex,
       endIndex,
     };
 
     // Clean up section trace memory
-    sectionTrace.deinit();
+    if (sectionTrace) {
+      sectionTrace.deinit();
+    }
 
     return result;
   });

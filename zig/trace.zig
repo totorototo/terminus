@@ -8,6 +8,122 @@ const distance3D = @import("gpspoint.zig").distance3D;
 const elevationDeltaSigned = @import("gpspoint.zig").elevationDeltaSigned;
 const findPeaks = @import("peaks.zig").findPeaks;
 
+/// Calculate perpendicular distance from point to line segment
+/// Uses haversine distance for accurate geographic calculations
+fn perpendicularDistance(point: [3]f64, line_start: [3]f64, line_end: [3]f64) f64 {
+    // Special case: line segment is actually a point
+    if (distance3D(line_start, line_end) < 0.001) {
+        return distance3D(point, line_start);
+    }
+
+    // Calculate total line segment distance
+    const line_distance = distance3D(line_start, line_end);
+
+    // Calculate distances to create triangle
+    const dist_start_to_point = distance3D(line_start, point);
+    const dist_end_to_point = distance3D(line_end, point);
+
+    // Use formula: perpendicular distance = 2 * area / base
+    // where area is calculated using Heron's formula
+    const s = (line_distance + dist_start_to_point + dist_end_to_point) / 2.0;
+    const area_squared = s * (s - line_distance) * (s - dist_start_to_point) * (s - dist_end_to_point);
+
+    if (area_squared <= 0.0) {
+        // Point is on the line or numerical issues
+        return @min(dist_start_to_point, dist_end_to_point);
+    }
+
+    const area = @sqrt(area_squared);
+    return (2.0 * area) / line_distance;
+}
+
+/// Douglas-Peucker line simplification algorithm (recursive implementation)
+/// Returns indices of points to keep
+fn douglasPeuckerRecursive(
+    points: []const [3]f64,
+    start_idx: usize,
+    end_idx: usize,
+    epsilon: f64,
+    keep_mask: []bool,
+) void {
+    if (end_idx <= start_idx + 1) {
+        return; // Nothing between start and end
+    }
+
+    var max_distance: f64 = 0.0;
+    var max_index: usize = start_idx;
+
+    const line_start = points[start_idx];
+    const line_end = points[end_idx];
+
+    // Find point with maximum distance from line segment
+    for (start_idx + 1..end_idx) |i| {
+        const dist = perpendicularDistance(points[i], line_start, line_end);
+        if (dist > max_distance) {
+            max_distance = dist;
+            max_index = i;
+        }
+    }
+
+    // If max distance is greater than epsilon, keep the point and recurse
+    if (max_distance > epsilon) {
+        keep_mask[max_index] = true;
+        douglasPeuckerRecursive(points, start_idx, max_index, epsilon, keep_mask);
+        douglasPeuckerRecursive(points, max_index, end_idx, epsilon, keep_mask);
+    }
+}
+
+/// Douglas-Peucker line simplification algorithm
+/// Reduces number of points in a polyline while preserving shape
+fn douglasPeuckerSimplify(
+    allocator: std.mem.Allocator,
+    points: []const [3]f64,
+    epsilon: f64,
+) ![]const [3]f64 {
+    if (points.len <= 2) {
+        // Can't simplify 2 or fewer points, return copy
+        const result = try allocator.alloc([3]f64, points.len);
+        @memcpy(result, points);
+        return result;
+    }
+
+    // Create mask to mark which points to keep
+    const keep_mask = try allocator.alloc(bool, points.len);
+    defer allocator.free(keep_mask);
+    @memset(keep_mask, false);
+
+    // Always keep first and last points
+    keep_mask[0] = true;
+    keep_mask[points.len - 1] = true;
+
+    // Recursively find points to keep
+    douglasPeuckerRecursive(points, 0, points.len - 1, epsilon, keep_mask);
+
+    // Count points to keep
+    var keep_count: usize = 0;
+    for (keep_mask) |keep| {
+        if (keep) keep_count += 1;
+    }
+
+    std.debug.print("🔍 Douglas-Peucker Debug: Keeping {} / {} points (epsilon={d:.2} meters)\n", .{
+        keep_count,
+        points.len,
+        epsilon,
+    });
+
+    // Build result array with kept points
+    const result = try allocator.alloc([3]f64, keep_count);
+    var result_idx: usize = 0;
+    for (points, 0..) |point, i| {
+        if (keep_mask[i]) {
+            result[result_idx] = point;
+            result_idx += 1;
+        }
+    }
+
+    return result;
+}
+
 // Structure to return both the closest point and its index
 pub const ClosestPointResult = struct {
     point: [3]f64,
@@ -41,24 +157,49 @@ pub const Trace = struct {
             };
         }
 
+        // Apply Douglas-Peucker simplification for large datasets (> 1000 points)
+        const should_simplify = coordinates.len > 1000;
+        const working_coords = if (should_simplify)
+            try douglasPeuckerSimplify(allocator, coordinates, 2.0) // 2 meter tolerance
+        else
+            coordinates;
+
+        // Log simplification results
+        if (should_simplify) {
+            const reduction_pct = (1.0 - @as(f64, @floatFromInt(working_coords.len)) / @as(f64, @floatFromInt(coordinates.len))) * 100.0;
+            std.debug.print("🔧 Douglas-Peucker: Reduced from {} to {} points ({d:.1}% reduction)\n", .{
+                coordinates.len,
+                working_coords.len,
+                reduction_pct,
+            });
+        }
+
         // Allocate and compute cumulative distances in one pass
-        const cumulativeDistances = try allocator.alloc(f64, coordinates.len);
-        const cumulativeElevations = try allocator.alloc(f64, coordinates.len);
-        const cumulativeElevationLoss = try allocator.alloc(f64, coordinates.len);
-        const slopes = try allocator.alloc(f64, coordinates.len);
+        const cumulativeDistances = try allocator.alloc(f64, working_coords.len);
+        const cumulativeElevations = try allocator.alloc(f64, working_coords.len);
+        const cumulativeElevationLoss = try allocator.alloc(f64, working_coords.len);
+        const slopes = try allocator.alloc(f64, working_coords.len);
         errdefer {
             allocator.free(cumulativeDistances);
             allocator.free(cumulativeElevations);
             allocator.free(cumulativeElevationLoss);
             allocator.free(slopes);
+            if (should_simplify) {
+                allocator.free(working_coords);
+            }
         }
 
-        const window: usize = if (coordinates.len < 15) @max(1, coordinates.len / 3) else 15; // Adaptive window size
+        const window: usize = if (working_coords.len < 15) @max(1, working_coords.len / 3) else 15; // Adaptive window size
 
         // Windowed moving average for elevation
-        var smoothed_points = try allocator.alloc([3]f64, coordinates.len);
-        errdefer allocator.free(smoothed_points); // Clean up on error
-        smoothed_points[0] = coordinates[0];
+        var smoothed_points = try allocator.alloc([3]f64, working_coords.len);
+        errdefer {
+            allocator.free(smoothed_points);
+            if (should_simplify) {
+                allocator.free(working_coords);
+            }
+        }
+        smoothed_points[0] = working_coords[0];
         cumulativeDistances[0] = 0.0;
         cumulativeElevations[0] = 0.0;
         cumulativeElevationLoss[0] = 0.0;
@@ -66,21 +207,26 @@ pub const Trace = struct {
         var cum_dist: f64 = 0.0;
         var cum_elev: f64 = 0.0;
         var cum_elev_loss: f64 = 0.0;
-        var smoothed_elevations = try allocator.alloc(f32, coordinates.len);
-        errdefer allocator.free(smoothed_elevations); // Clean up on error
+        var smoothed_elevations = try allocator.alloc(f32, working_coords.len);
+        errdefer {
+            allocator.free(smoothed_elevations);
+            if (should_simplify) {
+                allocator.free(working_coords);
+            }
+        }
         defer allocator.free(smoothed_elevations);
-        for (0..coordinates.len) |i| {
+        for (0..working_coords.len) |i| {
             // Compute moving average for elevation
             var sum: f64 = 0.0;
             var count: usize = 0;
             const start = if (i < window / 2) 0 else i - window / 2;
-            const end = @min(coordinates.len, i + window / 2 + 1);
+            const end = @min(working_coords.len, i + window / 2 + 1);
             for (start..end) |j| {
-                sum += coordinates[j][2];
+                sum += working_coords[j][2];
                 count += 1;
             }
             const smoothed_elev = sum / @as(f64, @floatFromInt(count));
-            smoothed_points[i] = coordinates[i];
+            smoothed_points[i] = working_coords[i];
             smoothed_points[i][2] = smoothed_elev;
             smoothed_elevations[i] = @floatCast(smoothed_elev);
             if (i > 0) {
@@ -105,12 +251,23 @@ pub const Trace = struct {
                 cumulativeElevationLoss[i] = cum_elev_loss;
             }
         }
+
         // Find peaks using peaks.zig (only if we have enough points)
-        const peaks = if (coordinates.len >= 3)
+        const peaks = if (working_coords.len >= 3)
             try findPeaks(allocator, smoothed_elevations)
         else
             try allocator.alloc(usize, 0); // Empty peaks array for small datasets
-        errdefer allocator.free(peaks); // Clean up peaks on error
+        errdefer {
+            allocator.free(peaks);
+            if (should_simplify) {
+                allocator.free(working_coords);
+            }
+        }
+
+        // Now that all data has been copied, we can safely free working_coords
+        if (should_simplify) {
+            allocator.free(working_coords);
+        }
 
         return Trace{
             .points = smoothed_points,
@@ -908,4 +1065,226 @@ test "ClosestPointResult: structure validation" {
     try expect(result.?.distance >= 0.0);
     try expect(!std.math.isNan(result.?.distance));
     try expect(!std.math.isInf(result.?.distance));
+}
+
+test "perpendicularDistance: point on line" {
+    const line_start = [3]f64{ 0.0, 0.0, 0.0 };
+    const line_end = [3]f64{ 10.0, 0.0, 0.0 };
+    const point_on_line = [3]f64{ 5.0, 0.0, 0.0 };
+
+    const dist = perpendicularDistance(point_on_line, line_start, line_end);
+    try expectApproxEqAbs(0.0, dist, 0.001);
+}
+
+test "perpendicularDistance: point off line" {
+    const line_start = [3]f64{ 0.0, 0.0, 0.0 };
+    const line_end = [3]f64{ 10.0, 0.0, 0.0 };
+    const point_off_line = [3]f64{ 5.0, 3.0, 0.0 };
+
+    const dist = perpendicularDistance(point_off_line, line_start, line_end);
+    try expectApproxEqAbs(3.0, dist, 0.01);
+}
+
+test "perpendicularDistance: 3D distance" {
+    const line_start = [3]f64{ 0.0, 0.0, 0.0 };
+    const line_end = [3]f64{ 10.0, 0.0, 0.0 };
+    const point_3d = [3]f64{ 5.0, 3.0, 4.0 };
+
+    const dist = perpendicularDistance(point_3d, line_start, line_end);
+    // Distance should be sqrt(3^2 + 4^2) = 5.0
+    try expectApproxEqAbs(5.0, dist, 0.01);
+}
+
+test "perpendicularDistance: point equals line start" {
+    const line_start = [3]f64{ 1.0, 2.0, 3.0 };
+    const line_end = [3]f64{ 5.0, 6.0, 7.0 };
+    const point = line_start;
+
+    const dist = perpendicularDistance(point, line_start, line_end);
+    try expectApproxEqAbs(0.0, dist, 0.001);
+}
+
+test "douglasPeuckerSimplify: straight line" {
+    const allocator = std.testing.allocator;
+
+    // Points on a perfectly straight line
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 1.0, 1.0, 100.0 },
+        [3]f64{ 2.0, 2.0, 100.0 },
+        [3]f64{ 3.0, 3.0, 100.0 },
+        [3]f64{ 4.0, 4.0, 100.0 },
+    };
+
+    const simplified = try douglasPeuckerSimplify(allocator, points[0..], 0.01);
+    defer allocator.free(simplified);
+
+    // Should simplify to just endpoints since all points are collinear
+    try expect(simplified.len == 2);
+    try expectApproxEqAbs(simplified[0][0], 0.0, 0.001);
+    try expectApproxEqAbs(simplified[1][0], 4.0, 0.001);
+}
+
+test "douglasPeuckerSimplify: zigzag preserves peaks" {
+    const allocator = std.testing.allocator;
+
+    // Zigzag pattern with clear peaks
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 1.0, 0.0, 100.0 },
+        [3]f64{ 2.0, 5.0, 110.0 }, // Peak
+        [3]f64{ 3.0, 0.0, 100.0 },
+        [3]f64{ 4.0, 0.0, 100.0 },
+        [3]f64{ 5.0, 5.0, 110.0 }, // Peak
+        [3]f64{ 6.0, 0.0, 100.0 },
+    };
+
+    const simplified = try douglasPeuckerSimplify(allocator, points[0..], 1.0);
+    defer allocator.free(simplified);
+
+    // Should keep significant peaks
+    try expect(simplified.len >= 3);
+    try expect(simplified.len <= points.len);
+
+    // Check that first and last are preserved
+    try expectApproxEqAbs(simplified[0][0], 0.0, 0.001);
+    try expectApproxEqAbs(simplified[simplified.len - 1][0], 6.0, 0.001);
+}
+
+test "douglasPeuckerSimplify: epsilon sensitivity" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 1.0, 0.1, 100.0 },
+        [3]f64{ 2.0, 0.2, 100.0 },
+        [3]f64{ 3.0, 0.1, 100.0 },
+        [3]f64{ 4.0, 0.0, 100.0 },
+    };
+
+    // Small epsilon - keeps more points
+    const strict = try douglasPeuckerSimplify(allocator, points[0..], 0.01);
+    defer allocator.free(strict);
+
+    // Large epsilon - keeps fewer points
+    const loose = try douglasPeuckerSimplify(allocator, points[0..], 1.0);
+    defer allocator.free(loose);
+
+    try expect(loose.len <= strict.len);
+    try expect(loose.len >= 2); // Always keep at least endpoints
+}
+
+test "douglasPeuckerSimplify: two points" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 1.0, 1.0, 105.0 },
+    };
+
+    const simplified = try douglasPeuckerSimplify(allocator, points[0..], 1.0);
+    defer allocator.free(simplified);
+
+    // Should return both points unchanged
+    try expect(simplified.len == 2);
+    try expectApproxEqAbs(simplified[0][0], 0.0, 0.001);
+    try expectApproxEqAbs(simplified[1][0], 1.0, 0.001);
+}
+
+test "douglasPeuckerSimplify: single point" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+    };
+
+    const simplified = try douglasPeuckerSimplify(allocator, points[0..], 1.0);
+    defer allocator.free(simplified);
+
+    try expect(simplified.len == 1);
+    try expectApproxEqAbs(simplified[0][0], 0.0, 0.001);
+}
+
+test "douglasPeuckerSimplify: real-world GPS data pattern" {
+    const allocator = std.testing.allocator;
+
+    // Simulate GPS data with noise
+    var points = try allocator.alloc([3]f64, 20);
+    defer allocator.free(points);
+
+    for (0..20) |i| {
+        const t = @as(f64, @floatFromInt(i)) / 20.0;
+        // Main path with small noise
+        points[i] = [3]f64{
+            t * 10.0,
+            t * 10.0 + @sin(t * 10.0) * 0.05, // Small oscillations
+            100.0 + t * 20.0,
+        };
+    }
+
+    const simplified = try douglasPeuckerSimplify(allocator, points, 0.1);
+    defer allocator.free(simplified);
+
+    // Should reduce points significantly while preserving general shape
+    try expect(simplified.len < points.len);
+    try expect(simplified.len >= 2);
+
+    // First and last should be preserved
+    try expectApproxEqAbs(simplified[0][0], 0.0, 0.1);
+    try expectApproxEqAbs(simplified[simplified.len - 1][0], 9.5, 0.1);
+}
+
+test "douglasPeuckerSimplify: elevation changes preserved" {
+    const allocator = std.testing.allocator;
+
+    // Path with significant elevation changes
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 1.0, 1.0, 100.0 },
+        [3]f64{ 2.0, 2.0, 200.0 }, // Big elevation gain
+        [3]f64{ 3.0, 3.0, 200.0 },
+        [3]f64{ 4.0, 4.0, 100.0 }, // Big elevation loss
+        [3]f64{ 5.0, 5.0, 100.0 },
+    };
+
+    const simplified = try douglasPeuckerSimplify(allocator, points[0..], 10.0);
+    defer allocator.free(simplified);
+
+    // Should keep the elevation change points
+    try expect(simplified.len >= 3);
+
+    // Check that point with high elevation is preserved
+    var found_high = false;
+    for (simplified) |pt| {
+        if (pt[2] >= 190.0) {
+            found_high = true;
+            break;
+        }
+    }
+    try expect(found_high);
+}
+
+test "Trace with large dataset applies simplification" {
+    const allocator = std.testing.allocator;
+
+    // Create 1500 points to trigger simplification (>1000 threshold)
+    var points = try allocator.alloc([3]f64, 1500);
+    defer allocator.free(points);
+
+    for (0..1500) |i| {
+        const t = @as(f64, @floatFromInt(i)) / 1500.0;
+        points[i] = [3]f64{
+            t * 100.0,
+            t * 100.0 + @sin(t * 20.0) * 0.1,
+            100.0 + t * 50.0,
+        };
+    }
+
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    // Should have fewer points than original due to simplification
+    try expect(trace.points.len < 1500);
+    try expect(trace.points.len > 0);
+    try expect(trace.totalDistance > 0.0);
 }
