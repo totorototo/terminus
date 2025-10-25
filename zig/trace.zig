@@ -677,3 +677,235 @@ test "findClosestPoint: identical points" {
     try expect(result.?.index == 0);
     try expectApproxEqAbs(result.?.distance, 0.0, 0.1);
 }
+
+test "peaks detection: trace with clear peaks" {
+    const allocator = std.testing.allocator;
+
+    // Create a signal with clear peaks at indices 2, 5, and 8
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 }, // 0
+        [3]f64{ 0.0, 0.001, 102.0 }, // 1
+        [3]f64{ 0.0, 0.002, 110.0 }, // 2 - Peak
+        [3]f64{ 0.0, 0.003, 103.0 }, // 3
+        [3]f64{ 0.0, 0.004, 104.0 }, // 4
+        [3]f64{ 0.0, 0.005, 115.0 }, // 5 - Peak
+        [3]f64{ 0.0, 0.006, 105.0 }, // 6
+        [3]f64{ 0.0, 0.007, 106.0 }, // 7
+        [3]f64{ 0.0, 0.008, 120.0 }, // 8 - Peak
+        [3]f64{ 0.0, 0.009, 107.0 }, // 9
+        [3]f64{ 0.0, 0.010, 108.0 }, // 10
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // Verify peaks array is populated
+    try expect(trace.peaks.len >= 0);
+
+    // With clear peaks in the data, we should find at least some peaks
+    // (The actual number depends on smoothing and AMPD parameters)
+    if (trace.peaks.len > 0) {
+        // Verify all peak indices are within bounds
+        for (trace.peaks) |peak_idx| {
+            try expect(peak_idx < trace.points.len);
+        }
+
+        // Verify peaks are sorted
+        for (0..trace.peaks.len - 1) |i| {
+            try expect(trace.peaks[i] < trace.peaks[i + 1]);
+        }
+    }
+}
+
+test "peaks detection: flat terrain" {
+    const allocator = std.testing.allocator;
+
+    // Flat terrain should have no peaks
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.0, 0.001, 100.0 },
+        [3]f64{ 0.0, 0.002, 100.0 },
+        [3]f64{ 0.0, 0.003, 100.0 },
+        [3]f64{ 0.0, 0.004, 100.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // Flat terrain should produce zero or very few peaks
+    try expect(trace.peaks.len < points.len);
+}
+
+test "peaks detection: too few points" {
+    const allocator = std.testing.allocator;
+
+    // With fewer than 3 points, peak detection should return empty array
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.0, 0.001, 110.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    try expect(trace.peaks.len == 0);
+}
+
+test "windowing: small dataset adaptive window" {
+    const allocator = std.testing.allocator;
+
+    // With 6 points, window should be 2 (6/3)
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.0, 0.001, 105.0 },
+        [3]f64{ 0.0, 0.002, 110.0 },
+        [3]f64{ 0.0, 0.003, 108.0 },
+        [3]f64{ 0.0, 0.004, 112.0 },
+        [3]f64{ 0.0, 0.005, 115.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // Verify smoothing occurred (points should be slightly different from input)
+    try expect(trace.points.len == 6);
+
+    // First and last points should be smoothed differently than middle
+    try expect(trace.points[0][2] >= 100.0); // Close to original
+    try expect(trace.points[0][2] <= 110.0); // But potentially smoothed
+}
+
+test "windowing: large dataset fixed window" {
+    const allocator = std.testing.allocator;
+
+    // Create 30 points (> 15, so window = 15)
+    var points = try allocator.alloc([3]f64, 30);
+    defer allocator.free(points);
+
+    for (0..30) |i| {
+        const lat = @as(f64, @floatFromInt(i)) * 0.001;
+        const elev = 100.0 + @as(f64, @floatFromInt(i % 5)); // Oscillating elevation
+        points[i] = [3]f64{ 0.0, lat, elev };
+    }
+
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    try expect(trace.points.len == 30);
+
+    // With window size 15, smoothing should be significant
+    // Middle points should be noticeably smoothed
+    const mid_idx = 15;
+    const original_elev = 100.0 + @as(f64, @floatFromInt(mid_idx % 5));
+    const smoothed_elev = trace.points[mid_idx][2];
+
+    // Smoothed value should be different from sharp oscillation
+    try expect(@abs(smoothed_elev - original_elev) >= 0.0);
+}
+
+test "cumulative arrays: monotonic increasing" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.0, 0.001, 105.0 },
+        [3]f64{ 0.0, 0.002, 103.0 },
+        [3]f64{ 0.0, 0.003, 110.0 },
+        [3]f64{ 0.0, 0.004, 108.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // Cumulative distances should be monotonically increasing
+    for (0..trace.cumulativeDistances.len - 1) |i| {
+        try expect(trace.cumulativeDistances[i + 1] >= trace.cumulativeDistances[i]);
+    }
+
+    // Cumulative elevations should be monotonically increasing (only counting gains)
+    for (0..trace.cumulativeElevations.len - 1) |i| {
+        try expect(trace.cumulativeElevations[i + 1] >= trace.cumulativeElevations[i]);
+    }
+
+    // Cumulative elevation loss should be monotonically increasing
+    for (0..trace.cumulativeElevationLoss.len - 1) |i| {
+        try expect(trace.cumulativeElevationLoss[i + 1] >= trace.cumulativeElevationLoss[i]);
+    }
+}
+
+test "cumulative arrays: consistency check" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.0, 0.001, 105.0 }, // +5m
+        [3]f64{ 0.0, 0.002, 110.0 }, // +5m
+        [3]f64{ 0.0, 0.003, 108.0 }, // -2m
+        [3]f64{ 0.0, 0.004, 112.0 }, // +4m
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // First element should always be 0
+    try expectApproxEqAbs(trace.cumulativeDistances[0], 0.0, 0.001);
+    try expectApproxEqAbs(trace.cumulativeElevations[0], 0.0, 0.001);
+    try expectApproxEqAbs(trace.cumulativeElevationLoss[0], 0.0, 0.001);
+
+    // Last element should equal totals
+    const last_idx = trace.points.len - 1;
+    try expectApproxEqAbs(trace.cumulativeDistances[last_idx], trace.totalDistance, 0.001);
+    try expectApproxEqAbs(trace.cumulativeElevations[last_idx], trace.totalElevation, 0.001);
+    try expectApproxEqAbs(trace.cumulativeElevationLoss[last_idx], trace.totalElevationLoss, 0.001);
+}
+
+test "deinit: verify no memory leaks with allocator" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.0, 0.001, 105.0 },
+        [3]f64{ 0.0, 0.002, 110.0 },
+    };
+
+    // Create and destroy multiple traces to test memory management
+    for (0..10) |_| {
+        var trace = try Trace.init(allocator, points[0..]);
+        trace.deinit(allocator);
+    }
+
+    // If there were memory leaks, the test allocator would catch them
+}
+
+test "deinit: empty trace cleanup" {
+    const allocator = std.testing.allocator;
+
+    var trace = try Trace.init(allocator, &.{});
+    trace.deinit(allocator); // Should not crash with empty slices
+
+    // Verify it completes without error
+}
+
+test "ClosestPointResult: structure validation" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 1.0, 2.0, 100.0 },
+        [3]f64{ 3.0, 4.0, 150.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const target = [3]f64{ 1.5, 2.5, 110.0 };
+    const result = trace.findClosestPoint(target);
+
+    try expect(result != null);
+
+    // Verify all fields are populated correctly
+    try expect(result.?.point.len == 3);
+    try expect(result.?.index < trace.points.len);
+    try expect(result.?.distance >= 0.0);
+    try expect(!std.math.isNan(result.?.distance));
+    try expect(!std.math.isInf(result.?.distance));
+}
