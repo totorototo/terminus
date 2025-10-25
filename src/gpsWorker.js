@@ -1,5 +1,6 @@
 // GPS Processing Web Worker
 // This runs GPS computations off the main thread to prevent UI freezing
+// All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
 
 import { Trace, __zigar } from "../zig/trace.zig";
 
@@ -60,13 +61,11 @@ self.onmessage = async function (e) {
   }
 };
 
-// Process full GPS data (heavy computation)
 async function processGPSData(gpsData, requestId) {
   console.log("🔄 GPS Worker: Processing GPS data...");
 
   const trace = Trace.init(gpsData.coordinates);
 
-  // Send progress updates during processing
   self.postMessage({
     type: "PROGRESS",
     id: requestId,
@@ -81,12 +80,14 @@ async function processGPSData(gpsData, requestId) {
     message: "Calculating statistics...",
   });
 
+  // Convert to plain JS object before deinit
+  const results = trace.valueOf();
   trace.deinit();
 
   self.postMessage({
     type: "GPS_DATA_PROCESSED",
     id: requestId,
-    results: trace.valueOf(),
+    results,
   });
 }
 
@@ -123,25 +124,31 @@ async function processSections(data, requestId) {
     const startIndex = trace.findIndexAtDistance(startKm * 1000);
     const endIndex = trace.findIndexAtDistance(endKm * 1000);
 
-    // Create a new trace from the section data if needed
+    // Create a new trace from the section data
     const sectionTrace = Trace.init(sectionData);
 
-    return {
+    // Extract data before cleanup
+    const result = {
       segmentId: section.id,
-      pointCount: sectionData ? Number(sectionData.length) : 0,
-      startKm: startKm,
-      endKm: endKm,
+      pointCount: sectionData?.length ?? 0,
+      startKm,
+      endKm,
       points: sectionTrace.points.valueOf(),
       startPoint: startPoint.valueOf(),
       endPoint: endPoint.valueOf(),
-      startLocation: startLocation,
-      endLocation: endLocation,
+      startLocation,
+      endLocation,
       totalDistance: sectionTrace.totalDistance,
       totalElevation: sectionTrace.totalElevation,
       totalElevationLoss: sectionTrace.totalElevationLoss,
       startIndex,
       endIndex,
     };
+
+    // Clean up section trace memory
+    sectionTrace.deinit();
+
+    return result;
   });
 
   self.postMessage({
@@ -167,10 +174,10 @@ async function calculateRouteStats(data, requestId) {
 
     return {
       segmentId: segment.id,
-      distance: Number(endDist - startDist),
-      pointCount: Number(sectionPoints.length),
-      startPoint: startPoint ? startPoint.valueOf() : null,
-      endPoint: endPoint ? endPoint.valueOf() : null,
+      distance: endDist - startDist,
+      pointCount: sectionPoints?.length ?? 0,
+      startPoint: startPoint?.valueOf() ?? null,
+      endPoint: endPoint?.valueOf() ?? null,
     };
   });
 
@@ -192,8 +199,8 @@ async function findPointsAtDistances(data, requestId) {
     .map((distance) => {
       const point = trace.pointAtDistance(distance);
       return {
-        distance: Number(distance),
-        point: point ? point.valueOf() : null,
+        distance,
+        point: point?.valueOf() ?? null,
       };
     })
     .filter((item) => item.point !== null);
@@ -227,24 +234,20 @@ async function getRouteSection(data, requestId) {
   trace.deinit();
 }
 
-// find closest point to target
+// Find closest point to target location
 async function findClosestLocation(data, requestId) {
   const { coordinates, target } = data;
   const trace = Trace.init(coordinates);
 
   const closest = trace.findClosestPoint(target);
 
-  const closestLocation = closest.point ? closest.point.valueOf() : null;
-
-  const closestIndex = closest.index;
-
   trace.deinit();
 
   self.postMessage({
     type: "CLOSEST_POINT_FOUND",
     id: requestId,
-    closestLocation,
-    closestIndex,
+    closestLocation: closest.point?.valueOf() ?? null,
+    closestIndex: closest.index,
   });
 }
 
