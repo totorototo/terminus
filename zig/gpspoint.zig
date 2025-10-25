@@ -67,3 +67,129 @@ pub fn elevationDeltaAbs(a: [3]f64, b: [3]f64) f64 {
 pub fn elevationDeltaSigned(a: [3]f64, b: [3]f64) f64 {
     return b[IDX_ELEV] - a[IDX_ELEV];
 }
+
+test "distance: same point returns zero" {
+    const p = [3]f64{ 0.0, 0.0, 0.0 };
+    const d = distance(p, p);
+    try std.testing.expectApproxEqAbs(0.0, d, 0.001);
+}
+
+test "distance: equator 1 degree longitude" {
+    const a = [3]f64{ 0.0, 0.0, 0.0 };
+    const b = [3]f64{ 1.0, 0.0, 0.0 };
+    const d = distance(a, b);
+    // At equator, 1 degree longitude ≈ 111,320 meters
+    try std.testing.expectApproxEqAbs(111320.0, d, 200.0);
+}
+
+test "distance: equator 1 degree latitude" {
+    const a = [3]f64{ 0.0, 0.0, 0.0 };
+    const b = [3]f64{ 0.0, 1.0, 0.0 };
+    const d = distance(a, b);
+    // 1 degree latitude ≈ 111,320 meters
+    try std.testing.expectApproxEqAbs(111320.0, d, 200.0);
+}
+
+test "distance: known coordinates (Paris to London)" {
+    const paris = [3]f64{ 2.3522, 48.8566, 0.0 };
+    const london = [3]f64{ -0.1276, 51.5074, 0.0 };
+    const d = distance(paris, london);
+    // Actual distance is approximately 343,560 meters
+    try std.testing.expectApproxEqAbs(343560.0, d, 1000.0);
+}
+
+test "distance3D: horizontal only (same elevation)" {
+    const a = [3]f64{ 0.0, 0.0, 100.0 };
+    const b = [3]f64{ 1.0, 0.0, 100.0 };
+    const d2d = distance(a, b);
+    const d3d = distance3D(a, b);
+    try std.testing.expectApproxEqAbs(d2d, d3d, 0.001);
+}
+
+test "distance3D: vertical only (same location)" {
+    const a = [3]f64{ 0.0, 0.0, 0.0 };
+    const b = [3]f64{ 0.0, 0.0, 100.0 };
+    const d3d = distance3D(a, b);
+    try std.testing.expectApproxEqAbs(100.0, d3d, 0.001);
+}
+
+test "distance3D: pythagorean theorem (3-4-5 triangle)" {
+    // Create points where horizontal distance is ~3000m and vertical is 4000m
+    // Expected 3D distance: 5000m
+    const a = [3]f64{ 0.0, 0.0, 0.0 };
+    // At equator, ~0.027 degrees ≈ 3000 meters
+    const b = [3]f64{ 0.027, 0.0, 4000.0 };
+    const d3d = distance3D(a, b);
+    try std.testing.expectApproxEqAbs(5000.0, d3d, 50.0);
+}
+
+test "elevationDelta: positive difference" {
+    const a = [3]f64{ 0.0, 0.0, 100.0 };
+    const b = [3]f64{ 0.0, 0.0, 50.0 };
+    const delta = elevationDelta(a, b);
+    try std.testing.expectEqual(50.0, delta);
+}
+
+test "elevationDelta: negative difference returns positive" {
+    const a = [3]f64{ 0.0, 0.0, 50.0 };
+    const b = [3]f64{ 0.0, 0.0, 100.0 };
+    const delta = elevationDelta(a, b);
+    try std.testing.expectEqual(50.0, delta);
+}
+
+test "elevationDelta: same elevation" {
+    const a = [3]f64{ 0.0, 0.0, 100.0 };
+    const b = [3]f64{ 0.0, 0.0, 100.0 };
+    const delta = elevationDelta(a, b);
+    try std.testing.expectEqual(0.0, delta);
+}
+
+test "elevationDeltaSigned: ascending" {
+    const a = [3]f64{ 0.0, 0.0, 100.0 };
+    const b = [3]f64{ 0.0, 0.0, 150.0 };
+    const delta = elevationDeltaSigned(a, b);
+    try std.testing.expectEqual(50.0, delta);
+}
+
+test "elevationDeltaSigned: descending" {
+    const a = [3]f64{ 0.0, 0.0, 150.0 };
+    const b = [3]f64{ 0.0, 0.0, 100.0 };
+    const delta = elevationDeltaSigned(a, b);
+    try std.testing.expectEqual(-50.0, delta);
+}
+
+test "bearingTo: north" {
+    const a = [3]f64{ 0.0, 0.0, 0.0 };
+    const b = [3]f64{ 0.0, 1.0, 0.0 };
+    const bearing = bearingTo(a, b);
+    try std.testing.expectApproxEqAbs(0.0, bearing, 0.1);
+}
+
+test "bearingTo: east" {
+    const a = [3]f64{ 0.0, 0.0, 0.0 };
+    const b = [3]f64{ 1.0, 0.0, 0.0 };
+    const bearing = bearingTo(a, b);
+    try std.testing.expectApproxEqAbs(90.0, bearing, 0.1);
+}
+
+test "bearingTo: south" {
+    const a = [3]f64{ 0.0, 0.0, 0.0 };
+    const b = [3]f64{ 0.0, -1.0, 0.0 };
+    const bearing = bearingTo(a, b);
+    try std.testing.expectApproxEqAbs(180.0, bearing, 0.1);
+}
+
+test "bearingTo: west" {
+    const a = [3]f64{ 0.0, 0.0, 0.0 };
+    const b = [3]f64{ -1.0, 0.0, 0.0 };
+    const bearing = bearingTo(a, b);
+    try std.testing.expectApproxEqAbs(270.0, bearing, 0.1);
+}
+
+test "elevationDeltaAbs: matches elevationDelta" {
+    const a = [3]f64{ 0.0, 0.0, 100.0 };
+    const b = [3]f64{ 0.0, 0.0, 50.0 };
+    const delta1 = elevationDelta(a, b);
+    const delta2 = elevationDeltaAbs(a, b);
+    try std.testing.expectEqual(delta1, delta2);
+}
