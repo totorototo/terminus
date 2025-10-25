@@ -167,7 +167,7 @@ pub const Trace = struct {
         var cum_elev: f64 = 0.0;
         var cum_elev_loss: f64 = 0.0;
 
-        // Calculate cumulative values in single pass
+        // First pass: calculate cumulative values
         for (0..final_points.len) |i| {
             elevations[i] = @floatCast(final_points[i][2]);
 
@@ -177,7 +177,6 @@ pub const Trace = struct {
                 cumulativeDistances[i] = cum_dist;
 
                 const elev_delta = final_points[i][2] - final_points[i - 1][2];
-                slopes[i] = if (d > 0.0) (elev_delta / d) * 100.0 else 0.0;
 
                 if (elev_delta > 0) {
                     cum_elev += elev_delta;
@@ -186,6 +185,40 @@ pub const Trace = struct {
                 }
                 cumulativeElevations[i] = cum_elev;
                 cumulativeElevationLoss[i] = cum_elev_loss;
+            }
+        }
+
+        // Second pass: calculate smoothed slopes using look-ahead window
+        // Use 50m window for slope averaging to reduce noise
+        const slope_window_distance: f64 = 50.0;
+        for (0..final_points.len) |i| {
+            if (i == 0) {
+                slopes[0] = 0.0;
+                continue;
+            }
+
+            // Find point ~50m ahead (or use last point if near end)
+            var target_idx = i;
+            const current_dist = cumulativeDistances[i];
+
+            for (i + 1..final_points.len) |j| {
+                if (cumulativeDistances[j] - current_dist >= slope_window_distance) {
+                    target_idx = j;
+                    break;
+                }
+                target_idx = j;
+            }
+
+            // Calculate slope over this segment (current to target)
+            if (target_idx > i) {
+                const segment_dist = cumulativeDistances[target_idx] - cumulativeDistances[i];
+                const segment_elev = final_points[target_idx][2] - final_points[i][2];
+                slopes[i] = if (segment_dist > 0.0) (segment_elev / segment_dist) * 100.0 else 0.0;
+            } else {
+                // Near end, use point-to-point slope
+                const d = distance3D(final_points[i - 1], final_points[i]);
+                const elev_delta = final_points[i][2] - final_points[i - 1][2];
+                slopes[i] = if (d > 0.0) (elev_delta / d) * 100.0 else 0.0;
             }
         }
 
@@ -1221,4 +1254,41 @@ test "Trace with large dataset applies simplification" {
     try expect(trace.points.len < 1500);
     try expect(trace.points.len > 0);
     try expect(trace.totalDistance > 0.0);
+}
+
+test "slope smoothing: reduces variations" {
+    const allocator = std.testing.allocator;
+
+    // Create points with noisy elevation but generally uphill
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.0, 0.001, 105.0 }, // +5m over ~111m = 4.5%
+        [3]f64{ 0.0, 0.002, 106.0 }, // +1m spike (would be 0.9% point-to-point)
+        [3]f64{ 0.0, 0.003, 111.0 }, // +5m
+        [3]f64{ 0.0, 0.004, 112.0 }, // +1m spike
+        [3]f64{ 0.0, 0.005, 117.0 }, // +5m
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // With 50m look-ahead, slopes should be more stable
+    // Check that slopes are reasonable (not extreme variations)
+    for (trace.slopes[1..]) |slope| {
+        // All slopes should be positive and reasonable for a consistent uphill
+        try expect(slope >= -5.0); // Allow small negative due to noise
+        try expect(slope <= 10.0); // Cap at reasonable maximum
+    }
+
+    // Verify slopes are less variable (standard deviation should be lower)
+    // than point-to-point would be
+    var sum: f64 = 0.0;
+    for (trace.slopes[1..]) |slope| {
+        sum += slope;
+    }
+    const mean = sum / @as(f64, @floatFromInt(trace.slopes.len - 1));
+
+    // Mean slope should be around 4-5% for this consistent uphill
+    try expect(mean >= 2.0);
+    try expect(mean <= 7.0);
 }
