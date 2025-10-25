@@ -79,7 +79,7 @@ fn douglasPeuckerSimplify(
     allocator: std.mem.Allocator,
     points: []const [3]f64,
     epsilon: f64,
-) ![]const [3]f64 {
+) ![][3]f64 {
     if (points.len <= 2) {
         // Can't simplify 2 or fewer points, return copy
         const result = try allocator.alloc([3]f64, points.len);
@@ -160,9 +160,10 @@ pub const Trace = struct {
         // Apply Douglas-Peucker simplification for large datasets (> 1000 points)
         const should_simplify = coordinates.len > 1000;
         const working_coords = if (should_simplify)
-            try douglasPeuckerSimplify(allocator, coordinates, 2.0) // 2 meter tolerance
+            try douglasPeuckerSimplify(allocator, coordinates, 5.0) // 2 meter tolerance
         else
             coordinates;
+        defer if (should_simplify) allocator.free(working_coords);
 
         // Log simplification results
         if (should_simplify) {
@@ -174,64 +175,47 @@ pub const Trace = struct {
             });
         }
 
-        // Allocate arrays for simplified points (no smoothing needed - Douglas-Peucker preserves important features)
-        const cumulativeDistances = try allocator.alloc(f64, working_coords.len);
-        const cumulativeElevations = try allocator.alloc(f64, working_coords.len);
-        const cumulativeElevationLoss = try allocator.alloc(f64, working_coords.len);
-        const slopes = try allocator.alloc(f64, working_coords.len);
-        errdefer {
-            allocator.free(cumulativeDistances);
-            allocator.free(cumulativeElevations);
-            allocator.free(cumulativeElevationLoss);
-            allocator.free(slopes);
-            if (should_simplify) {
-                allocator.free(working_coords);
-            }
-        }
-
-        // Copy simplified points directly (no smoothing)
+        // Always copy to ensure we own the data
         const final_points = try allocator.alloc([3]f64, working_coords.len);
-        errdefer {
-            allocator.free(final_points);
-            if (should_simplify) {
-                allocator.free(working_coords);
-            }
-        }
+        errdefer allocator.free(final_points);
         @memcpy(final_points, working_coords);
 
-        // Initialize cumulative arrays
+        const cumulativeDistances = try allocator.alloc(f64, final_points.len);
+        errdefer allocator.free(cumulativeDistances);
+
+        const cumulativeElevations = try allocator.alloc(f64, final_points.len);
+        errdefer allocator.free(cumulativeElevations);
+
+        const cumulativeElevationLoss = try allocator.alloc(f64, final_points.len);
+        errdefer allocator.free(cumulativeElevationLoss);
+
+        const slopes = try allocator.alloc(f64, final_points.len);
+        errdefer allocator.free(slopes);
+
+        const elevations = try allocator.alloc(f32, final_points.len);
+        defer allocator.free(elevations);
+
+        // Initialize arrays
         cumulativeDistances[0] = 0.0;
         cumulativeElevations[0] = 0.0;
         cumulativeElevationLoss[0] = 0.0;
         slopes[0] = 0.0;
+
         var cum_dist: f64 = 0.0;
         var cum_elev: f64 = 0.0;
         var cum_elev_loss: f64 = 0.0;
 
-        // Extract elevations for peak detection
-        const elevations = try allocator.alloc(f32, working_coords.len);
-        errdefer {
-            allocator.free(elevations);
-            if (should_simplify) {
-                allocator.free(working_coords);
-            }
-        }
-        defer allocator.free(elevations);
+        // Calculate cumulative values in single pass
+        for (0..final_points.len) |i| {
+            elevations[i] = @floatCast(final_points[i][2]);
 
-        for (0..working_coords.len) |i| {
-            elevations[i] = @floatCast(working_coords[i][2]);
             if (i > 0) {
                 const d = distance3D(final_points[i - 1], final_points[i]);
                 cum_dist += d;
                 cumulativeDistances[i] = cum_dist;
-                const elev_delta = final_points[i][2] - final_points[i - 1][2];
 
-                // Calculate slope percentage: (elevation change / horizontal distance) * 100
-                if (d > 0.0) {
-                    slopes[i] = (elev_delta / d) * 100.0;
-                } else {
-                    slopes[i] = 0.0;
-                }
+                const elev_delta = final_points[i][2] - final_points[i - 1][2];
+                slopes[i] = if (d > 0.0) (elev_delta / d) * 100.0 else 0.0;
 
                 if (elev_delta > 0) {
                     cum_elev += elev_delta;
@@ -243,22 +227,12 @@ pub const Trace = struct {
             }
         }
 
-        // Find peaks (only if we have enough points)
-        const peaks = if (working_coords.len >= 3)
+        // Find peaks
+        const peaks = if (final_points.len >= 3)
             try findPeaks(allocator, elevations)
         else
             try allocator.alloc(usize, 0);
-        errdefer {
-            allocator.free(peaks);
-            if (should_simplify) {
-                allocator.free(working_coords);
-            }
-        }
-
-        // Free working_coords now that we've copied the data
-        if (should_simplify) {
-            allocator.free(working_coords);
-        }
+        errdefer allocator.free(peaks);
 
         return Trace{
             .points = final_points,
