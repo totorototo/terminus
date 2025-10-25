@@ -25,8 +25,9 @@ function Scene({ width, height, className }) {
       className={className}
       style={{ width, height }}
       shadows
+      orthographic
       camera={{
-        fov: 75,
+        zoom: 50,
         near: 0.1,
         far: 1000,
         position: [15, 0, 0],
