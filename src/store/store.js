@@ -76,12 +76,14 @@ const useStore = create(
                 0,
               ];
 
+              const date = position.timestamp;
+
               // Update Zustand state
               set((state) => ({
                 ...state,
                 app: {
                   ...state.app,
-                  currentLocation: coords,
+                  currentLocation: { coords, date },
                   loading: false,
                 },
               }));
@@ -588,7 +590,7 @@ const useStore = create(
               // get current location first (using store action)
               // and gps data
               await get().getCurrentLocation();
-              const point = get().app.currentLocation;
+              const point = get().app.currentLocation.coords;
               const coordinates = get().gps.data;
 
               // safety check
@@ -668,6 +670,8 @@ const useStore = create(
             trackingMode: state.app.trackingMode,
             displaySlopes: state.app.displaySlopes,
             currentLocation: state.app.currentLocation,
+            currentClosestLocation: state.app.currentClosestLocation,
+            startingDate: state.app.startingDate,
           },
         }),
       },
