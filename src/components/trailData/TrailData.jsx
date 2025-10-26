@@ -23,10 +23,11 @@ const calculateTimeMetrics = (
   cumulativeDistances,
   startingDate,
 ) => {
-  const distanceDone = cumulativeDistances[currentPositionIndex.index] || 0;
+  const distanceDone =
+    cumulativeDistances[currentPositionIndex?.index || 0] || 0;
   const totalDistance =
     cumulativeDistances[cumulativeDistances.length - 1] || 1;
-  const elapsedDuration = currentPositionIndex.date - startingDate;
+  const elapsedDuration = (currentPositionIndex?.date || 0) - startingDate;
 
   // Avoid division by zero
   const estimatedTotalDuration =
@@ -55,19 +56,19 @@ const TrailData = memo(function TrailData({ className }) {
   const currentPositionIndex = useCurrentPosition();
   const stats = useStats();
   const cumulativeDistances = useStore(
-    (state) => state.gps.cumulativeDistances,
+    (state) => state.gps.cumulativeDistances || [],
   );
   const cumulativeElevations = useStore(
-    (state) => state.gps.cumulativeElevations,
+    (state) => state.gps.cumulativeElevations || [],
   );
   const cumulativeElevationLosses = useStore(
-    (state) => state.gps.cumulativeElevationLosses,
+    (state) => state.gps.cumulativeElevationLosses || [],
   );
   const startingDate = useStore((state) => state.app.startingDate);
 
   // Memoize expensive time calculations
   const timeMetrics = useMemo(() => {
-    if (!cumulativeDistances.length || !startingDate) {
+    if (!cumulativeDistances?.length || !startingDate) {
       return {
         etaDateStr: "--:--",
         remainingStr: "--",
@@ -87,18 +88,18 @@ const TrailData = memo(function TrailData({ className }) {
     () => ({
       remainingDistance: Math.max(
         0,
-        stats.distance -
-          (cumulativeDistances?.[currentPositionIndex.index] || 0),
+        (stats?.distance || 0) -
+          (cumulativeDistances?.[currentPositionIndex?.index || 0] || 0),
       ),
       remainingElevation: Math.max(
         0,
-        stats.elevationGain -
-          (cumulativeElevations?.[currentPositionIndex.index] || 0),
+        (stats?.elevationGain || 0) -
+          (cumulativeElevations?.[currentPositionIndex?.index || 0] || 0),
       ),
       remainingElevationLoss: Math.max(
         0,
-        stats.elevationLoss -
-          (cumulativeElevationLosses?.[currentPositionIndex.index] || 0),
+        (stats?.elevationLoss || 0) -
+          (cumulativeElevationLosses?.[currentPositionIndex?.index || 0] || 0),
       ),
     }),
     [
@@ -106,7 +107,7 @@ const TrailData = memo(function TrailData({ className }) {
       cumulativeDistances,
       cumulativeElevations,
       cumulativeElevationLosses,
-      currentPositionIndex.index,
+      currentPositionIndex,
     ],
   );
 
