@@ -1,10 +1,9 @@
-import { useMemo, useRef, useEffect, use } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { Edges } from "@react-three/drei";
 import { useSpring } from "@react-spring/three";
 import { useFrame } from "@react-three/fiber";
 import { scaleThreshold } from "d3-scale";
 import * as THREE from "three";
-import useStore from "../../store/store.js";
 
 // Elevation grade constants
 const ELEVATION_GRADE = {
@@ -101,8 +100,6 @@ function ElevationProfile({
 
   // Create vertex colors based on slopes
   const colors = useMemo(() => {
-    const colorCount = (points.length - 1) * 6; // 6 vertices per segment
-
     // If slope colors are disabled or no slopes data, return null (use material color)
     if (!showSlopeColors || !slopes || slopes.length === 0) {
       return null;
@@ -137,20 +134,6 @@ function ElevationProfile({
 
     return new Float32Array(colorArray);
   }, [points, slopes, showSlopeColors]);
-
-  // Create a key to force Edges re-render when geometry changes or visibility changes
-  const geometryKey = useMemo(() => {
-    // Create a simple hash from first few and last few positions for performance
-    const sample =
-      positions.length > 20
-        ? Array.from(positions.slice(0, 12)).concat(
-            Array.from(positions.slice(-12)),
-          )
-        : Array.from(positions);
-    // Include visible state, slopes, and showSlopeColors to force refresh when data changes
-    const slopesHash = slopes ? slopes.slice(0, 5).join(",") : "no-slopes";
-    return `${sample.join(",")}-visible:${visible}-slopes:${slopesHash}-showColors:${showSlopeColors}`;
-  }, [positions, visible, slopes, showSlopeColors]);
 
   // Update buffer geometry when positions change
   useEffect(() => {
@@ -210,14 +193,7 @@ function ElevationProfile({
         depthWrite={opacity.get() > 0.01} // Disable depth write when nearly invisible
         alphaTest={0.001} // Skip rendering pixels below this alpha threshold
       />
-      {visible && (
-        <Edges
-          key={geometryKey} // Force re-render when geometry changes
-          linewidth={0.5}
-          threshold={40}
-          color="black"
-        />
-      )}
+      <Edges linewidth={0.5} threshold={40} color="black" />
     </mesh>
   );
 }
