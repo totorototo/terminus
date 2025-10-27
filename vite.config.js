@@ -7,6 +7,10 @@ import dsv from "@rollup/plugin-dsv";
 
 // https://vite.dev/config/
 export default defineConfig({
+  test: {
+    environment: "jsdom",
+    globals: true,
+  },
   plugins: [
     react(),
     VitePWA({
