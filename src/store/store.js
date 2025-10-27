@@ -30,8 +30,15 @@ const useStore = create(
             currentLocation: state.app.currentLocation,
             currentClosestLocation: state.app.currentClosestLocation,
             startingDate: state.app.startingDate,
+            locations: state.app.locations,
           },
         }),
+        onRehydrateStorage: () => (state) => {
+          // Initialize location buffer from persisted locations after rehydration
+          if (state?.initLocationBuffer) {
+            state.initLocationBuffer();
+          }
+        },
       },
     ),
   ),
