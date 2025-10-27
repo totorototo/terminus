@@ -1,91 +1,132 @@
-export const createAppSlice = (set, get) => ({
-  app: {
-    trackingMode: false,
-    displaySlopes: false,
-    currentPositionIndex: { index: 0, date: 0 },
-    currentLocation: null,
-    currentClosestLocation: null,
-    startingDate: 0, //Unix timestamp
-  },
+import createRingBuffer from "../../helpers/createRingBuffer";
 
-  // App Actions
-  getCurrentLocation: async () => {
-    set((state) => ({
-      ...state,
-      app: {
-        ...state.app,
-        loading: true,
-      },
-    }));
-    try {
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject);
-      });
+export const createAppSlice = (set, get) => {
+  // Create ring buffer for storing last 10 GPS positions
+  // Will be initialized lazily to handle rehydration
+  let locationBuffer = null;
 
-      const coords = [position.coords.longitude, position.coords.latitude, 0];
-
-      const date = position.timestamp;
-
-      set((state) => ({
-        ...state,
-        app: {
-          ...state.app,
-          currentLocation: { coords, date },
-          loading: false,
-        },
-      }));
-    } catch (error) {
-      set((state) => ({
-        ...state,
-        app: {
-          ...state.app,
-          error: error.message,
-          loading: false,
-        },
-      }));
+  const ensureBuffer = () => {
+    if (!locationBuffer) {
+      const locations = get().app.locations || [];
+      locationBuffer = createRingBuffer(10, locations);
     }
-  },
+    return locationBuffer;
+  };
 
-  toggleTrackingMode: () =>
-    set((state) => ({
-      ...state,
-      app: {
-        ...state.app,
-        trackingMode: !state.app.trackingMode,
-      },
-    })),
+  return {
+    app: {
+      trackingMode: false,
+      displaySlopes: false,
+      currentPositionIndex: { index: 0, date: 0 },
+      currentLocation: null,
+      currentClosestLocation: null,
+      startingDate: 0, //Unix timestamp
+      locations: [],
+    },
 
-  toggleSlopesMode: () =>
-    set((state) => ({
-      ...state,
-      app: {
-        ...state.app,
-        displaySlopes: !state.app.displaySlopes,
-      },
-    })),
+    // Initialize/sync buffer from persisted state (called after rehydration)
+    initLocationBuffer: () => {
+      const locations = get().app.locations || [];
+      locationBuffer = createRingBuffer(10, locations);
+    },
 
-  setCurrentPositionIndex: (value) =>
-    set((state) => ({
-      ...state,
-      app: {
-        ...state.app,
-        currentPositionIndex: value,
-      },
-    })),
+    // App Actions
+    getCurrentLocation: async () => {
+      set((state) => ({
+        ...state,
+        app: {
+          ...state.app,
+          loading: true,
+        },
+      }));
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
 
-  setStartingDate: (date) => {
-    set((state) => ({
-      ...state,
-      app: {
-        ...state.app,
-        startingDate: date,
-      },
-    }));
-  },
+        const coords = [position.coords.longitude, position.coords.latitude, 0];
+        const date = position.timestamp;
+        const location = { coords, date };
 
-  // Selectors
-  getStartingDate: () => get().app.startingDate,
-  getTrackingMode: () => get().app.trackingMode,
-  getDisplaySlopes: () => get().app.displaySlopes,
-  getCurrentPositionIndex: () => get().app.currentPositionIndex,
-});
+        // Add to ring buffer (ensure buffer is initialized)
+        const buffer = ensureBuffer();
+        buffer.push(location);
+
+        set((state) => ({
+          ...state,
+          app: {
+            ...state.app,
+            currentLocation: location,
+            loading: false,
+            locations: buffer.dump(),
+          },
+        }));
+      } catch (error) {
+        set((state) => ({
+          ...state,
+          app: {
+            ...state.app,
+            error: error.message,
+            loading: false,
+          },
+        }));
+      }
+    },
+
+    // Get all locations from buffer
+    getLocationHistory: () => ensureBuffer().dump(),
+
+    // Get location buffer info
+    getLocationBufferInfo: () => {
+      const buffer = ensureBuffer();
+      return {
+        count: buffer.count(),
+        isFull: buffer.isFull(),
+        isEmpty: buffer.isEmpty(),
+      };
+    },
+
+    toggleTrackingMode: () =>
+      set((state) => ({
+        ...state,
+        app: {
+          ...state.app,
+          trackingMode: !state.app.trackingMode,
+        },
+      })),
+
+    toggleSlopesMode: () =>
+      set((state) => ({
+        ...state,
+        app: {
+          ...state.app,
+          displaySlopes: !state.app.displaySlopes,
+        },
+      })),
+
+    setCurrentPositionIndex: (value) =>
+      set((state) => ({
+        ...state,
+        app: {
+          ...state.app,
+          currentPositionIndex: value,
+        },
+      })),
+
+    setStartingDate: (date) => {
+      set((state) => ({
+        ...state,
+        app: {
+          ...state.app,
+          startingDate: date,
+        },
+      }));
+    },
+
+    // Selectors
+    getStartingDate: () => get().app.startingDate,
+    getTrackingMode: () => get().app.trackingMode,
+    getDisplaySlopes: () => get().app.displaySlopes,
+    getCurrentPositionIndex: () => get().app.currentPositionIndex,
+  };
+};
