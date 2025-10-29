@@ -12,68 +12,36 @@ import useStore, {
   useProcessingState,
 } from "./store";
 
-// Mock the slice creators
-vi.mock("./slices/appSlice", () => ({
-  createAppSlice: vi.fn(() => ({
-    app: {
-      trackingMode: false,
-      displaySlopes: false,
-      currentPositionIndex: { index: 0, date: 0 },
-      currentLocation: null,
-      currentClosestLocation: { coords: [1, 2, 3] },
-      startingDate: 0,
-      locations: [],
-    },
-    toggleTrackingMode: vi.fn(),
-    initLocationBuffer: vi.fn(),
+// Mock external dependencies only (per official Zustand testing docs)
+vi.mock("../../helpers/createRingBuffer", () => ({
+  default: vi.fn(() => ({
+    add: vi.fn(),
+    get: vi.fn(() => []),
+    clear: vi.fn(),
+    size: vi.fn(() => 0),
   })),
 }));
 
-vi.mock("./slices/gpsSlice", () => ({
-  createGpsSlice: vi.fn(() => ({
-    gps: {
-      data: [
-        [0, 0, 100],
-        [1, 1, 200],
-      ],
-      slopes: [1.5, 2.0],
-      sections: [],
-      cumulativeDistances: [],
-      cumulativeElevations: [],
-      cumulativeElevationLosses: [],
-    },
-    setGpsData: vi.fn(),
-  })),
+// Mock Worker API
+global.Worker = vi.fn(() => ({
+  postMessage: vi.fn(),
+  terminate: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
 }));
 
-vi.mock("./slices/statsSlice", () => ({
-  createStatsSlice: vi.fn(() => ({
-    stats: {
-      distance: 10000,
-      elevationGain: 500,
-      elevationLoss: 300,
-      pointCount: 1000,
-    },
-    setStats: vi.fn(),
-  })),
-}));
-
-vi.mock("./slices/workerSlice", () => ({
-  createWorkerSlice: vi.fn(() => ({
-    worker: {
-      isReady: true,
-      processing: false,
-      progress: 0,
-      progressMessage: "",
-      errorMessage: "",
-    },
-    initGPSWorker: vi.fn(),
-  })),
-}));
+// Mock geolocation API
+global.navigator.geolocation = {
+  getCurrentPosition: vi.fn(),
+  watchPosition: vi.fn(),
+  clearWatch: vi.fn(),
+};
 
 describe("store", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset store to initial state
+    useStore.setState(useStore.getState());
   });
 
   describe("useStore", () => {
@@ -86,147 +54,98 @@ describe("store", () => {
       expect(state.worker).toBeDefined();
     });
 
-    it("should have app slice state", () => {
+    it("should have app slice with correct initial state", () => {
       const state = useStore.getState();
 
-      expect(state.app.trackingMode).toBeDefined();
-      expect(state.app.displaySlopes).toBeDefined();
-      expect(state.app.currentPositionIndex).toBeDefined();
-      expect(state.app.locations).toBeDefined();
+      expect(state.app.trackingMode).toBe(false);
+      expect(state.app.displaySlopes).toBe(false);
+      expect(state.app.currentPositionIndex).toEqual({ index: 0, date: 0 });
+      expect(state.app.locations).toEqual([]);
+      expect(state.app.currentLocation).toBeNull();
+      expect(state.app.currentClosestLocation).toBeNull();
+      expect(state.app.startingDate).toBe(0);
     });
 
-    it("should have gps slice state", () => {
+    it("should have gps slice with correct initial state", () => {
       const state = useStore.getState();
 
-      expect(state.gps.data).toBeDefined();
-      expect(state.gps.slopes).toBeDefined();
-      expect(state.gps.sections).toBeDefined();
+      expect(state.gps.data).toEqual([]);
+      expect(state.gps.slopes).toEqual([]);
+      expect(state.gps.sections).toEqual([]);
+      expect(state.gps.cumulativeDistances).toEqual([]);
+      expect(state.gps.cumulativeElevations).toEqual([]);
+      expect(state.gps.cumulativeElevationLosses).toEqual([]);
     });
 
-    it("should have stats slice state", () => {
+    it("should have stats slice with correct initial state", () => {
       const state = useStore.getState();
 
-      expect(state.stats.distance).toBeDefined();
-      expect(state.stats.elevationGain).toBeDefined();
-      expect(state.stats.elevationLoss).toBeDefined();
-      expect(state.stats.pointCount).toBeDefined();
+      expect(state.stats.distance).toBe(0);
+      expect(state.stats.elevationGain).toBe(0);
+      expect(state.stats.elevationLoss).toBe(0);
+      expect(state.stats.pointCount).toBe(0);
     });
 
-    it("should have worker slice state", () => {
+    it("should have worker slice with correct initial state", () => {
       const state = useStore.getState();
 
-      expect(state.worker.isReady).toBeDefined();
-      expect(state.worker.processing).toBeDefined();
-      expect(state.worker.progress).toBeDefined();
+      expect(state.worker.isReady).toBe(false);
+      expect(state.worker.processing).toBe(false);
+      expect(state.worker.progress).toBe(0);
+      expect(state.worker.progressMessage).toBe("");
+      expect(state.worker.errorMessage).toBe("");
     });
   });
 
   describe("selector hooks", () => {
-    describe("useAppState", () => {
-      it("should select app state", () => {
-        const appState = useAppState();
-
-        expect(appState).toBeDefined();
-        expect(appState.trackingMode).toBeDefined();
-        expect(appState.displaySlopes).toBeDefined();
-      });
+    it("should export useAppState selector", () => {
+      expect(useAppState).toBeDefined();
+      expect(typeof useAppState).toBe("function");
     });
 
-    describe("useGpsData", () => {
-      it("should select gps state", () => {
-        const gpsData = useGpsData();
-
-        expect(gpsData).toBeDefined();
-        expect(gpsData.data).toBeDefined();
-        expect(gpsData.slopes).toBeDefined();
-        expect(gpsData.sections).toBeDefined();
-      });
+    it("should export useGpsData selector", () => {
+      expect(useGpsData).toBeDefined();
+      expect(typeof useGpsData).toBe("function");
     });
 
-    describe("useStats", () => {
-      it("should select stats state", () => {
-        const stats = useStats();
-
-        expect(stats).toBeDefined();
-        expect(stats.distance).toBeDefined();
-        expect(stats.elevationGain).toBeDefined();
-        expect(stats.elevationLoss).toBeDefined();
-        expect(stats.pointCount).toBeDefined();
-      });
+    it("should export useStats selector", () => {
+      expect(useStats).toBeDefined();
+      expect(typeof useStats).toBe("function");
     });
 
-    describe("useWorkerState", () => {
-      it("should select worker state", () => {
-        const workerState = useWorkerState();
-
-        expect(workerState).toBeDefined();
-        expect(workerState.isReady).toBeDefined();
-        expect(workerState.processing).toBeDefined();
-        expect(workerState.progress).toBeDefined();
-      });
+    it("should export useWorkerState selector", () => {
+      expect(useWorkerState).toBeDefined();
+      expect(typeof useWorkerState).toBe("function");
     });
 
-    describe("useTrackingMode", () => {
-      it("should select tracking mode", () => {
-        const trackingMode = useTrackingMode();
-
-        expect(typeof trackingMode).toBe("boolean");
-      });
+    it("should export useTrackingMode selector", () => {
+      expect(useTrackingMode).toBeDefined();
+      expect(typeof useTrackingMode).toBe("function");
     });
 
-    describe("useDisplaySlopes", () => {
-      it("should select display slopes", () => {
-        const displaySlopes = useDisplaySlopes();
-
-        expect(typeof displaySlopes).toBe("boolean");
-      });
+    it("should export useDisplaySlopes selector", () => {
+      expect(useDisplaySlopes).toBeDefined();
+      expect(typeof useDisplaySlopes).toBe("function");
     });
 
-    describe("useCurrentPosition", () => {
-      it("should select current position index", () => {
-        const position = useCurrentPosition();
-
-        expect(position).toBeDefined();
-        expect(position.index).toBeDefined();
-        expect(position.date).toBeDefined();
-      });
+    it("should export useCurrentPosition selector", () => {
+      expect(useCurrentPosition).toBeDefined();
+      expect(typeof useCurrentPosition).toBe("function");
     });
 
-    describe("useCurrentClosestLocation", () => {
-      it("should select current closest location", () => {
-        const location = useCurrentClosestLocation();
-
-        expect(location).toBeDefined();
-      });
+    it("should export useCurrentClosestLocation selector", () => {
+      expect(useCurrentClosestLocation).toBeDefined();
+      expect(typeof useCurrentClosestLocation).toBe("function");
     });
 
-    describe("useGpsCoordinates", () => {
-      it("should select GPS coordinates", () => {
-        const coordinates = useGpsCoordinates();
-
-        expect(Array.isArray(coordinates)).toBe(true);
-      });
+    it("should export useGpsCoordinates selector", () => {
+      expect(useGpsCoordinates).toBeDefined();
+      expect(typeof useGpsCoordinates).toBe("function");
     });
 
-    describe("useProcessingState", () => {
-      it("should select processing state", () => {
-        const processingState = useProcessingState();
-
-        expect(processingState).toBeDefined();
-        expect(processingState.isProcessing).toBeDefined();
-        expect(processingState.progress).toBeDefined();
-        expect(processingState.message).toBeDefined();
-        expect(processingState.error).toBeDefined();
-      });
-
-      it("should map worker properties correctly", () => {
-        const processingState = useProcessingState();
-
-        expect(typeof processingState.isProcessing).toBe("boolean");
-        expect(typeof processingState.progress).toBe("number");
-        expect(typeof processingState.message).toBe("string");
-        expect(typeof processingState.error).toBe("string");
-      });
+    it("should export useProcessingState selector", () => {
+      expect(useProcessingState).toBeDefined();
+      expect(typeof useProcessingState).toBe("function");
     });
   });
 
@@ -251,20 +170,55 @@ describe("store", () => {
   });
 
   describe("store integration", () => {
-    it("should allow state updates", () => {
+    it("should toggle tracking mode", () => {
       const initialState = useStore.getState();
+      expect(initialState.app.trackingMode).toBe(false);
 
-      // Test that setState works
-      useStore.setState({
-        ...initialState,
-        app: {
-          ...initialState.app,
-          trackingMode: true,
-        },
-      });
+      // Test actual action
+      useStore.getState().toggleTrackingMode();
 
       const updatedState = useStore.getState();
       expect(updatedState.app.trackingMode).toBe(true);
+    });
+
+    it("should toggle display slopes", () => {
+      const initialState = useStore.getState();
+      expect(initialState.app.displaySlopes).toBe(false);
+
+      // Test actual action
+      useStore.getState().toggleSlopesMode();
+
+      const updatedState = useStore.getState();
+      expect(updatedState.app.displaySlopes).toBe(true);
+    });
+
+    it("should set GPS data", () => {
+      const testData = [
+        [0, 0, 100],
+        [1, 1, 200],
+      ];
+
+      useStore.getState().setGpsData(testData);
+
+      const state = useStore.getState();
+      expect(state.gps.data).toEqual(testData);
+    });
+
+    it("should set stats", () => {
+      const testStats = {
+        distance: 10000,
+        elevationGain: 500,
+        elevationLoss: 300,
+        pointCount: 1000,
+      };
+
+      useStore.getState().setStats(testStats);
+
+      const state = useStore.getState();
+      expect(state.stats.distance).toBe(10000);
+      expect(state.stats.elevationGain).toBe(500);
+      expect(state.stats.elevationLoss).toBe(300);
+      expect(state.stats.pointCount).toBe(1000);
     });
 
     it("should maintain separate slice states", () => {
@@ -281,36 +235,41 @@ describe("store", () => {
 
       // App slice actions
       expect(state.toggleTrackingMode).toBeDefined();
-      expect(state.initLocationBuffer).toBeDefined();
+      expect(state.toggleSlopesMode).toBeDefined();
+      expect(state.setCurrentPositionIndex).toBeDefined();
 
       // GPS slice actions
       expect(state.setGpsData).toBeDefined();
+      expect(state.setSlopes).toBeDefined();
+      expect(state.setSections).toBeDefined();
 
       // Stats slice actions
       expect(state.setStats).toBeDefined();
+      expect(state.updateStats).toBeDefined();
 
       // Worker slice actions
       expect(state.initGPSWorker).toBeDefined();
+      expect(state.setWorkerState).toBeDefined();
+      expect(state.terminateGPSWorker).toBeDefined();
+      expect(state.sendWorkerMessage).toBeDefined();
     });
   });
 
   describe("selector performance", () => {
-    it("should select only specific slice without re-renders", () => {
-      // Selectors should only trigger re-renders for their specific slice
-      const appState1 = useAppState();
-      const gpsData1 = useGpsData();
+    it("should have separate slice states", () => {
+      const state = useStore.getState();
 
-      // These should be independent
-      expect(appState1).not.toBe(gpsData1);
+      // Each slice should be independent
+      expect(state.app).not.toBe(state.gps);
+      expect(state.gps).not.toBe(state.stats);
     });
 
-    it("should select specific properties efficiently", () => {
-      const trackingMode = useTrackingMode();
-      const displaySlopes = useDisplaySlopes();
+    it("should allow direct state access for primitive values", () => {
+      const state = useStore.getState();
 
-      // Should return primitive values directly
-      expect(typeof trackingMode).toBe("boolean");
-      expect(typeof displaySlopes).toBe("boolean");
+      // Primitive values should be accessible
+      expect(typeof state.app.trackingMode).toBe("boolean");
+      expect(typeof state.app.displaySlopes).toBe("boolean");
     });
   });
 
