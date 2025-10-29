@@ -31,13 +31,7 @@ export const createYScale = (
   );
 };
 
-
-export const getLine = (
-  points,
-  scaleX,
-  scaleY,
-  xOffset = 0
-) => {
+export const getLine = (points, scaleX, scaleY, xOffset = 0) => {
   const lineShape = d3.shape
     .line()
     .x((_, i) => scaleX(xOffset + i))
@@ -48,15 +42,7 @@ export const getLine = (
   };
 };
 
-
-
-export const getArea = (
-  points,
-  scaleX,
-  scaleY,
-  domainMin,
-  xOffset = 0
-) => {
+export const getArea = (points, scaleX, scaleY, domainMin, xOffset = 0) => {
   const areaShape = d3.shape
     .area()
     .x((_, i) => scaleX(xOffset + i))
