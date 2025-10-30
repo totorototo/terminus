@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef } from "react";
 import { Edges } from "@react-three/drei";
 import { useSpring } from "@react-spring/three";
 import { useFrame } from "@react-three/fiber";
@@ -59,14 +59,13 @@ function ElevationProfile({
   onClick,
   selected,
   slopes,
-  visible = true,
   showSlopeColors = false, // New prop to toggle slope colors
 }) {
   const materialRef = useRef();
   const geometryRef = useRef();
 
   const { opacity } = useSpring({
-    opacity: visible ? (selected ? 1 : 0.8) : 0,
+    opacity: selected ? 1 : 0.8,
   });
 
   useFrame(() => {
@@ -134,22 +133,6 @@ function ElevationProfile({
 
     return new Float32Array(colorArray);
   }, [points, slopes, showSlopeColors]);
-
-  // Update buffer geometry when positions change
-  useEffect(() => {
-    if (!geometryRef.current) return;
-    const geom = geometryRef.current;
-    geom.attributes.position.array = positions;
-    geom.attributes.position.needsUpdate = true;
-
-    // Update colors if they exist
-    if (colors && geom.attributes.color) {
-      geom.attributes.color.array = colors;
-      geom.attributes.color.needsUpdate = true;
-    }
-
-    geom.computeVertexNormals();
-  }, [positions, colors]);
 
   return (
     <mesh

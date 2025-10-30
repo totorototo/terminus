@@ -1,6 +1,6 @@
 import React, { Fragment, useMemo, useRef, useState } from "react";
 import ElevationProfile from "../elevationProfile/ElevationProfile";
-import { Text, Billboard } from "@react-three/drei";
+import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import style from "./ThreeDimensionalProfile.style.js";
