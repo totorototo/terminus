@@ -76,6 +76,7 @@ function ThreeDimensionalProfile({
   selectedSectionIndex,
   setSelectedSectionIndex,
   showSlopeColors,
+  showProgression,
   coordinateScales,
 }) {
   // reuse stable handlers per section id to avoid creating new functions each render
@@ -86,8 +87,10 @@ function ThreeDimensionalProfile({
     return map.get(id);
   };
   const sections = useStore((state) => state.gps.sections);
-  const coordinates = useStore((state) => state.gps.data);
   const slopes = useStore((state) => state.gps.slopes);
+  const currentPositionIndex = useStore(
+    (state) => state.app.currentPositionIndex?.index ?? 0,
+  );
 
   // Memoize transformed data for performance
   const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
@@ -107,23 +110,43 @@ function ThreeDimensionalProfile({
   // the underlying section data or relevant props change.
   const sectionElements = useMemo(() => {
     if (!sectionsPoints3D || sectionsPoints3D.length === 0) return null;
-    return sectionsPoints3D.map(({ points, id }, idx) => (
-      <Fragment key={id}>
-        <ElevationProfile
-          key={id}
-          points={points}
-          color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
-          onClick={getHandler(id)}
-          selected={selectedSectionIndex === id}
-          showSlopeColors={showSlopeColors}
-          slopes={slopes}
-        />
-      </Fragment>
-    ));
+    return sectionsPoints3D.map(({ points, id }) => {
+      // Find the corresponding section data to get startIndex
+      const section = sections.find((s) => s.segmentId === id);
+      const sectionStartIndex = section?.startIndex ?? 0;
+
+      // Calculate relative position within this section
+      // If currentPositionIndex is before this section, relativeIndex = 0
+      // If currentPositionIndex is after this section, relativeIndex = points.length (all done)
+      // Otherwise, subtract the section's start index to get position within section
+      const relativePositionIndex = Math.max(
+        0,
+        Math.min(currentPositionIndex - sectionStartIndex, points.length),
+      );
+
+      return (
+        <Fragment key={id}>
+          <ElevationProfile
+            key={id}
+            points={points}
+            color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
+            onClick={getHandler(id)}
+            selected={selectedSectionIndex === id}
+            showSlopeColors={showSlopeColors}
+            showProgression={showProgression}
+            currentPositionIndex={relativePositionIndex}
+            slopes={slopes}
+          />
+        </Fragment>
+      );
+    });
   }, [
     sectionsPoints3D,
+    sections,
     selectedSectionIndex,
     showSlopeColors,
+    showProgression,
+    currentPositionIndex,
     slopes,
     setSelectedSectionIndex,
   ]);

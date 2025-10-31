@@ -11,6 +11,7 @@ import Runner from "../runner/runner.jsx";
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const displaySlopes = useStore((state) => state.app.displaySlopes);
+  const displayProgression = useStore((state) => state.app.displayProgression);
 
   const coordinates = useStore((state) => state.gps.data);
   const modelRef = useRef();
@@ -38,6 +39,7 @@ function Scene({ width, height, className }) {
         setSelectedSectionIndex={setSelectedSectionIndex}
         selectedSectionIndex={selectedSectionIndex}
         showSlopeColors={displaySlopes}
+        showProgression={displayProgression}
         coordinateScales={coordinateScales}
       />
 

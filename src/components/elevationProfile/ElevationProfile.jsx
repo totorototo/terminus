@@ -1,8 +1,9 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { Edges } from "@react-three/drei";
 import { useSpring } from "@react-spring/three";
 import { useFrame } from "@react-three/fiber";
 import { scaleThreshold } from "d3-scale";
+import { useTheme } from "styled-components";
 import * as THREE from "three";
 
 // Elevation grade constants
@@ -22,6 +23,11 @@ const ELEVATION_COLORS = {
   DIFFICULT: "#E1351D",
   HARD: "#96451F",
   UNKNOWN: "#00451F",
+};
+
+// Progression colors
+const PROGRESSION_COLORS = {
+  REMAINING: "#9E9E9E", // Gray for remaining path
 };
 
 // Create D3 color scale
@@ -59,10 +65,13 @@ function ElevationProfile({
   onClick,
   selected,
   slopes,
-  showSlopeColors = false, // New prop to toggle slope colors
+  showSlopeColors = false, // Prop to toggle slope colors
+  showProgression = false, // Prop to toggle progression colors
+  currentPositionIndex = 0, // Current position index for progression display
 }) {
   const materialRef = useRef();
   const geometryRef = useRef();
+  const theme = useTheme();
 
   const { opacity } = useSpring({
     opacity: selected ? 1 : 0.8,
@@ -78,6 +87,22 @@ function ElevationProfile({
       materialRef.current.needsUpdate = true;
     }
   });
+
+  // Update buffer geometry when positions or colors change
+  useEffect(() => {
+    if (!geometryRef.current) return;
+    const geom = geometryRef.current;
+    geom.attributes.position.array = positions;
+    geom.attributes.position.needsUpdate = true;
+
+    // Update colors if they exist
+    if (colors && geom.attributes.color) {
+      geom.attributes.color.array = colors;
+      geom.attributes.color.needsUpdate = true;
+    }
+
+    geom.computeVertexNormals();
+  }, [points, currentPositionIndex]);
 
   const positions = useMemo(() => {
     const topVertices = points.map(([long, ele, lat]) => [long, ele, lat]);
@@ -97,42 +122,75 @@ function ElevationProfile({
     return new Float32Array(verts);
   }, [points]);
 
-  // Create vertex colors based on slopes
+  // Helper function to convert hex color to RGB array
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? [
+          parseInt(result[1], 16) / 255,
+          parseInt(result[2], 16) / 255,
+          parseInt(result[3], 16) / 255,
+        ]
+      : [1, 1, 1]; // Default to white
+  };
+
+  // Create vertex colors based on slopes or progression
   const colors = useMemo(() => {
-    // If slope colors are disabled or no slopes data, return null (use material color)
-    if (!showSlopeColors || !slopes || slopes.length === 0) {
+    // Priority: progression > slopes > null
+    // If neither is enabled, return null (use material color)
+    if (!showProgression && !showSlopeColors) {
       return null;
     }
 
-    const colorScale = createColorScale();
     const colorArray = [];
 
-    // Helper function to convert hex color to RGB array
-    const hexToRgb = (hex) => {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result
-        ? [
-            parseInt(result[1], 16) / 255,
-            parseInt(result[2], 16) / 255,
-            parseInt(result[3], 16) / 255,
-          ]
-        : [1, 1, 1]; // Default to white
-    };
+    if (showProgression) {
+      // Color based on progression - use theme primary color for completed
+      const completedColor = theme.colors.dark["--color-secondary"];
+      const remainingColor = theme.colors.dark["--color-text"];
+      const [completedR, completedG, completedB] = hexToRgb(completedColor);
+      const [remainingR, remainingG, remainingB] = hexToRgb(
+        PROGRESSION_COLORS.REMAINING,
+      );
 
-    for (let i = 0; i < points.length - 1; i++) {
-      const slope = slopes[i + 1] || 0; // Use slope of next point (since first point has 0 slope)
-      const grade = getRange(slope);
-      const hexColor = colorScale(grade);
-      const [r, g, b] = hexToRgb(hexColor);
+      for (let i = 0; i < points.length - 1; i++) {
+        // Determine if this segment is completed or remaining
+        const isCompleted = i < currentPositionIndex;
+        const [r, g, b] = isCompleted
+          ? [completedR, completedG, completedB]
+          : [remainingR, remainingG, remainingB];
 
-      // Each segment has 6 vertices, assign same color to all
-      for (let j = 0; j < 6; j++) {
-        colorArray.push(r, g, b);
+        // Each segment has 6 vertices, assign same color to all
+        for (let j = 0; j < 6; j++) {
+          colorArray.push(r, g, b);
+        }
+      }
+    } else if (showSlopeColors && slopes && slopes.length > 0) {
+      // Color based on slopes
+      const colorScale = createColorScale();
+
+      for (let i = 0; i < points.length - 1; i++) {
+        const slope = slopes[i + 1] || 0; // Use slope of next point (since first point has 0 slope)
+        const grade = getRange(slope);
+        const hexColor = colorScale(grade);
+        const [r, g, b] = hexToRgb(hexColor);
+
+        // Each segment has 6 vertices, assign same color to all
+        for (let j = 0; j < 6; j++) {
+          colorArray.push(r, g, b);
+        }
       }
     }
 
-    return new Float32Array(colorArray);
-  }, [points, slopes, showSlopeColors]);
+    return colorArray.length > 0 ? new Float32Array(colorArray) : null;
+  }, [
+    points,
+    slopes,
+    showSlopeColors,
+    showProgression,
+    currentPositionIndex,
+    theme,
+  ]);
 
   return (
     <mesh
@@ -170,8 +228,10 @@ function ElevationProfile({
       <meshStandardMaterial
         ref={materialRef}
         transparent
-        color={showSlopeColors && colors ? "white" : color} // Use white when vertex colors are present, otherwise use prop color
-        vertexColors={showSlopeColors && colors ? true : false} // Enable vertex colors when slope colors are enabled and available
+        color={(showSlopeColors || showProgression) && colors ? "white" : color} // Use white when vertex colors are present, otherwise use prop color
+        vertexColors={
+          (showSlopeColors || showProgression) && colors ? true : false
+        } // Enable vertex colors when any color mode is enabled and available
         side={THREE.DoubleSide}
         depthWrite={opacity.get() > 0.01} // Disable depth write when nearly invisible
         alphaTest={0.001} // Skip rendering pixels below this alpha threshold

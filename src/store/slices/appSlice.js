@@ -17,6 +17,7 @@ export const createAppSlice = (set, get) => {
     app: {
       trackingMode: false,
       displaySlopes: false,
+      displayProgression: false,
       currentPositionIndex: { index: 0, date: 0 },
       currentLocation: null,
       currentClosestLocation: null,
@@ -101,6 +102,23 @@ export const createAppSlice = (set, get) => {
         app: {
           ...state.app,
           displaySlopes: !state.app.displaySlopes,
+          // Turn off progression when slopes are enabled
+          displayProgression: state.app.displaySlopes
+            ? state.app.displayProgression
+            : false,
+        },
+      })),
+
+    toggleProgressionMode: () =>
+      set((state) => ({
+        ...state,
+        app: {
+          ...state.app,
+          displayProgression: !state.app.displayProgression,
+          // Turn off slopes when progression is enabled
+          displaySlopes: state.app.displayProgression
+            ? state.app.displaySlopes
+            : false,
         },
       })),
 
@@ -127,6 +145,7 @@ export const createAppSlice = (set, get) => {
     getStartingDate: () => get().app.startingDate,
     getTrackingMode: () => get().app.trackingMode,
     getDisplaySlopes: () => get().app.displaySlopes,
+    getDisplayProgression: () => get().app.displayProgression,
     getCurrentPositionIndex: () => get().app.currentPositionIndex,
   };
 };

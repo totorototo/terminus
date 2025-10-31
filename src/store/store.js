@@ -19,6 +19,7 @@ const useStore = create(
         {
           name: "Terminus Store",
           enabled: process.env.NODE_ENV === "development",
+          actionsDenylist: ["setCurrentPositionIndex"],
         },
       ),
       {
@@ -27,6 +28,7 @@ const useStore = create(
           app: {
             trackingMode: state.app.trackingMode,
             displaySlopes: state.app.displaySlopes,
+            displayProgression: state.app.displayProgression,
             currentLocation: state.app.currentLocation,
             currentClosestLocation: state.app.currentClosestLocation,
             startingDate: state.app.startingDate,
@@ -56,6 +58,8 @@ export const useTrackingMode = () =>
   useStore((state) => state.app.trackingMode);
 export const useDisplaySlopes = () =>
   useStore((state) => state.app.displaySlopes);
+export const useDisplayProgression = () =>
+  useStore((state) => state.app.displayProgression);
 export const useCurrentPosition = () =>
   useStore((state) => state.app.currentPositionIndex);
 export const useCurrentClosestLocation = () =>

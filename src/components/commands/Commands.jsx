@@ -1,6 +1,7 @@
 import { MapPin } from "@styled-icons/feather/MapPin";
 import { Film } from "@styled-icons/feather/Film";
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
+import { TrendingUp } from "@styled-icons/feather/TrendingUp";
 import useStore from "../../store/store";
 import style from "./Commands.style";
 
@@ -9,6 +10,10 @@ function Commands({ className }) {
   const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
   const displaySlopes = useStore((state) => state.app.displaySlopes);
   const toggleSlopesMode = useStore((state) => state.toggleSlopesMode);
+  const displayProgression = useStore((state) => state.app.displayProgression);
+  const toggleProgressionMode = useStore(
+    (state) => state.toggleProgressionMode,
+  );
   const findClosestLocation = useStore((state) => state.findClosestLocation);
 
   return (
@@ -21,6 +26,12 @@ function Commands({ className }) {
         onClick={toggleSlopesMode}
       >
         <BarChart2 size={24} />
+      </button>
+      <button
+        className={displayProgression ? "on" : "off"}
+        onClick={toggleProgressionMode}
+      >
+        <TrendingUp size={24} />
       </button>
       <button
         className={trackingMode ? "on" : "off"}

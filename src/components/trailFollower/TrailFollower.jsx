@@ -50,7 +50,7 @@ export default function TrailFollower({
   const setStartingDate = useStore((state) => state.setStartingDate);
   const coordinates = useStore((state) => state.gps.data);
 
-  const throttledSetIndex = useRef(throttle(setCurrentPositionIndex, 1000));
+  const throttledSetIndex = useRef(throttle(setCurrentPositionIndex, 10));
 
   const { nodes, animations } = useGLTF("/cartoon_plane.glb");
   const { actions } = useAnimations(animations, modelRef);
