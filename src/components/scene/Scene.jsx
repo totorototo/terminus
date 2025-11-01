@@ -11,14 +11,15 @@ import Runner from "../runner/runner.jsx";
 function Scene({ width, height, className }) {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const displaySlopes = useStore((state) => state.app.displaySlopes);
+  const profileMode = useStore((state) => state.app.profileMode);
 
   const coordinates = useStore((state) => state.gps.data);
   const modelRef = useRef();
 
   // Compute coordinate scales once and pass to children to avoid duplicate computations
   const coordinateScales = useMemo(() => {
-    return createCoordinateScales(coordinates);
-  }, [coordinates]);
+    return createCoordinateScales(coordinates, { profileMode });
+  }, [coordinates, profileMode]);
 
   return (
     <Canvas
@@ -39,6 +40,7 @@ function Scene({ width, height, className }) {
         selectedSectionIndex={selectedSectionIndex}
         showSlopeColors={displaySlopes}
         coordinateScales={coordinateScales}
+        profileMode={profileMode}
       />
 
       <TrailFollower

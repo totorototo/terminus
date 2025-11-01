@@ -6,13 +6,16 @@ export function createCoordinateScales(coordinates, options = {}) {
     yRange = [0, 1],
     zRange = [5, -5],
     padding = 0.1,
-    normalizeElevation = true,
+    normalizeElevation = false,
+    profileMode = true, // Use index-based profile mode
   } = options;
 
   // Safety check: return empty scales if coordinates are not available
   if (!coordinates || coordinates.length === 0) {
     return {
-      xScale: scaleLinear().domain([0, 1]).range(xRange),
+      xScale: profileMode
+        ? () => 0
+        : scaleLinear().domain([0, 1]).range(xRange),
       yScale: scaleLinear().domain([0, 1]).range(yRange),
       zScale: scaleLinear().domain([0, 1]).range(zRange),
       extents: {
@@ -20,10 +23,30 @@ export function createCoordinateScales(coordinates, options = {}) {
         elevation: [0, 1],
         latitude: [0, 1],
       },
+      profileMode,
     };
   }
 
-  // Calculate initial extents
+  // Profile mode: x=0, y=elevation, z=index
+  if (profileMode) {
+    const elevations = coordinates.map((coord) => coord[2]);
+    const yExtent = [Math.min(...elevations), Math.max(...elevations)];
+
+    return {
+      xScale: () => 0,
+      yScale: scaleLinear().domain(yExtent).range(yRange),
+      zScale: scaleLinear()
+        .domain([0, coordinates.length - 1])
+        .range(zRange),
+      extents: {
+        elevation: yExtent,
+        indices: [0, coordinates.length - 1],
+      },
+      profileMode,
+    };
+  }
+
+  // 3D mode: x=longitude, y=elevation, z=latitude
   const xExtent = [
     Math.min(...coordinates.map((coord) => coord[0])),
     Math.max(...coordinates.map((coord) => coord[0])),
@@ -72,11 +95,21 @@ export function createCoordinateScales(coordinates, options = {}) {
       elevation: yExtent,
       latitude: zExtent,
     },
+    profileMode,
   };
 }
 
-export function transformCoordinate(coordinate, scales) {
+export function transformCoordinate(coordinate, scales, offsetIndex) {
   const { xScale, yScale, zScale } = scales;
+
+  if (scales.profileMode && offsetIndex !== undefined && offsetIndex >= 0) {
+    return [
+      xScale(), // always 0 in profile mode
+      yScale(coordinate[2]), // elevation → y
+      zScale(offsetIndex), // index → z
+    ];
+  }
+
   return [
     xScale(coordinate[0]), // longitude → x
     yScale(coordinate[2]), // elevation → y
@@ -84,8 +117,10 @@ export function transformCoordinate(coordinate, scales) {
   ];
 }
 
-export function transformCoordinates(coordinates, scales) {
-  return coordinates.map((coord) => transformCoordinate(coord, scales));
+export function transformCoordinates(coordinates, scales, index = 0) {
+  return coordinates.map((coord, i) =>
+    transformCoordinate(coord, scales, index + i),
+  );
 }
 
 export function createCheckpoints(sections, scales) {
@@ -112,7 +147,7 @@ export function createCheckpoints(sections, scales) {
 
   return Object.entries(checkpointsMap).map(([key, value]) => ({
     name: key,
-    point3D: transformCoordinate(value.point, scales),
+    point3D: transformCoordinate(value.point, scales, value.index),
     index: value.index,
   }));
 }
@@ -128,8 +163,9 @@ export function transformSections(sections, scales) {
       totalElevationLoss,
       startPoint,
       segmentId,
+      startIndex = 0,
     }) => ({
-      points: transformCoordinates(points, scales),
+      points: transformCoordinates(points, scales, startIndex),
       totalDistance,
       totalElevation,
       totalElevationLoss,

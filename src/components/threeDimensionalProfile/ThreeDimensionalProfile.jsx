@@ -77,6 +77,7 @@ function ThreeDimensionalProfile({
   setSelectedSectionIndex,
   showSlopeColors,
   coordinateScales,
+  profileMode,
 }) {
   // reuse stable handlers per section id to avoid creating new functions each render
   const handlersRef = useRef(new Map());
@@ -86,7 +87,6 @@ function ThreeDimensionalProfile({
     return map.get(id);
   };
   const sections = useStore((state) => state.gps.sections);
-  const coordinates = useStore((state) => state.gps.data);
   const slopes = useStore((state) => state.gps.slopes);
 
   // Memoize transformed data for performance
@@ -101,7 +101,7 @@ function ThreeDimensionalProfile({
       sectionsPoints3D,
       checkpointsPoints3D,
     };
-  }, [sections, coordinateScales]);
+  }, [sections, coordinateScales, profileMode]);
 
   // Memoize the rendered section components so we only rebuild them when
   // the underlying section data or relevant props change.
@@ -117,6 +117,7 @@ function ThreeDimensionalProfile({
           selected={selectedSectionIndex === id}
           showSlopeColors={showSlopeColors}
           slopes={slopes}
+          profileMode={profileMode}
         />
       </Fragment>
     ));
@@ -126,6 +127,7 @@ function ThreeDimensionalProfile({
     showSlopeColors,
     slopes,
     setSelectedSectionIndex,
+    profileMode,
   ]);
 
   // Markers are independent of each section — render them once, memoized.

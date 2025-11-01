@@ -60,6 +60,7 @@ function ElevationProfile({
   selected,
   slopes,
   showSlopeColors = false, // New prop to toggle slope colors
+  profileMode,
 }) {
   const materialRef = useRef();
   const geometryRef = useRef();
@@ -132,7 +133,7 @@ function ElevationProfile({
     }
 
     return new Float32Array(colorArray);
-  }, [points, slopes, showSlopeColors]);
+  }, [points, slopes, showSlopeColors, profileMode]);
 
   return (
     <mesh

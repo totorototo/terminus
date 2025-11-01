@@ -17,6 +17,7 @@ export const createAppSlice = (set, get) => {
     app: {
       trackingMode: false,
       displaySlopes: false,
+      profileMode: false,
       currentPositionIndex: { index: 0, date: 0 },
       currentLocation: null,
       currentClosestLocation: null,
@@ -95,6 +96,15 @@ export const createAppSlice = (set, get) => {
         },
       })),
 
+    toggleProfileMode: () =>
+      set((state) => ({
+        ...state,
+        app: {
+          ...state.app,
+          profileMode: !state.app.profileMode,
+        },
+      })),
+
     toggleSlopesMode: () =>
       set((state) => ({
         ...state,
@@ -126,6 +136,7 @@ export const createAppSlice = (set, get) => {
     // Selectors
     getStartingDate: () => get().app.startingDate,
     getTrackingMode: () => get().app.trackingMode,
+    getProfileMode: () => get().app.profileMode,
     getDisplaySlopes: () => get().app.displaySlopes,
     getCurrentPositionIndex: () => get().app.currentPositionIndex,
   };
