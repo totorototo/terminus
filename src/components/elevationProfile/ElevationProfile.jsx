@@ -81,8 +81,14 @@ function ElevationProfile({
   });
 
   const positions = useMemo(() => {
-    const topVertices = points.map(([long, ele, lat]) => [long, ele, lat]);
-    const baseVertices = points.map(([long, _ele, lat]) => [long, 0, lat]);
+    if (!points || points.length < 2) return new Float32Array();
+
+    const topVertices = points.map(([long, ele, lat]) => {
+      return [long, ele, lat];
+    });
+    const baseVertices = points.map(([long, _ele, lat]) => {
+      return [long, 0, lat];
+    });
 
     const verts = [];
     for (let i = 0; i < points.length - 1; i++) {
@@ -96,7 +102,7 @@ function ElevationProfile({
       );
     }
     return new Float32Array(verts);
-  }, [points]);
+  }, [points, profileMode]);
 
   // Create vertex colors based on slopes
   const colors = useMemo(() => {
@@ -134,6 +140,18 @@ function ElevationProfile({
 
     return new Float32Array(colorArray);
   }, [points, slopes, showSlopeColors, profileMode]);
+
+  // Update geometry when positions or colors change
+  useMemo(() => {
+    if (geometryRef.current) {
+      geometryRef.current.attributes.position.needsUpdate = true;
+      if (colors) {
+        geometryRef.current.attributes.color.needsUpdate = true;
+      }
+      geometryRef.current.computeBoundingSphere();
+      geometryRef.current.computeVertexNormals();
+    }
+  }, [positions, colors]);
 
   return (
     <mesh
@@ -177,7 +195,7 @@ function ElevationProfile({
         depthWrite={opacity.get() > 0.01} // Disable depth write when nearly invisible
         alphaTest={0.001} // Skip rendering pixels below this alpha threshold
       />
-      <Edges linewidth={0.5} threshold={40} color="black" />
+      {!profileMode && <Edges linewidth={0.5} threshold={40} color="black" />}
     </mesh>
   );
 }
