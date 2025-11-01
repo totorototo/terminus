@@ -144,8 +144,10 @@ function ElevationProfile({
   // Update geometry when positions or colors change
   useMemo(() => {
     if (geometryRef.current) {
-      geometryRef.current.attributes.position.needsUpdate = true;
-      if (colors) {
+      if (geometryRef.current.attributes.position) {
+        geometryRef.current.attributes.position.needsUpdate = true;
+      }
+      if (colors && geometryRef.current.attributes.color) {
         geometryRef.current.attributes.color.needsUpdate = true;
       }
       geometryRef.current.computeBoundingSphere();
