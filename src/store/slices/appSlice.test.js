@@ -47,6 +47,7 @@ describe("appSlice", () => {
 
       expect(state.app.trackingMode).toBe(false);
       expect(state.app.displaySlopes).toBe(false);
+      expect(state.app.profileMode).toBe(false);
       expect(state.app.currentPositionIndex).toEqual({ index: 0, date: 0 });
       expect(state.app.currentLocation).toBeNull();
       expect(state.app.currentClosestLocation).toBeNull();
@@ -217,6 +218,20 @@ describe("appSlice", () => {
     });
   });
 
+  describe("toggleProfileMode", () => {
+    it("should toggle profile mode", () => {
+      const { toggleProfileMode, getProfileMode } = store.getState();
+
+      expect(getProfileMode()).toBe(false);
+
+      toggleProfileMode();
+      expect(getProfileMode()).toBe(true);
+
+      toggleProfileMode();
+      expect(getProfileMode()).toBe(false);
+    });
+  });
+
   describe("selectors", () => {
     it("should get starting date", () => {
       const { setStartingDate, getStartingDate } = store.getState();
@@ -245,6 +260,16 @@ describe("appSlice", () => {
       toggleSlopesMode();
 
       expect(getDisplaySlopes()).toBe(true);
+    });
+
+    it("should get profile mode", () => {
+      const { toggleProfileMode, getProfileMode } = store.getState();
+
+      expect(getProfileMode()).toBe(false);
+
+      toggleProfileMode();
+
+      expect(getProfileMode()).toBe(true);
     });
 
     it("should get current position index", () => {
