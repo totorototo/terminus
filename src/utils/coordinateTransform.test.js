@@ -15,12 +15,14 @@ describe("coordinateTransforms test suite", () => {
         [1, 1, 200],
         [2, 2, 150],
       ];
-      const scales = createCoordinateScales(coordinates);
+      const scales = createCoordinateScales(coordinates, {
+        profileMode: false,
+      });
 
       expect(scales).toBeDefined();
-      expect(scales.xScale).toBeDefined();
-      expect(scales.yScale).toBeDefined();
-      expect(scales.zScale).toBeDefined();
+      expect(typeof scales.xScale).toBe("function");
+      expect(typeof scales.yScale).toBe("function");
+      expect(typeof scales.zScale).toBe("function");
       expect(scales.extents).toBeDefined();
       expect(scales.extents.longitude).toHaveLength(2);
       expect(scales.extents.elevation).toHaveLength(2);
@@ -31,9 +33,12 @@ describe("coordinateTransforms test suite", () => {
       const scales = createCoordinateScales([]);
 
       expect(scales).toBeDefined();
-      expect(scales.xScale).toBeDefined();
-      expect(scales.yScale).toBeDefined();
-      expect(scales.zScale).toBeDefined();
+      expect(typeof scales.xScale).toBe("function");
+      expect(typeof scales.yScale).toBe("function");
+      expect(typeof scales.zScale).toBe("function");
+      expect(scales.xScale()).toBe(0);
+      expect(scales.yScale(0.5)).toBeDefined();
+      expect(scales.zScale(0.5)).toBeDefined();
     });
 
     it("should apply custom options", () => {
@@ -47,6 +52,7 @@ describe("coordinateTransforms test suite", () => {
         zRange: [10, -10],
         padding: 0.2,
         normalizeElevation: false,
+        profileMode: false, // Test in 3D mode
       };
       const scales = createCoordinateScales(coordinates, options);
 
