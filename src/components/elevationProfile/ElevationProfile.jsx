@@ -1,10 +1,10 @@
-import { useMemo, useRef } from "react";
-import { Edges } from "@react-three/drei";
-import { useSpring } from "@react-spring/three";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { scaleThreshold } from "d3-scale";
 import * as THREE from "three";
+import { scaleThreshold } from "d3-scale";
+import { useSpring } from "@react-spring/three";
 
+// Elevation grade and colors constants omitted for brevity, reuse from your code.
 // Elevation grade constants
 const ELEVATION_GRADE = {
   SMALL: 0,
@@ -53,45 +53,32 @@ const getRange = (percent) => {
   return ELEVATION_GRADE.UNKNOWN;
 };
 
-function ElevationProfile({
+function ElevationProfileManualInterpolationWithColors({
   points,
   color,
   onClick,
   selected,
   slopes,
-  showSlopeColors = false, // New prop to toggle slope colors
+  showSlopeColors = false,
   profileMode,
+  duration = 750,
 }) {
-  const materialRef = useRef();
   const geometryRef = useRef();
+  const materialRef = useRef();
 
   const { opacity } = useSpring({
     opacity: selected ? 1 : 0.8,
   });
 
-  useFrame(() => {
-    if (materialRef.current) {
-      const currentOpacity = opacity.get();
-      materialRef.current.opacity = currentOpacity;
-      // Disable depth write when nearly invisible to prevent z-fighting
-      materialRef.current.depthWrite = currentOpacity > 0.01;
-      // Update material to trigger re-render if needed
-      materialRef.current.needsUpdate = true;
-    }
-  });
+  // Create vertices (same as before)
+  const createVertices = (pts) => {
+    if (!pts || pts.length < 2) return new Float32Array();
 
-  const positions = useMemo(() => {
-    if (!points || points.length < 2) return new Float32Array();
-
-    const topVertices = points.map(([long, ele, lat]) => {
-      return [long, ele, lat];
-    });
-    const baseVertices = points.map(([long, _ele, lat]) => {
-      return [long, 0, lat];
-    });
+    const topVertices = pts.map(([long, ele, lat]) => [long, ele, lat]);
+    const baseVertices = pts.map(([long, _ele, lat]) => [long, 0, lat]);
 
     const verts = [];
-    for (let i = 0; i < points.length - 1; i++) {
+    for (let i = 0; i < pts.length - 1; i++) {
       verts.push(
         ...topVertices[i],
         ...baseVertices[i],
@@ -102,58 +89,88 @@ function ElevationProfile({
       );
     }
     return new Float32Array(verts);
-  }, [points, profileMode]);
+  };
 
-  // Create vertex colors based on slopes
+  // Create colors buffer based on slopes and points
   const colors = useMemo(() => {
-    // If slope colors are disabled or no slopes data, return null (use material color)
-    if (!showSlopeColors || !slopes || slopes.length === 0) {
+    if (
+      !showSlopeColors ||
+      !slopes ||
+      slopes.length === 0 ||
+      !points ||
+      points.length < 2
+    ) {
       return null;
     }
-
     const colorScale = createColorScale();
     const colorArray = [];
 
-    // Helper function to convert hex color to RGB array
     const hexToRgb = (hex) => {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result
-        ? [
-            parseInt(result[1], 16) / 255,
-            parseInt(result[2], 16) / 255,
-            parseInt(result[3], 16) / 255,
-          ]
-        : [1, 1, 1]; // Default to white
+      if (!result) return [1, 1, 1];
+      return [
+        parseInt(result[1], 16) / 255,
+        parseInt(result[2], 16) / 255,
+        parseInt(result[3], 16) / 255,
+      ];
     };
 
     for (let i = 0; i < points.length - 1; i++) {
-      const slope = slopes[i + 1] || 0; // Use slope of next point (since first point has 0 slope)
+      const slope = slopes[i + 1] || 0;
       const grade = getRange(slope);
       const hexColor = colorScale(grade);
       const [r, g, b] = hexToRgb(hexColor);
 
-      // Each segment has 6 vertices, assign same color to all
+      // 6 vertices per segment (2 triangles)
       for (let j = 0; j < 6; j++) {
         colorArray.push(r, g, b);
       }
     }
-
     return new Float32Array(colorArray);
-  }, [points, slopes, showSlopeColors, profileMode]);
+  }, [points, slopes, showSlopeColors]);
 
-  // Update geometry when positions or colors change
-  useMemo(() => {
-    if (geometryRef.current) {
-      if (geometryRef.current.attributes.position) {
-        geometryRef.current.attributes.position.needsUpdate = true;
-      }
-      if (colors && geometryRef.current.attributes.color) {
-        geometryRef.current.attributes.color.needsUpdate = true;
-      }
-      geometryRef.current.computeBoundingSphere();
-      geometryRef.current.computeVertexNormals();
+  const targetVertices = useMemo(() => createVertices(points), [points]);
+
+  // Previous vertices and start time state for interpolation
+  const [prevVertices, setPrevVertices] = useState(targetVertices);
+  const [startTime, setStartTime] = useState(null);
+
+  useEffect(() => {
+    if (!geometryRef.current) return;
+    setPrevVertices((prev) => {
+      if (prev.length !== targetVertices.length) return targetVertices;
+      return prev;
+    });
+    setStartTime(performance.now());
+  }, [targetVertices]);
+
+  const interpolatedPositions = useRef(new Float32Array(targetVertices.length));
+
+  useFrame(() => {
+    if (!geometryRef.current || !startTime) return;
+    const elapsed = performance.now() - startTime;
+    const t = Math.min(elapsed / duration, 1);
+
+    for (let i = 0; i < targetVertices.length; i++) {
+      const start = prevVertices[i] ?? 0;
+      const end = targetVertices[i] ?? 0;
+      interpolatedPositions.current[i] = start + (end - start) * t;
     }
-  }, [positions, colors]);
+
+    const positionAttribute = geometryRef.current.attributes.position;
+    positionAttribute.array.set(interpolatedPositions.current);
+    positionAttribute.needsUpdate = true;
+
+    if (t === 1) {
+      setPrevVertices(targetVertices);
+      setStartTime(null);
+    }
+  });
+
+  const initialPositions =
+    prevVertices.length === targetVertices.length
+      ? prevVertices
+      : targetVertices;
 
   return (
     <mesh
@@ -175,15 +192,16 @@ function ElevationProfile({
       <bufferGeometry ref={geometryRef}>
         <bufferAttribute
           attach="attributes-position"
-          count={positions.length / 3}
-          array={positions}
+          array={initialPositions}
+          count={initialPositions.length / 3}
           itemSize={3}
+          usage={THREE.DynamicDrawUsage}
         />
         {colors && (
           <bufferAttribute
             attach="attributes-color"
-            count={colors.length / 3}
             array={colors}
+            count={colors.length / 3}
             itemSize={3}
           />
         )}
@@ -191,15 +209,14 @@ function ElevationProfile({
       <meshStandardMaterial
         ref={materialRef}
         transparent
-        color={showSlopeColors && colors ? "white" : color} // Use white when vertex colors are present, otherwise use prop color
-        vertexColors={showSlopeColors && colors ? true : false} // Enable vertex colors when slope colors are enabled and available
+        color={showSlopeColors && colors ? "white" : color}
+        vertexColors={showSlopeColors && colors ? true : false}
         side={THREE.DoubleSide}
+        alphaTest={0.001}
         depthWrite={opacity.get() > 0.01} // Disable depth write when nearly invisible
-        alphaTest={0.001} // Skip rendering pixels below this alpha threshold
       />
-      {!profileMode && <Edges linewidth={0.5} threshold={40} color="black" />}
     </mesh>
   );
 }
 
-export default ElevationProfile;
+export default ElevationProfileManualInterpolationWithColors;
