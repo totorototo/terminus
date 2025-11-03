@@ -9,12 +9,8 @@ function Marker({ children, position, ...props }) {
   const textRef = useRef();
   const theme = useTheme();
 
-  const [isOccluded, setOccluded] = useState(false);
-  const [isInRange, setInRange] = useState(false);
-  const isVisible = isInRange && !isOccluded;
-
-  const vec = new THREE.Vector3();
-  const raycaster = new THREE.Raycaster();
+  const vec = useRef(new THREE.Vector3());
+  const raycaster = useRef(new THREE.Raycaster());
 
   useFrame((state) => {
     if (!ref.current || !textRef.current) return;
@@ -24,21 +20,24 @@ function Marker({ children, position, ...props }) {
 
     // Check distance range
     const distance = state.camera.position.distanceTo(
-      ref.current.getWorldPosition(vec),
+      ref.current.getWorldPosition(vec.current),
     );
-    const range = distance <= 10;
-    if (range !== isInRange) setInRange(range);
+    const isInRange = distance <= 10;
 
     // Check occlusion with simple raycasting
-    const worldPos = ref.current.getWorldPosition(vec);
+    const worldPos = ref.current.getWorldPosition(vec.current);
     const direction = worldPos.clone().sub(state.camera.position).normalize();
-    raycaster.set(state.camera.position, direction);
+    raycaster.current.set(state.camera.position, direction);
 
     // Simple occlusion check - you might want to make this more sophisticated
-    const intersects = raycaster.intersectObjects(state.scene.children, true);
-    const occluded =
+    const intersects = raycaster.current.intersectObjects(
+      state.scene.children,
+      true,
+    );
+    const isOccluded =
       intersects.length > 0 && intersects[0].distance < distance - 0.1;
-    if (occluded !== isOccluded) setOccluded(occluded);
+
+    const isVisible = isInRange && !isOccluded;
 
     // Update text opacity and scale based on visibility
     if (textRef.current.material) {
