@@ -44,18 +44,16 @@ function EnhancedProfile({
   const sectionElements = useMemo(() => {
     if (!sectionsPoints3D || sectionsPoints3D.length === 0) return null;
     return sectionsPoints3D.map(({ points, id }, idx) => (
-      <Fragment key={id}>
-        <Profile
-          key={id}
-          points={points}
-          color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
-          onClick={getHandler(id)}
-          selected={selectedSectionIndex === id}
-          showSlopeColors={showSlopeColors}
-          slopes={slopes}
-          profileMode={profileMode}
-        />
-      </Fragment>
+      <Profile
+        key={id}
+        points={points}
+        color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
+        onClick={getHandler(id)}
+        selected={selectedSectionIndex === id}
+        showSlopeColors={showSlopeColors}
+        slopes={slopes}
+        profileMode={profileMode}
+      />
     ));
   }, [
     sectionsPoints3D,

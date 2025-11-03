@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useTheme } from "styled-components";
 
-const Marker = memo(function Marker({ children, position, ...props }) {
+function Marker({ children, position, ...props }) {
   const ref = useRef();
   const textRef = useRef();
   const theme = useTheme();
@@ -63,6 +63,6 @@ const Marker = memo(function Marker({ children, position, ...props }) {
       </Text>
     </group>
   );
-});
+}
 
 export default Marker;
