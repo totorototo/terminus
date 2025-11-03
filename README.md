@@ -11,12 +11,16 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 
 ## Features
 
-- Interactive 3D elevation profiles with geographic positioning
-- Real-time section analytics (distance, elevation gain/loss, slopes)
-- Peak detection and visualization
-- Checkpoint markers with location labels
-- Live tracking and closest point finding
-- Smooth camera controls and transitions
+- **Interactive 3D Elevation Profiles**: Geographic positioning with real-time camera controls
+- **Multiple Visualization Modes**:
+  - Section-based coloring for route segments
+  - Slope gradient coloring (5 difficulty levels)
+  - Progression tracking (completed vs. remaining path)
+- **Section Analytics**: Distance, elevation gain/loss, slope percentages
+- **Peak Detection**: Automatic identification and visualization of peaks
+- **Checkpoint Markers**: Location labels with occlusion detection and distance-based visibility
+- **Live GPS Tracking**: Real-time position updates with closest point finding
+- **Performance Optimized**: Web Workers + WASM for smooth 60fps rendering
 
 ## Tech Stack
 
@@ -52,6 +56,13 @@ npm run build
 
 ## Testing
 
+Run JavaScript/React tests:
+
+```bash
+npm test              # Run all tests
+npm run test:coverage # Generate coverage report
+```
+
 Run Zig unit tests:
 
 ```bash
@@ -63,14 +74,24 @@ zig test trace.zig
 
 ```
 src/
-  components/     # React components (3D scene, profiles, navigation)
-  store/          # Zustand state management
-  utils/          # Coordinate transforms and helpers
-  gpsWorker.js    # Web Worker for GPS processing
+  components/           # React components
+    elevationProfile/   # 3D elevation mesh with vertex coloring
+    scene/              # Main 3D scene container
+    marker/             # Checkpoint markers with animations
+    commands/           # UI controls (tracking, slopes, progression)
+    trailFollower/      # Animated trail follower
+    cameraController/   # Camera movement and transitions
+  store/                # Zustand state management
+    slices/             # State slices (app, gps, stats, worker)
+  utils/                # Coordinate transforms and helpers
+  helpers/              # Utility functions (colors, ring buffer, etc.)
+  gpsWorker.js          # Web Worker for GPS processing
+  theme/                # Styled-components theme configuration
 zig/
-  trace.zig       # Core GPS processing and algorithms
-  peaks.zig       # Peak detection
-  gpspoint.zig    # Distance and geometry calculations
+  trace.zig             # Core GPS processing and algorithms
+  peaks.zig             # Peak detection
+  gpspoint.zig          # Distance and geometry calculations
+  waypoint.zig          # Waypoint handling
 ```
 
 ## Contribute
