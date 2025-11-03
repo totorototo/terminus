@@ -1,78 +1,14 @@
-import React, { Fragment, useMemo, useRef, useState } from "react";
-import ElevationProfile from "../elevationProfile/ElevationProfile";
-import { Text } from "@react-three/drei";
-import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
-import style from "./ThreeDimensionalProfile.style.js";
+import { Fragment, useMemo, useRef } from "react";
+import Profile from "../profile/Profile.jsx";
+import style from "./EnhancedProfile.style.js";
 import useStore from "../../store/store.js";
-import { useTheme } from "styled-components";
 import {
   transformSections,
   createCheckpoints,
 } from "../../utils/coordinateTransforms.js";
+import Marker from "../marker/Marker.jsx";
 
-const Marker = React.memo(function Marker({ children, position, ...props }) {
-  const ref = useRef();
-  const textRef = useRef();
-  const theme = useTheme();
-
-  const [isOccluded, setOccluded] = useState(false);
-  const [isInRange, setInRange] = useState(false);
-  const isVisible = isInRange && !isOccluded;
-
-  const vec = new THREE.Vector3();
-  const raycaster = new THREE.Raycaster();
-
-  useFrame((state) => {
-    if (!ref.current || !textRef.current) return;
-
-    // Manual billboard behavior - always face camera
-    textRef.current.lookAt(state.camera.position);
-
-    // Check distance range
-    const distance = state.camera.position.distanceTo(
-      ref.current.getWorldPosition(vec),
-    );
-    const range = distance <= 10;
-    if (range !== isInRange) setInRange(range);
-
-    // Check occlusion with simple raycasting
-    const worldPos = ref.current.getWorldPosition(vec);
-    const direction = worldPos.clone().sub(state.camera.position).normalize();
-    raycaster.set(state.camera.position, direction);
-
-    // Simple occlusion check - you might want to make this more sophisticated
-    const intersects = raycaster.intersectObjects(state.scene.children, true);
-    const occluded =
-      intersects.length > 0 && intersects[0].distance < distance - 0.1;
-    if (occluded !== isOccluded) setOccluded(occluded);
-
-    // Update text opacity and scale based on visibility
-    if (textRef.current.material) {
-      textRef.current.material.opacity = isVisible ? 1 : 0;
-      textRef.current.scale.setScalar(isVisible ? 1 : 0.25);
-    }
-  });
-
-  return (
-    <group ref={ref} position={position}>
-      <Text
-        ref={textRef}
-        fontSize={0.04}
-        color={theme.colors.dark["--color-text"]}
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.001}
-        outlineColor={theme.colors.dark["--color-background"]}
-        {...props}
-      >
-        {children}
-      </Text>
-    </group>
-  );
-});
-
-function ThreeDimensionalProfile({
+function EnhancedProfile({
   selectedSectionIndex,
   setSelectedSectionIndex,
   showSlopeColors,
@@ -109,7 +45,7 @@ function ThreeDimensionalProfile({
     if (!sectionsPoints3D || sectionsPoints3D.length === 0) return null;
     return sectionsPoints3D.map(({ points, id }, idx) => (
       <Fragment key={id}>
-        <ElevationProfile
+        <Profile
           key={id}
           points={points}
           color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
@@ -151,4 +87,4 @@ function ThreeDimensionalProfile({
   );
 }
 
-export default style(ThreeDimensionalProfile);
+export default style(EnhancedProfile);

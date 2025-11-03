@@ -7,7 +7,7 @@ import { getRange } from "../../helpers/getRange";
 import { createVertices } from "../../helpers/createVertices";
 import { hexToRgb } from "../../helpers/colors";
 
-function ElevationProfileManualInterpolationWithColors({
+function Profile({
   points,
   color,
   onClick,
@@ -141,4 +141,4 @@ function ElevationProfileManualInterpolationWithColors({
   );
 }
 
-export default ElevationProfileManualInterpolationWithColors;
+export default Profile;
