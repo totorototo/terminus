@@ -1,5 +1,6 @@
 import { describe } from "vitest";
 import { getRange } from "./getRange.js";
+import { ELEVATION_GRADE } from "../constans.js";
 
 describe("getRange", () => {
   it("should return correct elevation grade for given slope percentages", () => {

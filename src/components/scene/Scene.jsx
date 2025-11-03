@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
-import ThreeDimensionalProfile from "../threeDimensionalProfile/ThreeDimensionalProfile";
+import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
 import style from "./Scene.style";
 import TrailFollower from "../trailFollower/TrailFollower";
 import useStore from "../../store/store.js";
@@ -35,7 +35,7 @@ function Scene({ width, height, className }) {
     >
       {/* <Perf minimal position="bottom-right" /> */}
       <ambientLight intensity={2} />
-      <ThreeDimensionalProfile
+      <EnhancedProfile
         setSelectedSectionIndex={setSelectedSectionIndex}
         selectedSectionIndex={selectedSectionIndex}
         showSlopeColors={displaySlopes}
