@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from "react";
+import { memo, useRef, useState, useEffect } from "react";
 import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
@@ -11,12 +11,26 @@ function Marker({ children, position, ...props }) {
 
   const vec = useRef(new THREE.Vector3());
   const raycaster = useRef(new THREE.Raycaster());
+  const currentOpacity = useRef(0);
+  const targetOpacity = useRef(0);
+  const animationStartTime = useRef(null);
 
-  useFrame((state) => {
+  // Reset opacity and start time when position changes (fade in again)
+  useEffect(() => {
+    currentOpacity.current = 0;
+    animationStartTime.current = Date.now();
+  }, [position]);
+
+  useFrame((state, delta) => {
     if (!ref.current || !textRef.current) return;
 
     // Manual billboard behavior - always face camera
     textRef.current.lookAt(state.camera.position);
+
+    // Check if delay has passed
+    const delayMs = 400;
+    const timeSinceStart = Date.now() - (animationStartTime.current || 0);
+    const canAnimate = timeSinceStart >= delayMs;
 
     // Check distance range
     const distance = state.camera.position.distanceTo(
@@ -39,10 +53,23 @@ function Marker({ children, position, ...props }) {
 
     const isVisible = isInRange && !isOccluded;
 
+    // Set target opacity based on visibility (only after delay)
+    targetOpacity.current = canAnimate && isVisible ? 1 : 0;
+
+    // Smooth transition (lerp) between current and target opacity
+    const fadeSpeed = 3; // Adjust for faster/slower fade
+    currentOpacity.current = THREE.MathUtils.lerp(
+      currentOpacity.current,
+      targetOpacity.current,
+      delta * fadeSpeed,
+    );
+
     // Update text opacity and scale based on visibility
     if (textRef.current.material) {
-      textRef.current.material.opacity = isVisible ? 1 : 0;
-      textRef.current.scale.setScalar(isVisible ? 1 : 0.25);
+      textRef.current.material.opacity = currentOpacity.current;
+      textRef.current.scale.setScalar(
+        THREE.MathUtils.lerp(0.25, 1, currentOpacity.current),
+      );
     }
   });
 
