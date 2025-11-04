@@ -27,7 +27,7 @@ function Navigation({ className }) {
   const springConfig = { tension: 170, friction: 26 };
 
   const remaningSections = sections?.filter(
-    (section) => section.endIndex >= currentPositionIndex.index,
+    (section) => section.endIndex >= currentPositionIndex.index || 0,
   );
 
   const currentSection =
