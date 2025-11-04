@@ -94,11 +94,13 @@ export default function TrailFollower({
     const currentIndex = Math.floor(progress.current * (scaledPath.length - 1));
     const nextIndex = Math.min(currentIndex + 1, scaledPath.length - 1);
 
-    // Update position index with throttling
-    throttledSetIndex.current({
-      index: currentIndex,
-      date: Date.now(),
-    });
+    if (currentIndex) {
+      // Update position index with throttling
+      throttledSetIndex.current({
+        index: currentIndex,
+        date: Date.now(),
+      });
+    }
 
     const currentPoint = scaledPath[currentIndex];
     const nextPoint = scaledPath[nextIndex];
