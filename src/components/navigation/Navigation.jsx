@@ -12,22 +12,27 @@ import { CornerUpLeft } from "@styled-icons/feather";
 function Navigation({ className }) {
   const sections = useStore((state) => state.gps.sections);
   const currentPositionIndex = useStore(
-    (state) => state.app.currentPositionIndex,
-  );
+    (state) => state.app.currentPositionIndex || 0,
+  ); // HACK: default to 0 if undefined
+
   const cumulativeDistances = useStore(
     (state) => state.gps.cumulativeDistances,
   );
+
   const cumulativeElevations = useStore(
     (state) => state.gps.cumulativeElevations,
   );
+
   const cumulativeElevationLosses = useStore(
     (state) => state.gps.cumulativeElevationLosses,
   );
 
   const springConfig = { tension: 170, friction: 26 };
 
+  // currentPosition
+
   const remaningSections = sections?.filter(
-    (section) => section.endIndex >= currentPositionIndex.index || 0,
+    (section) => section.endIndex >= currentPositionIndex.index,
   );
 
   const currentSection =
