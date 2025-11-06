@@ -124,7 +124,9 @@ function Profile({
             polygonOffsetUnits={1}
             toneMapped={false}
             transparent
-            opacity={0.1} // Adjusted for lighter transparency
+            opacity={0.05} // Further reduced transparency
+            alphaTest={0.02} // Lowered to make faint areas less visible
+            depthWrite={false} // Keep disabled to avoid z-fighting
           />
         </mesh>
       )}
