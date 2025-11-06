@@ -18,6 +18,7 @@ function Profile({
 }) {
   const geometryRef = useRef();
   const materialRef = useRef();
+  const meshRef = useRef();
 
   const { opacity } = useSpring({
     opacity: selected ? 1 : 0.8,
@@ -66,6 +67,16 @@ function Profile({
     setStartTime(performance.now());
   }, [targetVertices]);
 
+  // Put this mesh on layer 1 so the Outline postprocessing (selectionLayer=1)
+  // will include it. This avoids passing references into the composer.
+  useEffect(() => {
+    if (!meshRef.current) return;
+    meshRef.current.layers.enable(1);
+    return () => {
+      if (meshRef.current) meshRef.current.layers.disable(1);
+    };
+  }, []);
+
   const interpolatedPositions = useRef(new Float32Array(targetVertices.length));
 
   useFrame(() => {
@@ -95,49 +106,74 @@ function Profile({
       : targetVertices;
 
   return (
-    <mesh
-      castShadow
-      receiveShadow
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick && onClick(e);
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = "default";
-      }}
-    >
-      <bufferGeometry ref={geometryRef}>
-        <bufferAttribute
-          attach="attributes-position"
-          array={initialPositions}
-          count={initialPositions.length / 3}
-          itemSize={3}
-          usage={THREE.DynamicDrawUsage}
-        />
-        {colors && (
-          <bufferAttribute
-            attach="attributes-color"
-            array={colors}
-            count={colors.length / 3}
-            itemSize={3}
+    <>
+      {/* Back-face scaled mesh for a consistent outline (works across browsers).
+          It re-uses the same geometry object (when available) so it updates
+          automatically when the main geometry changes. */}
+      {geometryRef.current && (
+        <mesh
+          geometry={geometryRef.current}
+          scale={[1, 1.001, 1.001]}
+          renderOrder={0}
+        >
+          <meshBasicMaterial
+            color={"black"}
+            side={THREE.DoubleSide}
+            polygonOffset
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
+            toneMapped={false}
+            transparent
+            opacity={0.1} // Adjusted for lighter transparency
           />
-        )}
-      </bufferGeometry>
-      <meshStandardMaterial
-        ref={materialRef}
-        transparent
-        color={showSlopeColors && colors ? "white" : color}
-        vertexColors={showSlopeColors && colors ? true : false}
-        side={THREE.DoubleSide}
-        alphaTest={0.001}
-        depthWrite={opacity.get() > 0.01} // Disable depth write when nearly invisible
-      />
-    </mesh>
+        </mesh>
+      )}
+
+      <mesh
+        ref={meshRef}
+        castShadow
+        receiveShadow
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick && onClick(e);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = "default";
+        }}
+      >
+        <bufferGeometry ref={geometryRef}>
+          <bufferAttribute
+            attach="attributes-position"
+            array={initialPositions}
+            count={initialPositions.length / 3}
+            itemSize={3}
+            usage={THREE.DynamicDrawUsage}
+          />
+          {colors && (
+            <bufferAttribute
+              attach="attributes-color"
+              array={colors}
+              count={colors.length / 3}
+              itemSize={3}
+            />
+          )}
+        </bufferGeometry>
+        <meshStandardMaterial
+          ref={materialRef}
+          transparent
+          color={showSlopeColors && colors ? "white" : color}
+          vertexColors={showSlopeColors && colors ? true : false}
+          side={THREE.DoubleSide}
+          alphaTest={0.001}
+          depthWrite={opacity.get() > 0.01} // Disable depth write when nearly invisible
+        />
+      </mesh>
+    </>
   );
 }
 
