@@ -54,38 +54,37 @@ function Profile({
 
   const targetVertices = useMemo(() => createVertices(points), [points]);
 
-  // Previous vertices and start time state for interpolation
-  const [prevVertices, setPrevVertices] = useState(targetVertices);
-  const [startTime, setStartTime] = useState(null);
+  // Previous vertices and start time for interpolation — use refs to avoid
+  // triggering re-renders when these change (improves performance).
+  const prevVerticesRef = useRef(targetVertices);
+  const startTimeRef = useRef(null);
 
   useEffect(() => {
     if (!geometryRef.current) return;
-    setPrevVertices((prev) => {
-      if (prev.length !== targetVertices.length) return targetVertices;
-      return prev;
-    });
-    setStartTime(performance.now());
-  }, [targetVertices]);
+    // If vertex count changed, replace the prev vertices buffer.
+    if (prevVerticesRef.current.length !== targetVertices.length) {
+      prevVerticesRef.current = targetVertices;
+    }
+    startTimeRef.current = performance.now();
 
-  // Put this mesh on layer 1 so the Outline postprocessing (selectionLayer=1)
-  // will include it. This avoids passing references into the composer.
-  useEffect(() => {
-    if (!meshRef.current) return;
-    meshRef.current.layers.enable(1);
-    return () => {
-      if (meshRef.current) meshRef.current.layers.disable(1);
-    };
-  }, []);
+    // Ensure interpolatedPositions buffer matches new vertex count
+    if (
+      !interpolatedPositions.current ||
+      interpolatedPositions.current.length !== targetVertices.length
+    ) {
+      interpolatedPositions.current = new Float32Array(targetVertices.length);
+    }
+  }, [targetVertices]);
 
   const interpolatedPositions = useRef(new Float32Array(targetVertices.length));
 
   useFrame(() => {
-    if (!geometryRef.current || !startTime) return;
-    const elapsed = performance.now() - startTime;
+    if (!geometryRef.current || !startTimeRef.current) return;
+    const elapsed = performance.now() - startTimeRef.current;
     const t = Math.min(elapsed / duration, 1);
 
     for (let i = 0; i < targetVertices.length; i++) {
-      const start = prevVertices[i] ?? 0;
+      const start = prevVerticesRef.current[i] ?? 0;
       const end = targetVertices[i] ?? 0;
       interpolatedPositions.current[i] = start + (end - start) * t;
     }
@@ -95,14 +94,14 @@ function Profile({
     positionAttribute.needsUpdate = true;
 
     if (t === 1) {
-      setPrevVertices(targetVertices);
-      setStartTime(null);
+      prevVerticesRef.current = targetVertices;
+      startTimeRef.current = null;
     }
   });
 
   const initialPositions =
-    prevVertices.length === targetVertices.length
-      ? prevVertices
+    prevVerticesRef.current.length === targetVertices.length
+      ? prevVerticesRef.current
       : targetVertices;
 
   return (
@@ -113,7 +112,7 @@ function Profile({
       {geometryRef.current && (
         <mesh
           geometry={geometryRef.current}
-          scale={[1, 1.001, 1.001]}
+          scale={[1.001, 1.001, 1.001]}
           renderOrder={0}
         >
           <meshBasicMaterial
@@ -124,7 +123,7 @@ function Profile({
             polygonOffsetUnits={1}
             toneMapped={false}
             transparent
-            opacity={0.05} // Further reduced transparency
+            opacity={0.15} // Further reduced transparency
             alphaTest={0.02} // Lowered to make faint areas less visible
             depthWrite={false} // Keep disabled to avoid z-fighting
           />
