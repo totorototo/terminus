@@ -8,20 +8,7 @@ import {
 } from "../../utils/coordinateTransforms.js";
 import Marker from "../marker/Marker.jsx";
 
-function EnhancedProfile({
-  selectedSectionIndex,
-  setSelectedSectionIndex,
-  showSlopeColors,
-  coordinateScales,
-  profileMode,
-}) {
-  // reuse stable handlers per section id to avoid creating new functions each render
-  const handlersRef = useRef(new Map());
-  const getHandler = (id) => {
-    const map = handlersRef.current;
-    if (!map.has(id)) map.set(id, () => setSelectedSectionIndex(id));
-    return map.get(id);
-  };
+function EnhancedProfile({ showSlopeColors, coordinateScales, profileMode }) {
   const sections = useStore((state) => state.gps.sections);
   const slopes = useStore((state) => state.gps.slopes);
 
@@ -48,21 +35,12 @@ function EnhancedProfile({
         key={id}
         points={points}
         color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
-        onClick={getHandler(id)}
-        selected={selectedSectionIndex === id}
         showSlopeColors={showSlopeColors}
         slopes={slopes}
         profileMode={profileMode}
       />
     ));
-  }, [
-    sectionsPoints3D,
-    selectedSectionIndex,
-    showSlopeColors,
-    slopes,
-    setSelectedSectionIndex,
-    profileMode,
-  ]);
+  }, [sectionsPoints3D, showSlopeColors, slopes, profileMode]);
 
   // Markers are independent of each section — render them once, memoized.
   const markerElements = useMemo(() => {
