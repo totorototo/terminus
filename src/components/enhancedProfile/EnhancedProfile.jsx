@@ -7,10 +7,23 @@ import {
   createCheckpoints,
 } from "../../utils/coordinateTransforms.js";
 import Marker from "../marker/Marker.jsx";
+import { useTheme } from "styled-components";
+import { getInterpolatedColor } from "../../helpers/colorInterpolation.js";
 
 function EnhancedProfile({ showSlopeColors, coordinateScales, profileMode }) {
   const sections = useStore((state) => state.gps.sections);
   const slopes = useStore((state) => state.gps.slopes);
+  const theme = useTheme();
+
+  // Theme colors for interpolation
+  const themeColors = useMemo(
+    () => [
+      theme.colors.dark["--color-primary"],
+      theme.colors.dark["--color-secondary"],
+      theme.colors.dark["--color-accent"],
+    ],
+    [theme],
+  );
 
   // Memoize transformed data for performance
   const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
@@ -34,13 +47,13 @@ function EnhancedProfile({ showSlopeColors, coordinateScales, profileMode }) {
       <Profile
         key={id}
         points={points}
-        color={`hsl(${(id / sectionsPoints3D.length) * 360}, 100%, 50%)`}
+        color={getInterpolatedColor(idx, sectionsPoints3D.length, themeColors)}
         showSlopeColors={showSlopeColors}
         slopes={slopes}
         profileMode={profileMode}
       />
     ));
-  }, [sectionsPoints3D, showSlopeColors, slopes, profileMode]);
+  }, [sectionsPoints3D, showSlopeColors, slopes, profileMode, themeColors]);
 
   // Markers are independent of each section — render them once, memoized.
   const markerElements = useMemo(() => {
