@@ -3,7 +3,7 @@ const THEME = {
     light: {
       "--color-background": "#f4f7f5",
       "--color-text": "#262424",
-      "--color-primary": "#f2af29",
+      "--color-primary": "#ABFC3A",
       "--color-secondary": "#3e7cb1",
       "--color-accent": "#ad343e",
     },
