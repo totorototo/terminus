@@ -9,11 +9,10 @@ import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 import Runner from "../runner/runner.jsx";
 
 function Scene({ width, height, className }) {
-  const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const displaySlopes = useStore((state) => state.app.displaySlopes);
   const profileMode = useStore((state) => state.app.profileMode);
-
   const coordinates = useStore((state) => state.gps.data);
+
   const modelRef = useRef();
 
   // Compute coordinate scales once and pass to children to avoid duplicate computations
@@ -51,8 +50,6 @@ function Scene({ width, height, className }) {
       />
 
       <EnhancedProfile
-        setSelectedSectionIndex={setSelectedSectionIndex}
-        selectedSectionIndex={selectedSectionIndex}
         showSlopeColors={displaySlopes}
         coordinateScales={coordinateScales}
         profileMode={profileMode}

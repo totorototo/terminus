@@ -57,15 +57,15 @@ const SlopeMaterial = shaderMaterial(
     vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
     vec3 normal = normalize(vNormal);
     
-    // Ambient light
-    float ambientStrength = 0.4;
+    // Matte surface - high ambient, soft diffuse, no specular
+    float ambientStrength = 0.6;
     vec3 ambient = ambientStrength * baseColor;
     
-    // Diffuse light
+    // Softer diffuse light for matte appearance
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * baseColor;
+    vec3 diffuse = diff * baseColor * 0.5;
     
-    // Combine lighting
+    // Combine lighting (no specular = matte finish)
     vec3 finalColor = ambient + diffuse;
     
     gl_FragColor = vec4(finalColor, opacity);
@@ -127,15 +127,15 @@ const SolidColorMaterial = shaderMaterial(
     vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
     vec3 normal = normalize(vNormal);
     
-    // Ambient light
-    float ambientStrength = 0.4;
+    // Matte surface - high ambient, soft diffuse, no specular
+    float ambientStrength = 0.6;
     vec3 ambient = ambientStrength * baseColor;
     
-    // Diffuse light
+    // Softer diffuse light for matte appearance
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * baseColor;
+    vec3 diffuse = diff * baseColor * 0.5;
     
-    // Combine lighting
+    // Combine lighting (no specular = matte finish)
     vec3 finalColor = ambient + diffuse;
     
     gl_FragColor = vec4(finalColor, opacity);
@@ -149,7 +149,6 @@ function Profile({
   points,
   color,
   onClick,
-  selected,
   slopes,
   showSlopeColors = false,
   duration = 750,
@@ -157,7 +156,7 @@ function Profile({
   const geometryRef = useRef();
 
   const { opacity } = useSpring({
-    opacity: selected ? 1 : 0.8,
+    opacity: 1,
   });
 
   // Create slope attribute buffer from slopes array
