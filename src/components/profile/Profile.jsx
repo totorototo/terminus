@@ -5,7 +5,7 @@ import { useSpring } from "@react-spring/three";
 import { createVertices } from "../../helpers/createVertices";
 import { shaderMaterial } from "@react-three/drei";
 
-// Slope-based shader material
+// Slope-based shader material with lighting
 const SlopeMaterial = shaderMaterial(
   {
     opacity: 0.8,
@@ -14,16 +14,28 @@ const SlopeMaterial = shaderMaterial(
   `
   attribute float slope;
   varying float vSlope;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
   
   void main() {
     vSlope = slope;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    
+    // Calculate normals in view space
+    vNormal = normalize(normalMatrix * normal);
+    
+    // Calculate view position for lighting
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition = -mvPosition.xyz;
+    
+    gl_Position = projectionMatrix * mvPosition;
   }
   `,
   // Fragment shader
   `
   uniform float opacity;
   varying float vSlope;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
   
   vec3 getSlopeColor(float grade) {
     // Use absolute value to treat negative and positive slopes the same
@@ -39,8 +51,24 @@ const SlopeMaterial = shaderMaterial(
   }
   
   void main() {
-    vec3 color = getSlopeColor(vSlope);
-    gl_FragColor = vec4(color, opacity);
+    vec3 baseColor = getSlopeColor(vSlope);
+    
+    // Simple directional lighting (simulates sun from upper-right)
+    vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
+    vec3 normal = normalize(vNormal);
+    
+    // Ambient light
+    float ambientStrength = 0.4;
+    vec3 ambient = ambientStrength * baseColor;
+    
+    // Diffuse light
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = diff * baseColor;
+    
+    // Combine lighting
+    vec3 finalColor = ambient + diffuse;
+    
+    gl_FragColor = vec4(finalColor, opacity);
   }
   `,
 );
@@ -65,7 +93,57 @@ const GradientMaterial = shaderMaterial(
   `,
 );
 
-extend({ SlopeMaterial, GradientMaterial });
+// Solid color shader material with lighting
+const SolidColorMaterial = shaderMaterial(
+  {
+    baseColor: new THREE.Color(0x00ff00),
+    opacity: 0.8,
+  },
+  // Vertex shader
+  `
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+  
+  void main() {
+    // Calculate normals in view space
+    vNormal = normalize(normalMatrix * normal);
+    
+    // Calculate view position for lighting
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition = -mvPosition.xyz;
+    
+    gl_Position = projectionMatrix * mvPosition;
+  }
+  `,
+  // Fragment shader
+  `
+  uniform vec3 baseColor;
+  uniform float opacity;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+  
+  void main() {
+    // Simple directional lighting (simulates sun from upper-right)
+    vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
+    vec3 normal = normalize(vNormal);
+    
+    // Ambient light
+    float ambientStrength = 0.4;
+    vec3 ambient = ambientStrength * baseColor;
+    
+    // Diffuse light
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = diff * baseColor;
+    
+    // Combine lighting
+    vec3 finalColor = ambient + diffuse;
+    
+    gl_FragColor = vec4(finalColor, opacity);
+  }
+  `,
+);
+
+extend({ SlopeMaterial, GradientMaterial, SolidColorMaterial });
 
 function Profile({
   points,
@@ -142,6 +220,8 @@ function Profile({
     positionAttribute.array.set(interpolatedPositions.current);
     positionAttribute.needsUpdate = true;
 
+    geometryRef.current.computeVertexNormals();
+
     if (t === 1) {
       prevVerticesRef.current = targetVertices;
       startTimeRef.current = null;
@@ -195,20 +275,12 @@ function Profile({
           depthWrite={opacity.get() > 0.01}
         />
       ) : (
-        // <gradientMaterial
-        //   side={THREE.DoubleSide}
-        //   transparent
-        //   baseColor={baseColor}
-        //   opacity={opacity.get()}
-        //   depthWrite={opacity.get() > 0.01}
-        // />
-        <meshStandardMaterial
-          transparent
-          color={color}
-          vertexColors={false}
+        <solidColorMaterial
           side={THREE.DoubleSide}
-          alphaTest={0.001}
-          depthWrite={opacity.get() > 0.01} // Disable depth write when nearly invisible
+          transparent
+          baseColor={new THREE.Color(color)}
+          opacity={opacity.get()}
+          depthWrite={opacity.get() > 0.01}
         />
       )}
     </mesh>
