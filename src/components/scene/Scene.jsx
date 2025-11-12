@@ -34,7 +34,22 @@ function Scene({ width, height, className }) {
       }}
     >
       {/* <Perf minimal position="bottom-right" /> */}
-      <ambientLight intensity={2} />
+      <ambientLight intensity={0.9} />
+      <spotLight
+        position={[10, 10, 10]}
+        angle={0.5}
+        penumbra={1}
+        decay={0}
+        intensity={1}
+        castShadow
+      />
+      <pointLight
+        position={[-10, 10, -10]}
+        decay={0}
+        intensity={0.5}
+        castShadow
+      />
+
       <EnhancedProfile
         setSelectedSectionIndex={setSelectedSectionIndex}
         selectedSectionIndex={selectedSectionIndex}
