@@ -31,6 +31,7 @@ dist-ssr
 *.sw?
 
 zig/.zig-cache
+zig/test/
 
 # Playwright
 /test-results/
@@ -38,3 +39,4 @@ zig/.zig-cache
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/test
