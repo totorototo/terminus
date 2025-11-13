@@ -1,72 +1,45 @@
 const std = @import("std");
 const Point = @import("waypoint.zig").Point;
 const Trace = @import("trace.zig").Trace;
+const gpx = @import("gpx.zig");
+const csv = @import("csv.zig");
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
 
-    // Define two GPS points
-    const pointA = Point{
-        .longitude = 12.492373,
-        .latitude = 41.890251,
-        .elevation = 21.00,
-    }; // Colosseum in Rome
+    // Generate GPX and CSV files
+    try gpx.generateAndSaveGPX(allocator, "random_160km_trail.gpx");
+    std.debug.print("GPX file 'random_160km_trail.gpx' generated successfully.\n", .{});
 
-    const pointB = Point{
-        .longitude = 2.294481,
-        .latitude = 48.858844,
-        .elevation = 35.00,
-    }; // Eiffel Tower in Paris
+    try csv.generateAndSaveRandomCheckpointsCSV(allocator, "random_checkpoints.csv");
+    std.debug.print("CSV file 'random_checkpoints.csv' generated successfully.\n", .{});
 
-    const pointC = Point{
-        .longitude = -0.127758,
-        .latitude = 51.507351,
-        .elevation = 15.00,
-    }; // London
-
-    const pointD = Point{
-        .longitude = -74.0060,
-        .latitude = 40.7128,
-        .elevation = 10.00,
-    }; // New York City
-
-    // Compute and print the distance between them
-    const distance = pointA.distance(&pointB);
-    std.debug.print("Distance between points: {:.2} meters\n", .{distance});
-    const distanceKm = distance / 1000.0; // Convert meters to kilometers
-    std.debug.print("Distance between points: {:.2} km\n", .{distanceKm});
-
-    const bearing = pointA.bearingTo(&pointB);
-    std.debug.print("Bearing from A to B: {:.2} degrees\n", .{bearing});
-
-    const elevationDelta = pointA.elevationDelta(&pointB);
-    std.debug.print("Elevation delta from A to B: {:.2} meters\n", .{elevationDelta});
-
-    // Initialize the trace
-    const points = [_]Point{
-        pointA,
-        pointB,
-        pointC,
-        pointD,
+    // Define GPS points as [3]f64 arrays [lon, lat, elevation]
+    const points = [_][3]f64{
+        .{ 12.492373, 41.890251, 21.00 }, // Colosseum in Rome
+        .{ 2.294481, 48.858844, 35.00 }, // Eiffel Tower in Paris
+        .{ -0.127758, 51.507351, 15.00 }, // London
+        .{ -74.0060, 40.7128, 10.00 }, // New York City
     };
 
+    // Initialize the trace
     var trace = try Trace.init(allocator, &points);
+    defer trace.deinit(allocator);
+
     // Print total distance
     const totalDistanceKm = trace.totalDistance / 1000.0;
     std.debug.print("Total Distance: {:.2} km\n", .{totalDistanceKm});
 
-    const totalElevationGain = trace.totalElevationGain();
-    std.debug.print("Total Elevation Gain: {:.2} meters\n", .{totalElevationGain});
+    std.debug.print("Total Elevation Gain: {:.2} meters\n", .{trace.totalElevation});
+    std.debug.print("Total Elevation Loss: {:.2} meters\n", .{trace.totalElevationLoss});
 
     // Use sliceBetweenDistances to get points between distances
     const sliceResultKmRange = trace.sliceBetweenDistances(0.001, 2.5);
     if (sliceResultKmRange) |slice| {
         for (slice) |point| {
-            std.debug.print("Point at ({}, {}, elevation {} meters)\n", .{ point.longitude, point.latitude, point.elevation });
+            std.debug.print("Point at ({d:.6}, {d:.6}, elevation {d:.2} meters)\n", .{ point[0], point[1], point[2] });
         }
     } else {
         std.debug.print("No points found within the specified range.\n", .{});
     }
-
-    trace.deinit(allocator);
 }
