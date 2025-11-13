@@ -7,12 +7,17 @@ const csv = @import("csv.zig");
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
 
-    // Generate GPX and CSV files
-    try gpx.generateAndSaveGPX(allocator, "random_160km_trail.gpx");
-    std.debug.print("GPX file 'random_160km_trail.gpx' generated successfully.\n", .{});
+    // Create test directory if it doesn't exist
+    std.fs.cwd().makeDir("test") catch |err| {
+        if (err != error.PathAlreadyExists) return err;
+    };
 
-    try csv.generateAndSaveRandomCheckpointsCSV(allocator, "random_checkpoints.csv");
-    std.debug.print("CSV file 'random_checkpoints.csv' generated successfully.\n", .{});
+    // Generate GPX and CSV files into test directory
+    try gpx.generateAndSaveGPX(allocator, "test/random_160km_trail.gpx");
+    std.debug.print("GPX file 'test/random_160km_trail.gpx' generated successfully.\n", .{});
+
+    try csv.generateAndSaveRandomCheckpointsCSV(allocator, "test/random_checkpoints.csv");
+    std.debug.print("CSV file 'test/random_checkpoints.csv' generated successfully.\n", .{});
 
     // Define GPS points as [3]f64 arrays [lon, lat, elevation]
     const points = [_][3]f64{
