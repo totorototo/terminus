@@ -1,11 +1,11 @@
 const std = @import("std");
 
 fn floatToString(allocator: std.mem.Allocator, value: f64) ![]u8 {
-    return std.fmt.allocPrint(allocator, "{:.6}", .{value});
+    return std.fmt.allocPrint(allocator, "{d:.6}", .{value});
 }
 
 fn floatToStringElev(allocator: std.mem.Allocator, value: f64) ![]u8 {
-    return std.fmt.allocPrint(allocator, "{:.1}", .{value});
+    return std.fmt.allocPrint(allocator, "{d:.1}", .{value});
 }
 
 pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void {
@@ -27,15 +27,80 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
         "<gpx version=\"1.1\" creator=\"ZigGPXGenerator\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n" ++
         " <trk>\n <name>Random 160-km Trail Run</name>\n <trkseg>\n");
 
+    // Perlin-like noise parameters for more natural meandering
+    var direction: f64 = std.math.pi / 4.0; // Start northeast
+    var elevation_trend: f64 = 0.0; // Smooth elevation changes
+    var noise_phase: f64 = 0.0;
+    var curve_phase: f64 = 0.0; // For creating smooth S-curves
+
+    // For creating hills and valleys
+    const hill_frequency: f64 = 0.001; // How often terrain changes
+    var hill_phase: f64 = 0.0;
+
     for (0..total_points) |_| {
-        const latOffset = (random.float(f64) - 0.5) * 0.0001;
-        const lonOffset = 0.00045 + (random.float(f64) - 0.5) * 0.0001;
+        // Create smooth S-curves using multiple sine waves
+        const large_curve = @sin(curve_phase * 0.3) * 0.4; // Large sweeping curves
+        const medium_curve = @sin(curve_phase * 0.8) * 0.2; // Medium bends
+        const small_wiggle = @sin(noise_phase * 2.0) * 0.1; // Small variations
 
-        lat += latOffset;
-        lon += lonOffset;
+        // Random component for natural irregularity
+        const direction_noise = (random.float(f64) - 0.5) * 0.15;
 
-        const elevChange = (random.float(f64) - 0.5) * 20.0;
-        elevation += elevChange;
+        // Combine all curve components
+        const total_curve = large_curve + medium_curve + small_wiggle + direction_noise;
+        direction += total_curve;
+
+        // Soft directional bias to prevent extreme backtracking
+        const forward_bias = std.math.pi / 4.0; // Northeast
+        const distance_from_forward = direction - forward_bias;
+
+        // Gentle pull back if straying too far (allows curves but prevents loops)
+        if (@abs(distance_from_forward) > std.math.pi / 3.0) {
+            direction -= distance_from_forward * 0.08;
+        }
+
+        // Occasional switchbacks for realism
+        if (random.float(f64) < 0.015) {
+            const switchback = (random.float(f64) - 0.5) * 1.2;
+            direction += switchback;
+        }
+
+        // Main forward progress with dynamic meandering
+        const base_progress: f64 = 0.00016; // ~16m per point = 160km / 10000 points
+        const meander_amount: f64 = @sin(noise_phase) * 0.25 + @cos(curve_phase * 0.5) * 0.15;
+
+        const lat_delta = @cos(direction) * base_progress * (1.0 + meander_amount);
+        const lon_delta = @sin(direction) * base_progress * (1.0 + meander_amount);
+
+        lat += lat_delta;
+        lon += lon_delta;
+
+        noise_phase += 0.05 + random.float(f64) * 0.02;
+        curve_phase += 0.01 + random.float(f64) * 0.005;
+
+        // Realistic elevation changes with hills and valleys
+        hill_phase += hill_frequency;
+
+        // Create terrain features: hills, valleys, plateaus
+        const terrain_base = @sin(hill_phase * 3.0) * 300.0 + // Large hills
+            @sin(hill_phase * 7.0) * 150.0 + // Medium features
+            @sin(hill_phase * 15.0) * 50.0; // Small variations
+
+        // Add random noise for natural roughness
+        const roughness = (random.float(f64) - 0.5) * 25.0;
+
+        // Smooth transition using exponential moving average
+        const smoothing: f64 = 0.92;
+        elevation_trend = elevation_trend * smoothing + (terrain_base + roughness) * (1.0 - smoothing);
+        elevation += elevation_trend * 0.03;
+
+        // Occasional steep sections (climbs/descents)
+        if (random.float(f64) < 0.005) {
+            const steep_change = (random.float(f64) - 0.3) * 40.0;
+            elevation += steep_change;
+        }
+
+        // Keep within reasonable bounds
         if (elevation < 0.0) elevation = 0.0;
         if (elevation > 1500.0) elevation = 1500.0;
 
