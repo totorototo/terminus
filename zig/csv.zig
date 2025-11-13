@@ -1,16 +1,5 @@
 const std = @import("std");
-
-// Generate a random alphabetic string of given length for location names
-fn randomString(rng: *std.Random.DefaultPrng, allocator: std.mem.Allocator, len: usize) ![]u8 {
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    const buf = try allocator.alloc(u8, len);
-    const random = rng.random();
-    for (buf) |*c| {
-        const idx = random.intRangeAtMost(u8, 0, @as(u8, @intCast(letters.len - 1)));
-        c.* = letters[idx];
-    }
-    return buf;
-}
+const name = @import("name.zig");
 
 pub fn generateAndSaveRandomCheckpointsCSV(allocator: std.mem.Allocator, path: []const u8) !void {
     const total_checkpoints = 8; // including start and finish
@@ -37,9 +26,8 @@ pub fn generateAndSaveRandomCheckpointsCSV(allocator: std.mem.Allocator, path: [
     for (0..total_checkpoints) |i| {
         const km = km_step * @as(f64, @floatFromInt(i));
 
-        // Generate random location name 6-12 chars long
-        const name_len = random.intRangeAtMost(usize, 6, 12);
-        const location = try randomString(&rng, allocator, name_len);
+        // Generate name (using IKEA-style names for simplicity)
+        const location = try name.generateIkeaName(allocator, random);
 
         // Label: "Départ" if first, "Arrivée" if last, else "CP" + idx
         const label_str = if (i == 0)
@@ -48,7 +36,6 @@ pub fn generateAndSaveRandomCheckpointsCSV(allocator: std.mem.Allocator, path: [
             try allocator.dupe(u8, "Arrivée")
         else
             try std.fmt.allocPrint(allocator, "CP{}", .{i});
-        defer allocator.free(label_str);
 
         // Kind: First "Depart", last "Arrivée", else "life base"
         const kind = if (i == 0) kinds[0] else if (i == total_checkpoints - 1) kinds[2] else kinds[1];
@@ -66,6 +53,7 @@ pub fn generateAndSaveRandomCheckpointsCSV(allocator: std.mem.Allocator, path: [
         try writer.print("{s},{s},{d:.1},{s},{s}\n", .{ location, label_str, km, kind, cutoffTime });
 
         allocator.free(location);
+        allocator.free(label_str);
         allocator.free(cutoffTime);
     }
 }
@@ -79,6 +67,7 @@ test "CSV file generation creates valid file" {
 
     // Clean up any existing test file
     std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
 
     try generateAndSaveRandomCheckpointsCSV(allocator, test_path);
 
@@ -92,9 +81,8 @@ test "CSV file generation creates valid file" {
 
     // Verify CSV header
     try testing.expect(std.mem.indexOf(u8, content, "location,label,km,kind,cutoffTime") != null);
-
-    // Clean up
-    try std.fs.cwd().deleteFile(test_path);
+    // Verify content has data
+    try testing.expect(content.len > 50);
 }
 
 test "CSV generates correct number of checkpoints" {
@@ -102,6 +90,7 @@ test "CSV generates correct number of checkpoints" {
     const test_path = "test_count.csv";
 
     std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
 
     try generateAndSaveRandomCheckpointsCSV(allocator, test_path);
 
@@ -111,17 +100,15 @@ test "CSV generates correct number of checkpoints" {
     const content = try file.readToEndAlloc(allocator, 1024 * 1024);
     defer allocator.free(content);
 
-    // Count lines (header + 8 checkpoints = 9 lines)
+    // Count non-empty lines
     var count: usize = 0;
     var iter = std.mem.splitScalar(u8, content, '\n');
-    while (iter.next()) |_| {
-        count += 1;
+    while (iter.next()) |line| {
+        if (line.len > 0) count += 1;
     }
 
-    // Should have header + 8 checkpoints + empty line = 10
-    try testing.expect(count >= 9);
-
-    try std.fs.cwd().deleteFile(test_path);
+    // Should have header + 8 checkpoints = 9 lines
+    try testing.expectEqual(@as(usize, 9), count);
 }
 
 test "CSV contains required fields" {
@@ -129,6 +116,7 @@ test "CSV contains required fields" {
     const test_path = "test_fields.csv";
 
     std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
 
     try generateAndSaveRandomCheckpointsCSV(allocator, test_path);
 
@@ -141,18 +129,15 @@ test "CSV contains required fields" {
     var iter = std.mem.splitScalar(u8, content, '\n');
     _ = iter.next(); // Skip header
 
-    // Check first data line
+    // Check first data line has 5 fields
     if (iter.next()) |line| {
-        // Should have 5 comma-separated fields
         var field_count: usize = 0;
         var field_iter = std.mem.splitScalar(u8, line, ',');
-        while (field_iter.next()) |_| {
-            field_count += 1;
+        while (field_iter.next()) |field| {
+            if (field.len > 0) field_count += 1;
         }
         try testing.expectEqual(@as(usize, 5), field_count);
     }
-
-    try std.fs.cwd().deleteFile(test_path);
 }
 
 test "CSV first checkpoint is Départ" {
@@ -160,6 +145,7 @@ test "CSV first checkpoint is Départ" {
     const test_path = "test_depart.csv";
 
     std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
 
     try generateAndSaveRandomCheckpointsCSV(allocator, test_path);
 
@@ -173,13 +159,18 @@ test "CSV first checkpoint is Départ" {
     _ = iter.next(); // Skip header
 
     if (iter.next()) |line| {
-        // Second field should be "Départ"
-        try testing.expect(std.mem.indexOf(u8, line, "Départ") != null);
-        // Fourth field should be "Depart"
-        try testing.expect(std.mem.indexOf(u8, line, "Depart") != null);
-    }
+        // Verify location field exists (IKEA-style name)
+        var fields = std.mem.splitScalar(u8, line, ',');
+        const location = fields.next() orelse "";
+        const label = fields.next() orelse "";
+        const km = fields.next() orelse "";
+        const kind = fields.next() orelse "";
 
-    try std.fs.cwd().deleteFile(test_path);
+        try testing.expect(location.len > 0); // Has a location name
+        try testing.expect(std.mem.eql(u8, label, "Départ")); // Label is "Départ"
+        try testing.expect(std.mem.startsWith(u8, km, "0.0")); // Starts at 0km
+        try testing.expect(std.mem.eql(u8, kind, "Depart")); // Kind is "Depart"
+    }
 }
 
 test "CSV last checkpoint is Arrivée" {
@@ -187,6 +178,7 @@ test "CSV last checkpoint is Arrivée" {
     const test_path = "test_arrivee.csv";
 
     std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
 
     try generateAndSaveRandomCheckpointsCSV(allocator, test_path);
 
@@ -197,22 +189,24 @@ test "CSV last checkpoint is Arrivée" {
     defer allocator.free(content);
 
     // Find last non-empty line
-    var lines = std.ArrayList([]const u8).init(allocator);
-    defer lines.deinit();
-
+    var last_line: []const u8 = "";
     var iter = std.mem.splitScalar(u8, content, '\n');
     while (iter.next()) |line| {
         if (line.len > 0) {
-            try lines.append(line);
+            last_line = line;
         }
     }
 
-    if (lines.items.len > 1) {
-        const last_line = lines.items[lines.items.len - 1];
-        try testing.expect(std.mem.indexOf(u8, last_line, "Arrivée") != null);
-    }
+    // Verify last checkpoint
+    var fields = std.mem.splitScalar(u8, last_line, ',');
+    const location = fields.next() orelse "";
+    const label = fields.next() orelse "";
+    _ = fields.next(); // km
+    const kind = fields.next() orelse "";
 
-    try std.fs.cwd().deleteFile(test_path);
+    try testing.expect(location.len > 0); // Has a location name
+    try testing.expect(std.mem.eql(u8, label, "Arrivée")); // Label is "Arrivée"
+    try testing.expect(std.mem.eql(u8, kind, "Arrivée")); // Kind is "Arrivée"
 }
 
 test "CSV distance increases progressively" {
@@ -220,6 +214,7 @@ test "CSV distance increases progressively" {
     const test_path = "test_distance.csv";
 
     std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
 
     try generateAndSaveRandomCheckpointsCSV(allocator, test_path);
 
@@ -233,6 +228,7 @@ test "CSV distance increases progressively" {
     _ = iter.next(); // Skip header
 
     var prev_km: f64 = -1.0;
+    var checkpoint_count: usize = 0;
     while (iter.next()) |line| {
         if (line.len == 0) continue;
 
@@ -246,13 +242,13 @@ test "CSV distance increases progressively" {
                 try testing.expect(km >= prev_km);
             }
             prev_km = km;
+            checkpoint_count += 1;
         }
     }
 
-    // Last distance should be 160km
+    // Verify 8 checkpoints and last distance is 160km
+    try testing.expectEqual(@as(usize, 8), checkpoint_count);
     try testing.expectApproxEqAbs(@as(f64, 160.0), prev_km, 0.1);
-
-    try std.fs.cwd().deleteFile(test_path);
 }
 
 test "CSV cutoff times are valid dates" {
@@ -260,6 +256,7 @@ test "CSV cutoff times are valid dates" {
     const test_path = "test_dates.csv";
 
     std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
 
     try generateAndSaveRandomCheckpointsCSV(allocator, test_path);
 
@@ -272,6 +269,7 @@ test "CSV cutoff times are valid dates" {
     var iter = std.mem.splitScalar(u8, content, '\n');
     _ = iter.next(); // Skip header
 
+    var date_count: usize = 0;
     while (iter.next()) |line| {
         if (line.len == 0) continue;
 
@@ -282,11 +280,14 @@ test "CSV cutoff times are valid dates" {
         _ = field_iter.next(); // km
         _ = field_iter.next(); // kind
         if (field_iter.next()) |datetime| {
-            // Should contain "2026" and ":"
-            try testing.expect(std.mem.indexOf(u8, datetime, "2026") != null);
+            // Should be format "YYYY-MM-DD HH:mm:ss"
+            try testing.expect(std.mem.startsWith(u8, datetime, "2026-05-"));
             try testing.expect(std.mem.indexOf(u8, datetime, ":") != null);
+            try testing.expect(datetime.len >= 19); // Min length for datetime format
+            date_count += 1;
         }
     }
 
-    try std.fs.cwd().deleteFile(test_path);
+    // Verify all 8 checkpoints have dates
+    try testing.expectEqual(@as(usize, 8), date_count);
 }
