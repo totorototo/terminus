@@ -100,9 +100,9 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
             elevation += steep_change;
         }
 
-        // Keep within reasonable bounds
+        // Keep within reasonable bounds (0-3000 meters)
         if (elevation < 0.0) elevation = 0.0;
-        if (elevation > 1500.0) elevation = 1500.0;
+        if (elevation > 3000.0) elevation = 3000.0;
 
         const latStr = try floatToString(allocator, lat);
         defer allocator.free(latStr);
@@ -229,7 +229,7 @@ test "GPX elevation values are within bounds" {
     const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
     defer allocator.free(content);
 
-    // Parse elevations and verify bounds (0-1500)
+    // Parse elevations and verify bounds (0-3000)
     var pos: usize = 0;
     while (std.mem.indexOfPos(u8, content, pos, "<ele>")) |start| {
         const ele_start = start + 5;
@@ -237,7 +237,7 @@ test "GPX elevation values are within bounds" {
             const ele_str = content[ele_start..end];
             const elevation = try std.fmt.parseFloat(f64, ele_str);
             try testing.expect(elevation >= 0.0);
-            try testing.expect(elevation <= 1500.0);
+            try testing.expect(elevation <= 3000.0);
             pos = end + 6;
         } else break;
     }
