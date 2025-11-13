@@ -3,6 +3,7 @@ const Point = @import("waypoint.zig").Point;
 const Trace = @import("trace.zig").Trace;
 const gpx = @import("gpx.zig");
 const csv = @import("csv.zig");
+const name = @import("name.zig");
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
@@ -18,6 +19,15 @@ pub fn main() !void {
 
     try csv.generateAndSaveRandomCheckpointsCSV(allocator, "test/random_checkpoints.csv");
     std.debug.print("CSV file 'test/random_checkpoints.csv' generated successfully.\n", .{});
+
+    var rng = std.Random.DefaultPrng.init(12345);
+    const random = rng.random();
+    if (name.generateIkeaName(allocator, random)) |ikea_name| {
+        std.debug.print("Generated IKEA-style name: {s}\n", .{ikea_name});
+        allocator.free(ikea_name);
+    } else |err| {
+        std.debug.print("Error generating IKEA name: {}\n", .{err});
+    }
 
     // Define GPS points as [3]f64 arrays [lon, lat, elevation]
     const points = [_][3]f64{
