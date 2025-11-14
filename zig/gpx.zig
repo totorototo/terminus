@@ -1,4 +1,5 @@
 const std = @import("std");
+const testing = std.testing;
 
 fn floatToString(allocator: std.mem.Allocator, value: f64) ![]u8 {
     return std.fmt.allocPrint(allocator, "{d:.6}", .{value});
@@ -133,8 +134,72 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
     try file.writeAll(gpx_data);
 }
 
+pub fn readGPXFile(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
+    var points = std.ArrayList([3]f64).init(allocator);
+    defer points.deinit();
+
+    var pos: usize = 0;
+    while (std.mem.indexOfPos(u8, bytes, pos, "<trkpt")) |start| {
+        const lat_start = std.mem.indexOfPos(u8, bytes, start, "lat=\"") orelse break;
+        const lat_value_start = lat_start + 5;
+        const lat_value_end = std.mem.indexOfPos(u8, bytes, lat_value_start, "\"") orelse break;
+        const lat_str = bytes[lat_value_start..lat_value_end];
+        const lat = try std.fmt.parseFloat(f64, lat_str);
+
+        const lon_start = std.mem.indexOfPos(u8, bytes, start, "lon=\"") orelse break;
+        const lon_value_start = lon_start + 5;
+        const lon_value_end = std.mem.indexOfPos(u8, bytes, lon_value_start, "\"") orelse break;
+        const lon_str = bytes[lon_value_start..lon_value_end];
+        const lon = try std.fmt.parseFloat(f64, lon_str);
+
+        const ele_start = std.mem.indexOfPos(u8, bytes, start, "<ele>") orelse break;
+        const ele_value_start = ele_start + 5;
+        const ele_value_end = std.mem.indexOfPos(u8, bytes, ele_value_start, "</ele>") orelse break;
+        const ele_str = bytes[ele_value_start..ele_value_end];
+        const ele = try std.fmt.parseFloat(f64, ele_str);
+
+        try points.append(.{ lat, lon, ele });
+
+        pos = ele_value_end + 6;
+    }
+
+    return points.toOwnedSlice();
+}
+
 // Tests
-const testing = std.testing;
+
+test "should read GPX file and extract track points" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+        \\<gpx version="1.1" creator="ZigGPXGenerator" xmlns="http://www.topografix.com/GPX/1/1">
+        \\ <trk>
+        \\ <name>Sample Track</name>
+        \\ <trkseg>
+        \\ <trkpt lat="37.123456" lon="-122.123456"><ele>100.0</ele></trkpt>
+        \\ <trkpt lat="37.123556" lon="-122.123556"><ele>150.0</ele></trkpt>
+        \\ <trkpt lat="37.123656" lon="-122.123656"><ele>200.0</ele></trkpt>
+        \\ </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    const points = try readGPXFile(allocator, sample_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 3), points.len);
+    try testing.expectEqual(37.123456, points[0][0]);
+    try testing.expectEqual(-122.123456, points[0][1]);
+    try testing.expectEqual(100.0, points[0][2]);
+
+    try testing.expectEqual(37.123556, points[1][0]);
+    try testing.expectEqual(-122.123556, points[1][1]);
+    try testing.expectEqual(150.0, points[1][2]);
+
+    try testing.expectEqual(37.123656, points[2][0]);
+    try testing.expectEqual(-122.123656, points[2][1]);
+    try testing.expectEqual(200.0, points[2][2]);
+}
 
 test "GPX file generation creates valid file" {
     const allocator = testing.allocator;
@@ -243,4 +308,207 @@ test "GPX elevation values are within bounds" {
     }
 
     try std.fs.cwd().deleteFile(test_path);
+}
+
+test "readGPXFile with empty input" {
+    const allocator = testing.allocator;
+    const empty_gpx = "";
+
+    const points = try readGPXFile(allocator, empty_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 0), points.len);
+}
+
+test "readGPXFile with no track points" {
+    const allocator = testing.allocator;
+    const no_points_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk>
+        \\  <name>Empty Track</name>
+        \\  <trkseg>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    const points = try readGPXFile(allocator, no_points_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 0), points.len);
+}
+
+test "readGPXFile with single point" {
+    const allocator = testing.allocator;
+    const single_point_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="45.5" lon="-122.5"><ele>250.5</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    const points = try readGPXFile(allocator, single_point_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 1), points.len);
+    try testing.expectEqual(45.5, points[0][0]);
+    try testing.expectEqual(-122.5, points[0][1]);
+    try testing.expectEqual(250.5, points[0][2]);
+}
+
+test "readGPXFile with negative coordinates" {
+    const allocator = testing.allocator;
+    const negative_coords_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="-33.8688" lon="151.2093"><ele>10.0</ele></trkpt>
+        \\   <trkpt lat="-34.0" lon="151.0"><ele>15.5</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    const points = try readGPXFile(allocator, negative_coords_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 2), points.len);
+    try testing.expectEqual(-33.8688, points[0][0]);
+    try testing.expectEqual(151.2093, points[0][1]);
+    try testing.expectEqual(-34.0, points[1][0]);
+    try testing.expectEqual(151.0, points[1][1]);
+}
+
+test "readGPXFile with extreme elevation values" {
+    const allocator = testing.allocator;
+    const extreme_elevation_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="27.9881" lon="86.9250"><ele>8848.0</ele></trkpt>
+        \\   <trkpt lat="35.8617" lon="14.3754"><ele>-10.5</ele></trkpt>
+        \\   <trkpt lat="0.0" lon="0.0"><ele>0.0</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    const points = try readGPXFile(allocator, extreme_elevation_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 3), points.len);
+    try testing.expectEqual(8848.0, points[0][2]); // Mt. Everest
+    try testing.expectEqual(-10.5, points[1][2]); // Below sea level
+    try testing.expectEqual(0.0, points[2][2]); // Sea level
+}
+
+test "readGPXFile with multiple track segments" {
+    const allocator = testing.allocator;
+    const multi_segment_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="40.0" lon="-120.0"><ele>100.0</ele></trkpt>
+        \\   <trkpt lat="40.1" lon="-120.1"><ele>110.0</ele></trkpt>
+        \\  </trkseg>
+        \\  <trkseg>
+        \\   <trkpt lat="41.0" lon="-121.0"><ele>200.0</ele></trkpt>
+        \\   <trkpt lat="41.1" lon="-121.1"><ele>210.0</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    const points = try readGPXFile(allocator, multi_segment_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 4), points.len);
+    try testing.expectEqual(40.0, points[0][0]);
+    try testing.expectEqual(41.1, points[3][0]);
+}
+
+test "readGPXFile with high precision coordinates" {
+    const allocator = testing.allocator;
+    const high_precision_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="37.123456789" lon="-122.987654321"><ele>123.456789</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    const points = try readGPXFile(allocator, high_precision_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 1), points.len);
+    try testing.expectApproxEqAbs(37.123456789, points[0][0], 0.000000001);
+    try testing.expectApproxEqAbs(-122.987654321, points[0][1], 0.000000001);
+    try testing.expectApproxEqAbs(123.456789, points[0][2], 0.000001);
+}
+
+test "readGPXFile with scientific notation" {
+    const allocator = testing.allocator;
+    const scientific_notation_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="3.7e1" lon="-1.22e2"><ele>1.0e2</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    const points = try readGPXFile(allocator, scientific_notation_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 1), points.len);
+    try testing.expectApproxEqAbs(37.0, points[0][0], 0.01);
+    try testing.expectApproxEqAbs(-122.0, points[0][1], 0.01);
+    try testing.expectApproxEqAbs(100.0, points[0][2], 0.01);
+}
+
+test "readGPXFile parses generated GPX correctly" {
+    const allocator = testing.allocator;
+    const test_path = "test_roundtrip.gpx";
+
+    std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
+
+    // Generate a GPX file
+    try generateAndSaveGPX(allocator, test_path);
+
+    // Read it back
+    const file = try std.fs.cwd().openFile(test_path, .{});
+    defer file.close();
+
+    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
+    defer allocator.free(content);
+
+    const points = try readGPXFile(allocator, content);
+    defer allocator.free(points);
+
+    // Should have 10000 points
+    try testing.expectEqual(@as(usize, 10000), points.len);
+
+    // Verify first point structure
+    try testing.expect(points[0].len == 3);
+    try testing.expect(points[0][0] != 0.0); // lat
+    try testing.expect(points[0][1] != 0.0); // lon
+    try testing.expect(points[0][2] >= 0.0); // elevation
+
+    // Verify last point
+    try testing.expect(points[9999][0] != points[0][0]); // Should have moved
+    try testing.expect(points[9999][1] != points[0][1]);
 }
