@@ -69,6 +69,7 @@ export const createWorkerSlice = (set, get) => ({
             request.onProgress?.(progressValue, message);
             break;
 
+          case "GPX_FILE_PROCESSED":
           case "GPS_DATA_PROCESSED":
           case "SECTIONS_PROCESSED":
           case "ROUTE_STATS_CALCULATED":
@@ -182,6 +183,51 @@ export const createWorkerSlice = (set, get) => ({
   },
 
   // Worker API Actions
+  processGPXFile: async (gpxBytes, onProgress) => {
+    try {
+      const results = await get().sendWorkerMessage(
+        "PROCESS_GPX_FILE",
+        { gpxBytes },
+        onProgress,
+      );
+
+      set((state) => ({
+        ...state,
+        gps: {
+          ...state.gps,
+          data: results.points,
+          slopes: results.slopes,
+          cumulativeDistances: results.cumulativeDistances,
+          cumulativeElevations: results.cumulativeElevations,
+          cumulativeElevationLosses: results.cumulativeElevationLoss,
+        },
+        stats: {
+          distance: results.totalDistance ?? 0,
+          elevationGain: results.totalElevation ?? 0,
+          elevationLoss: results.totalElevationLoss ?? 0,
+          pointCount: results.pointCount ?? 0,
+        },
+        worker: {
+          ...state.worker,
+          errorMessage: "",
+        },
+      }));
+
+      return results;
+    } catch (error) {
+      set((state) => ({
+        ...state,
+        worker: {
+          ...state.worker,
+          processing: false,
+          progress: 0,
+          errorMessage: error.message || "Failed to process GPX File",
+        },
+      }));
+      throw error;
+    }
+  },
+
   processGPSData: async (coordinates, onProgress) => {
     try {
       const results = await get().sendWorkerMessage(
