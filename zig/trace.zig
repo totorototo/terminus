@@ -189,8 +189,8 @@ pub const Trace = struct {
         }
 
         // Second pass: calculate smoothed slopes using look-ahead window
-        // Use 50m window for slope averaging to reduce noise
-        const slope_window_distance: f64 = 50.0;
+        // Use 10m window for slope averaging to reduce noise
+        const slope_window_distance: f64 = 10.0;
         for (0..final_points.len) |i| {
             if (i == 0) {
                 slopes[0] = 0.0;
