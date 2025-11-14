@@ -1,5 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
+const Trace = @import("trace.zig").Trace;
 
 fn floatToString(allocator: std.mem.Allocator, value: f64) ![]u8 {
     return std.fmt.allocPrint(allocator, "{d:.6}", .{value});
@@ -166,7 +167,43 @@ pub fn readGPXFile(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
     return points.toOwnedSlice();
 }
 
+pub fn readGPXFileAndReturnsTrace(allocator: std.mem.Allocator, bytes: []const u8) !Trace {
+    const points_array = try readGPXFile(allocator, bytes);
+    defer allocator.free(points_array);
+
+    return Trace.init(allocator, points_array);
+}
+
 // Tests
+
+test "should read gpx file and return Trace" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+        \\<gpx version="1.1" creator="ZigGPXGenerator" xmlns="http://www.topografix.com/GPX/1/1">
+        \\ <trk>
+        \\ <name>Sample Track</name>
+        \\ <trkseg>
+        \\ <trkpt lat="37.123456" lon="-122.123456"><ele>100.0</ele></trkpt>
+        \\ <trkpt lat="37.123556" lon="-122.123556"><ele>150.0</ele></trkpt>
+        \\ <trkpt lat="37.123656" lon="-122.123656"><ele>200.0</ele></trkpt>
+        \\ </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    var trace = try readGPXFileAndReturnsTrace(allocator, sample_gpx);
+    defer trace.deinit(allocator);
+
+    try testing.expectEqual(@as(usize, 3), trace.points.len);
+    try testing.expectEqual(37.123456, trace.points[0][0]);
+    try testing.expectEqual(-122.123456, trace.points[0][1]);
+    try testing.expectEqual(100.0, trace.points[0][2]);
+
+    try testing.expectEqual(37.123556, trace.points[1][0]);
+    try testing.expectEqual(-122.123556, trace.points[1][1]);
+    try testing.expectEqual(150.0, trace.points[1][2]);
+}
 
 test "should read GPX file and extract track points" {
     const allocator = testing.allocator;

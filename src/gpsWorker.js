@@ -3,6 +3,7 @@
 // All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
 
 import { Trace, __zigar } from "../zig/trace.zig";
+import { readGPXFileAndReturnsTrace } from "../zig/gpx.zig";
 
 // Initialize Zig/WASM in worker context
 let isInitialized = false;
@@ -24,6 +25,10 @@ self.onmessage = async function (e) {
     await initializeZig();
 
     switch (type) {
+      case "PROCESS_GPX_FILE":
+        await processGPXFile(data, id);
+        break;
+
       case "PROCESS_GPS_DATA":
         await processGPSData(data, id);
         break;
@@ -60,6 +65,20 @@ self.onmessage = async function (e) {
     });
   }
 };
+
+async function processGPXFile(gpxFileBytes, requestId) {
+  console.log("🔄 GPS Worker: Processing GPX file...");
+  const trace = readGPXFileAndReturnsTrace(gpxFileBytes.gpxBytes);
+
+  console.log(`📊 After processing: ${trace.points.length} points in trace`);
+  trace.deinit();
+
+  self.postMessage({
+    type: "GPX_FILE_PROCESSED",
+    id: requestId,
+    results: trace.valueOf(),
+  });
+}
 
 async function processGPSData(gpsData, requestId) {
   console.log("🔄 GPS Worker: Processing GPS data...");
@@ -107,7 +126,19 @@ async function processSections(data, requestId) {
   console.log("🔄 GPS Worker: Processing sections...");
 
   const { coordinates, sections } = data;
+
+  // Validate coordinates before creating trace
+  if (!coordinates || !Array.isArray(coordinates) || coordinates.length === 0) {
+    throw new Error("Invalid coordinates data");
+  }
+
   const trace = Trace.init(coordinates);
+
+  console.log(
+    `📏 Trace total distance: ${trace.totalDistance}m (${(trace.totalDistance / 1000).toFixed(2)}km)`,
+  );
+  console.log(`📏 Trace points: ${trace.points.length}`);
+  console.log(`📍 Processing ${sections.length} sections`);
 
   // Send progress updates during processing
   self.postMessage({
@@ -117,7 +148,7 @@ async function processSections(data, requestId) {
     message: "Trace initialized...",
   });
 
-  const results = sections.map((section) => {
+  const results = sections.map((section, idx) => {
     const {
       startKm,
       endKm,
@@ -125,48 +156,99 @@ async function processSections(data, requestId) {
       endCheckpoint: { location: endLocation },
     } = section;
 
-    const sectionData = trace.sliceBetweenDistances(
-      startKm * 1000,
-      endKm * 1000,
-    );
+    console.log(`🔍 Section ${idx}: startKm=${startKm}, endKm=${endKm}`);
 
-    const startPoint = trace.pointAtDistance(startKm * 1000);
-    const endPoint = trace.pointAtDistance(endKm * 1000);
+    // Ensure valid km range and clamp to trace bounds
+    const validStartKm = Math.max(0, startKm);
+    const validEndKm = Math.max(validStartKm, endKm);
+    const maxDistanceKm = trace.totalDistance / 1000;
+    const clampedStartKm = Math.min(validStartKm, maxDistanceKm);
+    const clampedEndKm = Math.min(validEndKm, maxDistanceKm);
 
-    const startIndex = trace.findIndexAtDistance(startKm * 1000);
-    const endIndex = trace.findIndexAtDistance(endKm * 1000);
+    const startMeters = clampedStartKm * 1000;
+    const endMeters = clampedEndKm * 1000;
 
-    // Copy sectionData to avoid issues with Zig slice references
-    //  Convert to plain JS array before creating new trace
-    const sectionDataCopy = sectionData
-      ? Array.from(sectionData.valueOf())
-      : null;
+    console.log(`✅ Clamped to: ${startMeters}m - ${endMeters}m`);
 
-    // Create a new trace from the copied section data (or handle null case)
-    const sectionTrace = sectionDataCopy ? Trace.init(sectionDataCopy) : null;
+    let sectionData = null;
+    let startPoint = null;
+    let endPoint = null;
+    let startIndex = 0;
+    let endIndex = 0;
+
+    try {
+      sectionData = trace.sliceBetweenDistances(startMeters, endMeters);
+      startPoint = trace.pointAtDistance(startMeters);
+      endPoint = trace.pointAtDistance(endMeters);
+      startIndex = trace.findIndexAtDistance(startMeters);
+      endIndex = trace.findIndexAtDistance(endMeters);
+    } catch (e) {
+      console.error(`⚠️ Error calling trace methods for section ${idx}:`, e);
+      console.error(`  startMeters: ${startMeters}, endMeters: ${endMeters}`);
+    }
+
+    // Extract points directly from the slice without creating a new trace
+    // This avoids the memory management issues with sub-traces
+    let sectionPoints = [];
+    let pointCount = 0;
+
+    if (sectionData) {
+      try {
+        // Get the slice as a plain JS array immediately
+        const sliceArray = Array.from(sectionData);
+        if (sliceArray && sliceArray.length > 0) {
+          sectionPoints = sliceArray.map((point) => Array.from(point));
+          pointCount = sectionPoints.length;
+        }
+      } catch (e) {
+        console.error(
+          `⚠️ Error extracting section points for section ${idx}:`,
+          e,
+        );
+      }
+    }
+
+    // Calculate section statistics from the main trace using indices
+    let sectionDistance = 0;
+    let sectionElevation = 0;
+    let sectionElevationLoss = 0;
+
+    if (startIndex < endIndex && endIndex < trace.cumulativeDistances.length) {
+      try {
+        sectionDistance =
+          trace.cumulativeDistances[endIndex] -
+          trace.cumulativeDistances[startIndex];
+        sectionElevation =
+          trace.cumulativeElevations[endIndex] -
+          trace.cumulativeElevations[startIndex];
+        sectionElevationLoss =
+          trace.cumulativeElevationLoss[endIndex] -
+          trace.cumulativeElevationLoss[startIndex];
+      } catch (e) {
+        console.error(
+          `⚠️ Error calculating section stats for section ${idx}:`,
+          e,
+        );
+      }
+    }
 
     // Extract data before cleanup
     const result = {
       segmentId: section.id,
-      pointCount: sectionDataCopy?.length ?? 0,
+      pointCount,
       startKm,
       endKm,
-      points: sectionTrace?.points.valueOf() ?? [],
+      points: sectionPoints,
       startPoint: startPoint?.valueOf() ?? null,
       endPoint: endPoint?.valueOf() ?? null,
       startLocation,
       endLocation,
-      totalDistance: sectionTrace?.totalDistance ?? 0,
-      totalElevation: sectionTrace?.totalElevation ?? 0,
-      totalElevationLoss: sectionTrace?.totalElevationLoss ?? 0,
+      totalDistance: sectionDistance,
+      totalElevation: sectionElevation,
+      totalElevationLoss: sectionElevationLoss,
       startIndex,
       endIndex,
     };
-
-    // Clean up section trace memory
-    if (sectionTrace) {
-      sectionTrace.deinit();
-    }
 
     return result;
   });
@@ -184,10 +266,13 @@ async function processSections(data, requestId) {
 async function calculateRouteStats(data, requestId) {
   const { coordinates, segments } = data;
   const trace = Trace.init(coordinates);
+  const maxDistance = trace.totalDistance;
 
   const stats = segments.map((segment) => {
-    const startDist = segment.start;
-    const endDist = segment.end;
+    // Validate and clamp distances to trace bounds
+    const startDist = Math.max(0, Math.min(segment.start, maxDistance));
+    const endDist = Math.max(startDist, Math.min(segment.end, maxDistance));
+
     const sectionPoints = trace.sliceBetweenDistances(startDist, endDist);
     const startPoint = trace.pointAtDistance(startDist);
     const endPoint = trace.pointAtDistance(endDist);
