@@ -125,48 +125,60 @@ async function processSections(data, requestId) {
       endCheckpoint: { location: endLocation },
     } = section;
 
-    const sectionData = trace.sliceBetweenDistances(
-      startKm * 1000,
-      endKm * 1000,
-    );
+    const startIndex = trace.findIndexAtDistance(startKm * 1000);
+    const endIndex = trace.findIndexAtDistance(endKm * 1000);
+
+    // Calculate section statistics directly from main trace using indices
+    // This avoids creating sub-traces and stays in WASM memory (zero-copy)
+    let sectionDistance = 0;
+    let sectionElevation = 0;
+    let sectionElevationLoss = 0;
+    let sectionPoints = [];
+
+    if (startIndex < endIndex && endIndex < trace.cumulativeDistances.length) {
+      sectionDistance =
+        trace.cumulativeDistances[endIndex] -
+        trace.cumulativeDistances[startIndex];
+      sectionElevation =
+        trace.cumulativeElevations[endIndex] -
+        trace.cumulativeElevations[startIndex];
+      sectionElevationLoss =
+        trace.cumulativeElevationLoss[endIndex] -
+        trace.cumulativeElevationLoss[startIndex];
+
+      // Only extract points if needed (causes WASM → JS copy)
+      // Better: keep points in WASM and only copy when necessary
+      for (let i = startIndex; i <= endIndex; i++) {
+        sectionPoints.push([
+          trace.points[i][0],
+          trace.points[i][1],
+          trace.points[i][2],
+        ]);
+      }
+    }
 
     const startPoint = trace.pointAtDistance(startKm * 1000);
     const endPoint = trace.pointAtDistance(endKm * 1000);
 
-    const startIndex = trace.findIndexAtDistance(startKm * 1000);
-    const endIndex = trace.findIndexAtDistance(endKm * 1000);
-
-    // Copy sectionData to avoid issues with Zig slice references
-    //  Convert to plain JS array before creating new trace
-    const sectionDataCopy = sectionData
-      ? Array.from(sectionData.valueOf())
-      : null;
-
-    // Create a new trace from the copied section data (or handle null case)
-    const sectionTrace = sectionDataCopy ? Trace.init(sectionDataCopy) : null;
-
     // Extract data before cleanup
     const result = {
       segmentId: section.id,
-      pointCount: sectionDataCopy?.length ?? 0,
+      pointCount: sectionPoints.length,
       startKm,
       endKm,
-      points: sectionTrace?.points.valueOf() ?? [],
-      startPoint: startPoint?.valueOf() ?? null,
-      endPoint: endPoint?.valueOf() ?? null,
+      points: sectionPoints,
+      startPoint: startPoint
+        ? [startPoint[0], startPoint[1], startPoint[2]]
+        : null,
+      endPoint: endPoint ? [endPoint[0], endPoint[1], endPoint[2]] : null,
       startLocation,
       endLocation,
-      totalDistance: sectionTrace?.totalDistance ?? 0,
-      totalElevation: sectionTrace?.totalElevation ?? 0,
-      totalElevationLoss: sectionTrace?.totalElevationLoss ?? 0,
+      totalDistance: sectionDistance,
+      totalElevation: sectionElevation,
+      totalElevationLoss: sectionElevationLoss,
       startIndex,
       endIndex,
     };
-
-    // Clean up section trace memory
-    if (sectionTrace) {
-      sectionTrace.deinit();
-    }
 
     return result;
   });
@@ -196,8 +208,11 @@ async function calculateRouteStats(data, requestId) {
       segmentId: segment.id,
       distance: endDist - startDist,
       pointCount: sectionPoints?.length ?? 0,
-      startPoint: startPoint?.valueOf() ?? null,
-      endPoint: endPoint?.valueOf() ?? null,
+      // Read directly from WASM instead of calling .valueOf()
+      startPoint: startPoint
+        ? [startPoint[0], startPoint[1], startPoint[2]]
+        : null,
+      endPoint: endPoint ? [endPoint[0], endPoint[1], endPoint[2]] : null,
     };
   });
 
@@ -220,7 +235,8 @@ async function findPointsAtDistances(data, requestId) {
       const point = trace.pointAtDistance(distance);
       return {
         distance,
-        point: point?.valueOf() ?? null,
+        // Read directly from WASM instead of calling .valueOf()
+        point: point ? [point[0], point[1], point[2]] : null,
       };
     })
     .filter((item) => item.point !== null);
@@ -266,7 +282,10 @@ async function findClosestLocation(data, requestId) {
   self.postMessage({
     type: "CLOSEST_POINT_FOUND",
     id: requestId,
-    closestLocation: closest.point?.valueOf() ?? null,
+    // Read directly from WASM instead of calling .valueOf()
+    closestLocation: closest.point
+      ? [closest.point[0], closest.point[1], closest.point[2]]
+      : null,
     closestIndex: closest.index,
   });
 }
