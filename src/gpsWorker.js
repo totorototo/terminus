@@ -172,91 +172,52 @@ async function processSections(data, requestId) {
       endCheckpoint: { location: endLocation },
     } = section;
 
-    console.log(`🔍 Section ${idx}: startKm=${startKm}, endKm=${endKm}`);
+    const startIndex = trace.findIndexAtDistance(startKm * 1000);
+    const endIndex = trace.findIndexAtDistance(endKm * 1000);
 
-    // Ensure valid km range and clamp to trace bounds
-    const validStartKm = Math.max(0, startKm);
-    const validEndKm = Math.max(validStartKm, endKm);
-    const maxDistanceKm = trace.totalDistance / 1000;
-    const clampedStartKm = Math.min(validStartKm, maxDistanceKm);
-    const clampedEndKm = Math.min(validEndKm, maxDistanceKm);
-
-    const startMeters = clampedStartKm * 1000;
-    const endMeters = clampedEndKm * 1000;
-
-    console.log(`✅ Clamped to: ${startMeters}m - ${endMeters}m`);
-
-    let sectionData = null;
-    let startPoint = null;
-    let endPoint = null;
-    let startIndex = 0;
-    let endIndex = 0;
-
-    try {
-      sectionData = trace.sliceBetweenDistances(startMeters, endMeters);
-      startPoint = trace.pointAtDistance(startMeters);
-      endPoint = trace.pointAtDistance(endMeters);
-      startIndex = trace.findIndexAtDistance(startMeters);
-      endIndex = trace.findIndexAtDistance(endMeters);
-    } catch (e) {
-      console.error(`⚠️ Error calling trace methods for section ${idx}:`, e);
-      console.error(`  startMeters: ${startMeters}, endMeters: ${endMeters}`);
-    }
-
-    // Extract points directly from the slice without creating a new trace
-    // This avoids the memory management issues with sub-traces
-    let sectionPoints = [];
-    let pointCount = 0;
-
-    if (sectionData) {
-      try {
-        // Get the slice as a plain JS array immediately
-        const sliceArray = Array.from(sectionData);
-        if (sliceArray && sliceArray.length > 0) {
-          sectionPoints = sliceArray.map((point) => Array.from(point));
-          pointCount = sectionPoints.length;
-        }
-      } catch (e) {
-        console.error(
-          `⚠️ Error extracting section points for section ${idx}:`,
-          e,
-        );
-      }
-    }
-
-    // Calculate section statistics from the main trace using indices
+    // Calculate section statistics directly from main trace using indices
+    // This avoids creating sub-traces and stays in WASM memory (zero-copy)
     let sectionDistance = 0;
     let sectionElevation = 0;
     let sectionElevationLoss = 0;
+    let sectionPoints = [];
 
     if (startIndex < endIndex && endIndex < trace.cumulativeDistances.length) {
-      try {
-        sectionDistance =
-          trace.cumulativeDistances[endIndex] -
-          trace.cumulativeDistances[startIndex];
-        sectionElevation =
-          trace.cumulativeElevations[endIndex] -
-          trace.cumulativeElevations[startIndex];
-        sectionElevationLoss =
-          trace.cumulativeElevationLoss[endIndex] -
-          trace.cumulativeElevationLoss[startIndex];
-      } catch (e) {
-        console.error(
-          `⚠️ Error calculating section stats for section ${idx}:`,
-          e,
-        );
+      sectionDistance =
+        trace.cumulativeDistances[endIndex] -
+        trace.cumulativeDistances[startIndex];
+      sectionElevation =
+        trace.cumulativeElevations[endIndex] -
+        trace.cumulativeElevations[startIndex];
+      sectionElevationLoss =
+        trace.cumulativeElevationLoss[endIndex] -
+        trace.cumulativeElevationLoss[startIndex];
+
+      // Only extract points if needed (causes WASM → JS copy)
+      // Better: keep points in WASM and only copy when necessary
+      for (let i = startIndex; i <= endIndex; i++) {
+        sectionPoints.push([
+          trace.points[i][0],
+          trace.points[i][1],
+          trace.points[i][2],
+        ]);
       }
     }
+
+    const startPoint = trace.pointAtDistance(startKm * 1000);
+    const endPoint = trace.pointAtDistance(endKm * 1000);
 
     // Extract data before cleanup - convert Zigar proxies to plain JS
     const result = {
       segmentId: section.id,
-      pointCount,
+      pointCount: sectionPoints.length,
       startKm,
       endKm,
       points: sectionPoints,
-      startPoint: startPoint?.valueOf() ?? null,
-      endPoint: endPoint?.valueOf() ?? null,
+      startPoint: startPoint
+        ? [startPoint[0], startPoint[1], startPoint[2]]
+        : null,
+      endPoint: endPoint ? [endPoint[0], endPoint[1], endPoint[2]] : null,
       startLocation,
       endLocation,
       totalDistance: sectionDistance,
@@ -297,8 +258,11 @@ async function calculateRouteStats(data, requestId) {
       segmentId: segment.id,
       distance: endDist - startDist,
       pointCount: sectionPoints?.length ?? 0,
-      startPoint: startPoint?.valueOf() ?? null,
-      endPoint: endPoint?.valueOf() ?? null,
+      // Read directly from WASM instead of calling .valueOf()
+      startPoint: startPoint
+        ? [startPoint[0], startPoint[1], startPoint[2]]
+        : null,
+      endPoint: endPoint ? [endPoint[0], endPoint[1], endPoint[2]] : null,
     };
   });
 
@@ -321,7 +285,8 @@ async function findPointsAtDistances(data, requestId) {
       const point = trace.pointAtDistance(distance);
       return {
         distance,
-        point: point?.valueOf() ?? null,
+        // Read directly from WASM instead of calling .valueOf()
+        point: point ? [point[0], point[1], point[2]] : null,
       };
     })
     .filter((item) => item.point !== null);
@@ -367,7 +332,10 @@ async function findClosestLocation(data, requestId) {
   self.postMessage({
     type: "CLOSEST_POINT_FOUND",
     id: requestId,
-    closestLocation: closest.point?.valueOf() ?? null,
+    // Read directly from WASM instead of calling .valueOf()
+    closestLocation: closest.point
+      ? [closest.point[0], closest.point[1], closest.point[2]]
+      : null,
     closestIndex: closest.index,
   });
 }
