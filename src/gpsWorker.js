@@ -3,7 +3,7 @@
 // All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
 
 import { Trace, __zigar } from "../zig/trace.zig";
-import { readGPXFileAndReturnsTrace } from "../zig/gpx.zig";
+import { readGPXComplete } from "../zig/gpx.zig";
 
 // Initialize Zig/WASM in worker context
 let isInitialized = false;
@@ -68,16 +68,28 @@ self.onmessage = async function (e) {
 
 async function processGPXFile(gpxFileBytes, requestId) {
   console.log("🔄 GPS Worker: Processing GPX file...");
-  const trace = readGPXFileAndReturnsTrace(gpxFileBytes.gpxBytes);
+  const gpxData = readGPXComplete(gpxFileBytes.gpxBytes);
 
+  console.log(
+    `📊 Loaded ${gpxData.trace_points.length} track points, ${gpxData.waypoints.length} waypoints`,
+  );
+
+  // Create trace from the parsed GPX data
+  const trace = Trace.init(gpxData.trace_points);
   console.log(`📊 After processing: ${trace.points.length} points in trace`);
-  trace.deinit();
 
   self.postMessage({
     type: "GPX_FILE_PROCESSED",
     id: requestId,
-    results: trace.valueOf(),
+    results: {
+      trace,
+      waypoints: gpxData.waypoints,
+      sections: gpxData.sections,
+    },
   });
+
+  trace.deinit();
+  gpxData.deinit();
 }
 
 async function processGPSData(gpsData, requestId) {
