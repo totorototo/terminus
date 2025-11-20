@@ -3,6 +3,7 @@
 // All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
 
 import { Trace, __zigar } from "../zig/trace.zig";
+import { readGPXComplete } from "../zig/gpx.zig";
 
 // Initialize Zig/WASM in worker context
 let isInitialized = false;
@@ -24,6 +25,10 @@ self.onmessage = async function (e) {
     await initializeZig();
 
     switch (type) {
+      case "PROCESS_GPX_FILE":
+        await processGPXFile(data, id);
+        break;
+
       case "PROCESS_GPS_DATA":
         await processGPSData(data, id);
         break;
@@ -61,6 +66,35 @@ self.onmessage = async function (e) {
   }
 };
 
+async function processGPXFile(gpxFileBytes, requestId) {
+  console.log("🔄 GPS Worker: Processing GPX file...");
+  const gpxData = readGPXComplete(gpxFileBytes.gpxBytes);
+
+  console.log(
+    `📊 Loaded ${gpxData.trace_points.length} track points, ${gpxData.waypoints.length} waypoints`,
+  );
+
+  // Create trace from the parsed GPX data
+  const trace = Trace.init(gpxData.trace_points);
+  console.log(`📊 After processing: ${trace.points.length} points in trace`);
+
+  // Convert Zigar proxy objects to plain JS before sending
+  const results = {
+    trace: trace.valueOf(),
+    waypoints: gpxData.waypoints.valueOf(),
+    sections: gpxData.sections?.valueOf() ?? null,
+  };
+
+  self.postMessage({
+    type: "GPX_FILE_PROCESSED",
+    id: requestId,
+    results,
+  });
+
+  trace.deinit();
+  gpxData.deinit();
+}
+
 async function processGPSData(gpsData, requestId) {
   console.log("🔄 GPS Worker: Processing GPS data...");
   console.log(`📊 Input: ${gpsData.coordinates.length} GPS points`);
@@ -94,20 +128,33 @@ async function processGPSData(gpsData, requestId) {
 
   // Convert to plain JS object before deinit
   const results = trace.valueOf();
-  trace.deinit();
 
   self.postMessage({
     type: "GPS_DATA_PROCESSED",
     id: requestId,
     results,
   });
+
+  trace.deinit();
 }
 
 async function processSections(data, requestId) {
   console.log("🔄 GPS Worker: Processing sections...");
 
   const { coordinates, sections } = data;
+
+  // Validate coordinates before creating trace
+  if (!coordinates || !Array.isArray(coordinates) || coordinates.length === 0) {
+    throw new Error("Invalid coordinates data");
+  }
+
   const trace = Trace.init(coordinates);
+
+  console.log(
+    `📏 Trace total distance: ${trace.totalDistance}m (${(trace.totalDistance / 1000).toFixed(2)}km)`,
+  );
+  console.log(`📏 Trace points: ${trace.points.length}`);
+  console.log(`📍 Processing ${sections.length} sections`);
 
   // Send progress updates during processing
   self.postMessage({
@@ -117,7 +164,7 @@ async function processSections(data, requestId) {
     message: "Trace initialized...",
   });
 
-  const results = sections.map((section) => {
+  const results = sections.map((section, idx) => {
     const {
       startKm,
       endKm,
@@ -160,7 +207,7 @@ async function processSections(data, requestId) {
     const startPoint = trace.pointAtDistance(startKm * 1000);
     const endPoint = trace.pointAtDistance(endKm * 1000);
 
-    // Extract data before cleanup
+    // Extract data before cleanup - convert Zigar proxies to plain JS
     const result = {
       segmentId: section.id,
       pointCount: sectionPoints.length,
@@ -196,10 +243,13 @@ async function processSections(data, requestId) {
 async function calculateRouteStats(data, requestId) {
   const { coordinates, segments } = data;
   const trace = Trace.init(coordinates);
+  const maxDistance = trace.totalDistance;
 
   const stats = segments.map((segment) => {
-    const startDist = segment.start;
-    const endDist = segment.end;
+    // Validate and clamp distances to trace bounds
+    const startDist = Math.max(0, Math.min(segment.start, maxDistance));
+    const endDist = Math.max(startDist, Math.min(segment.end, maxDistance));
+
     const sectionPoints = trace.sliceBetweenDistances(startDist, endDist);
     const startPoint = trace.pointAtDistance(startDist);
     const endPoint = trace.pointAtDistance(endDist);
