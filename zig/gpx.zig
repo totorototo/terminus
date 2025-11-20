@@ -1,6 +1,9 @@
 const std = @import("std");
 const testing = std.testing;
 const Trace = @import("trace.zig").Trace;
+const Waypoint = @import("gpxdata.zig").Waypoint;
+const GPXData = @import("gpxdata.zig").GPXData;
+const SectionStats = @import("section.zig").SectionStats;
 
 fn floatToString(allocator: std.mem.Allocator, value: f64) ![]u8 {
     return std.fmt.allocPrint(allocator, "{d:.6}", .{value});
@@ -22,12 +25,10 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
     var prng = std.Random.DefaultPrng.init(12345);
     const random = prng.random();
 
-    var gpx_buffer = std.ArrayList(u8).init(allocator);
-    defer gpx_buffer.deinit();
-
-    try gpx_buffer.appendSlice("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n" ++
-        "<gpx version=\"1.1\" creator=\"ZigGPXGenerator\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n" ++
-        " <trk>\n <name>Random 160-km Trail Run</name>\n <trkseg>\n");
+    // Pre-generate all track points
+    const TrackPoint = struct { lat: f64, lon: f64, ele: f64 };
+    var track_points = std.ArrayList(TrackPoint).init(allocator);
+    defer track_points.deinit();
 
     // Perlin-like noise parameters for more natural meandering
     var direction: f64 = std.math.pi / 4.0; // Start northeast
@@ -106,11 +107,95 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
         if (elevation < 0.0) elevation = 0.0;
         if (elevation > 3000.0) elevation = 3000.0;
 
-        const latStr = try floatToString(allocator, lat);
+        try track_points.append(.{ .lat = lat, .lon = lon, .ele = elevation });
+    }
+
+    // Calculate waypoint positions at 20km intervals
+    const waypoint_interval_km: f64 = 20.0;
+    const waypoint_interval_meters: f64 = waypoint_interval_km * 1000.0;
+    var waypoint_positions = std.ArrayList(usize).init(allocator);
+    defer waypoint_positions.deinit();
+
+    var cumulative_distance: f64 = 0.0;
+    var next_waypoint_distance: f64 = waypoint_interval_meters;
+
+    try waypoint_positions.append(0); // Start waypoint
+
+    for (1..track_points.items.len) |i| {
+        const p1 = track_points.items[i - 1];
+        const p2 = track_points.items[i];
+
+        // Haversine distance
+        const R: f64 = 6371000.0; // Earth radius in meters
+        const lat1_rad = p1.lat * std.math.pi / 180.0;
+        const lat2_rad = p2.lat * std.math.pi / 180.0;
+        const dlat = lat2_rad - lat1_rad;
+        const dlon = (p2.lon - p1.lon) * std.math.pi / 180.0;
+
+        const a = @sin(dlat / 2.0) * @sin(dlat / 2.0) +
+            @cos(lat1_rad) * @cos(lat2_rad) *
+                @sin(dlon / 2.0) * @sin(dlon / 2.0);
+        const c = 2.0 * std.math.atan2(@sqrt(a), @sqrt(1.0 - a));
+        const segment_distance = R * c;
+
+        cumulative_distance += segment_distance;
+
+        if (cumulative_distance >= next_waypoint_distance) {
+            try waypoint_positions.append(i);
+            next_waypoint_distance += waypoint_interval_meters;
+        }
+    }
+
+    // Build GPX file
+    var gpx_buffer = std.ArrayList(u8).init(allocator);
+    defer gpx_buffer.deinit();
+
+    try gpx_buffer.appendSlice("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n" ++
+        "<gpx version=\"1.1\" creator=\"ZigGPXGenerator\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
+
+    // Write waypoints
+    for (waypoint_positions.items, 0..) |pos, idx| {
+        const pt = track_points.items[pos];
+
+        const latStr = try floatToString(allocator, pt.lat);
         defer allocator.free(latStr);
-        const lonStr = try floatToString(allocator, lon);
+        const lonStr = try floatToString(allocator, pt.lon);
         defer allocator.free(lonStr);
-        const eleStr = try floatToStringElev(allocator, elevation);
+
+        var name_buf: [32]u8 = undefined;
+        const name = try std.fmt.bufPrint(&name_buf, "Checkpoint {d}", .{idx + 1});
+
+        // Calculate time based on waypoint index (assume 8 hours between waypoints for 20km sections)
+        const hours_offset: usize = idx * 8;
+        const base_hour: usize = 12; // Start at 12:00:00
+        const total_hours = base_hour + hours_offset;
+        const days: usize = @divFloor(total_hours, 24);
+        const hours: usize = @mod(total_hours, 24);
+        const day: usize = 20 + days;
+
+        var time_buf: [32]u8 = undefined;
+        const time = try std.fmt.bufPrint(&time_buf, "2025-11-{d:0>2}T{d:0>2}:00:00Z", .{ day, hours });
+
+        try gpx_buffer.appendSlice(" <wpt lat=\"");
+        try gpx_buffer.appendSlice(latStr);
+        try gpx_buffer.appendSlice("\" lon=\"");
+        try gpx_buffer.appendSlice(lonStr);
+        try gpx_buffer.appendSlice("\"><name>");
+        try gpx_buffer.appendSlice(name);
+        try gpx_buffer.appendSlice("</name><time>");
+        try gpx_buffer.appendSlice(time);
+        try gpx_buffer.appendSlice("</time></wpt>\n");
+    }
+
+    // Write track
+    try gpx_buffer.appendSlice(" <trk>\n <name>Random 160-km Trail Run</name>\n <trkseg>\n");
+
+    for (track_points.items) |pt| {
+        const latStr = try floatToString(allocator, pt.lat);
+        defer allocator.free(latStr);
+        const lonStr = try floatToString(allocator, pt.lon);
+        defer allocator.free(lonStr);
+        const eleStr = try floatToStringElev(allocator, pt.ele);
         defer allocator.free(eleStr);
 
         try gpx_buffer.appendSlice(" <trkpt lat=\"");
@@ -135,7 +220,7 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
     try file.writeAll(gpx_data);
 }
 
-pub fn readGPXFile(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
+pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
     var points = std.ArrayList([3]f64).init(allocator);
     defer points.deinit();
 
@@ -167,16 +252,103 @@ pub fn readGPXFile(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
     return points.toOwnedSlice();
 }
 
-pub fn readGPXFileAndReturnsTrace(allocator: std.mem.Allocator, bytes: []const u8) !Trace {
-    const points_array = try readGPXFile(allocator, bytes);
-    defer allocator.free(points_array);
+pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoint {
+    var waypoints = std.ArrayList(Waypoint).init(allocator);
+    errdefer {
+        for (waypoints.items) |*wpt| {
+            wpt.deinit(allocator);
+        }
+        waypoints.deinit();
+    }
 
-    return Trace.init(allocator, points_array);
+    var pos: usize = 0;
+    while (std.mem.indexOfPos(u8, bytes, pos, "<wpt")) |start| {
+        // Parse lat attribute
+        const lat_start = std.mem.indexOfPos(u8, bytes, start, "lat=\"") orelse break;
+        const lat_value_start = lat_start + 5;
+        const lat_value_end = std.mem.indexOfPos(u8, bytes, lat_value_start, "\"") orelse break;
+        const lat_str = bytes[lat_value_start..lat_value_end];
+        const lat = try std.fmt.parseFloat(f64, lat_str);
+
+        // Parse lon attribute
+        const lon_start = std.mem.indexOfPos(u8, bytes, start, "lon=\"") orelse break;
+        const lon_value_start = lon_start + 5;
+        const lon_value_end = std.mem.indexOfPos(u8, bytes, lon_value_start, "\"") orelse break;
+        const lon_str = bytes[lon_value_start..lon_value_end];
+        const lon = try std.fmt.parseFloat(f64, lon_str);
+
+        // Find the end of the waypoint element
+        const wpt_end = std.mem.indexOfPos(u8, bytes, start, "</wpt>") orelse break;
+
+        // Parse name (required)
+        var name: []const u8 = "";
+        if (std.mem.indexOfPos(u8, bytes, start, "<name>")) |name_start| {
+            if (name_start < wpt_end) {
+                const name_value_start = name_start + 6;
+                if (std.mem.indexOfPos(u8, bytes, name_value_start, "</name>")) |name_value_end| {
+                    if (name_value_end < wpt_end) {
+                        const name_str = bytes[name_value_start..name_value_end];
+                        name = try allocator.dupe(u8, name_str);
+                    }
+                }
+            }
+        }
+
+        // Parse time (optional)
+        var time: ?[]const u8 = null;
+        if (std.mem.indexOfPos(u8, bytes, start, "<time>")) |time_start| {
+            if (time_start < wpt_end) {
+                const time_value_start = time_start + 6;
+                if (std.mem.indexOfPos(u8, bytes, time_value_start, "</time>")) |time_value_end| {
+                    if (time_value_end < wpt_end) {
+                        const time_str = bytes[time_value_start..time_value_end];
+                        time = try allocator.dupe(u8, time_str);
+                    }
+                }
+            }
+        }
+
+        try waypoints.append(.{
+            .lat = lat,
+            .lon = lon,
+            .name = name,
+            .time = time,
+        });
+
+        pos = wpt_end + 6;
+    }
+
+    return waypoints.toOwnedSlice();
+}
+
+pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData {
+    const trace_points = try readTracePoints(allocator, bytes);
+    errdefer allocator.free(trace_points);
+
+    const waypoints = try readWaypoints(allocator, bytes);
+    errdefer {
+        for (waypoints) |*wpt| {
+            wpt.deinit(allocator);
+        }
+        allocator.free(waypoints);
+    }
+
+    // Compute sections if waypoints are available
+    const sections: ?[]const SectionStats = null;
+    // Note: Section computation from waypoints was removed from trace.zig
+    // The application computes sections from CSV checkpoints instead
+    // If needed, sections should be computed separately using dedicated functions
+
+    return GPXData{
+        .trace_points = trace_points,
+        .waypoints = waypoints,
+        .sections = sections,
+    };
 }
 
 // Tests
 
-test "should read gpx file and return Trace" {
+test "readTracePoints and Trace.init create valid trace" {
     const allocator = testing.allocator;
     const sample_gpx =
         \\<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
@@ -192,7 +364,10 @@ test "should read gpx file and return Trace" {
         \\</gpx>
     ;
 
-    var trace = try readGPXFileAndReturnsTrace(allocator, sample_gpx);
+    const points = try readTracePoints(allocator, sample_gpx);
+    defer allocator.free(points);
+
+    var trace = try Trace.init(allocator, points);
     defer trace.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 3), trace.points.len);
@@ -205,7 +380,7 @@ test "should read gpx file and return Trace" {
     try testing.expectEqual(150.0, trace.points[1][2]);
 }
 
-test "should read GPX file and extract track points" {
+test "readTracePoints extracts track points" {
     const allocator = testing.allocator;
     const sample_gpx =
         \\<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
@@ -221,7 +396,7 @@ test "should read GPX file and extract track points" {
         \\</gpx>
     ;
 
-    const points = try readGPXFile(allocator, sample_gpx);
+    const points = try readTracePoints(allocator, sample_gpx);
     defer allocator.free(points);
 
     try testing.expectEqual(@as(usize, 3), points.len);
@@ -347,17 +522,17 @@ test "GPX elevation values are within bounds" {
     try std.fs.cwd().deleteFile(test_path);
 }
 
-test "readGPXFile with empty input" {
+test "readTracePoints with empty input" {
     const allocator = testing.allocator;
     const empty_gpx = "";
 
-    const points = try readGPXFile(allocator, empty_gpx);
+    const points = try readTracePoints(allocator, empty_gpx);
     defer allocator.free(points);
 
     try testing.expectEqual(@as(usize, 0), points.len);
 }
 
-test "readGPXFile with no track points" {
+test "readTracePoints with no track points" {
     const allocator = testing.allocator;
     const no_points_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -370,13 +545,13 @@ test "readGPXFile with no track points" {
         \\</gpx>
     ;
 
-    const points = try readGPXFile(allocator, no_points_gpx);
+    const points = try readTracePoints(allocator, no_points_gpx);
     defer allocator.free(points);
 
     try testing.expectEqual(@as(usize, 0), points.len);
 }
 
-test "readGPXFile with single point" {
+test "readTracePoints with single point" {
     const allocator = testing.allocator;
     const single_point_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -389,7 +564,7 @@ test "readGPXFile with single point" {
         \\</gpx>
     ;
 
-    const points = try readGPXFile(allocator, single_point_gpx);
+    const points = try readTracePoints(allocator, single_point_gpx);
     defer allocator.free(points);
 
     try testing.expectEqual(@as(usize, 1), points.len);
@@ -398,7 +573,7 @@ test "readGPXFile with single point" {
     try testing.expectEqual(250.5, points[0][2]);
 }
 
-test "readGPXFile with negative coordinates" {
+test "readTracePoints with negative coordinates" {
     const allocator = testing.allocator;
     const negative_coords_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -412,7 +587,7 @@ test "readGPXFile with negative coordinates" {
         \\</gpx>
     ;
 
-    const points = try readGPXFile(allocator, negative_coords_gpx);
+    const points = try readTracePoints(allocator, negative_coords_gpx);
     defer allocator.free(points);
 
     try testing.expectEqual(@as(usize, 2), points.len);
@@ -422,7 +597,7 @@ test "readGPXFile with negative coordinates" {
     try testing.expectEqual(151.0, points[1][1]);
 }
 
-test "readGPXFile with extreme elevation values" {
+test "readTracePoints with extreme elevation values" {
     const allocator = testing.allocator;
     const extreme_elevation_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -437,7 +612,7 @@ test "readGPXFile with extreme elevation values" {
         \\</gpx>
     ;
 
-    const points = try readGPXFile(allocator, extreme_elevation_gpx);
+    const points = try readTracePoints(allocator, extreme_elevation_gpx);
     defer allocator.free(points);
 
     try testing.expectEqual(@as(usize, 3), points.len);
@@ -446,7 +621,7 @@ test "readGPXFile with extreme elevation values" {
     try testing.expectEqual(0.0, points[2][2]); // Sea level
 }
 
-test "readGPXFile with multiple track segments" {
+test "readTracePoints with multiple track segments" {
     const allocator = testing.allocator;
     const multi_segment_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -464,7 +639,7 @@ test "readGPXFile with multiple track segments" {
         \\</gpx>
     ;
 
-    const points = try readGPXFile(allocator, multi_segment_gpx);
+    const points = try readTracePoints(allocator, multi_segment_gpx);
     defer allocator.free(points);
 
     try testing.expectEqual(@as(usize, 4), points.len);
@@ -472,7 +647,7 @@ test "readGPXFile with multiple track segments" {
     try testing.expectEqual(41.1, points[3][0]);
 }
 
-test "readGPXFile with high precision coordinates" {
+test "readTracePoints with high precision coordinates" {
     const allocator = testing.allocator;
     const high_precision_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -485,7 +660,7 @@ test "readGPXFile with high precision coordinates" {
         \\</gpx>
     ;
 
-    const points = try readGPXFile(allocator, high_precision_gpx);
+    const points = try readTracePoints(allocator, high_precision_gpx);
     defer allocator.free(points);
 
     try testing.expectEqual(@as(usize, 1), points.len);
@@ -494,7 +669,7 @@ test "readGPXFile with high precision coordinates" {
     try testing.expectApproxEqAbs(123.456789, points[0][2], 0.000001);
 }
 
-test "readGPXFile with scientific notation" {
+test "readTracePoints with scientific notation" {
     const allocator = testing.allocator;
     const scientific_notation_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -507,7 +682,7 @@ test "readGPXFile with scientific notation" {
         \\</gpx>
     ;
 
-    const points = try readGPXFile(allocator, scientific_notation_gpx);
+    const points = try readTracePoints(allocator, scientific_notation_gpx);
     defer allocator.free(points);
 
     try testing.expectEqual(@as(usize, 1), points.len);
@@ -516,7 +691,7 @@ test "readGPXFile with scientific notation" {
     try testing.expectApproxEqAbs(100.0, points[0][2], 0.01);
 }
 
-test "readGPXFile parses generated GPX correctly" {
+test "readTracePoints parses generated GPX correctly" {
     const allocator = testing.allocator;
     const test_path = "test_roundtrip.gpx";
 
@@ -533,7 +708,7 @@ test "readGPXFile parses generated GPX correctly" {
     const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
     defer allocator.free(content);
 
-    const points = try readGPXFile(allocator, content);
+    const points = try readTracePoints(allocator, content);
     defer allocator.free(points);
 
     // Should have 10000 points
@@ -548,4 +723,147 @@ test "readGPXFile parses generated GPX correctly" {
     // Verify last point
     try testing.expect(points[9999][0] != points[0][0]); // Should have moved
     try testing.expect(points[9999][1] != points[0][1]);
+}
+
+test "readWaypoints parses waypoints correctly" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.000000" lon="7.000000">
+        \\  <name>Checkpoint 10km</name>
+        \\  <time>2025-11-20T12:00:00Z</time>
+        \\ </wpt>
+        \\ <wpt lat="45.005000" lon="7.005000">
+        \\  <name>Checkpoint 20km</name>
+        \\  <time>2025-11-20T14:00:00Z</time>
+        \\ </wpt>
+        \\</gpx>
+    ;
+
+    const waypoints = try readWaypoints(allocator, sample_gpx);
+    defer {
+        for (waypoints) |*wpt| {
+            allocator.free(wpt.name);
+            if (wpt.time) |t| allocator.free(t);
+        }
+        allocator.free(waypoints);
+    }
+
+    try testing.expectEqual(@as(usize, 2), waypoints.len);
+
+    try testing.expectEqual(45.0, waypoints[0].lat);
+    try testing.expectEqual(7.0, waypoints[0].lon);
+    try testing.expectEqualStrings("Checkpoint 10km", waypoints[0].name);
+    try testing.expect(waypoints[0].time != null);
+    try testing.expectEqualStrings("2025-11-20T12:00:00Z", waypoints[0].time.?);
+
+    try testing.expectEqual(45.005, waypoints[1].lat);
+    try testing.expectEqual(7.005, waypoints[1].lon);
+    try testing.expectEqualStrings("Checkpoint 20km", waypoints[1].name);
+}
+
+test "readWaypoints with no time element" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0">
+        \\  <name>Simple Checkpoint</name>
+        \\ </wpt>
+        \\</gpx>
+    ;
+
+    const waypoints = try readWaypoints(allocator, sample_gpx);
+    defer {
+        for (waypoints) |*wpt| {
+            allocator.free(wpt.name);
+            if (wpt.time) |t| allocator.free(t);
+        }
+        allocator.free(waypoints);
+    }
+
+    try testing.expectEqual(@as(usize, 1), waypoints.len);
+    try testing.expectEqualStrings("Simple Checkpoint", waypoints[0].name);
+    try testing.expect(waypoints[0].time == null);
+}
+
+test "readGPXComplete parses both tracks and waypoints" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.000000" lon="7.000000">
+        \\  <name>Checkpoint 10km</name>
+        \\  <time>2025-11-20T12:00:00Z</time>
+        \\ </wpt>
+        \\ <wpt lat="45.010000" lon="7.010000">
+        \\  <name>Checkpoint 20km</name>
+        \\  <time>2025-11-20T14:00:00Z</time>
+        \\ </wpt>
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="45.000000" lon="7.000000"><ele>300</ele></trkpt>
+        \\   <trkpt lat="45.005000" lon="7.005000"><ele>320</ele></trkpt>
+        \\   <trkpt lat="45.010000" lon="7.010000"><ele>340</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    var gpx_data = try readGPXComplete(allocator, sample_gpx);
+    defer gpx_data.deinit(allocator);
+
+    try testing.expectEqual(@as(usize, 3), gpx_data.trace_points.len);
+    try testing.expectEqual(@as(usize, 2), gpx_data.waypoints.len);
+
+    try testing.expectEqual(45.0, gpx_data.trace_points[0][0]);
+    try testing.expectEqual(300.0, gpx_data.trace_points[0][2]);
+
+    try testing.expectEqualStrings("Checkpoint 10km", gpx_data.waypoints[0].name);
+    try testing.expectEqualStrings("Checkpoint 20km", gpx_data.waypoints[1].name);
+}
+
+test "generateAndSaveGPX creates waypoints at 20km intervals" {
+    const allocator = testing.allocator;
+    const test_path = "test_waypoint_generation.gpx";
+
+    std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
+
+    // Generate GPX file with waypoints
+    try generateAndSaveGPX(allocator, test_path);
+
+    // Read the file and parse it
+    const file = try std.fs.cwd().openFile(test_path, .{});
+    defer file.close();
+
+    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
+    defer allocator.free(content);
+
+    var gpx_data = try readGPXComplete(allocator, content);
+    defer gpx_data.deinit(allocator);
+
+    // Should have 10000 track points
+    try testing.expectEqual(@as(usize, 10000), gpx_data.trace_points.len);
+
+    // Should have waypoints (start + one every 20km in a 160km trail = 9 waypoints)
+    try testing.expect(gpx_data.waypoints.len >= 8);
+    try testing.expect(gpx_data.waypoints.len <= 10);
+
+    // Verify waypoint names
+    try testing.expectEqualStrings("Checkpoint 1", gpx_data.waypoints[0].name);
+    if (gpx_data.waypoints.len > 1) {
+        try testing.expectEqualStrings("Checkpoint 2", gpx_data.waypoints[1].name);
+    }
+
+    // Verify waypoints are positioned along the track
+    for (gpx_data.waypoints) |wpt| {
+        try testing.expect(wpt.lat >= 36.0 and wpt.lat <= 38.0);
+        try testing.expect(wpt.lon >= -123.0 and wpt.lon <= -121.0);
+    }
+
+    // Note: Sections are no longer computed automatically from waypoints
+    // The application computes sections from CSV checkpoints as needed
+    try testing.expect(gpx_data.sections == null);
 }
