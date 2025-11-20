@@ -78,14 +78,17 @@ async function processGPXFile(gpxFileBytes, requestId) {
   const trace = Trace.init(gpxData.trace_points);
   console.log(`📊 After processing: ${trace.points.length} points in trace`);
 
+  // Convert Zigar proxy objects to plain JS before sending
+  const results = {
+    trace: trace.valueOf(),
+    waypoints: gpxData.waypoints.valueOf(),
+    sections: gpxData.sections?.valueOf() ?? null,
+  };
+
   self.postMessage({
     type: "GPX_FILE_PROCESSED",
     id: requestId,
-    results: {
-      trace,
-      waypoints: gpxData.waypoints,
-      sections: gpxData.sections,
-    },
+    results,
   });
 
   trace.deinit();
@@ -125,13 +128,14 @@ async function processGPSData(gpsData, requestId) {
 
   // Convert to plain JS object before deinit
   const results = trace.valueOf();
-  trace.deinit();
 
   self.postMessage({
     type: "GPS_DATA_PROCESSED",
     id: requestId,
     results,
   });
+
+  trace.deinit();
 }
 
 async function processSections(data, requestId) {
@@ -244,7 +248,7 @@ async function processSections(data, requestId) {
       }
     }
 
-    // Extract data before cleanup
+    // Extract data before cleanup - convert Zigar proxies to plain JS
     const result = {
       segmentId: section.id,
       pointCount,
