@@ -2,10 +2,10 @@ import { MapPin } from "@styled-icons/feather/MapPin";
 import { Film } from "@styled-icons/feather/Film";
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import { TrendingUp } from "@styled-icons/feather/TrendingUp";
-import { Upload } from "@styled-icons/feather/upload";
+// import { Upload } from "@styled-icons/feather/upload";
 import useStore from "../../store/store";
 import style from "./Commands.style";
-import { useCallback } from "react";
+// import { useCallback } from "react";
 
 function Commands({ className }) {
   const trackingMode = useStore((state) => state.app.trackingMode);
@@ -15,22 +15,22 @@ function Commands({ className }) {
   const displaySlopes = useStore((state) => state.app.displaySlopes);
   const toggleSlopesMode = useStore((state) => state.toggleSlopesMode);
   const findClosestLocation = useStore((state) => state.findClosestLocation);
-  const processGPXFile = useStore((state) => state.processGPXFile);
+  //const processGPXFile = useStore((state) => state.processGPXFile);
 
-  const onChange = useCallback(
-    async (evt) => {
-      const [file] = evt.target.files;
-      if (file) {
-        const buffer = await file.arrayBuffer();
-        await processGPXFile(buffer);
-      }
-    },
-    [processGPXFile],
-  );
+  // const onChange = useCallback(
+  //   async (evt) => {
+  //     const [file] = evt.target.files;
+  //     if (file) {
+  //       const buffer = await file.arrayBuffer();
+  //       await processGPXFile(buffer);
+  //     }
+  //   },
+  //   [processGPXFile],
+  // );
 
   return (
     <div className={className}>
-      <label className="off file-upload-button">
+      {/* <label className="off file-upload-button">
         <Upload size={24} />
         <input
           type="file"
@@ -38,7 +38,7 @@ function Commands({ className }) {
           onChange={onChange}
           style={{ display: "none" }}
         />
-      </label>
+      </label> */}
       <button className={"off"} onClick={findClosestLocation}>
         <MapPin size={24} />
       </button>
