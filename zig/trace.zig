@@ -1,7 +1,10 @@
 const Point = @import("waypoint.zig").Point;
+const SectionStats = @import("section.zig").SectionStats;
+const Waypoint = @import("gpxdata.zig").Waypoint;
 const std = @import("std");
 
 const expect = std.testing.expect;
+const expectEqual = std.testing.expectEqual;
 const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 const distance = @import("gpspoint.zig").distance;
 const distance3D = @import("gpspoint.zig").distance3D;
@@ -319,6 +322,70 @@ pub const Trace = struct {
             .index = closest_index,
             .distance = closest_distance,
         };
+    }
+
+    /// Compute section statistics between consecutive waypoints along this trace
+    pub fn computeSectionsFromWaypoints(self: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint) ![]SectionStats {
+        if (waypoints.len < 2) {
+            return &[_]SectionStats{};
+        }
+
+        const num_sections = waypoints.len - 1;
+        var sections = try allocator.alloc(SectionStats, num_sections);
+        errdefer allocator.free(sections);
+
+        for (0..num_sections) |i| {
+            const start_wpt = waypoints[i];
+            const end_wpt = waypoints[i + 1];
+
+            // Find closest points on trace to waypoints (using 2D coordinates, then use trace's elevation)
+            const start_coord = [3]f64{ start_wpt.lat, start_wpt.lon, 0.0 };
+            const end_coord = [3]f64{ end_wpt.lat, end_wpt.lon, 0.0 };
+
+            const start_result = self.findClosestPoint(start_coord) orelse continue;
+            const end_result = self.findClosestPoint(end_coord) orelse continue;
+
+            const start_index = start_result.index;
+            const end_index = end_result.index;
+
+            if (start_index >= end_index) continue;
+
+            // Compute section statistics
+            const dist = self.cumulativeDistances[end_index] - self.cumulativeDistances[start_index];
+            const elevation_gain = self.cumulativeElevations[end_index] - self.cumulativeElevations[start_index];
+            const elevation_loss = self.cumulativeElevationLoss[end_index] - self.cumulativeElevationLoss[start_index];
+
+            // Find min/max elevation and max slope in section
+            var min_elevation = self.points[start_index][2];
+            var max_elevation = self.points[start_index][2];
+            var max_slope: f64 = 0.0;
+
+            for (start_index..end_index) |j| {
+                const ele = self.points[j][2];
+                min_elevation = @min(min_elevation, ele);
+                max_elevation = @max(max_elevation, ele);
+                max_slope = @max(max_slope, @abs(self.slopes[j]));
+            }
+
+            const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
+
+            sections[i] = SectionStats{
+                .start_index = start_index,
+                .end_index = end_index,
+                .point_count = end_index - start_index,
+                .start_point = self.points[start_index],
+                .end_point = self.points[end_index],
+                .distance = dist,
+                .elevation_gain = elevation_gain,
+                .elevation_loss = elevation_loss,
+                .avg_slope = avg_slope,
+                .max_slope = max_slope,
+                .min_elevation = min_elevation,
+                .max_elevation = max_elevation,
+            };
+        }
+
+        return sections;
     }
 };
 
@@ -1291,4 +1358,167 @@ test "slope smoothing: reduces variations" {
     // Mean slope should be around 4-5% for this consistent uphill
     try expect(mean >= 2.0);
     try expect(mean <= 7.0);
+}
+
+test "computeSectionsFromWaypoints: basic functionality" {
+    const allocator = std.testing.allocator;
+
+    // Create a simple trace with known coordinates
+    const points = [_][3]f64{
+        [3]f64{ 37.0, -122.0, 100.0 },
+        [3]f64{ 37.01, -122.01, 120.0 },
+        [3]f64{ 37.02, -122.02, 140.0 },
+        [3]f64{ 37.03, -122.03, 160.0 },
+        [3]f64{ 37.04, -122.04, 180.0 },
+        [3]f64{ 37.05, -122.05, 200.0 },
+        [3]f64{ 37.06, -122.06, 220.0 },
+        [3]f64{ 37.07, -122.07, 240.0 },
+        [3]f64{ 37.08, -122.08, 260.0 },
+        [3]f64{ 37.09, -122.09, 280.0 },
+        [3]f64{ 37.10, -122.10, 300.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // Create waypoints at start, middle, end (matching trace points exactly)
+    const waypoints = [_]Waypoint{
+        .{ .lat = 37.0, .lon = -122.0, .name = "Start", .time = null },
+        .{ .lat = 37.05, .lon = -122.05, .name = "Middle", .time = null },
+        .{ .lat = 37.10, .lon = -122.10, .name = "End", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer allocator.free(sections);
+
+    // Should have 2 sections (between 3 waypoints)
+    try expectEqual(@as(usize, 2), sections.len);
+
+    // Verify section properties
+    for (sections) |section| {
+        try expect(section.distance > 0.0);
+        try expect(section.elevation_gain >= 0.0);
+        try expect(section.point_count > 0);
+        try expect(section.start_index < section.end_index);
+        try expect(section.end_index <= trace.points.len);
+    }
+}
+
+test "computeSectionsFromWaypoints: single waypoint returns empty" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 37.0, -122.0, 100.0 },
+        [3]f64{ 37.1, -122.1, 200.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 37.0, .lon = -122.0, .name = "Only", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer allocator.free(sections);
+
+    try expectEqual(@as(usize, 0), sections.len);
+}
+
+test "computeSectionsFromWaypoints: elevation statistics" {
+    const allocator = std.testing.allocator;
+
+    // Create trace with known elevation profile
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.01, 0.01, 150.0 }, // gain
+        [3]f64{ 0.02, 0.02, 200.0 }, // gain
+        [3]f64{ 0.03, 0.03, 180.0 }, // loss
+        [3]f64{ 0.04, 0.04, 220.0 }, // gain
+        [3]f64{ 0.05, 0.05, 190.0 }, // loss
+        [3]f64{ 0.06, 0.06, 160.0 }, // loss
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.0, .lon = 0.0, .name = "Start", .time = null },
+        .{ .lat = 0.06, .lon = 0.06, .name = "End", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer allocator.free(sections);
+
+    try expectEqual(@as(usize, 1), sections.len);
+
+    const section = sections[0];
+    // Check elevation bounds
+    try expect(section.min_elevation >= 100.0);
+    try expect(section.max_elevation <= 220.0);
+    try expect(section.elevation_gain > 0.0);
+    try expect(section.elevation_loss > 0.0);
+}
+
+test "computeSectionsFromWaypoints: section indices are valid" {
+    const allocator = std.testing.allocator;
+
+    var points = try allocator.alloc([3]f64, 50);
+    defer allocator.free(points);
+
+    for (0..50) |i| {
+        const t = @as(f64, @floatFromInt(i)) / 50.0;
+        points[i] = [3]f64{ t, t, 100.0 + t * 100.0 };
+    }
+
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.0, .lon = 0.0, .name = "W1", .time = null },
+        .{ .lat = 0.5, .lon = 0.5, .name = "W2", .time = null },
+        .{ .lat = 1.0, .lon = 1.0, .name = "W3", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer allocator.free(sections);
+
+    try expectEqual(@as(usize, 2), sections.len);
+
+    // Verify indices are within bounds and sequential
+    try expect(sections[0].start_index < sections[0].end_index);
+    try expect(sections[0].end_index <= sections[1].start_index);
+    try expect(sections[1].start_index < sections[1].end_index);
+    try expect(sections[1].end_index <= trace.points.len);
+}
+
+test "computeSectionsFromWaypoints: slope calculations" {
+    const allocator = std.testing.allocator;
+
+    // Create steep uphill section
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 0.0 },
+        [3]f64{ 0.001, 0.001, 50.0 }, // Very steep
+        [3]f64{ 0.002, 0.002, 100.0 },
+        [3]f64{ 0.003, 0.003, 150.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.0, .lon = 0.0, .name = "Bottom", .time = null },
+        .{ .lat = 0.003, .lon = 0.003, .name = "Top", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer allocator.free(sections);
+
+    try expectEqual(@as(usize, 1), sections.len);
+
+    const section = sections[0];
+    // Should have positive average slope for uphill
+    try expect(section.avg_slope > 0.0);
+    // Max slope should be reasonable
+    try expect(section.max_slope > 0.0);
 }

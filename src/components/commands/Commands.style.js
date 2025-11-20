@@ -81,6 +81,85 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  /* File upload styled as button */
+  label.file-upload-button {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid
+      ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.2)};
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Glass morphism effect */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    /* Shadow for depth */
+    box-shadow:
+      0 4px 16px
+        ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)},
+      0 1px 4px
+        ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)},
+      inset 0 1px 0
+        ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.1)};
+
+    /* Remove default styles */
+    outline: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Remove blue highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+
+    /* Hover effects */
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 24px
+          ${(props) =>
+            rgba(props.theme.colors.dark["--color-background"], 0.15)},
+        0 2px 8px
+          ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)},
+        inset 0 1px 0
+          ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.2)};
+    }
+
+    &:active {
+      transform: translateY(0);
+      transition: transform 0.1s;
+    }
+
+    /* Icon styling */
+    svg {
+      transition: all 0.2s ease;
+    }
+
+    &.off {
+      background: ${(props) =>
+        rgba(props.theme.colors.dark["--color-text"], 0.1)};
+      color: ${(props) => props.theme.colors.dark["--color-text"]};
+      border-color: ${(props) =>
+        rgba(props.theme.colors.dark["--color-text"], 0.2)};
+
+      &:hover {
+        background: ${(props) =>
+          rgba(props.theme.colors.dark["--color-text"], 0.2)};
+        border-color: ${(props) =>
+          rgba(props.theme.colors.dark["--color-text"], 0.3)};
+      }
+
+      svg {
+        opacity: 0.8;
+      }
+    }
+  }
+
   button.on {
     background: ${(props) =>
       rgba(props.theme.colors.dark["--color-primary"], 0.25)};
