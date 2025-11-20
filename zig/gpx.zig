@@ -334,10 +334,16 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData
     }
 
     // Compute sections if waypoints are available
-    const sections: ?[]const SectionStats = null;
-    // Note: Section computation from waypoints was removed from trace.zig
-    // The application computes sections from CSV checkpoints instead
-    // If needed, sections should be computed separately using dedicated functions
+    var sections: ?[]const SectionStats = null;
+    if (waypoints.len > 1) {
+        var trace = try Trace.init(allocator, trace_points);
+        defer trace.deinit(allocator);
+
+        sections = try trace.computeSectionsFromWaypoints(allocator, waypoints);
+    }
+    errdefer {
+        if (sections) |s| allocator.free(s);
+    }
 
     return GPXData{
         .trace_points = trace_points,
@@ -863,7 +869,168 @@ test "generateAndSaveGPX creates waypoints at 20km intervals" {
         try testing.expect(wpt.lon >= -123.0 and wpt.lon <= -121.0);
     }
 
-    // Note: Sections are no longer computed automatically from waypoints
-    // The application computes sections from CSV checkpoints as needed
+    // Verify sections were computed from waypoints
+    try testing.expect(gpx_data.sections != null);
+    const sections = gpx_data.sections.?;
+
+    // Should have one less section than waypoints (sections between waypoints)
+    try testing.expectEqual(gpx_data.waypoints.len - 1, sections.len);
+
+    // Verify each section has valid stats
+    for (sections) |section| {
+        try testing.expect(section.distance > 0.0);
+        try testing.expect(section.start_index < section.end_index);
+        try testing.expect(section.end_index <= gpx_data.trace_points.len);
+        try testing.expect(section.point_count == section.end_index - section.start_index);
+    }
+}
+
+test "readGPXComplete: sections null when no waypoints" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="45.0" lon="7.0"><ele>300</ele></trkpt>
+        \\   <trkpt lat="45.01" lon="7.01"><ele>320</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    var gpx_data = try readGPXComplete(allocator, sample_gpx);
+    defer gpx_data.deinit(allocator);
+
+    try testing.expectEqual(@as(usize, 2), gpx_data.trace_points.len);
+    try testing.expectEqual(@as(usize, 0), gpx_data.waypoints.len);
     try testing.expect(gpx_data.sections == null);
+}
+
+test "readGPXComplete: sections null when single waypoint" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0"><name>Only</name></wpt>
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="45.0" lon="7.0"><ele>300</ele></trkpt>
+        \\   <trkpt lat="45.01" lon="7.01"><ele>320</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    var gpx_data = try readGPXComplete(allocator, sample_gpx);
+    defer gpx_data.deinit(allocator);
+
+    try testing.expectEqual(@as(usize, 1), gpx_data.waypoints.len);
+    try testing.expect(gpx_data.sections == null);
+}
+
+test "readGPXComplete: sections computed with multiple waypoints" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0"><name>Start</name></wpt>
+        \\ <wpt lat="45.05" lon="7.05"><name>Mid</name></wpt>
+        \\ <wpt lat="45.10" lon="7.10"><name>End</name></wpt>
+        \\ <trk>
+        \\  <trkseg>
+        \\   <trkpt lat="45.00" lon="7.00"><ele>100</ele></trkpt>
+        \\   <trkpt lat="45.01" lon="7.01"><ele>120</ele></trkpt>
+        \\   <trkpt lat="45.02" lon="7.02"><ele>140</ele></trkpt>
+        \\   <trkpt lat="45.03" lon="7.03"><ele>160</ele></trkpt>
+        \\   <trkpt lat="45.04" lon="7.04"><ele>180</ele></trkpt>
+        \\   <trkpt lat="45.05" lon="7.05"><ele>200</ele></trkpt>
+        \\   <trkpt lat="45.06" lon="7.06"><ele>220</ele></trkpt>
+        \\   <trkpt lat="45.07" lon="7.07"><ele>240</ele></trkpt>
+        \\   <trkpt lat="45.08" lon="7.08"><ele>260</ele></trkpt>
+        \\   <trkpt lat="45.09" lon="7.09"><ele>280</ele></trkpt>
+        \\   <trkpt lat="45.10" lon="7.10"><ele>300</ele></trkpt>
+        \\  </trkseg>
+        \\ </trk>
+        \\</gpx>
+    ;
+
+    var gpx_data = try readGPXComplete(allocator, sample_gpx);
+    defer gpx_data.deinit(allocator);
+
+    try testing.expectEqual(@as(usize, 11), gpx_data.trace_points.len);
+    try testing.expectEqual(@as(usize, 3), gpx_data.waypoints.len);
+
+    // Verify sections were computed
+    try testing.expect(gpx_data.sections != null);
+    const sections = gpx_data.sections.?;
+    try testing.expectEqual(@as(usize, 2), sections.len);
+
+    // Verify section properties
+    for (sections) |section| {
+        try testing.expect(section.distance > 0.0);
+        try testing.expect(section.elevation_gain > 0.0);
+        try testing.expect(section.start_index < section.end_index);
+        try testing.expect(section.point_count > 0);
+    }
+}
+
+test "readWaypoints: handles time parsing correctly" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0">
+        \\  <name>With Time</name>
+        \\  <time>2025-11-20T12:00:00Z</time>
+        \\ </wpt>
+        \\ <wpt lat="45.1" lon="7.1">
+        \\  <name>Without Time</name>
+        \\ </wpt>
+        \\</gpx>
+    ;
+
+    const waypoints = try readWaypoints(allocator, sample_gpx);
+    defer {
+        for (waypoints) |*wpt| {
+            wpt.deinit(allocator);
+        }
+        allocator.free(waypoints);
+    }
+
+    try testing.expectEqual(@as(usize, 2), waypoints.len);
+
+    // First waypoint has time
+    try testing.expect(waypoints[0].time != null);
+    try testing.expectEqualStrings("2025-11-20T12:00:00Z", waypoints[0].time.?);
+
+    // Second waypoint has no time
+    try testing.expect(waypoints[1].time == null);
+}
+
+test "generateAndSaveGPX: waypoint time increments correctly" {
+    const allocator = testing.allocator;
+    const test_path = "test_waypoint_times.gpx";
+
+    std.fs.cwd().deleteFile(test_path) catch {};
+    defer std.fs.cwd().deleteFile(test_path) catch {};
+
+    try generateAndSaveGPX(allocator, test_path);
+
+    const file = try std.fs.cwd().openFile(test_path, .{});
+    defer file.close();
+
+    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
+    defer allocator.free(content);
+
+    var gpx_data = try readGPXComplete(allocator, content);
+    defer gpx_data.deinit(allocator);
+
+    // Verify all waypoints have time tags
+    for (gpx_data.waypoints) |wpt| {
+        try testing.expect(wpt.time != null);
+        // Time should be in ISO8601 format (contains 'T' and 'Z')
+        try testing.expect(std.mem.indexOf(u8, wpt.time.?, "T") != null);
+        try testing.expect(std.mem.indexOf(u8, wpt.time.?, "Z") != null);
+    }
 }
