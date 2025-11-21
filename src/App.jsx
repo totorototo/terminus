@@ -11,66 +11,18 @@ import Commands from "./components/commands/Commands.jsx";
 import { useShallow } from "zustand/react/shallow";
 import gpxArrayBuffer from "./assets/vvx-xgtv-2026.gpx?arraybuffer";
 
-// Helper function to create windows (like Rust's .windows(2))
-function windows(array, size) {
-  if (array.length < size) return [];
-  return Array.from({ length: array.length - size + 1 }, (_, i) =>
-    array.slice(i, i + size),
-  );
-}
-
-// Function to compute sections from checkpoints
-function computeSectionsFromCheckpoints(checkpoints) {
-  // Create sliding windows of size 2 (pairs of consecutive checkpoints)
-  const checkpointPairs = windows(checkpoints, 2);
-
-  return checkpointPairs.map(([start, end], index) => {
-    // Find GPS points corresponding to the distance range
-    const startKm = start.km;
-    const endKm = end.km;
-
-    return {
-      id: index + 1,
-      name: `${start.location} → ${end.location}`,
-      startKm,
-      endKm,
-      startCheckpoint: {
-        location: start.location,
-        label: start.label,
-        km: startKm,
-        kind: start.kind,
-        cutoffTime: start.cutoffTime,
-      },
-      endCheckpoint: {
-        location: end.location,
-        label: end.label,
-        km: endKm,
-        kind: end.kind,
-        cutoffTime: end.cutoffTime,
-      },
-      distance: endKm - startKm,
-    };
-  });
-}
-
 function App({ className }) {
-  const {
-    initGPSWorker,
-    terminateGPSWorker,
-    isWorkerReady,
-    processGPSData,
-    processSections,
-    processGPXFile,
-  } = useStore(
-    useShallow((state) => ({
-      initGPSWorker: state.initGPSWorker,
-      terminateGPSWorker: state.terminateGPSWorker,
-      isWorkerReady: state.worker.isReady,
-      processGPSData: state.processGPSData,
-      processSections: state.processSections,
-      processGPXFile: state.processGPXFile,
-    })),
-  );
+  const { initGPSWorker, terminateGPSWorker, isWorkerReady, processGPXFile } =
+    useStore(
+      useShallow((state) => ({
+        initGPSWorker: state.initGPSWorker,
+        terminateGPSWorker: state.terminateGPSWorker,
+        isWorkerReady: state.worker.isReady,
+        processGPSData: state.processGPSData,
+        processSections: state.processSections,
+        processGPXFile: state.processGPXFile,
+      })),
+    );
 
   useEffect(() => {
     initGPSWorker();
