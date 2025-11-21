@@ -1,6 +1,6 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
-const Scene = lazy(() => import("./components/scene/Scene.jsx"));
+import Scene from "./components/scene/Scene.jsx";
 import style from "./App.style.js";
 import useStore from "./store/store.js";
 import TrailData from "./components/trailData/TrailData.jsx";
@@ -42,17 +42,9 @@ function App({ className }) {
 
   return (
     <div className={className}>
-      <Suspense
-        fallback={
-          <div style={{ width: "100%", height: "100%", background: "#000" }}>
-            Loading 3D Scene...
-          </div>
-        }
-      >
-        <AutoSizer>
-          {({ width, height }) => <Scene width={width} height={height} />}
-        </AutoSizer>
-      </Suspense>
+      <AutoSizer>
+        {({ width, height }) => <Scene width={width} height={height} />}
+      </AutoSizer>
       <TopSheetPanel>
         <Navigation />
       </TopSheetPanel>
