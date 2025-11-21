@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useRef, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
 import style from "./Scene.style";

@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import Profile from "../profile/Profile.jsx";
 import style from "./EnhancedProfile.style.js";
 import useStore from "../../store/store.js";
