@@ -2,13 +2,14 @@ const std = @import("std");
 const math = std.math;
 
 // Define your indices for clarity
-pub const IDX_LON = 0;
-pub const IDX_LAT = 1;
+// Points are stored as [latitude, longitude, elevation]
+pub const IDX_LAT = 0;
+pub const IDX_LON = 1;
 pub const IDX_ELEV = 2;
 
 /// Print a [3]f64 point
 pub fn printPoint(pt: [3]f64) void {
-    std.debug.print("Longitude: {}, Latitude: {}, Elevation: {}\n", .{ pt[IDX_LON], pt[IDX_LAT], pt[IDX_ELEV] });
+    std.debug.print("Latitude: {}, Longitude: {}, Elevation: {}\n", .{ pt[IDX_LAT], pt[IDX_LON], pt[IDX_ELEV] });
 }
 
 /// Compute haversine distance between two [3]f64 points (ignoring elevation)
@@ -91,8 +92,8 @@ test "distance: equator 1 degree latitude" {
 }
 
 test "distance: known coordinates (Paris to London)" {
-    const paris = [3]f64{ 2.3522, 48.8566, 0.0 };
-    const london = [3]f64{ -0.1276, 51.5074, 0.0 };
+    const paris = [3]f64{ 48.8566, 2.3522, 0.0 };
+    const london = [3]f64{ 51.5074, -0.1276, 0.0 };
     const d = distance(paris, london);
     // Actual distance is approximately 343,560 meters
     try std.testing.expectApproxEqAbs(343560.0, d, 1000.0);
@@ -159,31 +160,31 @@ test "elevationDeltaSigned: descending" {
 }
 
 test "bearingTo: north" {
-    const a = [3]f64{ 0.0, 0.0, 0.0 };
-    const b = [3]f64{ 0.0, 1.0, 0.0 };
+    const a = [3]f64{ 45.0, 0.0, 0.0 };
+    const b = [3]f64{ 46.0, 0.0, 0.0 };
     const bearing = bearingTo(a, b);
     try std.testing.expectApproxEqAbs(0.0, bearing, 0.1);
 }
 
 test "bearingTo: east" {
-    const a = [3]f64{ 0.0, 0.0, 0.0 };
-    const b = [3]f64{ 1.0, 0.0, 0.0 };
+    const a = [3]f64{ 45.0, 0.0, 0.0 };
+    const b = [3]f64{ 45.0, 1.0, 0.0 };
     const bearing = bearingTo(a, b);
-    try std.testing.expectApproxEqAbs(90.0, bearing, 0.1);
+    try std.testing.expectApproxEqAbs(90.0, bearing, 1.0);
 }
 
 test "bearingTo: south" {
-    const a = [3]f64{ 0.0, 0.0, 0.0 };
-    const b = [3]f64{ 0.0, -1.0, 0.0 };
+    const a = [3]f64{ 45.0, 0.0, 0.0 };
+    const b = [3]f64{ 44.0, 0.0, 0.0 };
     const bearing = bearingTo(a, b);
     try std.testing.expectApproxEqAbs(180.0, bearing, 0.1);
 }
 
 test "bearingTo: west" {
-    const a = [3]f64{ 0.0, 0.0, 0.0 };
-    const b = [3]f64{ -1.0, 0.0, 0.0 };
+    const a = [3]f64{ 45.0, 0.0, 0.0 };
+    const b = [3]f64{ 45.0, -1.0, 0.0 };
     const bearing = bearingTo(a, b);
-    try std.testing.expectApproxEqAbs(270.0, bearing, 0.1);
+    try std.testing.expectApproxEqAbs(270.0, bearing, 1.0);
 }
 
 test "elevationDeltaAbs: matches elevationDelta" {

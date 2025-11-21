@@ -886,7 +886,7 @@ test "generateAndSaveGPX creates waypoints at 20km intervals" {
         try testing.expect(section.totalDistance > 0.0);
         try testing.expect(section.startIndex < section.endIndex);
         try testing.expect(section.endIndex <= gpx_data.trace_points.len);
-        try testing.expect(section.pointCount == section.endIndex - section.startIndex);
+        try testing.expect(section.pointCount == section.endIndex - section.startIndex + 1);
         try testing.expect(section.points.len == section.pointCount);
     }
 }

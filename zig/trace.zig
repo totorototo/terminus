@@ -374,15 +374,16 @@ pub const Trace = struct {
 
             const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
 
-            // Get points slice for this section
-            const section_points = try allocator.alloc([3]f64, end_index - start_index);
-            @memcpy(section_points, self.points[start_index..end_index]);
+            // Get points slice for this section (inclusive of start and end)
+            const point_count = end_index - start_index + 1;
+            const section_points = try allocator.alloc([3]f64, point_count);
+            @memcpy(section_points, self.points[start_index .. end_index + 1]);
 
             sections[i] = SectionStats{
                 .segmentId = i,
                 .startIndex = start_index,
                 .endIndex = end_index,
-                .pointCount = end_index - start_index,
+                .pointCount = point_count,
                 .points = section_points,
                 .startPoint = self.points[start_index],
                 .endPoint = self.points[end_index],
