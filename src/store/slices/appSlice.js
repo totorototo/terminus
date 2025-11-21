@@ -45,7 +45,8 @@ export const createAppSlice = (set, get) => {
           navigator.geolocation.getCurrentPosition(resolve, reject);
         });
 
-        const coords = [position.coords.longitude, position.coords.latitude, 0];
+        // Store as [lat, lon, ele] to match Zig coordinate format
+        const coords = [position.coords.latitude, position.coords.longitude, 0];
         const date = position.timestamp;
         const location = { coords, date };
 

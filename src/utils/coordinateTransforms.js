@@ -47,18 +47,19 @@ export function createCoordinateScales(coordinates, options = {}) {
   }
 
   // 3D mode: x=longitude, y=elevation, z=latitude
+  // Note: coordinates are [lat, lon, ele] from Zig
   const xExtent = [
-    Math.min(...coordinates.map((coord) => coord[0])),
-    Math.max(...coordinates.map((coord) => coord[0])),
-  ]; // longitude
+    Math.min(...coordinates.map((coord) => coord[1])),
+    Math.max(...coordinates.map((coord) => coord[1])),
+  ]; // longitude (coord[1])
   const yExtent = [
     Math.min(...coordinates.map((coord) => coord[2])),
     Math.max(...coordinates.map((coord) => coord[2])),
-  ]; // elevation
+  ]; // elevation (coord[2])
   const zExtent = [
-    Math.min(...coordinates.map((coord) => coord[1])),
-    Math.max(...coordinates.map((coord) => coord[1])),
-  ]; // latitude
+    Math.min(...coordinates.map((coord) => coord[0])),
+    Math.max(...coordinates.map((coord) => coord[0])),
+  ]; // latitude (coord[0])
 
   // Apply padding based on aspect ratio
   const lonDelta = xExtent[1] - xExtent[0];
@@ -110,10 +111,11 @@ export function transformCoordinate(coordinate, scales, offsetIndex) {
     ];
   }
 
+  // Coordinates are [lat, lon, ele] from Zig
   return [
-    xScale(coordinate[0]), // longitude → x
-    yScale(coordinate[2]), // elevation → y
-    zScale(coordinate[1]), // latitude → z
+    xScale(coordinate[1]), // longitude → x (coord[1])
+    yScale(coordinate[2]), // elevation → y (coord[2])
+    zScale(coordinate[0]), // latitude → z (coord[0])
   ];
 }
 
