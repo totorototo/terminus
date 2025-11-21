@@ -68,7 +68,7 @@ self.onmessage = async function (e) {
 
 async function processGPXFile(gpxFileBytes, requestId) {
   console.log("🔄 GPS Worker: Processing GPX file...");
-  const gpxData = readGPXComplete(gpxFileBytes.gpxBytes);
+  const gpxData = await readGPXComplete(gpxFileBytes.gpxBytes);
 
   console.log(
     `📊 Loaded ${gpxData.trace_points.length} track points, ${gpxData.waypoints.length} waypoints`,
@@ -79,10 +79,24 @@ async function processGPXFile(gpxFileBytes, requestId) {
   console.log(`📊 After processing: ${trace.points.length} points in trace`);
 
   // Convert Zigar proxy objects to plain JS before sending
+  // Note: Zig string fields ([]const u8) need .string property to convert to JS strings
+  let sanitizedSections = null;
+  if (gpxData.sections) {
+    sanitizedSections = [];
+    for (let i = 0; i < gpxData.sections.length; i++) {
+      const section = gpxData.sections[i];
+      sanitizedSections.push({
+        ...section.valueOf(),
+        startLocation: section.startLocation.string,
+        endLocation: section.endLocation.string,
+      });
+    }
+  }
+
   const results = {
     trace: trace.valueOf(),
     waypoints: gpxData.waypoints.valueOf(),
-    sections: gpxData.sections?.valueOf() ?? null,
+    sections: sanitizedSections,
   };
 
   self.postMessage({
