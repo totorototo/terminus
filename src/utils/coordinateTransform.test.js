@@ -11,7 +11,7 @@ describe("coordinateTransforms test suite", () => {
   describe("createCoordinateScales", () => {
     it("should create coordinate scales with valid coordinates", () => {
       const coordinates = [
-        [0, 0, 100], // [longitude, latitude, elevation]
+        [0, 0, 100], // [latitude, longitude, elevation]
         [1, 1, 200],
         [2, 2, 150],
       ];
@@ -70,7 +70,7 @@ describe("coordinateTransforms test suite", () => {
         [10, 10, 200],
       ];
       const scales = createCoordinateScales(coordinates);
-      const coord = [5, 5, 150]; // [longitude, latitude, elevation]
+      const coord = [5, 5, 150]; // [latitude, longitude, elevation]
 
       const result = transformCoordinate(coord, scales);
 
