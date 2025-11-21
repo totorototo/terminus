@@ -1,6 +1,4 @@
 import { useEffect } from "react";
-import gpx from "./assets/vvx-xgtv-2026.gpx";
-import csv from "./assets/vvx-xgtv-2026.csv";
 import AutoSizer from "react-virtualized-auto-sizer";
 import Scene from "./components/scene/Scene.jsx";
 import style from "./App.style.js";
@@ -11,6 +9,7 @@ import TopSheetPanel from "./components/topSheetPanel/TopSheetPanel.jsx";
 import Navigation from "./components/navigation/Navigation.jsx";
 import Commands from "./components/commands/Commands.jsx";
 import { useShallow } from "zustand/react/shallow";
+import gpxArrayBuffer from "./assets/vvx-xgtv-2026.gpx?arraybuffer";
 
 // Helper function to create windows (like Rust's .windows(2))
 function windows(array, size) {
@@ -61,6 +60,7 @@ function App({ className }) {
     isWorkerReady,
     processGPSData,
     processSections,
+    processGPXFile,
   } = useStore(
     useShallow((state) => ({
       initGPSWorker: state.initGPSWorker,
@@ -68,6 +68,7 @@ function App({ className }) {
       isWorkerReady: state.worker.isReady,
       processGPSData: state.processGPSData,
       processSections: state.processSections,
+      processGPXFile: state.processGPXFile,
     })),
   );
 
@@ -81,21 +82,7 @@ function App({ className }) {
     if (!isWorkerReady) return;
 
     async function processGPSThenSections() {
-      const coordinates = gpx.features[0].geometry.coordinates;
-      await processGPSData(coordinates, (progress, message) => {
-        // optional
-      });
-
-      if (csv.length) {
-        const computedSections = computeSectionsFromCheckpoints(csv);
-        await processSections(
-          coordinates,
-          computedSections,
-          (progress, message) => {
-            // optional
-          },
-        );
-      }
+      await processGPXFile(gpxArrayBuffer);
     }
 
     processGPSThenSections();
