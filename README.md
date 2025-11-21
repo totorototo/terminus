@@ -73,27 +73,34 @@ zig test trace.zig
 
 ```
 src/
-  components/           # React components
-    scene/              # Main 3D scene container with lighting and controls
-    profile/            # Enhanced 3D elevation mesh with vertex coloring
-    marker/             # Checkpoint markers with animations and occlusion
-    commands/           # UI controls (file upload, tracking modes, slopes)
-    trailFollower/      # Animated runner following GPS trace
-    cameraController/   # Smooth camera transitions and orbital controls
-    navigation/         # Bottom panel with trail/section data
-  store/                # Zustand state management
+  components/
+    scene/              # 3D scene with lighting and controls
+    profile/            # 3D elevation mesh with coloring
+    marker/             # Checkpoint markers
+    commands/           # UI controls
+    trailFollower/      # Animated runner
+    cameraController/   # Camera transitions
+    bottomSheetPanel/   # Bottom UI panel
+    topSheetPanel/      # Top UI panel
+    navigation/         # Trail navigation
+    trailData/          # Trail statistics
+    sectionData/        # Section details
+    liveTracking/       # GPS tracking
+    enhancedProfile/    # 2D elevation profile
+  store/
     slices/             # State slices (app, gps, stats, worker)
-  utils/                # Coordinate transforms (lat/lon → meters)
-  helpers/              # Utility functions (colors, ring buffer, throttle)
-  gpsWorker.js          # Web Worker
-  theme/                # Styled-components theme (glass morphism)
+  utils/                # Coordinate transforms
+  helpers/              # Utility functions
+  gpsWorker.js          # Web Worker for GPS processing
+  theme/                # Styled-components theme
 zig/
-  trace.zig             # Core GPS algorithms and cumulative calculations
-  peaks.zig             # Peak detection with prominence filtering
-  gpspoint.zig          # Haversine distance and geometry calculations
-  waypoint.zig          # Waypoint/checkpoint handling
-  gpx.zig               # GPX file parsing and generation
-  csv.zig               # CSV checkpoint generation with IKEA-style names
+  trace.zig             # Core GPS algorithms (distance, elevation, simplification)
+  peaks.zig             # Peak detection
+  gpspoint.zig          # Haversine distance calculations
+  waypoint.zig          # Waypoint handling
+  section.zig           # Section statistics structure
+  gpx.zig               # GPX parsing and generation
+  generate_vvx_gpx.zig  # GPX waypoint generator from CSV
 ```
 
 ## Contribute
