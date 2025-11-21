@@ -4,6 +4,7 @@ import zigar from "rollup-plugin-zigar";
 import { VitePWA } from "vite-plugin-pwa";
 import { gpxPlugin } from "./vite-plugin-gpx";
 import dsv from "@rollup/plugin-dsv";
+import arraybuffer from "vite-plugin-arraybuffer";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -13,6 +14,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    arraybuffer(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "logo150.png", "logo512.png"],
