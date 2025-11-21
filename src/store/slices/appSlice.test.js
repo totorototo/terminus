@@ -133,7 +133,7 @@ describe("appSlice", () => {
 
       const state = store.getState();
       expect(state.app.currentLocation).toBeDefined();
-      expect(state.app.currentLocation.coords).toEqual([-122.4194, 37.7749, 0]);
+      expect(state.app.currentLocation.coords).toEqual([37.7749, -122.4194, 0]);
       expect(state.app.currentLocation.date).toBe(1698624000000);
     });
 
