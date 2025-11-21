@@ -12,11 +12,33 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split Three.js and React Three Fiber into separate chunk
+          "three-vendor": [
+            "three",
+            "@react-three/fiber",
+            "@react-three/drei",
+            "@react-spring/three",
+          ],
+          // Split D3 libraries into separate chunk
+          "d3-vendor": ["d3-array", "d3-scale", "d3-shape"],
+          // Split React and core dependencies
+          "react-vendor": ["react", "react-dom", "zustand"],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     arraybuffer(),
     VitePWA({
       registerType: "autoUpdate",
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
+      },
       includeAssets: ["favicon.ico", "logo150.png", "logo512.png"],
       manifest: {
         name: "Terminus PWA",
