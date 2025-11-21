@@ -1,16 +1,20 @@
 const std = @import("std");
 
 pub const SectionStats = struct {
-    start_index: usize,
-    end_index: usize,
-    point_count: usize,
-    start_point: [3]f64, // [lat, lon, elevation]
-    end_point: [3]f64, // [lat, lon, elevation]
-    distance: f64, // meters
-    elevation_gain: f64, // meters
-    elevation_loss: f64, // meters
-    avg_slope: f64, // percentage
-    max_slope: f64, // percentage
-    min_elevation: f64,
-    max_elevation: f64,
+    segmentId: usize,
+    startIndex: usize,
+    endIndex: usize,
+    pointCount: usize,
+    points: [][3]f64, // Array of points in this section [lat, lon, elevation]
+    startPoint: [3]f64, // [lat, lon, elevation]
+    endPoint: [3]f64, // [lat, lon, elevation]
+    startLocation: []const u8, // Name/label of start checkpoint
+    endLocation: []const u8, // Name/label of end checkpoint
+    totalDistance: f64, // meters (renamed from distance)
+    totalElevation: f64, // meters (renamed from elevation_gain)
+    totalElevationLoss: f64, // meters (renamed from elevation_loss)
+    avgSlope: f64, // percentage
+    maxSlope: f64, // percentage
+    minElevation: f64,
+    maxElevation: f64,
 };

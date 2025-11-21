@@ -342,7 +342,12 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData
         sections = try trace.computeSectionsFromWaypoints(allocator, waypoints);
     }
     errdefer {
-        if (sections) |s| allocator.free(s);
+        if (sections) |s| {
+            for (s) |section| {
+                allocator.free(section.points);
+            }
+            allocator.free(s);
+        }
     }
 
     return GPXData{
@@ -878,10 +883,11 @@ test "generateAndSaveGPX creates waypoints at 20km intervals" {
 
     // Verify each section has valid stats
     for (sections) |section| {
-        try testing.expect(section.distance > 0.0);
-        try testing.expect(section.start_index < section.end_index);
-        try testing.expect(section.end_index <= gpx_data.trace_points.len);
-        try testing.expect(section.point_count == section.end_index - section.start_index);
+        try testing.expect(section.totalDistance > 0.0);
+        try testing.expect(section.startIndex < section.endIndex);
+        try testing.expect(section.endIndex <= gpx_data.trace_points.len);
+        try testing.expect(section.pointCount == section.endIndex - section.startIndex);
+        try testing.expect(section.points.len == section.pointCount);
     }
 }
 
@@ -968,10 +974,11 @@ test "readGPXComplete: sections computed with multiple waypoints" {
 
     // Verify section properties
     for (sections) |section| {
-        try testing.expect(section.distance > 0.0);
-        try testing.expect(section.elevation_gain > 0.0);
-        try testing.expect(section.start_index < section.end_index);
-        try testing.expect(section.point_count > 0);
+        try testing.expect(section.totalDistance > 0.0);
+        try testing.expect(section.totalElevation > 0.0);
+        try testing.expect(section.startIndex < section.endIndex);
+        try testing.expect(section.pointCount > 0);
+        try testing.expect(section.points.len == section.pointCount);
     }
 }
 
