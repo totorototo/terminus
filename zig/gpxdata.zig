@@ -27,6 +27,10 @@ pub const GPXData = struct {
         }
         allocator.free(self.waypoints);
         if (self.sections) |sections| {
+            // Free points arrays within each section
+            for (sections) |section| {
+                allocator.free(section.points);
+            }
             allocator.free(sections);
         }
     }

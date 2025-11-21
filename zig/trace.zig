@@ -332,7 +332,12 @@ pub const Trace = struct {
 
         const num_sections = waypoints.len - 1;
         var sections = try allocator.alloc(SectionStats, num_sections);
-        errdefer allocator.free(sections);
+        errdefer {
+            for (sections) |section| {
+                allocator.free(section.points);
+            }
+            allocator.free(sections);
+        }
 
         for (0..num_sections) |i| {
             const start_wpt = waypoints[i];
@@ -369,19 +374,27 @@ pub const Trace = struct {
 
             const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
 
+            // Get points slice for this section
+            const section_points = try allocator.alloc([3]f64, end_index - start_index);
+            @memcpy(section_points, self.points[start_index..end_index]);
+
             sections[i] = SectionStats{
-                .start_index = start_index,
-                .end_index = end_index,
-                .point_count = end_index - start_index,
-                .start_point = self.points[start_index],
-                .end_point = self.points[end_index],
-                .distance = dist,
-                .elevation_gain = elevation_gain,
-                .elevation_loss = elevation_loss,
-                .avg_slope = avg_slope,
-                .max_slope = max_slope,
-                .min_elevation = min_elevation,
-                .max_elevation = max_elevation,
+                .segmentId = i,
+                .startIndex = start_index,
+                .endIndex = end_index,
+                .pointCount = end_index - start_index,
+                .points = section_points,
+                .startPoint = self.points[start_index],
+                .endPoint = self.points[end_index],
+                .startLocation = start_wpt.name,
+                .endLocation = end_wpt.name,
+                .totalDistance = dist,
+                .totalElevation = elevation_gain,
+                .totalElevationLoss = elevation_loss,
+                .avgSlope = avg_slope,
+                .maxSlope = max_slope,
+                .minElevation = min_elevation,
+                .maxElevation = max_elevation,
             };
         }
 
@@ -1389,18 +1402,24 @@ test "computeSectionsFromWaypoints: basic functionality" {
     };
 
     const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
-    defer allocator.free(sections);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
 
     // Should have 2 sections (between 3 waypoints)
     try expectEqual(@as(usize, 2), sections.len);
 
     // Verify section properties
     for (sections) |section| {
-        try expect(section.distance > 0.0);
-        try expect(section.elevation_gain >= 0.0);
-        try expect(section.point_count > 0);
-        try expect(section.start_index < section.end_index);
-        try expect(section.end_index <= trace.points.len);
+        try expect(section.totalDistance > 0.0);
+        try expect(section.totalElevation >= 0.0);
+        try expect(section.pointCount > 0);
+        try expect(section.startIndex < section.endIndex);
+        try expect(section.endIndex <= trace.points.len);
+        try expect(section.points.len == section.pointCount);
     }
 }
 
@@ -1420,7 +1439,12 @@ test "computeSectionsFromWaypoints: single waypoint returns empty" {
     };
 
     const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
-    defer allocator.free(sections);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
 
     try expectEqual(@as(usize, 0), sections.len);
 }
@@ -1448,16 +1472,21 @@ test "computeSectionsFromWaypoints: elevation statistics" {
     };
 
     const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
-    defer allocator.free(sections);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
 
     try expectEqual(@as(usize, 1), sections.len);
 
     const section = sections[0];
     // Check elevation bounds
-    try expect(section.min_elevation >= 100.0);
-    try expect(section.max_elevation <= 220.0);
-    try expect(section.elevation_gain > 0.0);
-    try expect(section.elevation_loss > 0.0);
+    try expect(section.minElevation >= 100.0);
+    try expect(section.maxElevation <= 220.0);
+    try expect(section.totalElevation > 0.0);
+    try expect(section.totalElevationLoss > 0.0);
 }
 
 test "computeSectionsFromWaypoints: section indices are valid" {
@@ -1481,15 +1510,20 @@ test "computeSectionsFromWaypoints: section indices are valid" {
     };
 
     const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
-    defer allocator.free(sections);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
 
     try expectEqual(@as(usize, 2), sections.len);
 
     // Verify indices are within bounds and sequential
-    try expect(sections[0].start_index < sections[0].end_index);
-    try expect(sections[0].end_index <= sections[1].start_index);
-    try expect(sections[1].start_index < sections[1].end_index);
-    try expect(sections[1].end_index <= trace.points.len);
+    try expect(sections[0].startIndex < sections[0].endIndex);
+    try expect(sections[0].endIndex <= sections[1].startIndex);
+    try expect(sections[1].startIndex < sections[1].endIndex);
+    try expect(sections[1].endIndex <= trace.points.len);
 }
 
 test "computeSectionsFromWaypoints: slope calculations" {
@@ -1512,13 +1546,18 @@ test "computeSectionsFromWaypoints: slope calculations" {
     };
 
     const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
-    defer allocator.free(sections);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
 
     try expectEqual(@as(usize, 1), sections.len);
 
     const section = sections[0];
     // Should have positive average slope for uphill
-    try expect(section.avg_slope > 0.0);
+    try expect(section.avgSlope > 0.0);
     // Max slope should be reasonable
-    try expect(section.max_slope > 0.0);
+    try expect(section.maxSlope > 0.0);
 }
