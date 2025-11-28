@@ -1,21 +1,25 @@
 const std = @import("std");
 
+// Swedish-inspired syllables for authentic IKEA-style names
 const syllables = [_][]const u8{
-    "an",  "ar", "bo", "da", "el", "fi", "ge", "ha", "jo", "ka",  "li",
-    "mo",  "na", "or", "pe", "ri", "sa", "ta", "ul", "va", "öa", "äy",
-    "åx",
+    "an",   "ar",   "bo",   "da",  "el",     "fi",  "ge",  "ha",     "jo",   "ka",
+    "li",   "mo",   "na",   "or",  "pe",     "ri",  "sa",  "ta",     "ul",   "va",
+    "ög",  "äs",  "ål",  "ek",  "björk", "mal", "fal", "ström", "berg", "sky",
+    "sjö", "vall", "mark", "hus", "liv",
 };
 
+/// Generate a random IKEA-style name with Swedish character patterns
+/// Caller owns the returned memory and must free it
 pub fn generateIkeaName(allocator: std.mem.Allocator, random: std.Random) ![]u8 {
     const minSyllables = 2;
-    const maxSyllables = 4;
+    const maxSyllables = 3; // Reduced from 4 for more realistic names
     const count = random.intRangeAtMost(usize, minSyllables, maxSyllables);
 
     var nameLen: usize = 0;
     var parts: [maxSyllables][]const u8 = undefined;
 
-    var i: usize = 0;
-    while (i < count) : (i += 1) {
+    // Build syllable sequence
+    for (0..count) |i| {
         const idx = random.intRangeAtMost(usize, 0, syllables.len - 1);
         parts[i] = syllables[idx];
         nameLen += parts[i].len;
@@ -24,16 +28,26 @@ pub fn generateIkeaName(allocator: std.mem.Allocator, random: std.Random) ![]u8 
     var name = try allocator.alloc(u8, nameLen);
     errdefer allocator.free(name);
 
+    // Copy syllables into final name
     var offset: usize = 0;
-    i = 0;
-    while (i < count) : (i += 1) {
+    for (0..count) |i| {
         @memcpy(name[offset..(offset + parts[i].len)], parts[i]);
         offset += parts[i].len;
     }
 
-    // Capitalize first letter
-    if (nameLen > 0 and name[0] >= 'a' and name[0] <= 'z') {
-        name[0] = name[0] - 32;
+    // Capitalize first letter (handle UTF-8 special chars)
+    if (nameLen > 0) {
+        if (name[0] >= 'a' and name[0] <= 'z') {
+            name[0] = name[0] - 32; // Convert to uppercase
+        } else if (name[0] == 0xC3 and nameLen > 1) {
+            // Handle UTF-8 Swedish chars (å, ä, ö)
+            // å (0xC3 0xA5) -> Å (0xC3 0x85)
+            // ä (0xC3 0xA4) -> Ä (0xC3 0x84)
+            // ö (0xC3 0xB6) -> Ö (0xC3 0x96)
+            if (name[1] >= 0xA0 and name[1] <= 0xBF) {
+                name[1] = name[1] - 0x20;
+            }
+        }
     }
 
     return name;
@@ -78,10 +92,10 @@ test "generateIkeaName respects syllable count range" {
     const name = try generateIkeaName(allocator, random);
     defer allocator.free(name);
 
-    // Minimum is 2 syllables (2 chars each = 4), maximum is 4 syllables (2 chars each = 8)
-    // But syllables can be different lengths, so just check reasonable bounds
+    // Minimum is 2 syllables (2 chars each = 4), maximum is 3 syllables
+    // Syllables vary in length (2-5 chars), so check reasonable bounds
     try testing.expect(name.len >= 4); // At least 2 syllables of 2 chars
-    try testing.expect(name.len <= 8); // At most 4 syllables of 2 chars
+    try testing.expect(name.len <= 15); // At most 3 syllables of 5 chars
 }
 
 test "generateIkeaName generates different names with different seeds" {
