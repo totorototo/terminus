@@ -39,7 +39,7 @@ pub fn generateIkeaName(allocator: std.mem.Allocator, random: std.Random) ![]u8 
     if (nameLen > 0) {
         if (name[0] >= 'a' and name[0] <= 'z') {
             name[0] = name[0] - 32; // Convert to uppercase
-        } else if (name[0] == 0xC3 and nameLen > 1) {
+        } else if (nameLen > 1 and name[0] == 0xC3) {
             // Handle UTF-8 Swedish chars (å, ä, ö)
             // å (0xC3 0xA5) -> Å (0xC3 0x85)
             // ä (0xC3 0xA4) -> Ä (0xC3 0x84)

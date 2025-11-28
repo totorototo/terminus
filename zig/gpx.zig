@@ -225,28 +225,37 @@ pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f6
     defer points.deinit();
 
     var pos: usize = 0;
-    while (std.mem.indexOfPos(u8, bytes, pos, "<trkpt")) |start| {
-        const lat_start = std.mem.indexOfPos(u8, bytes, start, "lat=\"") orelse break;
-        const lat_value_start = lat_start + 5;
-        const lat_value_end = std.mem.indexOfPos(u8, bytes, lat_value_start, "\"") orelse break;
-        const lat_str = bytes[lat_value_start..lat_value_end];
-        const lat = try std.fmt.parseFloat(f64, lat_str);
+    while (std.mem.indexOfPos(u8, bytes, pos, "<trkpt")) |trkpt_start| {
+        // Find end of opening tag to bound our search
+        const tag_end = std.mem.indexOfPos(u8, bytes, trkpt_start, ">") orelse break;
 
-        const lon_start = std.mem.indexOfPos(u8, bytes, start, "lon=\"") orelse break;
-        const lon_value_start = lon_start + 5;
-        const lon_value_end = std.mem.indexOfPos(u8, bytes, lon_value_start, "\"") orelse break;
-        const lon_str = bytes[lon_value_start..lon_value_end];
-        const lon = try std.fmt.parseFloat(f64, lon_str);
+        // Parse lat and lon from attributes (both in opening tag)
+        const lat = blk: {
+            const lat_pos = std.mem.indexOfPos(u8, bytes[trkpt_start..tag_end], 0, "lat=\"") orelse break;
+            const start = trkpt_start + lat_pos + 5;
+            const end = std.mem.indexOfScalarPos(u8, bytes, start, '"') orelse break;
+            break :blk std.fmt.parseFloat(f64, bytes[start..end]) catch break;
+        };
 
-        const ele_start = std.mem.indexOfPos(u8, bytes, start, "<ele>") orelse break;
-        const ele_value_start = ele_start + 5;
-        const ele_value_end = std.mem.indexOfPos(u8, bytes, ele_value_start, "</ele>") orelse break;
-        const ele_str = bytes[ele_value_start..ele_value_end];
-        const ele = try std.fmt.parseFloat(f64, ele_str);
+        const lon = blk: {
+            const lon_pos = std.mem.indexOfPos(u8, bytes[trkpt_start..tag_end], 0, "lon=\"") orelse break;
+            const start = trkpt_start + lon_pos + 5;
+            const end = std.mem.indexOfScalarPos(u8, bytes, start, '"') orelse break;
+            break :blk std.fmt.parseFloat(f64, bytes[start..end]) catch break;
+        };
+
+        // Parse elevation (after opening tag)
+        const ele = blk: {
+            const ele_start = std.mem.indexOfPos(u8, bytes, tag_end, "<ele>") orelse break;
+            const value_start = ele_start + 5;
+            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</ele>") orelse break;
+            break :blk std.fmt.parseFloat(f64, bytes[value_start..value_end]) catch break;
+        };
 
         try points.append(.{ lat, lon, ele });
 
-        pos = ele_value_end + 6;
+        // Move past this trackpoint
+        pos = tag_end + 1;
     }
 
     return points.toOwnedSlice();
@@ -262,51 +271,52 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
     }
 
     var pos: usize = 0;
-    while (std.mem.indexOfPos(u8, bytes, pos, "<wpt")) |start| {
-        // Parse lat attribute
-        const lat_start = std.mem.indexOfPos(u8, bytes, start, "lat=\"") orelse break;
-        const lat_value_start = lat_start + 5;
-        const lat_value_end = std.mem.indexOfPos(u8, bytes, lat_value_start, "\"") orelse break;
-        const lat_str = bytes[lat_value_start..lat_value_end];
-        const lat = try std.fmt.parseFloat(f64, lat_str);
+    while (std.mem.indexOfPos(u8, bytes, pos, "<wpt")) |wpt_start| {
+        // Find end of waypoint element first to bound our searches
+        const wpt_end = std.mem.indexOfPos(u8, bytes, wpt_start, "</wpt>") orelse break;
 
-        // Parse lon attribute
-        const lon_start = std.mem.indexOfPos(u8, bytes, start, "lon=\"") orelse break;
-        const lon_value_start = lon_start + 5;
-        const lon_value_end = std.mem.indexOfPos(u8, bytes, lon_value_start, "\"") orelse break;
-        const lon_str = bytes[lon_value_start..lon_value_end];
-        const lon = try std.fmt.parseFloat(f64, lon_str);
+        // Find end of opening tag
+        const tag_end = std.mem.indexOfPos(u8, bytes[wpt_start..wpt_end], 0, ">") orelse break;
+        const tag_section = bytes[wpt_start .. wpt_start + tag_end];
 
-        // Find the end of the waypoint element
-        const wpt_end = std.mem.indexOfPos(u8, bytes, start, "</wpt>") orelse break;
+        // Parse lat and lon from opening tag (bound search to opening tag only)
+        const lat = blk: {
+            const lat_pos = std.mem.indexOf(u8, tag_section, "lat=\"") orelse break;
+            const start = wpt_start + lat_pos + 5;
+            const end = std.mem.indexOfScalarPos(u8, bytes, start, '"') orelse break;
+            break :blk std.fmt.parseFloat(f64, bytes[start..end]) catch break;
+        };
 
-        // Parse name (required)
-        var name: []const u8 = "";
-        if (std.mem.indexOfPos(u8, bytes, start, "<name>")) |name_start| {
-            if (name_start < wpt_end) {
-                const name_value_start = name_start + 6;
-                if (std.mem.indexOfPos(u8, bytes, name_value_start, "</name>")) |name_value_end| {
-                    if (name_value_end < wpt_end) {
-                        const name_str = bytes[name_value_start..name_value_end];
-                        name = try allocator.dupe(u8, name_str);
-                    }
-                }
-            }
-        }
+        const lon = blk: {
+            const lon_pos = std.mem.indexOf(u8, tag_section, "lon=\"") orelse break;
+            const start = wpt_start + lon_pos + 5;
+            const end = std.mem.indexOfScalarPos(u8, bytes, start, '"') orelse break;
+            break :blk std.fmt.parseFloat(f64, bytes[start..end]) catch break;
+        };
 
-        // Parse time (optional)
-        var time: ?[]const u8 = null;
-        if (std.mem.indexOfPos(u8, bytes, start, "<time>")) |time_start| {
-            if (time_start < wpt_end) {
-                const time_value_start = time_start + 6;
-                if (std.mem.indexOfPos(u8, bytes, time_value_start, "</time>")) |time_value_end| {
-                    if (time_value_end < wpt_end) {
-                        const time_str = bytes[time_value_start..time_value_end];
-                        time = try allocator.dupe(u8, time_str);
-                    }
-                }
-            }
-        }
+        // Bound content searches between tag end and waypoint end
+        const content_start = wpt_start + tag_end + 1;
+        const content = bytes[content_start..wpt_end];
+
+        // Parse name (required) - search within waypoint content only
+        const name = blk: {
+            const name_pos = std.mem.indexOf(u8, content, "<name>") orelse break :blk "";
+            const value_start = content_start + name_pos + 6;
+            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</name>") orelse break :blk "";
+            if (value_end > wpt_end) break :blk "";
+            const name_str = bytes[value_start..value_end];
+            break :blk allocator.dupe(u8, name_str) catch break :blk "";
+        };
+
+        // Parse time (optional) - search within waypoint content only
+        const time = blk: {
+            const time_pos = std.mem.indexOf(u8, content, "<time>") orelse break :blk null;
+            const value_start = content_start + time_pos + 6;
+            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</time>") orelse break :blk null;
+            if (value_end > wpt_end) break :blk null;
+            const time_str = bytes[value_start..value_end];
+            break :blk allocator.dupe(u8, time_str) catch null;
+        };
 
         try waypoints.append(.{
             .lat = lat,
