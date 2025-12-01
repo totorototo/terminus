@@ -337,9 +337,6 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
 
 pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData {
     const trace_points = try readTracePoints(allocator, bytes);
-    var trace = try Trace.init(allocator, trace_points);
-    defer allocator.free(trace_points); // Trace owns its own copy
-    errdefer trace.deinit(allocator);
 
     const waypoints = try readWaypoints(allocator, bytes);
     errdefer {
@@ -348,6 +345,10 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData
         }
         allocator.free(waypoints);
     }
+
+    var trace = try Trace.init(allocator, trace_points);
+    defer allocator.free(trace_points); // Trace owns its own copy
+    errdefer trace.deinit(allocator);
 
     // Compute sections if waypoints are available
     var sections: ?[]const SectionStats = null;

@@ -314,6 +314,8 @@ pub const Trace = struct {
                 .maxSlope = max_slope,
                 .minElevation = min_elevation,
                 .maxElevation = max_elevation,
+                .startTime = start_wpt.time,
+                .endTime = end_wpt.time,
             };
         }
 

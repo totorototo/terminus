@@ -76,15 +76,21 @@ async function processGPXFile(gpxFileBytes, requestId) {
 
   // Convert Zigar proxy objects to plain JS before sending
   // Note: Zig string fields ([]const u8) need .string property to convert to JS strings
+  // Note: Zig i64 fields need explicit Number() conversion (they become BigInt in JS)
   let sanitizedSections = null;
   if (gpxData.sections) {
     sanitizedSections = [];
     for (let i = 0; i < gpxData.sections.length; i++) {
       const section = gpxData.sections[i];
+      const sectionData = section.valueOf();
       sanitizedSections.push({
-        ...section.valueOf(),
+        ...sectionData,
         startLocation: section.startLocation.string,
         endLocation: section.endLocation.string,
+        startTime:
+          sectionData.startTime !== null ? Number(sectionData.startTime) : null,
+        endTime:
+          sectionData.endTime !== null ? Number(sectionData.endTime) : null,
       });
     }
   }
