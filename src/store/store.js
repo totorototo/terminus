@@ -8,35 +8,33 @@ import { createWorkerSlice } from "./slices/workerSlice";
 // Create store by combining slices
 const useStore = create(
   devtools(
-    subscribeWithSelector(
-      persist(
-        (...a) => ({
-          ...createAppSlice(...a),
-          ...createGpsSlice(...a),
-          ...createStatsSlice(...a),
-          ...createWorkerSlice(...a),
-        }),
-        {
-          name: "terminus-storage",
-          partialize: (state) => ({
-            app: {
-              trackingMode: state.app.trackingMode,
-              displaySlopes: state.app.displaySlopes,
-              profileMode: state.app.profileMode,
-              currentLocation: state.app.currentLocation,
-              currentClosestLocation: state.app.currentClosestLocation,
-              startingDate: state.app.startingDate,
-              locations: state.app.locations,
-            },
-          }),
-          onRehydrateStorage: () => (state) => {
-            // Initialize location buffer from persisted locations after rehydration
-            if (state?.initLocationBuffer) {
-              state.initLocationBuffer();
-            }
+    persist(
+      subscribeWithSelector((...a) => ({
+        ...createAppSlice(...a),
+        ...createGpsSlice(...a),
+        ...createStatsSlice(...a),
+        ...createWorkerSlice(...a),
+      })),
+      {
+        name: "terminus-storage",
+        partialize: (state) => ({
+          app: {
+            trackingMode: state.app.trackingMode,
+            displaySlopes: state.app.displaySlopes,
+            profileMode: state.app.profileMode,
+            currentLocation: state.app.currentLocation,
+            currentClosestLocation: state.app.currentClosestLocation,
+            startingDate: state.app.startingDate,
+            locations: state.app.locations,
           },
+        }),
+        onRehydrateStorage: () => (state) => {
+          // Initialize location buffer from persisted locations after rehydration
+          if (state?.initLocationBuffer) {
+            state.initLocationBuffer();
+          }
         },
-      ),
+      },
     ),
     {
       name: "Terminus Store",
