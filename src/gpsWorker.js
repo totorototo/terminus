@@ -71,12 +71,8 @@ async function processGPXFile(gpxFileBytes, requestId) {
   const gpxData = await readGPXComplete(gpxFileBytes.gpxBytes);
 
   console.log(
-    `📊 Loaded ${gpxData.trace_points.length} track points, ${gpxData.waypoints.length} waypoints`,
+    `📊 Loaded ${gpxData.trace.points.length} track points, ${gpxData.waypoints.length} waypoints`,
   );
-
-  // Create trace from the parsed GPX data
-  const trace = Trace.init(gpxData.trace_points);
-  console.log(`📊 After processing: ${trace.points.length} points in trace`);
 
   // Convert Zigar proxy objects to plain JS before sending
   // Note: Zig string fields ([]const u8) need .string property to convert to JS strings
@@ -93,9 +89,21 @@ async function processGPXFile(gpxFileBytes, requestId) {
     }
   }
 
+  // Sanitize waypoints - convert BigInt time to Number
+  const sanitizedWaypoints = [];
+  for (let i = 0; i < gpxData.waypoints.length; i++) {
+    const wpt = gpxData.waypoints[i];
+    sanitizedWaypoints.push({
+      lat: wpt.lat,
+      lon: wpt.lon,
+      name: wpt.name.string,
+      time: wpt.time ? Number(wpt.time) : null, // Convert BigInt to Number
+    });
+  }
+
   const results = {
-    trace: trace.valueOf(),
-    waypoints: gpxData.waypoints.valueOf(),
+    trace: gpxData.trace.valueOf(),
+    waypoints: sanitizedWaypoints,
     sections: sanitizedSections,
   };
 
@@ -105,7 +113,7 @@ async function processGPXFile(gpxFileBytes, requestId) {
     results,
   });
 
-  trace.deinit();
+  // gpxData.deinit() will now clean up the trace as well
   gpxData.deinit();
 }
 
