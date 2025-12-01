@@ -17,4 +17,6 @@ pub const SectionStats = struct {
     maxSlope: f64, // percentage
     minElevation: f64,
     maxElevation: f64,
+    startTime: ?i64, // Unix epoch time in seconds
+    endTime: ?i64, // Unix epoch time in seconds
 };
