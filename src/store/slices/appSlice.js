@@ -116,13 +116,17 @@ export const createAppSlice = (set, get) => {
       })),
 
     setCurrentPositionIndex: (value) =>
-      set((state) => ({
-        ...state,
-        app: {
-          ...state.app,
-          currentPositionIndex: value,
-        },
-      })),
+      set(
+        (state) => ({
+          ...state,
+          app: {
+            ...state.app,
+            currentPositionIndex: value,
+          },
+        }),
+        undefined,
+        "setCurrentPositionIndex",
+      ),
 
     setStartingDate: (date) => {
       set((state) => ({
