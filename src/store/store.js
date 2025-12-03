@@ -39,6 +39,7 @@ const useStore = create(
     {
       name: "Terminus Store",
       enabled: process.env.NODE_ENV === "development",
+      actionsDenylist: ["setCurrentPositionIndex"],
     },
   ),
 );
