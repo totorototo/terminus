@@ -155,10 +155,6 @@ function Profile({
 }) {
   const geometryRef = useRef();
 
-  const { opacity } = useSpring({
-    opacity: 1,
-  });
-
   // Create slope attribute buffer from slopes array
   const slopeAttribute = useMemo(() => {
     if (!slopes || slopes.length === 0 || !points || points.length < 2) {
@@ -269,17 +265,17 @@ function Profile({
       {showSlopeColors ? (
         <slopeMaterial
           side={THREE.DoubleSide}
-          transparent
-          opacity={opacity.get()}
-          depthWrite={opacity.get() > 0.01}
+          transparent={false}
+          depthWrite={true}
+          depthTest={true}
         />
       ) : (
         <solidColorMaterial
           side={THREE.DoubleSide}
-          transparent
+          transparent={false}
           baseColor={new THREE.Color(color)}
-          opacity={opacity.get()}
-          depthWrite={opacity.get() > 0.01}
+          depthWrite={true}
+          depthTest={true}
         />
       )}
     </mesh>
