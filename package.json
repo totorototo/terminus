@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "prepare": "husky",
     "test": "vitest",
-    "test:zig": "cd zig && zig test gpx.zig && zig test trace.zig && zig test simplify.zig && zig test time.zig && zig test gpspoint.zig && zig test peaks.zig && zig test csv.zig",
+    "test:zig": "cd zig && for %f in (*.zig) do @zig test %f",
     "test:zig:parallel": "cd zig && powershell -c \"$dir = Get-Location; $jobs = @(); @('gpx.zig', 'trace.zig', 'simplify.zig', 'time.zig', 'gpspoint.zig', 'peaks.zig', 'csv.zig') | ForEach-Object { $jobs += Start-Job -ScriptBlock { param($f, $d) Set-Location $d; zig test $f } -ArgumentList $_, $dir }; $jobs | Wait-Job | Receive-Job; $jobs | Remove-Job\"",
     "test:all": "npm run test:zig && npm run test"
   },
