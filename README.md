@@ -58,49 +58,40 @@ npm run build
 Run JavaScript/React tests:
 
 ```bash
-npm test              # Run all tests
+npm test              # Run Vitest tests
 npm run test:coverage # Generate coverage report
 ```
 
 Run Zig unit tests:
 
 ```bash
-cd zig
-zig test trace.zig
+npm run test:zig           # Sequential test execution (cross-platform)
+npm run test:zig:parallel  # Parallel execution (Windows only, faster)
+npm run test:all           # Run both Zig and JavaScript tests
 ```
 
 ## Project Structure
 
 ```
 src/
-  components/
-    scene/              # 3D scene with lighting and controls
-    profile/            # 3D elevation mesh with coloring
-    marker/             # Checkpoint markers
-    commands/           # UI controls
-    trailFollower/      # Animated runner
-    cameraController/   # Camera transitions
-    bottomSheetPanel/   # Bottom UI panel
-    topSheetPanel/      # Top UI panel
-    navigation/         # Trail navigation
-    trailData/          # Trail statistics
-    sectionData/        # Section details
-    liveTracking/       # GPS tracking
-    enhancedProfile/    # 2D elevation profile
+  components/           # React components for UI and 3D visualization
   store/
-    slices/             # State slices (app, gps, stats, worker)
-  utils/                # Coordinate transforms
-  helpers/              # Utility functions
-  gpsWorker.js          # Web Worker for GPS processing
-  theme/                # Styled-components theme
+    slices/             # Zustand state management slices
+  helpers/              # Utility functions (colors, buffers, throttling)
+  utils/                # Coordinate transformations
+  gpsWorker.js          # Web Worker for background GPS processing
+  theme/                # Styled-components theme definitions
+
 zig/
-  trace.zig             # Core GPS algorithms (distance, elevation, simplification)
-  peaks.zig             # Peak detection
+  gpx.zig               # GPX file parsing
+  trace.zig             # Core GPS algorithms (distance, elevation)
+  simplify.zig          # Douglas-Peucker simplification
+  peaks.zig             # Peak detection algorithms
   gpspoint.zig          # Haversine distance calculations
-  waypoint.zig          # Waypoint handling
+  csv.zig               # CSV file parsing for checkpoints
+  time.zig              # Time/duration calculations
+  waypoint.zig          # Waypoint data structure
   section.zig           # Section statistics structure
-  gpx.zig               # GPX parsing and generation
-  generate_vvx_gpx.zig  # GPX waypoint generator from CSV
 ```
 
 ## Contribute
