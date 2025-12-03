@@ -12,6 +12,8 @@ const SlopeMaterial = shaderMaterial(
   },
   // Vertex shader
   `
+  precision highp float;
+  
   attribute float slope;
   varying float vSlope;
   varying vec3 vNormal;
@@ -32,6 +34,8 @@ const SlopeMaterial = shaderMaterial(
   `,
   // Fragment shader
   `
+  precision highp float;
+  
   uniform float opacity;
   varying float vSlope;
   varying vec3 vNormal;
@@ -68,7 +72,7 @@ const SlopeMaterial = shaderMaterial(
     // Combine lighting (no specular = matte finish)
     vec3 finalColor = ambient + diffuse;
     
-    gl_FragColor = vec4(finalColor, opacity);
+    gl_FragColor = vec4(finalColor, 1.0);
   }
   `,
 );
@@ -101,6 +105,8 @@ const SolidColorMaterial = shaderMaterial(
   },
   // Vertex shader
   `
+  precision highp float;
+  
   varying vec3 vNormal;
   varying vec3 vViewPosition;
   
@@ -117,6 +123,8 @@ const SolidColorMaterial = shaderMaterial(
   `,
   // Fragment shader
   `
+  precision highp float;
+  
   uniform vec3 baseColor;
   uniform float opacity;
   varying vec3 vNormal;
@@ -138,7 +146,7 @@ const SolidColorMaterial = shaderMaterial(
     // Combine lighting (no specular = matte finish)
     vec3 finalColor = ambient + diffuse;
     
-    gl_FragColor = vec4(finalColor, opacity);
+    gl_FragColor = vec4(finalColor, 1.0);
   }
   `,
 );
