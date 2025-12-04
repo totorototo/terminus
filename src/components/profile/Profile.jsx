@@ -1,7 +1,6 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { useFrame, extend } from "@react-three/fiber";
-import * as THREE from "three";
-import { useSpring } from "@react-spring/three";
+import { Color, DoubleSide, DynamicDrawUsage } from "three";
 import { createVertices } from "../../helpers/createVertices";
 import { shaderMaterial } from "@react-three/drei";
 
@@ -100,7 +99,7 @@ const GradientMaterial = shaderMaterial(
 // Solid color shader material with lighting
 const SolidColorMaterial = shaderMaterial(
   {
-    baseColor: new THREE.Color(0x00ff00),
+    baseColor: new Color(0x00ff00),
   },
   // Vertex shader
   `
@@ -252,7 +251,7 @@ function Profile({
           array={initialPositions}
           count={initialPositions.length / 3}
           itemSize={3}
-          usage={THREE.DynamicDrawUsage}
+          usage={DynamicDrawUsage}
         />
         {showSlopeColors && (
           <bufferAttribute
@@ -265,16 +264,16 @@ function Profile({
       </bufferGeometry>
       {showSlopeColors ? (
         <slopeMaterial
-          side={THREE.DoubleSide}
+          side={DoubleSide}
           transparent={false}
           depthWrite={true}
           depthTest={true}
         />
       ) : (
         <solidColorMaterial
-          side={THREE.DoubleSide}
+          side={DoubleSide}
           transparent={false}
-          baseColor={new THREE.Color(color)}
+          baseColor={new Color(color)}
           depthWrite={true}
           depthTest={true}
         />
