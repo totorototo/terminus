@@ -8,7 +8,7 @@ import { shaderMaterial } from "@react-three/drei";
 // Slope-based shader material with lighting
 const SlopeMaterial = shaderMaterial(
   {
-    opacity: 0.8,
+    opacity: 1.0,
   },
   // Vertex shader
   `
@@ -101,23 +101,18 @@ const GradientMaterial = shaderMaterial(
 const SolidColorMaterial = shaderMaterial(
   {
     baseColor: new THREE.Color(0x00ff00),
-    opacity: 0.8,
   },
   // Vertex shader
   `
   precision highp float;
   
   varying vec3 vNormal;
-  varying vec3 vViewPosition;
   
   void main() {
     // Calculate normals in view space
     vNormal = normalize(normalMatrix * normal);
     
-    // Calculate view position for lighting
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    vViewPosition = -mvPosition.xyz;
-    
     gl_Position = projectionMatrix * mvPosition;
   }
   `,
@@ -126,9 +121,7 @@ const SolidColorMaterial = shaderMaterial(
   precision highp float;
   
   uniform vec3 baseColor;
-  uniform float opacity;
   varying vec3 vNormal;
-  varying vec3 vViewPosition;
   
   void main() {
     // Simple directional lighting (simulates sun from upper-right)
