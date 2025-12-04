@@ -15,17 +15,20 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split Three.js and React Three Fiber into separate chunk
-          "three-vendor": [
-            "three",
-            "@react-three/fiber",
-            "@react-three/drei",
-            "@react-spring/three",
-          ],
+          // Split Three.js core
+          "three-core": ["three"],
+          // Split React Three Fiber separately
+          "react-three-fiber": ["@react-three/fiber"],
+          // Split Drei helpers separately
+          "react-three-drei": ["@react-three/drei"],
+          // Split React Spring Three
+          "react-spring-three": ["@react-spring/three"],
           // Split D3 libraries into separate chunk
           "d3-vendor": ["d3-array", "d3-scale", "d3-shape"],
           // Split React and core dependencies
-          "react-vendor": ["react", "react-dom", "zustand"],
+          "react-vendor": ["react", "react-dom"],
+          // Split Zustand separately for better caching
+          zustand: ["zustand"],
         },
       },
     },
