@@ -16,6 +16,8 @@ const style = (Component) => styled(Component)`
   margin-right: 1rem;
   gap: 1rem;
 
+  touch-action: none;
+
   button {
     width: 48px;
     height: 48px;
