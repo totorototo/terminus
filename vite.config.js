@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import zigar from "rollup-plugin-zigar";
 import { VitePWA } from "vite-plugin-pwa";
 import arraybuffer from "vite-plugin-arraybuffer";
+import { visualizer } from "rollup-plugin-visualizer";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -32,6 +33,7 @@ export default defineConfig({
   plugins: [
     react(),
     arraybuffer(),
+    visualizer({ open: true }),
     VitePWA({
       registerType: "autoUpdate",
       workbox: {

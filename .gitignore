@@ -40,3 +40,4 @@ zig/test/
 /playwright/.cache/
 /playwright/.auth/
 /test
+stats.html
