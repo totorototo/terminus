@@ -39,24 +39,34 @@ function Commands({ className }) {
           style={{ display: "none" }}
         />
       </label> */}
-      <button className={"off"} onClick={findClosestLocation}>
+      <button
+        className={"off"}
+        onClick={findClosestLocation}
+        aria-label="Find closest location on trail"
+      >
         <MapPin size={24} />
       </button>
       <button
         className={displaySlopes ? "on" : "off"}
         onClick={toggleSlopesMode}
+        aria-label="Toggle slope colors"
+        aria-pressed={displaySlopes}
       >
         <BarChart2 size={24} />
       </button>
       <button
         className={profileMode ? "on" : "off"}
         onClick={toggleProfileMode}
+        aria-label="Toggle 2D profile view"
+        aria-pressed={profileMode}
       >
         <TrendingUp size={24} />
       </button>
       <button
         className={trackingMode ? "on" : "off"}
         onClick={toggleTrackingMode}
+        aria-label="Toggle animation mode"
+        aria-pressed={trackingMode}
       >
         <Film size={24} />
       </button>
