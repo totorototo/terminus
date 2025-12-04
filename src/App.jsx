@@ -9,7 +9,6 @@ import TopSheetPanel from "./components/topSheetPanel/TopSheetPanel.jsx";
 import Navigation from "./components/navigation/Navigation.jsx";
 import Commands from "./components/commands/Commands.jsx";
 import { useShallow } from "zustand/react/shallow";
-import gpxArrayBuffer from "./assets/vvx-xgtv-2026.gpx?arraybuffer";
 
 function App({ className }) {
   const { initGPSWorker, terminateGPSWorker, isWorkerReady, processGPXFile } =
@@ -33,12 +32,14 @@ function App({ className }) {
   useEffect(() => {
     if (!isWorkerReady) return;
 
-    async function processGPSThenSections() {
+    async function loadAndProcessGPX() {
+      const response = await fetch("/vvx-xgtv-2026.gpx");
+      const gpxArrayBuffer = await response.arrayBuffer();
       await processGPXFile(gpxArrayBuffer);
     }
 
-    processGPSThenSections();
-  }, [isWorkerReady]);
+    loadAndProcessGPX();
+  }, [isWorkerReady, processGPXFile]);
 
   return (
     <div className={className}>
