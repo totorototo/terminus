@@ -2,8 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import zigar from "rollup-plugin-zigar";
 import { VitePWA } from "vite-plugin-pwa";
-import { gpxPlugin } from "./vite-plugin-gpx";
-import dsv from "@rollup/plugin-dsv";
 import arraybuffer from "vite-plugin-arraybuffer";
 
 // https://vite.dev/config/
@@ -81,14 +79,6 @@ export default defineConfig({
       optimize: "ReleaseSmall",
       embedWASM: true,
       topLevelAwait: false,
-    }),
-    gpxPlugin(),
-    dsv({
-      processRow: (row) => ({
-        ...row,
-        km: parseFloat(row.km), // Convert to number
-        cutoffTime: new Date(row.cutoffTime), // Convert to Date object
-      }),
     }),
   ],
   worker: {
