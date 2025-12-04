@@ -51,6 +51,9 @@ const style = (Component) => styled(Component)`
       box-shadow: none;
     }
 
+    /* Prevent scroll on touch */
+    touch-action: none;
+
     /* Remove blue highlight on mobile */
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
@@ -110,6 +113,9 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     justify-content: center;
+
+    /* Prevent scroll on touch */
+    touch-action: none;
 
     /* Remove blue highlight on mobile */
     -webkit-tap-highlight-color: transparent;
