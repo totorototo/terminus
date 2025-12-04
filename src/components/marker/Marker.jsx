@@ -1,6 +1,6 @@
 import { memo, useRef, useState, useEffect } from "react";
 import { Text } from "@react-three/drei";
-import * as THREE from "three";
+import { Vector3, Raycaster, MathUtils } from "three";
 import { useFrame } from "@react-three/fiber";
 import { useTheme } from "styled-components";
 
@@ -9,8 +9,8 @@ function Marker({ children, position, ...props }) {
   const textRef = useRef();
   const theme = useTheme();
 
-  const vec = useRef(new THREE.Vector3());
-  const raycaster = useRef(new THREE.Raycaster());
+  const vec = useRef(new Vector3());
+  const raycaster = useRef(new Raycaster());
   const currentOpacity = useRef(0);
   const targetOpacity = useRef(0);
   const animationStartTime = useRef(null);
@@ -58,7 +58,7 @@ function Marker({ children, position, ...props }) {
 
     // Smooth transition (lerp) between current and target opacity
     const fadeSpeed = 3; // Adjust for faster/slower fade
-    currentOpacity.current = THREE.MathUtils.lerp(
+    currentOpacity.current = MathUtils.lerp(
       currentOpacity.current,
       targetOpacity.current,
       delta * fadeSpeed,
@@ -68,7 +68,7 @@ function Marker({ children, position, ...props }) {
     if (textRef.current.material) {
       textRef.current.material.opacity = currentOpacity.current;
       textRef.current.scale.setScalar(
-        THREE.MathUtils.lerp(0.25, 1, currentOpacity.current),
+        MathUtils.lerp(0.25, 1, currentOpacity.current),
       );
     }
   });
