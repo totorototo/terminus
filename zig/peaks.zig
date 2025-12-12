@@ -35,18 +35,22 @@ fn ampd_core(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize
         }
     }
 
-    var peaks = std.ArrayList(usize).init(allocator);
-    defer peaks.deinit();
+    // std.ArrayList is now unmanaged by default in Zig 0.15+
+    var peaks = std.ArrayList(usize){};
+    defer peaks.deinit(allocator);
+
     for (0..signal.len) |i| {
         var count: usize = 0;
         for (0..effective_scale_max) |scale| {
             if (scalogram_data[scale * signal.len + i]) count += 1;
         }
         if (count >= threshold) {
-            try peaks.append(i);
+            try peaks.append(allocator, i);
         }
     }
-    return try peaks.toOwnedSlice();
+
+    // Return ownership of the buffer as a slice
+    return try peaks.toOwnedSlice(allocator);
 }
 
 pub fn ampd(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize, threshold: usize) ![]usize {
