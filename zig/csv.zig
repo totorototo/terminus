@@ -11,11 +11,11 @@ pub fn generateAndSaveRandomCheckpointsCSV(allocator: std.mem.Allocator, path: [
     const file = try std.fs.cwd().createFile(path, .{});
     defer file.close();
 
-    var writer_buf: [1024]u8 = undefined;
+    var writer_buf: [4096]u8 = undefined;
     var file_writer = file.writer(&writer_buf);
-    const w = &file_writer.interface;
+    const writer = &file_writer.interface;
 
-    try w.print("location,label,km,kind,cutoffTime\n", .{});
+    try writer.print("location,label,km,kind,cutoffTime\n", .{});
 
     const km_step: f64 = 160.0 / @as(f64, @floatFromInt(total_checkpoints - 1));
 
@@ -53,13 +53,13 @@ pub fn generateAndSaveRandomCheckpointsCSV(allocator: std.mem.Allocator, path: [
         const cutoffTime = try std.fmt.allocPrint(allocator, "{d:0>4}-{d:0>2}-{d:0>2} {d:0>2}:{d:0>2}:00", .{ base_year, base_month, day, hour, base_minute });
 
         // Write CSV line
-        try w.print("{s},{s},{d:.1},{s},{s}\n", .{ location, label_str, km, kind, cutoffTime });
+        try writer.print("{s},{s},{d:.1},{s},{s}\n", .{ location, label_str, km, kind, cutoffTime });
 
         allocator.free(location);
         allocator.free(label_str);
         allocator.free(cutoffTime);
     }
-    try w.flush();
+    try writer.flush();
 }
 
 // Tests

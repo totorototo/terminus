@@ -35,11 +35,9 @@ fn ampd_core(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize
         }
     }
 
-    // Use a simple allocator-backed buffer instead of std.ArrayList to avoid
-    // std lib API changes between Zig versions.
-    var peaks_buf = try allocator.alloc(usize, signal.len);
-    var peaks_count: usize = 0;
-    defer allocator.free(peaks_buf);
+    // std.ArrayList is now unmanaged by default in Zig 0.15+
+    var peaks = std.ArrayList(usize){};
+    defer peaks.deinit(allocator);
 
     for (0..signal.len) |i| {
         var count: usize = 0;
@@ -47,15 +45,12 @@ fn ampd_core(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize
             if (scalogram_data[scale * signal.len + i]) count += 1;
         }
         if (count >= threshold) {
-            peaks_buf[peaks_count] = i;
-            peaks_count += 1;
+            try peaks.append(allocator, i);
         }
     }
 
-    // Return a tightly-sized owned slice
-    const out = try allocator.alloc(usize, peaks_count);
-    if (peaks_count > 0) @memcpy(out, peaks_buf[0..peaks_count]);
-    return out;
+    // Return ownership of the buffer as a slice
+    return try peaks.toOwnedSlice(allocator);
 }
 
 pub fn ampd(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize, threshold: usize) ![]usize {
