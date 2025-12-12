@@ -135,32 +135,32 @@ describe("gpsSlice", () => {
     });
   });
 
-  describe("selectors", () => {
-    it("should get GPS data", () => {
-      const { setGpsData, getGpsData } = store.getState();
+  describe("state access", () => {
+    it("should set and retrieve GPS data", () => {
+      const { setGpsData } = store.getState();
       const testData = [[1, 2, 3]];
 
       setGpsData(testData);
 
-      expect(getGpsData()).toEqual(testData);
+      expect(store.getState().gps.data).toEqual(testData);
     });
 
-    it("should get slopes", () => {
-      const { setSlopes, getSlopes } = store.getState();
+    it("should set and retrieve slopes", () => {
+      const { setSlopes } = store.getState();
       const testSlopes = [1.5, 2.0];
 
       setSlopes(testSlopes);
 
-      expect(getSlopes()).toEqual(testSlopes);
+      expect(store.getState().gps.slopes).toEqual(testSlopes);
     });
 
-    it("should get sections", () => {
-      const { setSections, getSections } = store.getState();
+    it("should set and retrieve sections", () => {
+      const { setSections } = store.getState();
       const testSections = [{ id: "test" }];
 
       setSections(testSections);
 
-      expect(getSections()).toEqual(testSections);
+      expect(store.getState().gps.sections).toEqual(testSections);
     });
   });
 
