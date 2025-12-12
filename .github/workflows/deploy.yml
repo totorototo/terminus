@@ -57,8 +57,8 @@ jobs:
           cat .env
           echo "Setting up Zig environment for build..."
           export ZIG_EXE=$(which zig)
-          export ZIG_LIB_DIR=$(zig env | grep "lib_dir" | cut -d'"' -f4)
-          export ZIG_GLOBAL_CACHE_DIR=$(zig env | grep "global_cache_dir" | cut -d'"' -f4)
+          export ZIG_LIB_DIR=$(zig env | jq -r '.lib_dir')
+          export ZIG_GLOBAL_CACHE_DIR=$(zig env | jq -r '.global_cache_dir')
           export PATH="$(dirname $(which zig)):$PATH"
           echo "ZIG_EXE=$ZIG_EXE"
           echo "ZIG_LIB_DIR=$ZIG_LIB_DIR"
@@ -68,9 +68,9 @@ jobs:
           zig build-lib trace.zig -target wasm32-wasi -dynamic -OReleaseSmall --name trace 2>&1 || echo "Manual build failed, continuing..."
           ls -la trace.wasm 2>/dev/null && echo "Manual WASM build successful" || echo "Manual WASM build not found"
           cd ..
-          echo "Building with npm run build (verbose mode)..."
-          npm run build -- --debug
-          echo "Build completed. Checking if build number ${{ github.run_number }}" is in built files:"
+          echo "Building with npm run build..."
+          npm run build
+          echo "Build completed. Checking if build number ${{ github.run_number }} is in built files:"
           grep -r "${{ github.run_number }}" dist/ > /dev/null && echo "GitHub run number found in dist" || echo "GitHub run number not found in dist"
 
       - name: Create and push git tag for the build number
