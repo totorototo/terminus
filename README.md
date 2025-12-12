@@ -31,7 +31,7 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 ## Prerequisites
 
 - **Node.js**: v18+ (recommended v20+)
-- **Zig**: v0.14.0 for WASM compilation
+- **Zig**: v0.15.2 for WASM compilation
 - **npm**: Latest version
 
 Install Zig from [ziglang.org](https://ziglang.org/download/)
