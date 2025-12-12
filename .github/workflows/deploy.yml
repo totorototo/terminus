@@ -21,12 +21,6 @@ jobs:
         with:
           version: 0.15.2
 
-      - name: Verify Zig installation
-        run: |
-          zig version
-          which zig
-          zig env
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -38,31 +32,13 @@ jobs:
       - name: Run Zig tests
         run: npm run test:zig
 
-      - name: Test Zig WASM compilation
-        run: |
-          echo "Testing Zig to WASM compilation for trace.zig..."
-          cd zig
-          zig build-exe trace.zig -fno-entry --stack 262144 -fsingle-threaded -OReleaseSmall -target wasm32-wasi -mcpu generic
-          ls -la *.wasm *.o || echo "No WASM files generated"
-          rm -f *.wasm *.o
-          cd ..
-
       - name: Run unit tests
         run: npm test
 
-      - name: Build with build number env
+      - name: Build with build number
         run: |
-          echo "Creating .env file with VITE_NUMBER=${{ github.run_number }}"
           echo "VITE_NUMBER=${{ github.run_number }}" > .env
-          cat .env
-          echo "Setting up Zig environment for build..."
-          export ZIG_EXE=$(which zig)
-          export PATH="$(dirname $(which zig)):$PATH"
-          echo "ZIG_EXE=$ZIG_EXE"
-          echo "Building with npm run build..."
           npm run build
-          echo "Build completed. Checking if build number ${{ github.run_number }} is in built files:"
-          grep -r "${{ github.run_number }}" dist/ > /dev/null && echo "GitHub run number found in dist" || echo "GitHub run number not found in dist"
 
       - name: Create and push git tag for the build number
         run: |
