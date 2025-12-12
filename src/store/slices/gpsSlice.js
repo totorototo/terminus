@@ -62,9 +62,4 @@ export const createGpsSlice = (set, get) => ({
         cumulativeElevationLosses: elevations,
       },
     })),
-
-  // Selectors
-  getGpsData: () => get().gps.data,
-  getSlopes: () => get().gps.slopes,
-  getSections: () => get().gps.sections,
 });

@@ -29,7 +29,4 @@ export const createStatsSlice = (set, get) => ({
         stats: updatedStats,
       };
     }),
-
-  // Selectors
-  getStats: () => get().stats,
 });

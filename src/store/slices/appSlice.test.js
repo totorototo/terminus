@@ -220,66 +220,65 @@ describe("appSlice", () => {
 
   describe("toggleProfileMode", () => {
     it("should toggle profile mode", () => {
-      const { toggleProfileMode, getProfileMode } = store.getState();
+      const { toggleProfileMode } = store.getState();
 
-      expect(getProfileMode()).toBe(false);
-
-      toggleProfileMode();
-      expect(getProfileMode()).toBe(true);
+      expect(store.getState().app.profileMode).toBe(false);
 
       toggleProfileMode();
-      expect(getProfileMode()).toBe(false);
+      expect(store.getState().app.profileMode).toBe(true);
+
+      toggleProfileMode();
+      expect(store.getState().app.profileMode).toBe(false);
     });
   });
 
-  describe("selectors", () => {
-    it("should get starting date", () => {
-      const { setStartingDate, getStartingDate } = store.getState();
+  describe("state mutations", () => {
+    it("should set starting date", () => {
+      const { setStartingDate } = store.getState();
       const timestamp = 1698624000000;
 
       setStartingDate(timestamp);
 
-      expect(getStartingDate()).toBe(timestamp);
+      expect(store.getState().app.startingDate).toBe(timestamp);
     });
 
-    it("should get tracking mode", () => {
-      const { toggleTrackingMode, getTrackingMode } = store.getState();
+    it("should toggle tracking mode", () => {
+      const { toggleTrackingMode } = store.getState();
 
-      expect(getTrackingMode()).toBe(false);
+      expect(store.getState().app.trackingMode).toBe(false);
 
       toggleTrackingMode();
 
-      expect(getTrackingMode()).toBe(true);
+      expect(store.getState().app.trackingMode).toBe(true);
     });
 
-    it("should get display slopes", () => {
-      const { toggleSlopesMode, getDisplaySlopes } = store.getState();
+    it("should toggle display slopes", () => {
+      const { toggleSlopesMode } = store.getState();
 
-      expect(getDisplaySlopes()).toBe(false);
+      expect(store.getState().app.displaySlopes).toBe(false);
 
       toggleSlopesMode();
 
-      expect(getDisplaySlopes()).toBe(true);
+      expect(store.getState().app.displaySlopes).toBe(true);
     });
 
-    it("should get profile mode", () => {
-      const { toggleProfileMode, getProfileMode } = store.getState();
+    it("should toggle profile mode state", () => {
+      const { toggleProfileMode } = store.getState();
 
-      expect(getProfileMode()).toBe(false);
+      expect(store.getState().app.profileMode).toBe(false);
 
       toggleProfileMode();
 
-      expect(getProfileMode()).toBe(true);
+      expect(store.getState().app.profileMode).toBe(true);
     });
 
-    it("should get current position index", () => {
-      const { setCurrentPositionIndex, getCurrentPositionIndex } =
-        store.getState();
+    it("should set current position index", () => {
+      const { setCurrentPositionIndex } = store.getState();
       const position = { index: 10, date: 5000 };
 
       setCurrentPositionIndex(position);
 
-      expect(getCurrentPositionIndex()).toEqual(position);
+      expect(store.getState().app.currentPositionIndex).toEqual(position);
     });
   });
 

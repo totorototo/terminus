@@ -482,9 +482,4 @@ export const createWorkerSlice = (set, get) => ({
       throw error;
     }
   },
-
-  // Selectors
-  getWorkerStatus: () => get().worker,
-  getIsProcessing: () => get().worker.processing,
-  getHasError: () => Boolean(get().worker.errorMessage),
 });

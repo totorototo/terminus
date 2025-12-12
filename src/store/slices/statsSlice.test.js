@@ -132,9 +132,9 @@ describe("statsSlice", () => {
     });
   });
 
-  describe("getStats selector", () => {
-    it("should return current stats", () => {
-      const { setStats, getStats } = store.getState();
+  describe("state access", () => {
+    it("should set and retrieve stats", () => {
+      const { setStats } = store.getState();
 
       setStats({
         distance: 5000,
@@ -143,7 +143,7 @@ describe("statsSlice", () => {
         pointCount: 1000,
       });
 
-      expect(getStats()).toEqual({
+      expect(store.getState().stats).toEqual({
         distance: 5000,
         elevationGain: 250,
         elevationLoss: 150,
@@ -151,14 +151,14 @@ describe("statsSlice", () => {
       });
     });
 
-    it("should return updated stats after changes", () => {
-      const { updateStats, getStats } = store.getState();
+    it("should update stats", () => {
+      const { updateStats } = store.getState();
 
       updateStats({ distance: 1000 });
-      expect(getStats().distance).toBe(1000);
+      expect(store.getState().stats.distance).toBe(1000);
 
       updateStats({ distance: 2000 });
-      expect(getStats().distance).toBe(2000);
+      expect(store.getState().stats.distance).toBe(2000);
     });
   });
 

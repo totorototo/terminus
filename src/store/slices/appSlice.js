@@ -137,12 +137,5 @@ export const createAppSlice = (set, get) => {
         },
       }));
     },
-
-    // Selectors
-    getStartingDate: () => get().app.startingDate,
-    getTrackingMode: () => get().app.trackingMode,
-    getProfileMode: () => get().app.profileMode,
-    getDisplaySlopes: () => get().app.displaySlopes,
-    getCurrentPositionIndex: () => get().app.currentPositionIndex,
   };
 };
