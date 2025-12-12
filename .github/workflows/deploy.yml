@@ -57,17 +57,8 @@ jobs:
           cat .env
           echo "Setting up Zig environment for build..."
           export ZIG_EXE=$(which zig)
-          export ZIG_LIB_DIR=$(zig env | jq -r '.lib_dir')
-          export ZIG_GLOBAL_CACHE_DIR=$(zig env | jq -r '.global_cache_dir')
           export PATH="$(dirname $(which zig)):$PATH"
           echo "ZIG_EXE=$ZIG_EXE"
-          echo "ZIG_LIB_DIR=$ZIG_LIB_DIR"
-          echo "ZIG_GLOBAL_CACHE_DIR=$ZIG_GLOBAL_CACHE_DIR"
-          echo "Testing manual WASM build from zig directory..."
-          cd zig
-          zig build-lib trace.zig -target wasm32-wasi -dynamic -OReleaseSmall --name trace 2>&1 || echo "Manual build failed, continuing..."
-          ls -la trace.wasm 2>/dev/null && echo "Manual WASM build successful" || echo "Manual WASM build not found"
-          cd ..
           echo "Building with npm run build..."
           npm run build
           echo "Build completed. Checking if build number ${{ github.run_number }} is in built files:"
