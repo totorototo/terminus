@@ -12,20 +12,18 @@ const CheckpointCSV = struct {
 };
 
 fn parseCSVLine(allocator: std.mem.Allocator, line: []const u8) !?CheckpointCSV {
-    // Small fixed-size field buffer (CSV lines expected to have 5 fields)
-    var fields_buf = try allocator.alloc([]const u8, 5);
-    defer allocator.free(fields_buf);
-    var fields_len: usize = 0;
+    var fields = std.ArrayList([]const u8){};
+    defer fields.deinit(allocator);
 
     var iter = std.mem.splitSequence(u8, line, ",");
     while (iter.next()) |field| {
         const trimmed = std.mem.trim(u8, field, " \t\r\n");
-        if (fields_len >= 5) return null;
-        fields_buf[fields_len] = trimmed;
-        fields_len += 1;
+        try fields.append(allocator, trimmed);
     }
 
-    if (fields_len != 5) return null;
+    if (fields.items.len != 5) return null;
+
+    const fields_buf = fields.items;
 
     const km = std.fmt.parseFloat(f64, fields_buf[2]) catch return null;
 
@@ -92,18 +90,15 @@ pub fn main() !void {
     defer allocator.free(csv_content);
 
     // Parse CSV
-    // Dynamic buffer for parsed checkpoints
-    var cp_capacity: usize = 16;
-    var checkpoints_buf = try allocator.alloc(CheckpointCSV, cp_capacity);
-    var checkpoints_len: usize = 0;
+    var checkpoints = std.ArrayList(CheckpointCSV){};
     defer {
-        for (checkpoints_buf[0..checkpoints_len]) |cp| {
+        for (checkpoints.items) |cp| {
             allocator.free(cp.location);
             allocator.free(cp.label);
             allocator.free(cp.kind);
             allocator.free(cp.cutoff_time);
         }
-        allocator.free(checkpoints_buf);
+        checkpoints.deinit(allocator);
     }
 
     var line_iter = std.mem.splitSequence(u8, csv_content, "\n");
@@ -119,36 +114,25 @@ pub fn main() !void {
         if (trimmed.len == 0) continue;
 
         if (try parseCSVLine(allocator, trimmed)) |checkpoint| {
-            if (checkpoints_len == cp_capacity) {
-                const new_capacity = cp_capacity * 2;
-                const new_buf = try allocator.alloc(CheckpointCSV, new_capacity);
-                if (checkpoints_len > 0) @memcpy(new_buf, checkpoints_buf[0..checkpoints_len]);
-                allocator.free(checkpoints_buf);
-                checkpoints_buf = new_buf;
-                cp_capacity = new_capacity;
-            }
-            checkpoints_buf[checkpoints_len] = checkpoint;
-            checkpoints_len += 1;
+            try checkpoints.append(allocator, checkpoint);
             std.debug.print("  ✓ {s} at {d:.1} km\n", .{ checkpoint.location, checkpoint.km });
         }
     }
 
-    std.debug.print("\n✅ Loaded {d} checkpoints from CSV\n", .{checkpoints_len});
+    std.debug.print("\n✅ Loaded {d} checkpoints from CSV\n", .{checkpoints.items.len});
 
     // Convert checkpoints to waypoints
-    var wp_capacity: usize = 16;
-    var waypoints_buf = try allocator.alloc(Waypoint, wp_capacity);
-    var waypoints_len: usize = 0;
+    var waypoints = std.ArrayList(Waypoint){};
     defer {
-        for (waypoints_buf[0..waypoints_len]) |*wpt| {
+        for (waypoints.items) |*wpt| {
             wpt.deinit(allocator);
         }
-        allocator.free(waypoints_buf);
+        waypoints.deinit(allocator);
     }
 
     std.debug.print("\n🔄 Converting checkpoints to waypoints...\n", .{});
 
-    for (checkpoints_buf[0..checkpoints_len]) |checkpoint| {
+    for (checkpoints.items) |checkpoint| {
         const distance_meters = checkpoint.km * 1000.0;
         const point = trace.pointAtDistance(distance_meters);
 
@@ -163,16 +147,7 @@ pub fn main() !void {
                 .time = try allocator.dupe(u8, utc_time),
             };
 
-            if (waypoints_len == wp_capacity) {
-                const new_capacity = wp_capacity * 2;
-                const new_buf = try allocator.alloc(Waypoint, new_capacity);
-                if (waypoints_len > 0) @memcpy(new_buf, waypoints_buf[0..waypoints_len]);
-                allocator.free(waypoints_buf);
-                waypoints_buf = new_buf;
-                wp_capacity = new_capacity;
-            }
-            waypoints_buf[waypoints_len] = waypoint;
-            waypoints_len += 1;
+            try waypoints.append(allocator, waypoint);
 
             std.debug.print("  ✓ {s}: lat={d:.6}, lon={d:.6}, time={s}\n", .{
                 checkpoint.location,
@@ -213,7 +188,7 @@ pub fn main() !void {
     );
 
     // Write waypoints
-    for (waypoints_buf[0..waypoints_len]) |wpt| {
+    for (waypoints.items) |wpt| {
         try w.print(
             \\  <wpt lat="{d:.6}" lon="{d:.6}">
             \\    <time>{s}</time>
@@ -248,7 +223,7 @@ pub fn main() !void {
     );
 
     std.debug.print("\n✅ GPX file generated successfully!\n", .{});
-    std.debug.print("   {d} waypoints written\n", .{waypoints_len});
+    std.debug.print("   {d} waypoints written\n", .{waypoints.items.len});
     std.debug.print("   {d} track points written\n", .{gpx_data.trace_points.len});
 
     // waypoints cleaned up by earlier defer
