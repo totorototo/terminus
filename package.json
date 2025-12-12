@@ -57,7 +57,7 @@
     "r3f-perf": "7.2.3",
     "rimraf": "6.1.2",
     "rollup-plugin-visualizer": "^6.0.5",
-    "rollup-plugin-zigar": "0.14.2",
+    "rollup-plugin-zigar": "0.15.2",
     "vite": "7.2.6",
     "vite-plugin-arraybuffer": "0.1.1",
     "vite-plugin-pwa": "1.2.0",

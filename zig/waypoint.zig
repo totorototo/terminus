@@ -146,10 +146,8 @@ pub const Point = struct {
     }
 
     /// Format point as a string (useful for debugging)
-    pub fn format(self: *const Point, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = options;
-        try writer.print("Point({d:.6}, {d:.6}, {d:.1})", .{ self.longitude, self.latitude, self.elevation });
+    pub fn format(self: Point, writer: anytype) !void {
+        return writer.print("Point({d:.6}, {d:.6}, {d:.1})", .{ self.longitude, self.latitude, self.elevation });
     }
 };
 
@@ -309,7 +307,8 @@ test "print method with formatting" {
     // This is a simplified test to ensure the format function compiles
     var buf: [256]u8 = undefined;
     var fbs = std.io.fixedBufferStream(&buf);
-    try p.format("", .{}, fbs.writer());
+    var fw = fbs.writer();
+    try p.format(&fw);
 
     const result = fbs.getWritten();
     try expect(std.mem.indexOf(u8, result, "Point(") != null);

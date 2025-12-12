@@ -28,8 +28,8 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
 
     // Pre-generate all track points
     const TrackPoint = struct { lat: f64, lon: f64, ele: f64 };
-    var track_points = std.ArrayList(TrackPoint).init(allocator);
-    defer track_points.deinit();
+    var track_points = std.ArrayList(TrackPoint){};
+    defer track_points.deinit(allocator);
 
     // Perlin-like noise parameters for more natural meandering
     var direction: f64 = std.math.pi / 4.0; // Start northeast
@@ -108,23 +108,27 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
         if (elevation < 0.0) elevation = 0.0;
         if (elevation > 3000.0) elevation = 3000.0;
 
-        try track_points.append(.{ .lat = lat, .lon = lon, .ele = elevation });
+        try track_points.append(allocator, TrackPoint{ .lat = lat, .lon = lon, .ele = elevation });
     }
+
+    const track_points_buf = track_points.items;
+    const track_points_len = track_points.items.len;
 
     // Calculate waypoint positions at 20km intervals
     const waypoint_interval_km: f64 = 20.0;
     const waypoint_interval_meters: f64 = waypoint_interval_km * 1000.0;
-    var waypoint_positions = std.ArrayList(usize).init(allocator);
-    defer waypoint_positions.deinit();
+    var waypoint_positions = std.ArrayList(usize){};
+    defer waypoint_positions.deinit(allocator);
 
     var cumulative_distance: f64 = 0.0;
     var next_waypoint_distance: f64 = waypoint_interval_meters;
 
-    try waypoint_positions.append(0); // Start waypoint
+    // Start waypoint
+    try waypoint_positions.append(allocator, 0);
 
-    for (1..track_points.items.len) |i| {
-        const p1 = track_points.items[i - 1];
-        const p2 = track_points.items[i];
+    for (1..track_points_len) |i| {
+        const p1 = track_points_buf[i - 1];
+        const p2 = track_points_buf[i];
 
         // Haversine distance
         const R: f64 = 6371000.0; // Earth radius in meters
@@ -142,21 +146,52 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
         cumulative_distance += segment_distance;
 
         if (cumulative_distance >= next_waypoint_distance) {
-            try waypoint_positions.append(i);
+            try waypoint_positions.append(allocator, i);
             next_waypoint_distance += waypoint_interval_meters;
         }
     }
 
-    // Build GPX file
-    var gpx_buffer = std.ArrayList(u8).init(allocator);
-    defer gpx_buffer.deinit();
+    const waypoint_positions_buf = waypoint_positions.items;
+    const waypoint_positions_len = waypoint_positions.items.len;
 
-    try gpx_buffer.appendSlice("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n" ++
-        "<gpx version=\"1.1\" creator=\"ZigGPXGenerator\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
+    // Build GPX file using a growable u8 buffer
+    var gb_capacity: usize = 4096;
+    var gpx_buffer = try allocator.alloc(u8, gb_capacity);
+    var gpx_buffer_len: usize = 0;
+    defer allocator.free(gpx_buffer);
+
+    // Helper macro for appending slices to gpx_buffer
+    const header1 = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n";
+    var needed = gpx_buffer_len + header1.len;
+    if (needed > gb_capacity) {
+        var new_cap = gb_capacity * 2;
+        while (new_cap < needed) new_cap *= 2;
+        var new_buf = try allocator.alloc(u8, new_cap);
+        if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
+        allocator.free(gpx_buffer);
+        gpx_buffer = new_buf;
+        gb_capacity = new_cap;
+    }
+    @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + header1.len], header1);
+    gpx_buffer_len += header1.len;
+
+    const header2 = "<gpx version=\"1.1\" creator=\"ZigGPXGenerator\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n";
+    needed = gpx_buffer_len + header2.len;
+    if (needed > gb_capacity) {
+        var new_cap = gb_capacity * 2;
+        while (new_cap < needed) new_cap *= 2;
+        var new_buf = try allocator.alloc(u8, new_cap);
+        if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
+        allocator.free(gpx_buffer);
+        gpx_buffer = new_buf;
+        gb_capacity = new_cap;
+    }
+    @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + header2.len], header2);
+    gpx_buffer_len += header2.len;
 
     // Write waypoints
-    for (waypoint_positions.items, 0..) |pos, idx| {
-        const pt = track_points.items[pos];
+    for (waypoint_positions_buf[0..waypoint_positions_len], 0..) |pos, idx| {
+        const pt = track_points_buf[pos];
 
         const latStr = try floatToString(allocator, pt.lat);
         defer allocator.free(latStr);
@@ -177,21 +212,40 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
         var time_buf: [32]u8 = undefined;
         const time = try std.fmt.bufPrint(&time_buf, "2025-11-{d:0>2}T{d:0>2}:00:00Z", .{ day, hours });
 
-        try gpx_buffer.appendSlice(" <wpt lat=\"");
-        try gpx_buffer.appendSlice(latStr);
-        try gpx_buffer.appendSlice("\" lon=\"");
-        try gpx_buffer.appendSlice(lonStr);
-        try gpx_buffer.appendSlice("\"><name>");
-        try gpx_buffer.appendSlice(name);
-        try gpx_buffer.appendSlice("</name><time>");
-        try gpx_buffer.appendSlice(time);
-        try gpx_buffer.appendSlice("</time></wpt>\n");
+        // Inline buffer append for waypoint entry
+        const wpt_str = try std.fmt.allocPrint(allocator, " <wpt lat=\"{s}\" lon=\"{s}\"><name>{s}</name><time>{s}</time></wpt>\n", .{ latStr, lonStr, name, time });
+        defer allocator.free(wpt_str);
+
+        needed = gpx_buffer_len + wpt_str.len;
+        if (needed > gb_capacity) {
+            var new_cap = gb_capacity * 2;
+            while (new_cap < needed) new_cap *= 2;
+            var new_buf = try allocator.alloc(u8, new_cap);
+            if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
+            allocator.free(gpx_buffer);
+            gpx_buffer = new_buf;
+            gb_capacity = new_cap;
+        }
+        @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + wpt_str.len], wpt_str);
+        gpx_buffer_len += wpt_str.len;
     }
 
     // Write track
-    try gpx_buffer.appendSlice(" <trk>\n <name>Random 160-km Trail Run</name>\n <trkseg>\n");
+    const track_header = " <trk>\n <name>Random 160-km Trail Run</name>\n <trkseg>\n";
+    needed = gpx_buffer_len + track_header.len;
+    if (needed > gb_capacity) {
+        var new_cap = gb_capacity * 2;
+        while (new_cap < needed) new_cap *= 2;
+        var new_buf = try allocator.alloc(u8, new_cap);
+        if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
+        allocator.free(gpx_buffer);
+        gpx_buffer = new_buf;
+        gb_capacity = new_cap;
+    }
+    @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + track_header.len], track_header);
+    gpx_buffer_len += track_header.len;
 
-    for (track_points.items) |pt| {
+    for (track_points_buf[0..track_points_len]) |pt| {
         const latStr = try floatToString(allocator, pt.lat);
         defer allocator.free(latStr);
         const lonStr = try floatToString(allocator, pt.lon);
@@ -199,31 +253,54 @@ pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void 
         const eleStr = try floatToStringElev(allocator, pt.ele);
         defer allocator.free(eleStr);
 
-        try gpx_buffer.appendSlice(" <trkpt lat=\"");
-        try gpx_buffer.appendSlice(latStr);
-        try gpx_buffer.appendSlice("\" lon=\"");
-        try gpx_buffer.appendSlice(lonStr);
-        try gpx_buffer.appendSlice("\"><ele>");
-        try gpx_buffer.appendSlice(eleStr);
-        try gpx_buffer.appendSlice("</ele></trkpt>\n");
+        const trkpt_str = try std.fmt.allocPrint(allocator, " <trkpt lat=\"{s}\" lon=\"{s}\"><ele>{s}</ele></trkpt>\n", .{ latStr, lonStr, eleStr });
+        defer allocator.free(trkpt_str);
+
+        needed = gpx_buffer_len + trkpt_str.len;
+        if (needed > gb_capacity) {
+            var new_cap = gb_capacity * 2;
+            while (new_cap < needed) new_cap *= 2;
+            var new_buf = try allocator.alloc(u8, new_cap);
+            if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
+            allocator.free(gpx_buffer);
+            gpx_buffer = new_buf;
+            gb_capacity = new_cap;
+        }
+        @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + trkpt_str.len], trkpt_str);
+        gpx_buffer_len += trkpt_str.len;
     }
 
-    try gpx_buffer.appendSlice(" </trkseg>\n" ++
-        " </trk>\n" ++
-        "</gpx>\n");
+    const track_footer = " </trkseg>\n </trk>\n</gpx>\n";
+    needed = gpx_buffer_len + track_footer.len;
+    if (needed > gb_capacity) {
+        var new_cap = gb_capacity * 2;
+        while (new_cap < needed) new_cap *= 2;
+        var new_buf = try allocator.alloc(u8, new_cap);
+        if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
+        allocator.free(gpx_buffer);
+        gpx_buffer = new_buf;
+        gb_capacity = new_cap;
+    }
+    @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + track_footer.len], track_footer);
+    gpx_buffer_len += track_footer.len;
 
-    const gpx_data = try gpx_buffer.toOwnedSlice();
+    const gpx_data = try allocator.alloc(u8, gpx_buffer_len);
+    if (gpx_buffer_len > 0) @memcpy(gpx_data[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
     defer allocator.free(gpx_data);
 
     const file = try std.fs.cwd().createFile(path, .{});
     defer file.close();
 
-    try file.writeAll(gpx_data);
+    var write_buf: [4096]u8 = undefined;
+    var file_writer = file.writer(&write_buf);
+    const writer = &file_writer.interface;
+    try writer.writeAll(gpx_data[0..gpx_buffer_len]);
+    try writer.flush();
 }
 
 pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
-    var points = std.ArrayList([3]f64).init(allocator);
-    defer points.deinit();
+    var points = std.ArrayList([3]f64){};
+    defer points.deinit(allocator);
 
     var pos: usize = 0;
     while (std.mem.indexOfPos(u8, bytes, pos, "<trkpt")) |trkpt_start| {
@@ -253,22 +330,22 @@ pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f6
             break :blk std.fmt.parseFloat(f64, bytes[value_start..value_end]) catch break;
         };
 
-        try points.append(.{ lat, lon, ele });
+        try points.append(allocator, .{ lat, lon, ele });
 
         // Move past this trackpoint
         pos = tag_end + 1;
     }
 
-    return points.toOwnedSlice();
+    return try points.toOwnedSlice(allocator);
 }
 
 pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoint {
-    var waypoints = std.ArrayList(Waypoint).init(allocator);
+    var waypoints = std.ArrayList(Waypoint){};
     errdefer {
         for (waypoints.items) |*wpt| {
             wpt.deinit(allocator);
         }
-        waypoints.deinit();
+        waypoints.deinit(allocator);
     }
 
     var pos: usize = 0;
@@ -322,7 +399,7 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
 
         const time_epoch = if (time) |t| parseIso8601ToEpoch(t) catch null else null;
 
-        try waypoints.append(.{
+        try waypoints.append(allocator, Waypoint{
             .lat = lat,
             .lon = lon,
             .name = name,
@@ -332,7 +409,7 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
         pos = wpt_end + 6;
     }
 
-    return waypoints.toOwnedSlice();
+    return try waypoints.toOwnedSlice(allocator);
 }
 
 pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData {
