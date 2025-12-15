@@ -1,5 +1,12 @@
 # Terminus
 
+<p align="left">
+ 
+  <a href="src/"><img src="https://img.shields.io/badge/Frontend-React%20%2B%20Three.js-purple" alt="Frontend React"></a>
+   <a href="zig/"><img src="https://img.shields.io/badge/Backend-Zig%200.15.2-blue" alt="Zig Backend"></a>
+  <a href=".github/copilot-instructions.md"><img src="https://img.shields.io/badge/Copilot%20Optimized-Enabled-success" alt="Copilot Optimized"></a>
+</p>
+
 High-performance GPS route analysis and 3D visualization tool. Process large GPX files with interactive elevation profiles, real-time section analytics.
 
 ## Architecture
@@ -44,6 +51,16 @@ npm run dev
 ```
 
 The app will be available at `http://localhost:5173` (or next available port)
+
+## Copilot Instruction Setup
+
+Our project uses structured Copilot instruction files:
+
+- `.github/copilot-instructions.md`: Global repo guidance
+- `.github/instructions/frontend.md`: Frontend (TS/JS) conventions
+- `.github/instructions/backend.md`: Backend (Zig) patterns and memory model
+
+Copilot automatically applies the right set based on file type.
 
 ## Building
 
