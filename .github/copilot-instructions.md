@@ -14,21 +14,37 @@ Terminus is a high-performance GPS trail visualization web application combining
 
 ## Core Principles
 
-### 1. Performance First
+### 1. KISS (Keep It Simple, Stupid)
+
+- Favor simple, readable solutions over clever ones
+- Avoid unnecessary abstractions and complexity
+- Optimize for clarity first, performance second (profile before optimizing)
+- Each function/component should have a single, clear purpose
+- When in doubt, choose the most straightforward approach
+
+### 2. SOLID Principles
+
+- **S**ingle Responsibility: Each function/component has one reason to change
+- **O**pen/Closed: Open for extension, closed for modification
+- **L**iskov Substitution: Subtypes should be substitutable for base types
+- **I**nterface Segregation: Many specific interfaces over one general-purpose interface
+- **D**ependency Inversion: Depend on abstractions, not concrete implementations
+
+### 3. Performance First
 
 - Heavy computation (GPS, algorithms) → Zig/WASM
 - UI rendering and interaction → React
 - Background processing → Web Workers
 - Target 60fps for all interactions
 
-### 2. Memory Management
+### 4. Memory Management
 
 - **JavaScript/React**: Automatic garbage collection
 - **Zig/WASM**: Manual cleanup required - always call `.deinit()` or `.deinit(allocator)`
 - **Web Workers**: Clean up transferred data manually
 - Test for leaks using `std.testing.allocator` in Zig
 
-### 3. Code Quality
+### 5. Code Quality
 
 - Write tests for all complex logic
 - Keep functions small and focused
