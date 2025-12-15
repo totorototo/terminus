@@ -56,9 +56,9 @@ The app will be available at `http://localhost:5173` (or next available port)
 
 Our project uses structured Copilot instruction files:
 
-- `.github/copilot-instructions.md`: Global repo guidance
-- `.github/instructions/frontend.md`: Frontend (TS/JS) conventions
-- `.github/instructions/backend.md`: Backend (Zig) patterns and memory model
+- [`.github/copilot-instructions.md`](.github/copilot-instructions.md): Global repo guidance
+- [`.github/instructions/frontend.instructions.md`](.github/instructions/frontend.instructions.md): Frontend (TS/JS) conventions
+- [`.github/instructions/backend.instructions.md`](.github/instructions/backend.instructions.md): Backend (Zig) patterns and memory model
 
 Copilot automatically applies the right set based on file type.
 
@@ -119,3 +119,8 @@ zig/
 4. Commit your changes (`git commit -m 'Add amazing feature'`)
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
+
+## Security Policy
+
+See [`.github/SECURITY.md`](.github/SECURITY.md) for environment rules and safe coding practices.  
+Copilot and contributors must follow these guidelines to prevent unsafe suggestions or accidental environment leaks.
