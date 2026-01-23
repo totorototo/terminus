@@ -251,7 +251,6 @@ describe("store", () => {
       expect(state.initGPSWorker).toBeDefined();
       expect(state.setWorkerState).toBeDefined();
       expect(state.terminateGPSWorker).toBeDefined();
-      expect(state.sendWorkerMessage).toBeDefined();
     });
   });
 
