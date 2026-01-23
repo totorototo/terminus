@@ -32,7 +32,7 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 
 - **Frontend**: React 18, Vite, Zustand (state management with DevTools/persist)
 - **3D Graphics**: React Three Fiber, Three.js, Drei helpers
-- **Performance**: Zig 0.14.0 → WASM via Zigar bindings with zero-copy optimization
+- **Performance**: Zig 0.15.2 → WASM via Zigar bindings with zero-copy optimization
 - **Styling**: Styled-components with glass morphism theme
 
 ## Prerequisites
@@ -105,7 +105,6 @@ zig/
   simplify.zig          # Douglas-Peucker simplification
   peaks.zig             # Peak detection algorithms
   gpspoint.zig          # Haversine distance calculations
-  csv.zig               # CSV file parsing for checkpoints
   time.zig              # Time/duration calculations
   waypoint.zig          # Waypoint data structure
   section.zig           # Section statistics structure
