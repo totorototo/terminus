@@ -24,6 +24,7 @@ const useStore = create(
             profileMode: state.app.profileMode,
             currentLocation: state.app.currentLocation,
             currentClosestLocation: state.app.currentClosestLocation,
+            currentClosestLocationIndex: state.app.currentClosestLocationIndex,
             startingDate: state.app.startingDate,
             locations: state.app.locations,
           },
