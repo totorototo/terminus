@@ -60,6 +60,8 @@ export const useCurrentPosition = () =>
   useStore((state) => state.app.currentPositionIndex);
 export const useCurrentClosestLocation = () =>
   useStore((state) => state.app.currentClosestLocation);
+export const useCurrentClosestLocationIndex = () =>
+  useStore((state) => state.app.currentClosestLocationIndex);
 export const useGpsCoordinates = () => useStore((state) => state.gps.data);
 export const useProcessingState = () =>
   useStore((state) => ({
