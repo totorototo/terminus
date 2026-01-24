@@ -21,6 +21,7 @@ export const createAppSlice = (set, get) => {
       currentPositionIndex: { index: 0, date: 0 },
       currentLocation: null,
       currentClosestLocation: null,
+      currentClosestLocationIndex: 0,
       startingDate: 0, //Unix timestamp
       locations: [],
     },
@@ -137,5 +138,15 @@ export const createAppSlice = (set, get) => {
         },
       }));
     },
+
+    setClosestLocation: (location, index) =>
+      set((state) => ({
+        ...state,
+        app: {
+          ...state.app,
+          currentClosestLocation: location,
+          currentClosestLocationIndex: index,
+        },
+      })),
   };
 };

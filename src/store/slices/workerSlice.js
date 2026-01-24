@@ -2,6 +2,9 @@
 let worker = null;
 const requests = new Map();
 
+// FIXME: improve cross-slice updates.
+// add custom actions to update app slice from worker slice
+
 // Helper to create worker
 function createGPSWorker() {
   return new Worker(new URL("../../gpsWorker.js", import.meta.url), {
@@ -459,12 +462,17 @@ export const createWorkerSlice = (set, get) => {
 
         if (results && results.closestLocation) {
           const closestCoord = results.closestLocation;
+          const closestIndex = results.closestIndex;
+
+          get().setClosestLocation(closestCoord, closestIndex);
 
           set((state) => ({
             ...state,
-            app: {
-              ...state.app,
-              currentClosestLocation: closestCoord,
+            worker: {
+              ...state.worker,
+              processing: false,
+              progress: 100,
+              errorMessage: "",
             },
           }));
         }
