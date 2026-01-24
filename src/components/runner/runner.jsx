@@ -15,8 +15,17 @@ function Runner({ coordinateScales }) {
     if (!coordinateScales) return null;
     if (currentClosestLocationIndex === 0) return null;
 
-    return transformCoordinates([currentClosestLocation], coordinateScales)[0];
-  }, [currentClosestLocation, coordinateScales, transformCoordinates]);
+    return transformCoordinates(
+      [currentClosestLocation],
+      coordinateScales,
+      currentClosestLocationIndex,
+    )[0];
+  }, [
+    currentClosestLocation,
+    currentClosestLocationIndex,
+    coordinateScales,
+    transformCoordinates,
+  ]);
 
   return (
     transformedLocation && (
