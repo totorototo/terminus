@@ -195,25 +195,25 @@ export const createWorkerSlice = (set, get) => {
           onProgress,
         );
 
+        get().updateStats({
+          distance: results.trace.totalDistance ?? 0,
+          elevationGain: results.trace.totalElevation ?? 0,
+          elevationLoss: results.trace.totalElevationLoss ?? 0,
+          pointCount: results.trace.points.length ?? 0,
+        });
+
+        get().setGpsData(results.trace.points);
+        get().setSlopes(results.trace.slopes);
+        get().setCumulativeDistances(results.trace.cumulativeDistances);
+        get().setCumulativeElevations(results.trace.cumulativeElevations);
+        get().setCumulativeElevationLosses(
+          results.trace.cumulativeElevationLoss,
+        );
+        get().setSections(results.sections);
+        get().setWayPoints(results.waypoints);
+
         set((state) => ({
           ...state,
-          gps: {
-            ...state.gps,
-            data: results.trace.points,
-            slopes: results.trace.slopes,
-            cumulativeDistances: results.trace.cumulativeDistances,
-            cumulativeElevations: results.trace.cumulativeElevations,
-            cumulativeElevationLosses: results.trace.cumulativeElevationLoss,
-            sections: results.sections,
-          },
-
-          waypoints: results.waypoints ?? state.waypoints,
-          stats: {
-            distance: results.trace.totalDistance ?? 0,
-            elevationGain: results.trace.totalElevation ?? 0,
-            elevationLoss: results.trace.totalElevationLoss ?? 0,
-            pointCount: results.trace.pointCount ?? 0,
-          },
           worker: {
             ...state.worker,
             errorMessage: "",
@@ -243,22 +243,21 @@ export const createWorkerSlice = (set, get) => {
           onProgress,
         );
 
+        get().setGpsData(results.points);
+        get().setSlopes(results.slopes);
+        get().setCumulativeDistances(results.cumulativeDistances);
+        get().setCumulativeElevations(results.cumulativeElevations);
+        get().setCumulativeElevationLosses(results.cumulativeElevationLoss);
+
+        get().updateStats({
+          distance: results.totalDistance ?? 0,
+          elevationGain: results.totalElevation ?? 0,
+          elevationLoss: results.totalElevationLoss ?? 0,
+          pointCount: results.pointCount ?? 0,
+        });
+
         set((state) => ({
           ...state,
-          gps: {
-            ...state.gps,
-            data: results.points,
-            slopes: results.slopes,
-            cumulativeDistances: results.cumulativeDistances,
-            cumulativeElevations: results.cumulativeElevations,
-            cumulativeElevationLosses: results.cumulativeElevationLoss,
-          },
-          stats: {
-            distance: results.totalDistance ?? 0,
-            elevationGain: results.totalElevation ?? 0,
-            elevationLoss: results.totalElevationLoss ?? 0,
-            pointCount: results.pointCount ?? 0,
-          },
           worker: {
             ...state.worker,
             errorMessage: "",
@@ -288,27 +287,16 @@ export const createWorkerSlice = (set, get) => {
           onProgress,
         );
 
+        get().setSections(results ?? []);
+        get().updateStats({
+          distance: results?.totalDistance ?? 0,
+          elevationGain: results?.totalElevationGain ?? 0,
+          elevationLoss: results?.totalElevationLoss ?? 0,
+          pointCount: results?.pointCount ?? 0,
+        });
+
         set((state) => ({
           ...state,
-          gps: {
-            ...state.gps,
-            sections: results ?? state.gps.sections,
-          },
-          stats: {
-            ...state.stats,
-            ...(results?.totalDistance !== undefined && {
-              distance: results.totalDistance,
-            }),
-            ...(results?.totalElevationGain !== undefined && {
-              elevationGain: results.totalElevationGain,
-            }),
-            ...(results?.totalElevationLoss !== undefined && {
-              elevationLoss: results.totalElevationLoss,
-            }),
-            ...(results?.pointCount !== undefined && {
-              pointCount: results.pointCount,
-            }),
-          },
           worker: {
             ...state.worker,
             errorMessage: "",
@@ -337,23 +325,15 @@ export const createWorkerSlice = (set, get) => {
           segments,
         });
 
+        get().stats.updateStats({
+          distance: results.distance,
+          elevationGain: results.elevationGain,
+          elevationLoss: results.elevationLoss,
+          pointCount: results.pointCount,
+        });
+
         set((state) => ({
           ...state,
-          stats: {
-            ...state.stats,
-            ...(results?.distance !== undefined && {
-              distance: results.distance,
-            }),
-            ...(results?.elevationGain !== undefined && {
-              elevationGain: results.elevationGain,
-            }),
-            ...(results?.elevationLoss !== undefined && {
-              elevationLoss: results.elevationLoss,
-            }),
-            ...(results?.pointCount !== undefined && {
-              pointCount: results.pointCount,
-            }),
-          },
           worker: {
             ...state.worker,
             errorMessage: "",

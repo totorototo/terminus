@@ -4,6 +4,7 @@ import { createAppSlice } from "./slices/appSlice";
 import { createGpsSlice } from "./slices/gpsSlice";
 import { createStatsSlice } from "./slices/statsSlice";
 import { createWorkerSlice } from "./slices/workerSlice";
+import createWayPointsSlice from "./slices/wayPointsSlice";
 
 // Create store by combining slices
 const useStore = create(
@@ -14,6 +15,7 @@ const useStore = create(
         ...createGpsSlice(...a),
         ...createStatsSlice(...a),
         ...createWorkerSlice(...a),
+        ...createWayPointsSlice(...a),
       })),
       {
         name: "terminus-storage",
