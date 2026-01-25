@@ -10,9 +10,10 @@ import Marker from "../marker/Marker.jsx";
 import { useTheme } from "styled-components";
 import { getInterpolatedColor } from "../../helpers/colorInterpolation.js";
 
-function EnhancedProfile({ showSlopeColors, coordinateScales, profileMode }) {
+function EnhancedProfile({ coordinateScales, profileMode }) {
   const sections = useStore((state) => state.gps.sections);
   const slopes = useStore((state) => state.gps.slopes);
+  const showSlopeColors = useStore((state) => state.app.displaySlopes);
   const theme = useTheme();
 
   // Theme colors for interpolation

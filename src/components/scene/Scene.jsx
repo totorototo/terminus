@@ -9,7 +9,6 @@ import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 import Runner from "../runner/runner.jsx";
 
 function Scene({ width, height, className }) {
-  const displaySlopes = useStore((state) => state.app.displaySlopes);
   const profileMode = useStore((state) => state.app.profileMode);
   const coordinates = useStore((state) => state.gps.data);
 
@@ -50,7 +49,6 @@ function Scene({ width, height, className }) {
       />
 
       <EnhancedProfile
-        showSlopeColors={displaySlopes}
         coordinateScales={coordinateScales}
         profileMode={profileMode}
       />
