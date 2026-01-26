@@ -10,7 +10,7 @@ import Runner from "../runner/runner.jsx";
 
 function Scene({ width, height, className }) {
   const profileMode = useStore((state) => state.app.profileMode);
-  const coordinates = useStore((state) => state.gps.data);
+  const coordinates = useStore((state) => state.gpx.data);
 
   const modelRef = useRef();
 

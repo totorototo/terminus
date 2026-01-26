@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { devtools, subscribeWithSelector, persist } from "zustand/middleware";
 import { createAppSlice } from "./slices/appSlice";
-import { createGpsSlice } from "./slices/gpsSlice";
+import { createGpxSlice } from "./slices/gpxSlice";
 import { createStatsSlice } from "./slices/statsSlice";
 import { createWorkerSlice } from "./slices/workerSlice";
-import createWayPointsSlice from "./slices/wayPointsSlice";
+import { createWayPointsSlice } from "./slices/wayPointsSlice";
+import { createSectionsSlice } from "./slices/sectionsSlice";
 
 // Create store by combining slices
 const useStore = create(
@@ -12,10 +13,11 @@ const useStore = create(
     persist(
       subscribeWithSelector((...a) => ({
         ...createAppSlice(...a),
-        ...createGpsSlice(...a),
+        ...createGpxSlice(...a),
         ...createStatsSlice(...a),
         ...createWorkerSlice(...a),
         ...createWayPointsSlice(...a),
+        ...createSectionsSlice(...a),
       })),
       {
         name: "terminus-storage",
@@ -50,7 +52,7 @@ const useStore = create(
 // --- Selector Hooks for Performance ---
 // These hooks prevent unnecessary re-renders by selecting only specific slices
 export const useAppState = () => useStore((state) => state.app);
-export const useGpsData = () => useStore((state) => state.gps);
+export const useGpxData = () => useStore((state) => state.gpx);
 export const useStats = () => useStore((state) => state.stats);
 export const useWorkerState = () => useStore((state) => state.worker);
 
@@ -65,7 +67,7 @@ export const useCurrentClosestLocation = () =>
   useStore((state) => state.app.currentClosestLocation);
 export const useCurrentClosestLocationIndex = () =>
   useStore((state) => state.app.currentClosestLocationIndex);
-export const useGpsCoordinates = () => useStore((state) => state.gps.data);
+export const useGpxCoordinates = () => useStore((state) => state.gpx.data);
 export const useProcessingState = () =>
   useStore((state) => ({
     isProcessing: state.worker.processing,

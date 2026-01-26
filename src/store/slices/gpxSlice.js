@@ -1,87 +1,74 @@
-export const createGpsSlice = (set, get) => ({
-  gps: {
+export const createGpxSlice = (set, get) => ({
+  gpx: {
     data: [],
     slopes: [],
-    sections: [],
     cumulativeDistances: [],
     cumulativeElevations: [],
     cumulativeElevationLosses: [],
   },
 
-  // GPS Data Actions
-  setGpsData: (data) =>
+  // GPX Data Actions
+  setGpxData: (data) =>
     set(
       (state) => ({
         ...state,
-        gps: {
-          ...state.gps,
+        gpx: {
+          ...state.gpx,
           data,
         },
       }),
       undefined,
-      "gps/setGpsData",
+      "gpx/setGpxData",
     ),
 
   setSlopes: (slopes) =>
     set(
       (state) => ({
         ...state,
-        gps: {
-          ...state.gps,
+        gpx: {
+          ...state.gpx,
           slopes,
         },
       }),
       undefined,
-      "gps/setSlopes",
+      "gpx/setSlopes",
     ),
 
-  setSections: (sections) =>
-    set(
-      (state) => ({
-        ...state,
-        gps: {
-          ...state.gps,
-          sections,
-        },
-      }),
-      undefined,
-      "gps/setSections",
-    ),
   setCumulativeDistances: (distances) =>
     set(
       (state) => ({
         ...state,
-        gps: {
-          ...state.gps,
+        gpx: {
+          ...state.gpx,
           cumulativeDistances: distances,
         },
       }),
       undefined,
-      "gps/setCumulativeDistances",
+      "gpx/setCumulativeDistances",
     ),
 
   setCumulativeElevations: (elevations) =>
     set(
       (state) => ({
         ...state,
-        gps: {
-          ...state.gps,
+        gpx: {
+          ...state.gpx,
           cumulativeElevations: elevations,
         },
       }),
       undefined,
-      "gps/setCumulativeElevations",
+      "gpx/setCumulativeElevations",
     ),
   setCumulativeElevationLosses: (elevations) =>
     set(
       (state) => ({
         ...state,
-        gps: {
-          ...state.gps,
+        gpx: {
+          ...state.gpx,
           cumulativeElevationLosses: elevations,
         },
       }),
       undefined,
-      "gps/setCumulativeElevationLosses",
+      "gpx/setCumulativeElevationLosses",
     ),
 });

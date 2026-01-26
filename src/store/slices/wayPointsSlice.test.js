@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { create } from "zustand";
-import createWayPointsSlice from "./wayPointsSlice";
+import { createWayPointsSlice } from "./wayPointsSlice";
 
 describe("wayPointsSlice", () => {
   let store;

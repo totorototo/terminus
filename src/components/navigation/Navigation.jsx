@@ -10,21 +10,21 @@ import { ArrowUp } from "@styled-icons/feather";
 import { CornerUpLeft } from "@styled-icons/feather";
 
 function Navigation({ className }) {
-  const sections = useStore((state) => state.gps.sections);
+  const sections = useStore((state) => state.sections);
   const currentPositionIndex = useStore(
     (state) => state.app.currentPositionIndex || 0,
   ); // HACK: default to 0 if undefined
 
   const cumulativeDistances = useStore(
-    (state) => state.gps.cumulativeDistances,
+    (state) => state.gpx.cumulativeDistances,
   );
 
   const cumulativeElevations = useStore(
-    (state) => state.gps.cumulativeElevations,
+    (state) => state.gpx.cumulativeElevations,
   );
 
   const cumulativeElevationLosses = useStore(
-    (state) => state.gps.cumulativeElevationLosses,
+    (state) => state.gpx.cumulativeElevationLosses,
   );
 
   const springConfig = { tension: 170, friction: 26 };

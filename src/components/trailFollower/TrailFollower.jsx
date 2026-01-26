@@ -48,7 +48,7 @@ export default function TrailFollower({
     (state) => state.setCurrentPositionIndex,
   );
   const setStartingDate = useStore((state) => state.setStartingDate);
-  const coordinates = useStore((state) => state.gps.data);
+  const coordinates = useStore((state) => state.gpx.data);
 
   const throttledSetIndex = useRef(throttle(setCurrentPositionIndex, 1000));
 

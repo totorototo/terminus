@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { create } from "zustand";
-import { createGpsSlice } from "./gpsSlice";
+import { createGpxSlice } from "./gpxSlice";
 
-describe("gpsSlice", () => {
+describe("gpxSlice", () => {
   let store;
 
   beforeEach(() => {
     store = create((set, get) => ({
-      ...createGpsSlice(set, get),
+      ...createGpxSlice(set, get),
     }));
   });
 
@@ -15,36 +15,35 @@ describe("gpsSlice", () => {
     it("should have correct initial state", () => {
       const state = store.getState();
 
-      expect(state.gps.data).toEqual([]);
-      expect(state.gps.slopes).toEqual([]);
-      expect(state.gps.sections).toEqual([]);
-      expect(state.gps.cumulativeDistances).toEqual([]);
-      expect(state.gps.cumulativeElevations).toEqual([]);
-      expect(state.gps.cumulativeElevationLosses).toEqual([]);
+      expect(state.gpx.data).toEqual([]);
+      expect(state.gpx.slopes).toEqual([]);
+      expect(state.gpx.sections).toEqual([]);
+      expect(state.gpx.cumulativeDistances).toEqual([]);
+      expect(state.gpx.cumulativeElevations).toEqual([]);
+      expect(state.gpx.cumulativeElevationLosses).toEqual([]);
     });
   });
 
-  describe("setGpsData", () => {
-    it("should set GPS data", () => {
-      const { setGpsData } = store.getState();
+  describe("setGpxData", () => {
+    it("should set GPX data", () => {
+      const { setGpxData } = store.getState();
       const testData = [
         [0, 0, 100],
         [1, 1, 200],
         [2, 2, 150],
       ];
 
-      setGpsData(testData);
+      setGpxData(testData);
 
-      expect(store.getState().gps.data).toEqual(testData);
+      expect(store.getState().gpx.data).toEqual(testData);
     });
 
-    it("should preserve other gps properties when setting data", () => {
-      const { setGpsData, setSlopes } = store.getState();
+    it("should preserve other gpx properties when setting data", () => {
+      const { setGpxData, setSlopes } = store.getState();
 
       setSlopes([1, 2, 3]);
-      setGpsData([[0, 0, 0]]);
-
-      const state = store.getState().gps;
+      setGpxData([[0, 0, 0]]);
+      const state = store.getState().gpx;
       expect(state.data).toEqual([[0, 0, 0]]);
       expect(state.slopes).toEqual([1, 2, 3]);
     });
@@ -57,7 +56,7 @@ describe("gpsSlice", () => {
 
       setSlopes(testSlopes);
 
-      expect(store.getState().gps.slopes).toEqual(testSlopes);
+      expect(store.getState().gpx.slopes).toEqual(testSlopes);
     });
 
     it("should handle empty slopes array", () => {
@@ -65,7 +64,7 @@ describe("gpsSlice", () => {
 
       setSlopes([]);
 
-      expect(store.getState().gps.slopes).toEqual([]);
+      expect(store.getState().gpx.slopes).toEqual([]);
     });
   });
 
@@ -89,7 +88,7 @@ describe("gpsSlice", () => {
 
       setSections(testSections);
 
-      expect(store.getState().gps.sections).toEqual(testSections);
+      expect(store.getState().gpx.sections).toEqual(testSections);
     });
 
     it("should replace existing sections", () => {
@@ -98,7 +97,7 @@ describe("gpsSlice", () => {
       setSections([{ id: "old" }]);
       setSections([{ id: "new" }]);
 
-      expect(store.getState().gps.sections).toEqual([{ id: "new" }]);
+      expect(store.getState().gpx.sections).toEqual([{ id: "new" }]);
     });
   });
 
@@ -109,7 +108,7 @@ describe("gpsSlice", () => {
 
       setCumulativeDistances(distances);
 
-      expect(store.getState().gps.cumulativeDistances).toEqual(distances);
+      expect(store.getState().gpx.cumulativeDistances).toEqual(distances);
     });
   });
 
@@ -120,7 +119,7 @@ describe("gpsSlice", () => {
 
       setCumulativeElevations(elevations);
 
-      expect(store.getState().gps.cumulativeElevations).toEqual(elevations);
+      expect(store.getState().gpx.cumulativeElevations).toEqual(elevations);
     });
   });
 
@@ -131,18 +130,18 @@ describe("gpsSlice", () => {
 
       setCumulativeElevationLosses(losses);
 
-      expect(store.getState().gps.cumulativeElevationLosses).toEqual(losses);
+      expect(store.getState().gpx.cumulativeElevationLosses).toEqual(losses);
     });
   });
 
   describe("state access", () => {
-    it("should set and retrieve GPS data", () => {
-      const { setGpsData } = store.getState();
+    it("should set and retrieve GPX data", () => {
+      const { setGpxData } = store.getState();
       const testData = [[1, 2, 3]];
 
-      setGpsData(testData);
+      setGpxData(testData);
 
-      expect(store.getState().gps.data).toEqual(testData);
+      expect(store.getState().gpx.data).toEqual(testData);
     });
 
     it("should set and retrieve slopes", () => {
@@ -151,7 +150,7 @@ describe("gpsSlice", () => {
 
       setSlopes(testSlopes);
 
-      expect(store.getState().gps.slopes).toEqual(testSlopes);
+      expect(store.getState().gpx.slopes).toEqual(testSlopes);
     });
 
     it("should set and retrieve sections", () => {
@@ -160,14 +159,14 @@ describe("gpsSlice", () => {
 
       setSections(testSections);
 
-      expect(store.getState().gps.sections).toEqual(testSections);
+      expect(store.getState().gpx.sections).toEqual(testSections);
     });
   });
 
   describe("integration", () => {
-    it("should update multiple GPS properties independently", () => {
+    it("should update multiple GPX properties independently", () => {
       const {
-        setGpsData,
+        setGpxData,
         setSlopes,
         setSections,
         setCumulativeDistances,
@@ -175,14 +174,14 @@ describe("gpsSlice", () => {
         setCumulativeElevationLosses,
       } = store.getState();
 
-      setGpsData([[0, 0, 0]]);
+      setGpxData([[0, 0, 0]]);
       setSlopes([1.0]);
       setSections([{ id: "s1" }]);
       setCumulativeDistances([0, 100]);
       setCumulativeElevations([0, 50]);
       setCumulativeElevationLosses([0, 10]);
 
-      const state = store.getState().gps;
+      const state = store.getState().gpx;
       expect(state.data).toEqual([[0, 0, 0]]);
       expect(state.slopes).toEqual([1.0]);
       expect(state.sections).toEqual([{ id: "s1" }]);
