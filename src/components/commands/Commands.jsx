@@ -15,6 +15,7 @@ function Commands({ className }) {
   const displaySlopes = useStore((state) => state.app.displaySlopes);
   const toggleSlopesMode = useStore((state) => state.toggleSlopesMode);
   const findClosestLocation = useStore((state) => state.findClosestLocation);
+  const spotMe = useStore((state) => state.spotMe);
   //const processGPXFile = useStore((state) => state.processGPXFile);
 
   // const onChange = useCallback(
@@ -41,8 +42,8 @@ function Commands({ className }) {
       </label> */}
       <button
         className={"off"}
-        onClick={findClosestLocation}
-        aria-label="Find closest location on trail"
+        onClick={spotMe}
+        aria-label="Find my current location"
       >
         <MapPin size={24} />
       </button>

@@ -8,12 +8,18 @@ import useStore from "../../store/store.js";
 import { CornerUpRight } from "@styled-icons/feather/CornerUpRight";
 import { ArrowUp } from "@styled-icons/feather";
 import { CornerUpLeft } from "@styled-icons/feather";
+import { useProjectedLocation } from "../../store/store.js";
 
 function Navigation({ className }) {
   const sections = useStore((state) => state.sections);
-  const currentPositionIndex = useStore(
-    (state) => state.app.currentPositionIndex || 0,
-  ); // HACK: default to 0 if undefined
+  // const currentPositionIndex = useStore(
+  //   (state) => state.app.currentPositionIndex || 0,
+  // ); // HACK: default to 0 if undefined
+
+  const projectedLocation = useProjectedLocation();
+  const currentPositionIndex = projectedLocation.index || 0;
+
+  console.log("Projected Index:", projectedLocation.index);
 
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances,
@@ -32,7 +38,7 @@ function Navigation({ className }) {
   // currentPosition
 
   const remaningSections = sections?.filter(
-    (section) => section.endIndex >= currentPositionIndex.index,
+    (section) => section.endIndex >= currentPositionIndex,
   );
 
   const currentSection =
@@ -42,17 +48,17 @@ function Navigation({ className }) {
     distance:
       currentSection && cumulativeDistances
         ? cumulativeDistances[currentSection.endIndex] -
-          cumulativeDistances[currentPositionIndex.index]
+          cumulativeDistances[currentPositionIndex]
         : 0,
     elevation:
       currentSection && cumulativeElevations
         ? cumulativeElevations[currentSection.endIndex] -
-          cumulativeElevations[currentPositionIndex.index]
+          cumulativeElevations[currentPositionIndex]
         : 0,
     elevationLoss:
       currentSection && cumulativeElevationLosses
         ? cumulativeElevationLosses[currentSection.endIndex] -
-          cumulativeElevationLosses[currentPositionIndex.index]
+          cumulativeElevationLosses[currentPositionIndex]
         : 0,
     config: springConfig,
   });

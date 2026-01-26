@@ -503,9 +503,8 @@ export const createWorkerSlice = (set, get) => {
 
     findClosestLocation: async () => {
       try {
-        await get().getCurrentLocation();
-        const point = get().app.currentLocation.coords;
-        const coordinates = get().gps.data;
+        const point = get().gps.location.coords;
+        const coordinates = get().gpx.data;
 
         if (!point || !coordinates || coordinates.length === 0) {
           set(
@@ -533,7 +532,7 @@ export const createWorkerSlice = (set, get) => {
           const closestCoord = results.closestLocation;
           const closestIndex = results.closestIndex;
 
-          get().setClosestLocation(closestCoord, closestIndex);
+          // get().setClosestLocation(closestCoord, closestIndex);
 
           set(
             (state) => ({

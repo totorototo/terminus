@@ -6,6 +6,7 @@ import { createStatsSlice } from "./slices/statsSlice";
 import { createWorkerSlice } from "./slices/workerSlice";
 import { createWayPointsSlice } from "./slices/wayPointsSlice";
 import { createSectionsSlice } from "./slices/sectionsSlice";
+import { createGPSSlice } from "./slices/gpsSlice";
 
 // Create store by combining slices
 const useStore = create(
@@ -18,6 +19,7 @@ const useStore = create(
         ...createWorkerSlice(...a),
         ...createWayPointsSlice(...a),
         ...createSectionsSlice(...a),
+        ...createGPSSlice(...a),
       })),
       {
         name: "terminus-storage",
@@ -26,11 +28,11 @@ const useStore = create(
             trackingMode: state.app.trackingMode,
             displaySlopes: state.app.displaySlopes,
             profileMode: state.app.profileMode,
-            currentLocation: state.app.currentLocation,
-            currentClosestLocation: state.app.currentClosestLocation,
-            currentClosestLocationIndex: state.app.currentClosestLocationIndex,
-            startingDate: state.app.startingDate,
-            locations: state.app.locations,
+          },
+          gps: {
+            location: state.gps.location,
+            projectedLocation: state.gps.projectedLocation,
+            savedLocations: state.gps.savedLocations,
           },
         }),
         onRehydrateStorage: () => (state) => {
@@ -61,12 +63,8 @@ export const useTrackingMode = () =>
   useStore((state) => state.app.trackingMode);
 export const useDisplaySlopes = () =>
   useStore((state) => state.app.displaySlopes);
-export const useCurrentPosition = () =>
-  useStore((state) => state.app.currentPositionIndex);
-export const useCurrentClosestLocation = () =>
-  useStore((state) => state.app.currentClosestLocation);
-export const useCurrentClosestLocationIndex = () =>
-  useStore((state) => state.app.currentClosestLocationIndex);
+export const useProjectedLocation = () =>
+  useStore((state) => state.gps.projectedLocation);
 export const useGpxCoordinates = () => useStore((state) => state.gpx.data);
 export const useProcessingState = () =>
   useStore((state) => ({

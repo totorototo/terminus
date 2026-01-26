@@ -6,17 +6,17 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import useStore from "../../store/store";
 import { transformCoordinates } from "../../utils/coordinateTransforms";
 
-function throttle(fn, delay) {
-  let timeout = null;
-  return (...args) => {
-    if (!timeout) {
-      fn(...args);
-      timeout = setTimeout(() => {
-        timeout = null;
-      }, delay);
-    }
-  };
-}
+// function throttle(fn, delay) {
+//   let timeout = null;
+//   return (...args) => {
+//     if (!timeout) {
+//       fn(...args);
+//       timeout = setTimeout(() => {
+//         timeout = null;
+//       }, delay);
+//     }
+//   };
+// }
 
 export default function TrailFollower({
   speed = 0.02,
@@ -50,7 +50,7 @@ export default function TrailFollower({
   const setStartingDate = useStore((state) => state.setStartingDate);
   const coordinates = useStore((state) => state.gpx.data);
 
-  const throttledSetIndex = useRef(throttle(setCurrentPositionIndex, 1000));
+  // const throttledSetIndex = useRef(throttle(setCurrentPositionIndex, 1000));
 
   const { nodes, animations } = useGLTF("/cartoon_plane.glb");
   const { actions } = useAnimations(animations, modelRef);
@@ -75,7 +75,7 @@ export default function TrailFollower({
   }, [actions]);
 
   useEffect(() => {
-    setStartingDate(Date.now());
+    // setStartingDate(Date.now());
   }, []);
 
   useFrame((state, delta) => {
@@ -87,7 +87,7 @@ export default function TrailFollower({
     // Loop back to start when reaching the end
     if (progress.current >= 1) {
       progress.current = 0;
-      setStartingDate(Date.now());
+      // setStartingDate(Date.now());
     }
 
     // Compute current point index
@@ -96,10 +96,10 @@ export default function TrailFollower({
 
     if (currentIndex) {
       // Update position index with throttling
-      throttledSetIndex.current({
-        index: currentIndex,
-        date: Date.now(),
-      });
+      // throttledSetIndex.current({
+      //   index: currentIndex,
+      //   date: Date.now(),
+      // });
     }
 
     const currentPoint = scaledPath[currentIndex];

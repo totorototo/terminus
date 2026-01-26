@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
-import useStore, { useCurrentPosition, useStats } from "../../store/store.js";
+import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 
 const customLocale = {
@@ -53,7 +53,7 @@ const calculateTimeMetrics = (
 
 const TrailData = memo(function TrailData({ className }) {
   // Use optimized selectors for better performance
-  const currentPositionIndex = useCurrentPosition();
+  const projectedLocation = useProjectedLocation();
   const stats = useStats();
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
@@ -64,11 +64,16 @@ const TrailData = memo(function TrailData({ className }) {
   const cumulativeElevationLosses = useStore(
     (state) => state.gpx.cumulativeElevationLosses || [],
   );
-  const startingDate = useStore((state) => state.app.startingDate);
+  const sections = useStore((state) => state.sections);
+  const startingDate = sections && sections.length > 0 && sections[0].startTime;
 
   // Memoize expensive time calculations
   const timeMetrics = useMemo(() => {
-    if (!cumulativeDistances?.length || !startingDate) {
+    if (
+      !cumulativeDistances?.length ||
+      !startingDate ||
+      projectedLocation.timestamp / 1000 < startingDate
+    ) {
       return {
         etaDateStr: "--:--",
         remainingStr: "--",
@@ -77,29 +82,33 @@ const TrailData = memo(function TrailData({ className }) {
       };
     }
     return calculateTimeMetrics(
-      currentPositionIndex,
+      projectedLocation.index,
       cumulativeDistances,
       startingDate,
     );
-  }, [currentPositionIndex, cumulativeDistances, startingDate]);
-
+  }, [
+    projectedLocation.index,
+    projectedLocation.timestamp,
+    cumulativeDistances,
+    startingDate,
+  ]);
   // Memoize remaining values for spring animation
   const remainingValues = useMemo(
     () => ({
       remainingDistance: Math.max(
         0,
         (stats?.distance || 0) -
-          (cumulativeDistances?.[currentPositionIndex?.index || 0] || 0),
+          (cumulativeDistances?.[projectedLocation?.index || 0] || 0),
       ),
       remainingElevation: Math.max(
         0,
         (stats?.elevationGain || 0) -
-          (cumulativeElevations?.[currentPositionIndex?.index || 0] || 0),
+          (cumulativeElevations?.[projectedLocation?.index || 0] || 0),
       ),
       remainingElevationLoss: Math.max(
         0,
         (stats?.elevationLoss || 0) -
-          (cumulativeElevationLosses?.[currentPositionIndex?.index || 0] || 0),
+          (cumulativeElevationLosses?.[projectedLocation?.index || 0] || 0),
       ),
     }),
     [
@@ -107,7 +116,7 @@ const TrailData = memo(function TrailData({ className }) {
       cumulativeDistances,
       cumulativeElevations,
       cumulativeElevationLosses,
-      currentPositionIndex,
+      projectedLocation,
     ],
   );
 
