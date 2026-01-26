@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import useStore, {
   useAppState,
-  useGpsData,
+  useGpxData,
   useStats,
   useWorkerState,
   useTrackingMode,
   useDisplaySlopes,
   useCurrentPosition,
   useCurrentClosestLocation,
-  useGpsCoordinates,
+  useGpxCoordinates,
   useProcessingState,
 } from "./store";
 
@@ -49,7 +49,7 @@ describe("store", () => {
       const state = useStore.getState();
 
       expect(state.app).toBeDefined();
-      expect(state.gps).toBeDefined();
+      expect(state.gpx).toBeDefined();
       expect(state.stats).toBeDefined();
       expect(state.worker).toBeDefined();
     });
@@ -66,15 +66,14 @@ describe("store", () => {
       expect(state.app.startingDate).toBe(0);
     });
 
-    it("should have gps slice with correct initial state", () => {
+    it("should have gpx slice with correct initial state", () => {
       const state = useStore.getState();
 
-      expect(state.gps.data).toEqual([]);
-      expect(state.gps.slopes).toEqual([]);
-      expect(state.gps.sections).toEqual([]);
-      expect(state.gps.cumulativeDistances).toEqual([]);
-      expect(state.gps.cumulativeElevations).toEqual([]);
-      expect(state.gps.cumulativeElevationLosses).toEqual([]);
+      expect(state.gpx.data).toEqual([]);
+      expect(state.gpx.slopes).toEqual([]);
+      expect(state.gpx.cumulativeDistances).toEqual([]);
+      expect(state.gpx.cumulativeElevations).toEqual([]);
+      expect(state.gpx.cumulativeElevationLosses).toEqual([]);
     });
 
     it("should have stats slice with correct initial state", () => {
@@ -104,8 +103,8 @@ describe("store", () => {
     });
 
     it("should export useGpsData selector", () => {
-      expect(useGpsData).toBeDefined();
-      expect(typeof useGpsData).toBe("function");
+      expect(useGpxData).toBeDefined();
+      expect(typeof useGpxData).toBe("function");
     });
 
     it("should export useStats selector", () => {
@@ -138,9 +137,9 @@ describe("store", () => {
       expect(typeof useCurrentClosestLocation).toBe("function");
     });
 
-    it("should export useGpsCoordinates selector", () => {
-      expect(useGpsCoordinates).toBeDefined();
-      expect(typeof useGpsCoordinates).toBe("function");
+    it("should export useGpxCoordinates selector", () => {
+      expect(useGpxCoordinates).toBeDefined();
+      expect(typeof useGpxCoordinates).toBe("function");
     });
 
     it("should export useProcessingState selector", () => {
@@ -198,10 +197,10 @@ describe("store", () => {
         [1, 1, 200],
       ];
 
-      useStore.getState().setGpsData(testData);
+      useStore.getState().setGpxData(testData);
 
       const state = useStore.getState();
-      expect(state.gps.data).toEqual(testData);
+      expect(state.gpx.data).toEqual(testData);
     });
 
     it("should set stats", () => {
@@ -238,8 +237,8 @@ describe("store", () => {
       expect(state.toggleSlopesMode).toBeDefined();
       expect(state.setCurrentPositionIndex).toBeDefined();
 
-      // GPS slice actions
-      expect(state.setGpsData).toBeDefined();
+      // GPX slice actions
+      expect(state.setGpxData).toBeDefined();
       expect(state.setSlopes).toBeDefined();
       expect(state.setSections).toBeDefined();
 
