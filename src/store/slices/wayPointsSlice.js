@@ -1,7 +1,6 @@
-const createWayPointsSlice = (set, get) => ({
+export const createWayPointsSlice = (set, get) => ({
   waypoints: [],
 
-  // WayPoints Actions
   setWayPoints: (waypoints) =>
     set(
       (state) => ({
@@ -12,5 +11,3 @@ const createWayPointsSlice = (set, get) => ({
       "waypoints/setWayPoints",
     ),
 });
-
-export default createWayPointsSlice;

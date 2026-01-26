@@ -11,8 +11,8 @@ import { useTheme } from "styled-components";
 import { getInterpolatedColor } from "../../helpers/colorInterpolation.js";
 
 function EnhancedProfile({ coordinateScales, profileMode }) {
-  const sections = useStore((state) => state.gps.sections);
-  const slopes = useStore((state) => state.gps.slopes);
+  const sections = useStore((state) => state.sections);
+  const slopes = useStore((state) => state.gpx.slopes);
   const showSlopeColors = useStore((state) => state.app.displaySlopes);
   const theme = useTheme();
 

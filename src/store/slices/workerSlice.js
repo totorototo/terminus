@@ -1,9 +1,5 @@
-// Non-serializable references outside store state
 let worker = null;
 const requests = new Map();
-
-// FIXME: improve cross-slice updates.
-// add custom actions to update app slice from worker slice
 
 // Helper to create worker
 function createGPSWorker() {
@@ -242,7 +238,7 @@ export const createWorkerSlice = (set, get) => {
           pointCount: results.trace.points.length ?? 0,
         });
 
-        get().setGpsData(results.trace.points);
+        get().setGpxData(results.trace.points);
         get().setSlopes(results.trace.slopes);
         get().setCumulativeDistances(results.trace.cumulativeDistances);
         get().setCumulativeElevations(results.trace.cumulativeElevations);
@@ -291,7 +287,7 @@ export const createWorkerSlice = (set, get) => {
           onProgress,
         );
 
-        get().setGpsData(results.points);
+        get().setGpxData(results.points);
         get().setSlopes(results.slopes);
         get().setCumulativeDistances(results.cumulativeDistances);
         get().setCumulativeElevations(results.cumulativeElevations);

@@ -56,13 +56,13 @@ const TrailData = memo(function TrailData({ className }) {
   const currentPositionIndex = useCurrentPosition();
   const stats = useStats();
   const cumulativeDistances = useStore(
-    (state) => state.gps.cumulativeDistances || [],
+    (state) => state.gpx.cumulativeDistances || [],
   );
   const cumulativeElevations = useStore(
-    (state) => state.gps.cumulativeElevations || [],
+    (state) => state.gpx.cumulativeElevations || [],
   );
   const cumulativeElevationLosses = useStore(
-    (state) => state.gps.cumulativeElevationLosses || [],
+    (state) => state.gpx.cumulativeElevationLosses || [],
   );
   const startingDate = useStore((state) => state.app.startingDate);
 
