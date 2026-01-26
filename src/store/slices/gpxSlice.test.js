@@ -17,7 +17,6 @@ describe("gpxSlice", () => {
 
       expect(state.gpx.data).toEqual([]);
       expect(state.gpx.slopes).toEqual([]);
-      expect(state.gpx.sections).toEqual([]);
       expect(state.gpx.cumulativeDistances).toEqual([]);
       expect(state.gpx.cumulativeElevations).toEqual([]);
       expect(state.gpx.cumulativeElevationLosses).toEqual([]);
@@ -65,39 +64,6 @@ describe("gpxSlice", () => {
       setSlopes([]);
 
       expect(store.getState().gpx.slopes).toEqual([]);
-    });
-  });
-
-  describe("setSections", () => {
-    it("should set sections", () => {
-      const { setSections } = store.getState();
-      const testSections = [
-        {
-          id: "section-1",
-          startKm: 0,
-          endKm: 5,
-          points: [[0, 0, 0]],
-        },
-        {
-          id: "section-2",
-          startKm: 5,
-          endKm: 10,
-          points: [[1, 1, 100]],
-        },
-      ];
-
-      setSections(testSections);
-
-      expect(store.getState().gpx.sections).toEqual(testSections);
-    });
-
-    it("should replace existing sections", () => {
-      const { setSections } = store.getState();
-
-      setSections([{ id: "old" }]);
-      setSections([{ id: "new" }]);
-
-      expect(store.getState().gpx.sections).toEqual([{ id: "new" }]);
     });
   });
 
@@ -152,15 +118,6 @@ describe("gpxSlice", () => {
 
       expect(store.getState().gpx.slopes).toEqual(testSlopes);
     });
-
-    it("should set and retrieve sections", () => {
-      const { setSections } = store.getState();
-      const testSections = [{ id: "test" }];
-
-      setSections(testSections);
-
-      expect(store.getState().gpx.sections).toEqual(testSections);
-    });
   });
 
   describe("integration", () => {
@@ -176,7 +133,7 @@ describe("gpxSlice", () => {
 
       setGpxData([[0, 0, 0]]);
       setSlopes([1.0]);
-      setSections([{ id: "s1" }]);
+
       setCumulativeDistances([0, 100]);
       setCumulativeElevations([0, 50]);
       setCumulativeElevationLosses([0, 10]);
@@ -184,7 +141,7 @@ describe("gpxSlice", () => {
       const state = store.getState().gpx;
       expect(state.data).toEqual([[0, 0, 0]]);
       expect(state.slopes).toEqual([1.0]);
-      expect(state.sections).toEqual([{ id: "s1" }]);
+
       expect(state.cumulativeDistances).toEqual([0, 100]);
       expect(state.cumulativeElevations).toEqual([0, 50]);
       expect(state.cumulativeElevationLosses).toEqual([0, 10]);
