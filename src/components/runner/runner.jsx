@@ -1,8 +1,5 @@
 import React, { useMemo, useEffect } from "react";
-import {
-  useCurrentClosestLocation,
-  useCurrentClosestLocationIndex,
-} from "../../store/store.js";
+import { useProjectedLocation } from "../../store/store.js";
 import { transformCoordinates } from "../../utils/coordinateTransforms.js";
 import { Box } from "@react-three/drei";
 import { a, useSpring } from "@react-spring/three";
@@ -10,21 +7,19 @@ import { a, useSpring } from "@react-spring/three";
 const AnimatedBox = a(Box);
 
 function Runner({ coordinateScales }) {
-  const currentClosestLocation = useCurrentClosestLocation();
-  const currentClosestLocationIndex = useCurrentClosestLocationIndex();
+  const projectedLocation = useProjectedLocation();
 
   const transformedLocation = useMemo(() => {
-    if (!currentClosestLocation) return null;
+    if (!projectedLocation) return null;
     if (!coordinateScales) return null;
-    if (currentClosestLocationIndex === 0) return null;
+    if (projectedLocation.index === 0) return null;
 
     return transformCoordinates(
-      [currentClosestLocation],
+      [projectedLocation.coords],
       coordinateScales,
-      currentClosestLocationIndex,
+      projectedLocation.index,
     )[0];
-  }, [currentClosestLocation, currentClosestLocationIndex, coordinateScales]);
-
+  }, [projectedLocation, coordinateScales]);
   const [springs, api] = useSpring(() => ({
     position: [0, 0, 0],
     config: { tension: 170, friction: 26 }, // tweak as you like

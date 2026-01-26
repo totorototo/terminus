@@ -6,7 +6,7 @@ import useStore, {
   useWorkerState,
   useTrackingMode,
   useDisplaySlopes,
-  useCurrentPosition,
+  useProjectedLocation,
   useCurrentClosestLocation,
   useGpxCoordinates,
   useProcessingState,
@@ -127,14 +127,9 @@ describe("store", () => {
       expect(typeof useDisplaySlopes).toBe("function");
     });
 
-    it("should export useCurrentPosition selector", () => {
-      expect(useCurrentPosition).toBeDefined();
-      expect(typeof useCurrentPosition).toBe("function");
-    });
-
-    it("should export useCurrentClosestLocation selector", () => {
-      expect(useCurrentClosestLocation).toBeDefined();
-      expect(typeof useCurrentClosestLocation).toBe("function");
+    it("should export useProjectedLocation selector", () => {
+      expect(useProjectedLocation).toBeDefined();
+      expect(typeof useProjectedLocation).toBe("function");
     });
 
     it("should export useGpxCoordinates selector", () => {
@@ -235,7 +230,6 @@ describe("store", () => {
       // App slice actions
       expect(state.toggleTrackingMode).toBeDefined();
       expect(state.toggleSlopesMode).toBeDefined();
-      expect(state.setCurrentPositionIndex).toBeDefined();
 
       // GPX slice actions
       expect(state.setGpxData).toBeDefined();
