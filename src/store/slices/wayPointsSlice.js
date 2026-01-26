@@ -3,10 +3,14 @@ const createWayPointsSlice = (set, get) => ({
 
   // WayPoints Actions
   setWayPoints: (waypoints) =>
-    set((state) => ({
-      ...state,
-      waypoints,
-    })),
+    set(
+      (state) => ({
+        ...state,
+        waypoints,
+      }),
+      undefined,
+      "waypoints/setWayPoints",
+    ),
 });
 
 export default createWayPointsSlice;

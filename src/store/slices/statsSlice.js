@@ -8,25 +8,33 @@ export const createStatsSlice = (set, get) => ({
 
   // Stats Actions
   setStats: (newStats) =>
-    set((state) => ({
-      ...state,
-      stats: {
-        ...state.stats,
-        ...newStats,
-      },
-    })),
+    set(
+      (state) => ({
+        ...state,
+        stats: {
+          ...state.stats,
+          ...newStats,
+        },
+      }),
+      undefined,
+      "stats/setStats",
+    ),
 
   updateStats: (partialStats) =>
-    set((state) => {
-      const updatedStats = { ...state.stats };
-      Object.entries(partialStats).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          updatedStats[key] = value;
-        }
-      });
-      return {
-        ...state,
-        stats: updatedStats,
-      };
-    }),
+    set(
+      (state) => {
+        const updatedStats = { ...state.stats };
+        Object.entries(partialStats).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            updatedStats[key] = value;
+          }
+        });
+        return {
+          ...state,
+          stats: updatedStats,
+        };
+      },
+      undefined,
+      "stats/updateStats",
+    ),
 });
