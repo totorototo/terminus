@@ -25,16 +25,20 @@ export const createWorkerSlice = (set, get) => {
       const id = Date.now() + Math.random();
       requests.set(id, { resolve, reject, onProgress });
 
-      set((state) => ({
-        ...state,
-        worker: {
-          ...state.worker,
-          processing: true,
-          progress: 0,
-          progressMessage: "Starting...",
-          errorMessage: "",
-        },
-      }));
+      set(
+        (state) => ({
+          ...state,
+          worker: {
+            ...state.worker,
+            processing: true,
+            progress: 0,
+            progressMessage: "Starting...",
+            errorMessage: "",
+          },
+        }),
+        undefined,
+        "worker/sendWorkerMessage",
+      );
 
       worker.postMessage({ type, data, id });
     });
@@ -51,22 +55,30 @@ export const createWorkerSlice = (set, get) => {
 
     // Worker Actions
     setWorkerState: (partialState) =>
-      set((state) => ({
-        ...state,
-        worker: {
-          ...state.worker,
-          ...partialState,
-        },
-      })),
+      set(
+        (state) => ({
+          ...state,
+          worker: {
+            ...state.worker,
+            ...partialState,
+          },
+        }),
+        undefined,
+        "worker/setWorkerState",
+      ),
 
     clearError: () =>
-      set((state) => ({
-        ...state,
-        worker: {
-          ...state.worker,
-          errorMessage: "",
-        },
-      })),
+      set(
+        (state) => ({
+          ...state,
+          worker: {
+            ...state.worker,
+            errorMessage: "",
+          },
+        }),
+        undefined,
+        "worker/clearError",
+      ),
 
     // Worker Lifecycle
     initGPSWorker: () => {
@@ -89,14 +101,18 @@ export const createWorkerSlice = (set, get) => {
 
           switch (type) {
             case "PROGRESS":
-              set((state) => ({
-                ...state,
-                worker: {
-                  ...state.worker,
-                  progress: progressValue,
-                  progressMessage: message,
-                },
-              }));
+              set(
+                (state) => ({
+                  ...state,
+                  worker: {
+                    ...state.worker,
+                    progress: progressValue,
+                    progressMessage: message,
+                  },
+                }),
+                undefined,
+                "worker/setWorkerProgress",
+              );
               request.onProgress?.(progressValue, message);
               break;
 
@@ -108,29 +124,37 @@ export const createWorkerSlice = (set, get) => {
             case "ROUTE_SECTION_READY":
             case "CLOSEST_POINT_FOUND":
               requests.delete(id);
-              set((state) => ({
-                ...state,
-                worker: {
-                  ...state.worker,
-                  processing: false,
-                  progress: 100,
-                  errorMessage: "",
-                },
-              }));
+              set(
+                (state) => ({
+                  ...state,
+                  worker: {
+                    ...state.worker,
+                    processing: false,
+                    progress: 100,
+                    errorMessage: "",
+                  },
+                }),
+                undefined,
+                "worker/setWorkerComplete",
+              );
               request.resolve(results ?? e.data);
               break;
 
             case "ERROR":
               requests.delete(id);
-              set((state) => ({
-                ...state,
-                worker: {
-                  ...state.worker,
-                  processing: false,
-                  progress: 0,
-                  errorMessage: error ?? "Unknown worker error",
-                },
-              }));
+              set(
+                (state) => ({
+                  ...state,
+                  worker: {
+                    ...state.worker,
+                    processing: false,
+                    progress: 0,
+                    errorMessage: error ?? "Unknown worker error",
+                  },
+                }),
+                undefined,
+                "worker/setWorkerError",
+              );
               request.reject(new Error(error));
               break;
           }
@@ -138,33 +162,45 @@ export const createWorkerSlice = (set, get) => {
 
         worker.onerror = (error) => {
           console.error("GPS Worker error:", error);
-          set((state) => ({
+          set(
+            (state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                isReady: false,
+                errorMessage: "Worker initialization failed",
+              },
+            }),
+            undefined,
+            "worker/setWorkerError",
+          );
+        };
+
+        set(
+          (state) => ({
             ...state,
             worker: {
               ...state.worker,
-              isReady: false,
-              errorMessage: "Worker initialization failed",
+              isReady: true,
+              errorMessage: "",
             },
-          }));
-        };
-
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            isReady: true,
-            errorMessage: "",
-          },
-        }));
+          }),
+          undefined,
+          "worker/setWorkerReady",
+        );
       } catch (error) {
         console.error("Failed to create GPS Worker:", error);
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            errorMessage: "Failed to initialize worker",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              errorMessage: "Failed to initialize worker",
+            },
+          }),
+          undefined,
+          "worker/setWorkerError",
+        );
       }
     },
 
@@ -174,16 +210,20 @@ export const createWorkerSlice = (set, get) => {
         worker = null;
       }
       requests.clear();
-      set((state) => ({
-        ...state,
-        worker: {
-          ...state.worker,
-          isReady: false,
-          processing: false,
-          progress: 0,
-          progressMessage: "",
-        },
-      }));
+      set(
+        (state) => ({
+          ...state,
+          worker: {
+            ...state.worker,
+            isReady: false,
+            processing: false,
+            progress: 0,
+            progressMessage: "",
+          },
+        }),
+        undefined,
+        "worker/setWorkerState",
+      );
     },
 
     // Worker API Actions
@@ -212,25 +252,33 @@ export const createWorkerSlice = (set, get) => {
         get().setSections(results.sections);
         get().setWayPoints(results.waypoints);
 
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            errorMessage: "",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              errorMessage: "",
+            },
+          }),
+          undefined,
+          "worker/setWorkerState",
+        );
 
         return results;
       } catch (error) {
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to process GPX File",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              processing: false,
+              progress: 0,
+              errorMessage: error.message || "Failed to process GPX File",
+            },
+          }),
+          undefined,
+          "worker/setWorkerError",
+        );
         throw error;
       }
     },
@@ -256,25 +304,33 @@ export const createWorkerSlice = (set, get) => {
           pointCount: results.pointCount ?? 0,
         });
 
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            errorMessage: "",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              errorMessage: "",
+            },
+          }),
+          undefined,
+          "worker/setWorkerState",
+        );
 
         return results;
       } catch (error) {
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to process GPS Data",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              processing: false,
+              progress: 0,
+              errorMessage: error.message || "Failed to process GPS Data",
+            },
+          }),
+          undefined,
+          "worker/setWorkerError",
+        );
         throw error;
       }
     },
@@ -295,25 +351,33 @@ export const createWorkerSlice = (set, get) => {
           pointCount: results?.pointCount ?? 0,
         });
 
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            errorMessage: "",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              errorMessage: "",
+            },
+          }),
+          undefined,
+          "worker/setWorkerState",
+        );
 
         return results;
       } catch (error) {
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to process Sections",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              processing: false,
+              progress: 0,
+              errorMessage: error.message || "Failed to process Sections",
+            },
+          }),
+          undefined,
+          "worker/setWorkerError",
+        );
         throw error;
       }
     },
@@ -332,25 +396,33 @@ export const createWorkerSlice = (set, get) => {
           pointCount: results.pointCount,
         });
 
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            errorMessage: "",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              errorMessage: "",
+            },
+          }),
+          undefined,
+          "worker/setWorkerState",
+        );
 
         return results;
       } catch (error) {
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to calculate Route Stats",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              processing: false,
+              progress: 0,
+              errorMessage: error.message || "Failed to calculate Route Stats",
+            },
+          }),
+          undefined,
+          "worker/setWorkerError",
+        );
         throw error;
       }
     },
@@ -362,25 +434,34 @@ export const createWorkerSlice = (set, get) => {
           distances,
         });
 
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            errorMessage: "",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              errorMessage: "",
+            },
+          }),
+          undefined,
+          "worker/setWorkerState",
+        );
 
         return results;
       } catch (error) {
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to find points at distances",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              processing: false,
+              progress: 0,
+              errorMessage:
+                error.message || "Failed to find points at distances",
+            },
+          }),
+          undefined,
+          "worker/setWorkerError",
+        );
         throw error;
       }
     },
@@ -393,25 +474,33 @@ export const createWorkerSlice = (set, get) => {
           end,
         });
 
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            errorMessage: "",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              errorMessage: "",
+            },
+          }),
+          undefined,
+          "worker/setWorkerState",
+        );
 
         return results;
       } catch (error) {
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to get route section",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              processing: false,
+              progress: 0,
+              errorMessage: error.message || "Failed to get route section",
+            },
+          }),
+          undefined,
+          "worker/setWorkerError",
+        );
         throw error;
       }
     },
@@ -423,15 +512,19 @@ export const createWorkerSlice = (set, get) => {
         const coordinates = get().gps.data;
 
         if (!point || !coordinates || coordinates.length === 0) {
-          set((state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 0,
-              errorMessage: "No location or GPS data available",
-            },
-          }));
+          set(
+            (state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                processing: false,
+                progress: 0,
+                errorMessage: "No location or GPS data available",
+              },
+            }),
+            undefined,
+            "worker/setWorkerState",
+          );
           return null;
         }
 
@@ -446,28 +539,36 @@ export const createWorkerSlice = (set, get) => {
 
           get().setClosestLocation(closestCoord, closestIndex);
 
-          set((state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 100,
-              errorMessage: "",
-            },
-          }));
+          set(
+            (state) => ({
+              ...state,
+              worker: {
+                ...state.worker,
+                processing: false,
+                progress: 100,
+                errorMessage: "",
+              },
+            }),
+            undefined,
+            "worker/setWorkerState",
+          );
         }
 
         return results;
       } catch (error) {
-        set((state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: false,
-            progress: 0,
-            errorMessage: error.message || "Failed to find closest point",
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              processing: false,
+              progress: 0,
+              errorMessage: error.message || "Failed to find closest point",
+            },
+          }),
+          undefined,
+          "worker/setWorkerError",
+        );
         throw error;
       }
     },

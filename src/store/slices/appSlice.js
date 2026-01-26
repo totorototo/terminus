@@ -34,13 +34,17 @@ export const createAppSlice = (set, get) => {
 
     // App Actions
     getCurrentLocation: async () => {
-      set((state) => ({
-        ...state,
-        app: {
-          ...state.app,
-          loading: true,
-        },
-      }));
+      set(
+        (state) => ({
+          ...state,
+          app: {
+            ...state.app,
+            loading: true,
+          },
+        }),
+        undefined,
+        "app/getCurrentLocation",
+      );
       try {
         const position = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject);
@@ -55,24 +59,32 @@ export const createAppSlice = (set, get) => {
         const buffer = ensureBuffer();
         buffer.push(location);
 
-        set((state) => ({
-          ...state,
-          app: {
-            ...state.app,
-            currentLocation: location,
-            loading: false,
-            locations: buffer.dump(),
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            app: {
+              ...state.app,
+              currentLocation: location,
+              loading: false,
+              locations: buffer.dump(),
+            },
+          }),
+          undefined,
+          "app/getCurrentLocation",
+        );
       } catch (error) {
-        set((state) => ({
-          ...state,
-          app: {
-            ...state.app,
-            error: error.message,
-            loading: false,
-          },
-        }));
+        set(
+          (state) => ({
+            ...state,
+            app: {
+              ...state.app,
+              error: error.message,
+              loading: false,
+            },
+          }),
+          undefined,
+          "app/getCurrentLocationError",
+        );
       }
     },
 
@@ -90,31 +102,42 @@ export const createAppSlice = (set, get) => {
     },
 
     toggleTrackingMode: () =>
-      set((state) => ({
-        ...state,
-        app: {
-          ...state.app,
-          trackingMode: !state.app.trackingMode,
-        },
-      })),
+      set(
+        (state) => ({
+          ...state,
+          app: {
+            ...state.app,
+            trackingMode: !state.app.trackingMode,
+          },
+        }),
+        undefined,
+        "app/toggleTrackingMode",
+      ),
 
     toggleProfileMode: () =>
-      set((state) => ({
-        ...state,
-        app: {
-          ...state.app,
-          profileMode: !state.app.profileMode,
-        },
-      })),
-
+      set(
+        (state) => ({
+          ...state,
+          app: {
+            ...state.app,
+            profileMode: !state.app.profileMode,
+          },
+        }),
+        undefined,
+        "app/toggleProfileMode",
+      ),
     toggleSlopesMode: () =>
-      set((state) => ({
-        ...state,
-        app: {
-          ...state.app,
-          displaySlopes: !state.app.displaySlopes,
-        },
-      })),
+      set(
+        (state) => ({
+          ...state,
+          app: {
+            ...state.app,
+            displaySlopes: !state.app.displaySlopes,
+          },
+        }),
+        undefined,
+        "app/toggleSlopesMode",
+      ),
 
     setCurrentPositionIndex: (value) =>
       set(
@@ -126,27 +149,35 @@ export const createAppSlice = (set, get) => {
           },
         }),
         undefined,
-        "setCurrentPositionIndex",
+        "app/setCurrentPositionIndex",
       ),
 
     setStartingDate: (date) => {
-      set((state) => ({
-        ...state,
-        app: {
-          ...state.app,
-          startingDate: date,
-        },
-      }));
+      set(
+        (state) => ({
+          ...state,
+          app: {
+            ...state.app,
+            startingDate: date,
+          },
+        }),
+        undefined,
+        "app/setStartingDate",
+      );
     },
 
     setClosestLocation: (location, index) =>
-      set((state) => ({
-        ...state,
-        app: {
-          ...state.app,
-          currentClosestLocation: location,
-          currentClosestLocationIndex: index,
-        },
-      })),
+      set(
+        (state) => ({
+          ...state,
+          app: {
+            ...state.app,
+            currentClosestLocation: location,
+            currentClosestLocationIndex: index,
+          },
+        }),
+        undefined,
+        "app/setClosestLocation",
+      ),
   };
 };
