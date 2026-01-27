@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
@@ -18,16 +18,11 @@ const customLocale = {
 };
 
 // Helper function to calculate ETA and remaining time
-const calculateTimeMetrics = (
-  currentPositionIndex,
-  cumulativeDistances,
-  startingDate,
-) => {
-  const distanceDone =
-    cumulativeDistances[currentPositionIndex?.index || 0] || 0;
+const calculateTimeMetrics = (location, cumulativeDistances, startingDate) => {
+  const distanceDone = cumulativeDistances[location?.index || 0] || 0;
   const totalDistance =
     cumulativeDistances[cumulativeDistances.length - 1] || 1;
-  const elapsedDuration = (currentPositionIndex?.date || 0) - startingDate;
+  const elapsedDuration = (location?.timestamp || 0) - startingDate;
 
   // Avoid division by zero
   const estimatedTotalDuration =
@@ -65,14 +60,17 @@ const TrailData = memo(function TrailData({ className }) {
     (state) => state.gpx.cumulativeElevationLosses || [],
   );
   const sections = useStore((state) => state.sections);
-  const startingDate = sections && sections.length > 0 && sections[0].startTime;
+  const startingDate =
+    sections && sections.length > 0 && sections[0].startTime * 1000;
+
+  // const [startingDate] = useState(Date.now());
 
   // Memoize expensive time calculations
   const timeMetrics = useMemo(() => {
     if (
       !cumulativeDistances?.length ||
       !startingDate ||
-      projectedLocation.timestamp / 1000 < startingDate
+      projectedLocation.timestamp < startingDate
     ) {
       return {
         etaDateStr: "--:--",
@@ -82,7 +80,7 @@ const TrailData = memo(function TrailData({ className }) {
       };
     }
     return calculateTimeMetrics(
-      projectedLocation.index,
+      projectedLocation,
       cumulativeDistances,
       startingDate,
     );
