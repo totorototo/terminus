@@ -7,7 +7,6 @@ export const createGpxSlice = (set, get) => ({
     cumulativeElevationLosses: [],
   },
 
-  // GPX Data Actions
   setGpxData: (data) =>
     set(
       (state) => ({

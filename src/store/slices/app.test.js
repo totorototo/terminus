@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { create } from "zustand";
-import { createAppSlice } from "./appSlice";
+import { createAppSlice } from "./app";
 
 describe("appSlice", () => {
   let store;
