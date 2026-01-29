@@ -1,14 +1,13 @@
 import { create } from "zustand";
 import { devtools, subscribeWithSelector, persist } from "zustand/middleware";
-import { createAppSlice } from "./slices/appSlice";
-import { createGpxSlice } from "./slices/gpxSlice";
-import { createStatsSlice } from "./slices/statsSlice";
-import { createWorkerSlice } from "./slices/workerSlice";
-import { createWayPointsSlice } from "./slices/wayPointsSlice";
-import { createSectionsSlice } from "./slices/sectionsSlice";
-import { createGPSSlice } from "./slices/gpsSlice";
+import { createAppSlice } from "./slices/app";
+import { createGpxSlice } from "./slices/gpx";
+import { createStatsSlice } from "./slices/stats";
+import { createWorkerSlice } from "./slices/worker";
+import { createWayPointsSlice } from "./slices/wayPoints";
+import { createSectionsSlice } from "./slices/sections";
+import { createGPSSlice } from "./slices/gps";
 
-// Create store by combining slices
 const useStore = create(
   devtools(
     persist(

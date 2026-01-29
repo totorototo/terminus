@@ -49,7 +49,6 @@ export const createWorkerSlice = (set, get) => {
       errorMessage: "",
     },
 
-    // Worker Actions
     setWorkerState: (partialState) =>
       set(
         (state) => ({
@@ -76,7 +75,6 @@ export const createWorkerSlice = (set, get) => {
         "worker/clearError",
       ),
 
-    // Worker Lifecycle
     initGPSWorker: () => {
       if (worker) return;
 
@@ -222,7 +220,6 @@ export const createWorkerSlice = (set, get) => {
       );
     },
 
-    // Worker API Actions
     processGPXFile: async (gpxBytes, onProgress) => {
       try {
         const results = await sendWorkerMessage(

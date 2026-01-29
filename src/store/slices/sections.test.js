@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { create } from "zustand";
-import { createSectionsSlice } from "./sectionsSlice";
+import { createSectionsSlice } from "./sections";
 
 describe("sectionsSlice", () => {
   let store;

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { create } from "zustand";
-import { createGpxSlice } from "./gpxSlice";
+import { createGpxSlice } from "./gpx";
 
 describe("gpxSlice", () => {
   let store;

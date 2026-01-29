@@ -6,7 +6,6 @@ export const createStatsSlice = (set, get) => ({
     pointCount: 0,
   },
 
-  // Stats Actions
   setStats: (newStats) =>
     set(
       (state) => ({
