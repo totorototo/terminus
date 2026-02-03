@@ -19,8 +19,6 @@ function Navigation({ className }) {
   const projectedLocation = useProjectedLocation();
   const currentPositionIndex = projectedLocation.index || 0;
 
-  console.log("Projected Index:", projectedLocation.index);
-
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances,
   );
