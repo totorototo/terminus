@@ -21,6 +21,11 @@ export function Model({ coordinateScales, ...props }) {
   );
   const { actions } = useAnimations(animations, group);
 
+  // Change material color to pink
+  if (materials.Material) {
+    materials.Material.color.set(0xfca3b7);
+  }
+
   const projectedLocation = useProjectedLocation();
 
   const transformedLocation = useMemo(() => {
@@ -64,9 +69,7 @@ export function Model({ coordinateScales, ...props }) {
   useFrame(({ clock }) => {
     if (!group.current) return;
 
-    // Random rotation on all axes based on time with sine/cosine
     const t = clock.getElapsedTime();
-    group.current.rotation.x = Math.sin(t * 0.5) * 0.3;
     group.current.rotation.y +=
       (0.01 + Math.sin(t * 0.7) * 0.008) * Math.cos(t * 0.3);
     group.current.rotation.z = Math.cos(t * 0.4) * 0.2;
