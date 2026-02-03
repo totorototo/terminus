@@ -39,7 +39,7 @@ function Scene({ width, height, className }) {
         angle={0.5}
         penumbra={1}
         decay={0}
-        intensity={1}
+        intensity={5}
         castShadow
       />
       <pointLight
