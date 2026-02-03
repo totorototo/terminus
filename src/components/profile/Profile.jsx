@@ -8,18 +8,25 @@ import { shaderMaterial } from "@react-three/drei";
 const SlopeMaterial = shaderMaterial(
   {
     opacity: 1.0,
+    progressColor: new Color(0xff0000),
+    progressIndex: -1.0,
+    startIndex: 0.0,
+    endIndex: 1.0,
   },
   // Vertex shader
   `
   precision highp float;
   
   attribute float slope;
+  attribute float vertexIndex;
   varying float vSlope;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
+  varying float vVertexIndex;
   
   void main() {
     vSlope = slope;
+    vVertexIndex = vertexIndex;
     
     // Calculate normals in view space
     vNormal = normalize(normalMatrix * normal);
@@ -36,9 +43,14 @@ const SlopeMaterial = shaderMaterial(
   precision highp float;
   
   uniform float opacity;
+  uniform vec3 progressColor;
+  uniform float progressIndex;
+  uniform float startIndex;
+  uniform float endIndex;
   varying float vSlope;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
+  varying float vVertexIndex;
   
   vec3 getSlopeColor(float grade) {
     // Use absolute value to treat negative and positive slopes the same
@@ -55,6 +67,23 @@ const SlopeMaterial = shaderMaterial(
   
   void main() {
     vec3 baseColor = getSlopeColor(vSlope);
+    
+    // Apply progress coloring if active
+    if (progressIndex >= 0.0) {
+      if (progressIndex < startIndex) {
+        // Before progress starts, keep as is
+        baseColor = baseColor;
+      } else if (progressIndex >= endIndex) {
+        // After progress completes, use progress color
+        baseColor = progressColor;
+      } else {
+        // During progress, convert global index to section-relative
+        float relativeProgress = progressIndex - startIndex;
+        if (vVertexIndex < relativeProgress) {
+          baseColor = progressColor;
+        }
+      }
+    }
     
     // Simple directional lighting (simulates sun from upper-right)
     vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
@@ -100,16 +129,23 @@ const GradientMaterial = shaderMaterial(
 const SolidColorMaterial = shaderMaterial(
   {
     baseColor: new Color(0x00ff00),
+    progressColor: new Color(0xff0000),
+    progressIndex: -1.0,
+    startIndex: 0.0,
+    endIndex: 1.0,
   },
   // Vertex shader
   `
   precision highp float;
   
+  attribute float vertexIndex;
   varying vec3 vNormal;
+  varying float vVertexIndex;
   
   void main() {
     // Calculate normals in view space
     vNormal = normalize(normalMatrix * normal);
+    vVertexIndex = vertexIndex;
     
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mvPosition;
@@ -120,20 +156,44 @@ const SolidColorMaterial = shaderMaterial(
   precision highp float;
   
   uniform vec3 baseColor;
+  uniform vec3 progressColor;
+  uniform float progressIndex;
+  uniform float startIndex;
+  uniform float endIndex;
   varying vec3 vNormal;
+  varying float vVertexIndex;
   
   void main() {
+    vec3 finalBaseColor = baseColor;
+    
+    // Apply progress coloring if active
+    if (progressIndex >= 0.0) {
+      if (progressIndex < startIndex) {
+        // Before progress starts, keep as is
+        finalBaseColor = baseColor;
+      } else if (progressIndex >= endIndex) {
+        // After progress completes, use progress color
+        finalBaseColor = progressColor;
+      } else {
+        // During progress, convert global index to section-relative
+        float relativeProgress = progressIndex - startIndex;
+        if (vVertexIndex < relativeProgress) {
+          finalBaseColor = progressColor;
+        }
+      }
+    }
+    
     // Simple directional lighting (simulates sun from upper-right)
     vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
     vec3 normal = normalize(vNormal);
     
     // Matte surface - high ambient, soft diffuse, no specular
     float ambientStrength = 0.6;
-    vec3 ambient = ambientStrength * baseColor;
+    vec3 ambient = ambientStrength * finalBaseColor;
     
     // Softer diffuse light for matte appearance
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * baseColor * 0.5;
+    vec3 diffuse = diff * finalBaseColor * 0.5;
     
     // Combine lighting (no specular = matte finish)
     vec3 finalColor = ambient + diffuse;
@@ -152,6 +212,10 @@ function Profile({
   slopes,
   showSlopeColors = false,
   duration = 750,
+  progressIndex,
+  progressColor,
+  startIndex,
+  endIndex,
 }) {
   const geometryRef = useRef();
 
@@ -173,6 +237,23 @@ function Profile({
     }
     return new Float32Array(slopeArray);
   }, [points, slopes]);
+
+  // Create vertex index attribute for progress tracking
+  const vertexIndexAttribute = useMemo(() => {
+    if (!points || points.length < 2) {
+      return new Float32Array(0);
+    }
+
+    const indexArray = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      // 6 vertices per segment (2 triangles)
+      // Each vertex gets the point index it corresponds to
+      for (let j = 0; j < 6; j++) {
+        indexArray.push(i);
+      }
+    }
+    return new Float32Array(indexArray);
+  }, [points]);
 
   const targetVertices = useMemo(() => createVertices(points), [points]);
 
@@ -228,6 +309,12 @@ function Profile({
       ? prevVerticesRef.current
       : targetVertices;
 
+  // Prepare progress parameters
+  const safeProgressIndex = progressIndex ?? -1;
+  const safeStartIndex = startIndex ?? 0;
+  const safeEndIndex = endIndex ?? 1;
+  const safeProgressColor = progressColor ?? color;
+
   return (
     <mesh
       castShadow
@@ -261,11 +348,21 @@ function Profile({
             itemSize={1}
           />
         )}
+        <bufferAttribute
+          attach="attributes-vertexIndex"
+          array={vertexIndexAttribute}
+          count={vertexIndexAttribute.length}
+          itemSize={1}
+        />
       </bufferGeometry>
       {showSlopeColors ? (
         <slopeMaterial
           side={DoubleSide}
           transparent={false}
+          progressColor={new Color(safeProgressColor)}
+          progressIndex={safeProgressIndex}
+          startIndex={safeStartIndex}
+          endIndex={safeEndIndex}
           depthWrite={true}
           depthTest={true}
         />
@@ -274,6 +371,10 @@ function Profile({
           side={DoubleSide}
           transparent={false}
           baseColor={new Color(color)}
+          progressColor={new Color(safeProgressColor)}
+          progressIndex={safeProgressIndex}
+          startIndex={safeStartIndex}
+          endIndex={safeEndIndex}
           depthWrite={true}
           depthTest={true}
         />

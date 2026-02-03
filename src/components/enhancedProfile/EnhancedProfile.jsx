@@ -15,6 +15,9 @@ function EnhancedProfile({ coordinateScales, profileMode }) {
   const slopes = useStore((state) => state.gpx.slopes);
   const showSlopeColors = useStore((state) => state.app.displaySlopes);
   const theme = useTheme();
+  const { index: progressIndex } = useStore(
+    (state) => state.gps.projectedLocation,
+  );
 
   // Theme colors for interpolation
   const themeColors = useMemo(
@@ -44,6 +47,7 @@ function EnhancedProfile({ coordinateScales, profileMode }) {
   // the underlying section data or relevant props change.
   const sectionElements = useMemo(() => {
     if (!sectionsPoints3D || sectionsPoints3D.length === 0) return null;
+
     return sectionsPoints3D.map(({ points, id }, idx) => (
       <Profile
         key={id}
@@ -52,9 +56,20 @@ function EnhancedProfile({ coordinateScales, profileMode }) {
         showSlopeColors={showSlopeColors}
         slopes={slopes}
         profileMode={profileMode}
+        progressIndex={progressIndex}
+        progressColor={theme.colors.dark["--color-progress"]}
+        startIndex={sections[idx].startIndex}
+        endIndex={sections[idx].endIndex}
       />
     ));
-  }, [sectionsPoints3D, showSlopeColors, slopes, profileMode, themeColors]);
+  }, [
+    sectionsPoints3D,
+    showSlopeColors,
+    slopes,
+    profileMode,
+    themeColors,
+    progressIndex,
+  ]);
 
   // Markers are independent of each section — render them once, memoized.
   const markerElements = useMemo(() => {
