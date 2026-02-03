@@ -7,6 +7,7 @@ import useStore from "../../store/store.js";
 import CameraController from "../cameraController/CameraController.jsx";
 import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 import Runner from "../runner/runner.jsx";
+import { Model } from "../helicopter.jsx";
 
 function Scene({ width, height, className }) {
   const profileMode = useStore((state) => state.app.profileMode);
@@ -62,7 +63,9 @@ function Scene({ width, height, className }) {
         coordinateScales={coordinateScales}
       />
 
-      <Runner coordinateScales={coordinateScales} />
+      {/* <Runner coordinateScales={coordinateScales} /> */}
+
+      <Model scale={0.01} coordinateScales={coordinateScales} />
 
       <CameraController modelRef={modelRef} />
     </Canvas>
