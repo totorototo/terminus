@@ -49,6 +49,7 @@ const calculateTimeMetrics = (location, cumulativeDistances, startingDate) => {
 const TrailData = memo(function TrailData({ className }) {
   // Use optimized selectors for better performance
   const projectedLocation = useProjectedLocation();
+  const flush = useStore((state) => state.flush);
   const stats = useStats();
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
@@ -141,20 +142,16 @@ const TrailData = memo(function TrailData({ className }) {
           <div className="value">{timeMetrics.remainingStr}</div>
           <div className="label">remaining</div>
         </div>
-        {/* <div className="item">
-          <animated.div className="value">
-            {remainingElevation.to((n) => `${n.toFixed(0)}`)}
-          </animated.div>
-          <div className="label">↗ m</div>
-        </div>
-        <div className="item">
-          <animated.div className="value">
-            {remainingElevationLoss.to((n) => `${n.toFixed(0)}`)}
-          </animated.div>
-          <div className="label">↘ m </div>
-        </div> */}
       </div>
 
+      <button
+        onClick={() => {
+          console.log("Button clicked, calling flush");
+          flush();
+        }}
+      >
+        Flush Data
+      </button>
       <div className="build-number">
         <span>Build Number: {import.meta.env.VITE_NUMBER || "dev"}</span>
       </div>

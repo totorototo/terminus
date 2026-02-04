@@ -3,7 +3,7 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   z-index: 10;
   display: flex;
-  padding-top: 2rem;
+  // padding-top: 2rem;
   padding-left: 1rem;
   padding-right: 1rem;
   flex-direction: row;
@@ -12,7 +12,7 @@ const style = (Component) => styled(Component)`
   flex-direction: column;
   width: 100%;
   height: 20rem;
-  pointer-events: none;
+  pointer-events: auto;
 
   color: ${(props) => props.theme.colors.dark["--color-text"]};
   line-height: 1.2;
