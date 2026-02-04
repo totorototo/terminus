@@ -12,6 +12,7 @@ export const createGPSSlice = (set, get) => {
     }
     return locationBuffer;
   };
+
   return {
     gps: {
       location: {
@@ -30,6 +31,24 @@ export const createGPSSlice = (set, get) => {
     initLocationBuffer: () => {
       const locations = get().gps.savedLocations || [];
       locationBuffer = createRingBuffer(10, locations);
+    },
+
+    flush: () => {
+      const buffer = ensureBuffer();
+      buffer.flush();
+      set(
+        (state) => ({
+          ...state,
+          gps: {
+            ...state.gps,
+            savedLocations: [],
+            location: { timestamp: 0, coords: [] },
+            projectedLocation: { timestamp: 0, coords: [], index: null },
+          },
+        }),
+        undefined,
+        "gps/flush",
+      );
     },
 
     setLocation: (location) =>
