@@ -146,14 +146,7 @@ const TrailData = memo(function TrailData({ className }) {
 
       <div className={"command-container"}>
         <div className="command-content">
-          <button
-            onClick={() => {
-              console.log("Button clicked, calling flush");
-              flush();
-            }}
-          >
-            Flush Data
-          </button>
+          <button onClick={flush}>Flush Data</button>
         </div>
       </div>
       <div className="build-number">
