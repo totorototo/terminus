@@ -3,7 +3,7 @@ const requests = new Map();
 
 // Helper to create worker
 function createGPSWorker() {
-  return new Worker(new URL("../../gpsWorker.js", import.meta.url), {
+  return new Worker(new URL("../../gpxWorker.js", import.meta.url), {
     type: "module",
   });
 }
@@ -75,7 +75,7 @@ export const createWorkerSlice = (set, get) => {
         "worker/clearError",
       ),
 
-    initGPSWorker: () => {
+    initGPXWorker: () => {
       if (worker) return;
 
       try {
@@ -198,7 +198,7 @@ export const createWorkerSlice = (set, get) => {
       }
     },
 
-    terminateGPSWorker: () => {
+    terminateGPXWorker: () => {
       if (worker) {
         worker.terminate();
         worker = null;

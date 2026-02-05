@@ -11,11 +11,11 @@ import Commands from "./components/commands/Commands.jsx";
 import { useShallow } from "zustand/react/shallow";
 
 function App({ className }) {
-  const { initGPSWorker, terminateGPSWorker, isWorkerReady, processGPXFile } =
+  const { initGPXWorker, terminateGPXWorker, isWorkerReady, processGPXFile } =
     useStore(
       useShallow((state) => ({
-        initGPSWorker: state.initGPSWorker,
-        terminateGPSWorker: state.terminateGPSWorker,
+        initGPXWorker: state.initGPXWorker,
+        terminateGPXWorker: state.terminateGPXWorker,
         isWorkerReady: state.worker.isReady,
         processGPSData: state.processGPSData,
         processSections: state.processSections,
@@ -24,9 +24,9 @@ function App({ className }) {
     );
 
   useEffect(() => {
-    initGPSWorker();
+    initGPXWorker();
 
-    return () => terminateGPSWorker();
+    return () => terminateGPXWorker();
   }, []);
 
   useEffect(() => {
@@ -42,18 +42,20 @@ function App({ className }) {
   }, [isWorkerReady, processGPXFile]);
 
   return (
-    <div className={className}>
-      <AutoSizer>
-        {({ width, height }) => <Scene width={width} height={height} />}
-      </AutoSizer>
-      <TopSheetPanel>
-        <Navigation />
-      </TopSheetPanel>
-      <BottomSheetPanel>
-        <TrailData />
-      </BottomSheetPanel>
-      <Commands />
-    </div>
+    isWorkerReady && (
+      <div className={className}>
+        <AutoSizer>
+          {({ width, height }) => <Scene width={width} height={height} />}
+        </AutoSizer>
+        <TopSheetPanel>
+          <Navigation />
+        </TopSheetPanel>
+        <BottomSheetPanel>
+          <TrailData />
+        </BottomSheetPanel>
+        <Commands />
+      </div>
+    )
   );
 }
 

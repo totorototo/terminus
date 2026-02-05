@@ -241,9 +241,9 @@ describe("store", () => {
       expect(state.updateStats).toBeDefined();
 
       // Worker slice actions
-      expect(state.initGPSWorker).toBeDefined();
+      expect(state.initGPXWorker).toBeDefined();
       expect(state.setWorkerState).toBeDefined();
-      expect(state.terminateGPSWorker).toBeDefined();
+      expect(state.terminateGPXWorker).toBeDefined();
     });
   });
 
