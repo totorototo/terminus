@@ -61,6 +61,7 @@ function BottomSheetPanel({ children, className }) {
   return (
     <a.div
       className={className}
+      {...bind()}
       style={{
         bottom: `calc(-100vh + ${height}px)`,
         width: "96vw",
@@ -71,8 +72,7 @@ function BottomSheetPanel({ children, className }) {
         transform: "translateX(-50%)",
       }}
     >
-      <div className="drag-handle" {...bind()} />
-      <div className="content">{children}</div>
+      {children}
     </a.div>
   );
 }

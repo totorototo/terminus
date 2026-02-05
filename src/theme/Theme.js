@@ -17,6 +17,7 @@ const THEME = {
       "--color-progress": "#8b8e8c",
     },
   },
+
   font: {
     family: {
       "--font-family-sansSerif":
@@ -37,6 +38,7 @@ const THEME = {
       "--font-size-xxlarge": "48px",
     },
   },
+  spacing: [0, 2, 4, 8, 16, 32, 64, 128, 256],
   breakpoints: ["40em", "52em", "64em"],
 };
 
