@@ -107,7 +107,15 @@ async function processGPXFile(gpxFileBytes, requestId) {
     });
   }
 
+  const metadata = {
+    name: gpxData.metadata.name ? gpxData.metadata.name.string : null,
+    description: gpxData.metadata.description
+      ? gpxData.metadata.description.string
+      : null,
+  };
+
   const results = {
+    metadata,
     trace: gpxData.trace.valueOf(),
     waypoints: sanitizedWaypoints,
     sections: sanitizedSections,

@@ -235,6 +235,8 @@ export const createWorkerSlice = (set, get) => {
           pointCount: results.trace.points.length ?? 0,
         });
 
+        get().setMetadata(results.metadata);
+
         get().setGpxData(results.trace.points);
         get().setSlopes(results.trace.slopes);
         get().setCumulativeDistances(results.trace.cumulativeDistances);
