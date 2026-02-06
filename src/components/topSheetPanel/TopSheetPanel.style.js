@@ -11,7 +11,7 @@ const style = (Component) => styled(Component)`
   user-select: none;
   touch-action: none;
   position: absolute;
-  top: 20px;
+  top: 0.8rem;
   left: 50%;
   width: 96vw;
   max-width: 600px;
