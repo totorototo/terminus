@@ -2,6 +2,16 @@ const std = @import("std");
 const SectionStats = @import("section.zig").SectionStats;
 const Trace = @import("trace.zig").Trace;
 
+pub const Metadata = struct {
+    name: ?[]const u8,
+    description: ?[]const u8,
+
+    pub fn deinit(self: *Metadata, allocator: std.mem.Allocator) void {
+        if (self.name) |name| allocator.free(name);
+        if (self.description) |desc| allocator.free(desc);
+    }
+};
+
 pub const Waypoint = struct {
     lat: f64,
     lon: f64,
@@ -17,8 +27,10 @@ pub const GPXData = struct {
     trace: Trace,
     waypoints: []Waypoint,
     sections: ?[]const SectionStats, // Optional: available when waypoints exist
+    metadata: Metadata,
 
     pub fn deinit(self: *GPXData, allocator: std.mem.Allocator) void {
+        self.metadata.deinit(allocator);
         self.trace.deinit(allocator);
         for (self.waypoints) |*wpt| {
             wpt.deinit(allocator);

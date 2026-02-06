@@ -6,14 +6,17 @@ import TrailFollower from "../trailFollower/TrailFollower";
 import useStore from "../../store/store.js";
 import CameraController from "../cameraController/CameraController.jsx";
 import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
-import Runner from "../runner/runner.jsx";
 import { Model } from "../helicopter.jsx";
+import Marker from "../marker/Marker.jsx";
+import { useTheme } from "styled-components";
 
 function Scene({ width, height, className }) {
   const profileMode = useStore((state) => state.app.profileMode);
   const coordinates = useStore((state) => state.gpx.data);
+  const { name } = useStore((state) => state.gpx.metadata);
 
   const modelRef = useRef();
+  const theme = useTheme();
 
   // Compute coordinate scales once and pass to children to avoid duplicate computations
   const coordinateScales = useMemo(() => {
@@ -48,6 +51,16 @@ function Scene({ width, height, className }) {
         intensity={0.5}
         castShadow
       />
+
+      {name && (
+        <Marker
+          position={[0, 1.5, 0]}
+          fontSize={0.15}
+          color={theme.colors.dark["--color-text"]}
+        >
+          {name}
+        </Marker>
+      )}
 
       <EnhancedProfile
         coordinateScales={coordinateScales}

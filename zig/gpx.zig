@@ -3,6 +3,7 @@ const testing = std.testing;
 const Trace = @import("trace.zig").Trace;
 const Waypoint = @import("gpxdata.zig").Waypoint;
 const GPXData = @import("gpxdata.zig").GPXData;
+const Metadata = @import("gpxdata.zig").Metadata;
 const SectionStats = @import("section.zig").SectionStats;
 const parseIso8601ToEpoch = @import("time.zig").parseIso8601ToEpoch;
 
@@ -412,7 +413,66 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
     return try waypoints.toOwnedSlice(allocator);
 }
 
+pub fn readMetadata(allocator: std.mem.Allocator, bytes: []const u8) !Metadata {
+    var metadata = Metadata{
+        .name = null,
+        .description = null,
+    };
+    errdefer metadata.deinit(allocator);
+
+    // Find the <metadata> section (optional in GPX)
+    if (std.mem.indexOf(u8, bytes, "<metadata>")) |metadata_start| {
+        const metadata_end = std.mem.indexOfPos(u8, bytes, metadata_start, "</metadata>") orelse return metadata;
+        const metadata_content = bytes[metadata_start..metadata_end];
+
+        // Parse name
+        if (std.mem.indexOf(u8, metadata_content, "<name>")) |name_pos| {
+            const value_start = metadata_start + name_pos + 6;
+            if (std.mem.indexOfPos(u8, bytes, value_start, "</name>")) |value_end| {
+                if (value_end <= metadata_end) {
+                    const name_str = bytes[value_start..value_end];
+                    metadata.name = try allocator.dupe(u8, name_str);
+                }
+            }
+        }
+
+        // Parse description
+        if (std.mem.indexOf(u8, metadata_content, "<desc>")) |desc_pos| {
+            const value_start = metadata_start + desc_pos + 6;
+            if (std.mem.indexOfPos(u8, bytes, value_start, "</desc>")) |value_end| {
+                if (value_end <= metadata_end) {
+                    const desc_str = bytes[value_start..value_end];
+                    metadata.description = try allocator.dupe(u8, desc_str);
+                }
+            }
+        }
+    } else {
+        // If no metadata section, try to find name and description at root level
+        // Some GPX files have <name> directly under <gpx>
+        if (std.mem.indexOf(u8, bytes, "<name>")) |name_pos| {
+            const value_start = name_pos + 6;
+            if (std.mem.indexOfPos(u8, bytes, value_start, "</name>")) |value_end| {
+                const name_str = bytes[value_start..value_end];
+                metadata.name = try allocator.dupe(u8, name_str);
+            }
+        }
+
+        if (std.mem.indexOf(u8, bytes, "<desc>")) |desc_pos| {
+            const value_start = desc_pos + 6;
+            if (std.mem.indexOfPos(u8, bytes, value_start, "</desc>")) |value_end| {
+                const desc_str = bytes[value_start..value_end];
+                metadata.description = try allocator.dupe(u8, desc_str);
+            }
+        }
+    }
+
+    return metadata;
+}
+
 pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData {
+    var metadata = try readMetadata(allocator, bytes);
+    errdefer metadata.deinit(allocator);
+
     const trace_points = try readTracePoints(allocator, bytes);
 
     const waypoints = try readWaypoints(allocator, bytes);
@@ -445,6 +505,7 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData
         .trace = trace,
         .waypoints = waypoints,
         .sections = sections,
+        .metadata = metadata,
     };
 }
 
@@ -477,6 +538,65 @@ test "readGPXComplete creates valid trace" {
     try testing.expectEqual(37.123556, gpx_data.trace.points[1][0]);
     try testing.expectEqual(-122.123556, gpx_data.trace.points[1][1]);
     try testing.expectEqual(150.0, gpx_data.trace.points[1][2]);
+}
+
+test "readMetadata extracts name and description" {
+    const allocator = testing.allocator;
+
+    const gpx_with_metadata =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1" creator="Test">
+        \\ <metadata>
+        \\  <name>My Trail Run</name>
+        \\  <desc>A beautiful mountain trail with amazing views</desc>
+        \\ </metadata>
+        \\ <trk><trkseg></trkseg></trk>
+        \\</gpx>
+    ;
+
+    var metadata = try readMetadata(allocator, gpx_with_metadata);
+    defer metadata.deinit(allocator);
+
+    try testing.expect(metadata.name != null);
+    try testing.expectEqualStrings("My Trail Run", metadata.name.?);
+
+    try testing.expect(metadata.description != null);
+    try testing.expectEqualStrings("A beautiful mountain trail with amazing views", metadata.description.?);
+}
+
+test "readMetadata handles missing metadata" {
+    const allocator = testing.allocator;
+
+    const gpx_no_metadata =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1" creator="Test">
+        \\ <trk><trkseg></trkseg></trk>
+        \\</gpx>
+    ;
+
+    var metadata = try readMetadata(allocator, gpx_no_metadata);
+    defer metadata.deinit(allocator);
+
+    try testing.expect(metadata.name == null);
+    try testing.expect(metadata.description == null);
+}
+
+test "readMetadata handles root level name" {
+    const allocator = testing.allocator;
+
+    const gpx_root_name =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1" creator="Test">
+        \\ <name>Root Level Name</name>
+        \\ <trk><trkseg></trkseg></trk>
+        \\</gpx>
+    ;
+
+    var metadata = try readMetadata(allocator, gpx_root_name);
+    defer metadata.deinit(allocator);
+
+    try testing.expect(metadata.name != null);
+    try testing.expectEqualStrings("Root Level Name", metadata.name.?);
 }
 
 test "readTracePoints extracts track points" {
