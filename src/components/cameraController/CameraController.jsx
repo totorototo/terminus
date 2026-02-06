@@ -13,6 +13,7 @@ export default function CameraController({
 }) {
   const cameraControlsRef = useRef();
   const trackingMode = useStore((state) => state.app.trackingMode);
+  const profileMode = useStore((state) => state.app.profileMode);
 
   // Temp vectors to avoid per-frame allocations
   const tmpModelPosition = useRef(new Vector3());
@@ -23,18 +24,18 @@ export default function CameraController({
   useEffect(() => {
     if (cameraControlsRef.current) {
       // Only reset camera position when switching OFF tracking mode
-      if (!trackingMode) {
+      if (profileMode || !trackingMode) {
         cameraControlsRef.current.setPosition(15, 0, 0, true);
         cameraControlsRef.current.setTarget(0, 0, 0, true);
       }
       // When switching ON tracking mode, let useFrame handle the smooth transition
     }
-  }, [trackingMode]);
+  }, [trackingMode, profileMode]);
 
   useFrame((state, delta) => {
     if (!cameraControlsRef.current || !enabled) return;
 
-    if (trackingMode && modelRef?.current) {
+    if (trackingMode && !profileMode && modelRef?.current) {
       // Get model's world position and direction
       modelRef.current.getWorldPosition(tmpModelPosition.current);
       modelRef.current.getWorldDirection(tmpModelDirection.current);
@@ -95,9 +96,9 @@ export default function CameraController({
       ref={cameraControlsRef}
       enabled={!trackingMode} // Disable user controls when tracking
       makeDefault
-      minPolarAngle={-Math.PI / 4}
-      maxPolarAngle={Math.PI / 2}
-      minAzimuthAngle={-Math.PI / 2}
+      minPolarAngle={profileMode ? Math.PI / 2 : -Math.PI / 4}
+      maxPolarAngle={profileMode ? Math.PI / 2 : Math.PI / 2}
+      minAzimuthAngle={profileMode ? Math.PI / 2 : -Math.PI / 2}
       maxAzimuthAngle={Math.PI / 2}
       smoothTime={0.25}
       draggingSmoothTime={0.125}
