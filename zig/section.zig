@@ -19,4 +19,5 @@ pub const SectionStats = struct {
     maxElevation: f64,
     startTime: ?i64, // Unix epoch time in seconds
     endTime: ?i64, // Unix epoch time in seconds
+    bearing: f64, // degrees from north
 };
