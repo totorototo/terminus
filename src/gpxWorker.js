@@ -87,6 +87,7 @@ async function processGPXFile(gpxFileBytes, requestId) {
         ...sectionData,
         startLocation: section.startLocation.string,
         endLocation: section.endLocation.string,
+        bearing: sectionData.bearing,
         startTime:
           sectionData.startTime !== null ? Number(sectionData.startTime) : null,
         endTime:

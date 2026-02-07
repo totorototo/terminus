@@ -11,6 +11,7 @@ const distance3D = @import("gpspoint.zig").distance3D;
 const elevationDeltaSigned = @import("gpspoint.zig").elevationDeltaSigned;
 const findPeaks = @import("peaks.zig").findPeaks;
 const douglasPeuckerSimplify = @import("simplify.zig").douglasPeuckerSimplify;
+const bearingTo = @import("gpspoint.zig").bearingTo;
 
 // Structure to return both the closest point and its index
 pub const ClosestPointResult = struct {
@@ -268,6 +269,8 @@ pub const Trace = struct {
             const start_result = self.findClosestPoint(start_coord) orelse continue;
             const end_result = self.findClosestPoint(end_coord) orelse continue;
 
+            const bearing = bearingTo(start_coord, end_coord);
+
             const start_index = start_result.index;
             const end_index = end_result.index;
 
@@ -316,6 +319,7 @@ pub const Trace = struct {
                 .maxElevation = max_elevation,
                 .startTime = start_wpt.time,
                 .endTime = end_wpt.time,
+                .bearing = bearing,
             };
         }
 
