@@ -13,6 +13,43 @@ pub const AMPDConfig = struct {
     }
 };
 
+// Cluster consecutive peaks and return highest point in each cluster
+fn clusterPeaks(allocator: std.mem.Allocator, peaks_raw: []const usize, signal: []const f32) ![]usize {
+    if (peaks_raw.len == 0) return &.{};
+
+    var clustered = std.ArrayList(usize){};
+    defer clustered.deinit(allocator);
+
+    var cluster_start = peaks_raw[0];
+    var max_idx = peaks_raw[0];
+    var max_ele = signal[peaks_raw[0]];
+
+    for (1..peaks_raw.len) |i| {
+        const current_idx = peaks_raw[i];
+        const prev_idx = peaks_raw[i - 1];
+
+        // If consecutive (gap <= 1), continue cluster
+        if (current_idx - prev_idx <= 3) {
+            const current_ele = signal[current_idx];
+            if (current_ele > max_ele) {
+                max_ele = current_ele;
+                max_idx = current_idx;
+            }
+        } else {
+            // Gap found, save the cluster's peak
+            try clustered.append(allocator, max_idx);
+            // Start new cluster
+            cluster_start = current_idx;
+            max_idx = current_idx;
+            max_ele = signal[current_idx];
+        }
+    }
+    // Don't forget the last cluster
+    try clustered.append(allocator, max_idx);
+
+    return try clustered.toOwnedSlice(allocator);
+}
+
 // Minimal AMPD core for peaks only
 fn ampd_core(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize, threshold: usize) ![]usize {
     if (signal.len == 0 or scale_max == 0) return &.{};
@@ -54,16 +91,16 @@ fn ampd_core(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize
 }
 
 pub fn ampd(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize, threshold: usize) ![]usize {
-    return ampd_core(allocator, signal, scale_max, threshold);
+    const raw_peaks = try ampd_core(allocator, signal, scale_max, threshold);
+    defer allocator.free(raw_peaks);
+    return clusterPeaks(allocator, raw_peaks, signal);
 }
 
 /// Convenience function using default configuration
 pub fn findPeaks(allocator: std.mem.Allocator, signal: []const f32) ![]usize {
     const config = AMPDConfig{};
     try config.validate(signal.len);
-    const peaks = try ampd(allocator, signal, config.scale_max, config.threshold_peaks);
-    defer allocator.free(peaks);
-    return try allocator.dupe(usize, peaks);
+    return ampd(allocator, signal, config.scale_max, config.threshold_peaks);
 }
 
 test "ampd: flat signal" {

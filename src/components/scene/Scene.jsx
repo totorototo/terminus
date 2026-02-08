@@ -9,6 +9,7 @@ import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 import { Model } from "../helicopter.jsx";
 import Marker from "../marker/Marker.jsx";
 import { useTheme } from "styled-components";
+import Peaks from "../peaks/Peaks.jsx";
 
 function Scene({ width, height, className }) {
   const profileMode = useStore((state) => state.app.profileMode);
@@ -61,6 +62,8 @@ function Scene({ width, height, className }) {
           {name}
         </Marker>
       )}
+
+      <Peaks coordinateScales={coordinateScales} profileMode={profileMode} />
 
       <EnhancedProfile
         coordinateScales={coordinateScales}

@@ -120,6 +120,7 @@ async function processGPXFile(gpxFileBytes, requestId) {
     trace: gpxData.trace.valueOf(),
     waypoints: sanitizedWaypoints,
     sections: sanitizedSections,
+    peaks: gpxData.peaks ? gpxData.peaks.map((p) => Number(p)) : [],
   };
 
   self.postMessage({
