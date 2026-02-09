@@ -36,8 +36,8 @@ function Peaks({ coordinateScales, profileMode }) {
         anchorY="middle"
         outlineWidth={0.001}
         outlineColor={theme.colors.dark["--color-background"]}
-        fadeDistance={3}
-        fadeStrength={2}
+        fadeDistance={5}
+        fadeStrength={1}
         fadeFrom={1} // fade relative to camera
       >
         {Math.round(data[peaks[idx]][2])}
