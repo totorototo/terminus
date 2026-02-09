@@ -79,8 +79,6 @@ function Scene({ width, height, className }) {
         coordinateScales={coordinateScales}
       />
 
-      {/* <Runner coordinateScales={coordinateScales} /> */}
-
       <Model scale={0.01} coordinateScales={coordinateScales} />
 
       <CameraController modelRef={modelRef} />
