@@ -82,15 +82,15 @@ const style = (Component) => styled(Component)`
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   .value {
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
-    // font-weight: ${(props) =>
-      props.theme.font.weights["--font-weight-bold"]};
-    min-width: 4rem;
+  }
+
+  .label {
   }
 `;
 

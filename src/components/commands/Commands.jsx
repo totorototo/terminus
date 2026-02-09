@@ -1,7 +1,7 @@
 import { MapPin } from "@styled-icons/feather/MapPin";
 import { Film } from "@styled-icons/feather/Film";
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
-import { TrendingUp } from "@styled-icons/feather/TrendingUp";
+import { Map } from "@styled-icons/feather/Map";
 // import { Upload } from "@styled-icons/feather/upload";
 import useStore from "../../store/store";
 import style from "./Commands.style";
@@ -56,12 +56,12 @@ function Commands({ className }) {
         <BarChart2 size={24} />
       </button>
       <button
-        className={profileMode ? "on" : "off"}
+        className={!profileMode ? "on" : "off"}
         onClick={toggleProfileMode}
         aria-label="Toggle 2D profile view"
         aria-pressed={profileMode}
       >
-        <TrendingUp size={24} />
+        <Map size={24} />
       </button>
       <button
         className={trackingMode ? "on" : "off"}
