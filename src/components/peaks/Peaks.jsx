@@ -3,6 +3,7 @@ import { transformCoordinate } from "../../utils/coordinateTransforms";
 import useStore from "../../store/store.js";
 import { Billboard, Text } from "@react-three/drei";
 import { useTheme } from "styled-components";
+import FadingText from "./FadingText.jsx";
 
 function Peaks({ coordinateScales, profileMode }) {
   const data = useStore((state) => state.gpx.data);
@@ -27,15 +28,20 @@ function Peaks({ coordinateScales, profileMode }) {
 
   return peakPoints3D?.map((point, idx) => (
     <Billboard key={idx} position={point}>
-      <Text
+      <FadingText
         position={[0, 0.03, 0]}
         fontSize={0.02}
-        color={theme.colors.dark["--color-progress"]}
+        color={theme.colors.dark["--color-text"]}
         anchorX="center"
         anchorY="middle"
+        outlineWidth={0.001}
+        outlineColor={theme.colors.dark["--color-background"]}
+        fadeDistance={3}
+        fadeStrength={2}
+        fadeFrom={1} // fade relative to camera
       >
         {Math.round(data[peaks[idx]][2])}
-      </Text>
+      </FadingText>
     </Billboard>
   ));
 }
