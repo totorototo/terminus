@@ -1,18 +1,19 @@
 # Terminus
 
 <p align="left">
- 
-  <a href="src/"><img src="https://img.shields.io/badge/Frontend-React%20%2B%20Three.js-purple" alt="Frontend React"></a>
-   <a href="zig/"><img src="https://img.shields.io/badge/Backend-Zig%200.15.2-blue" alt="Zig Backend"></a>
-  <a href=".github/copilot-instructions.md"><img src="https://img.shields.io/badge/Copilot%20Optimized-Enabled-success" alt="Copilot Optimized"></a>
+
+<a href="src/"><img src="https://img.shields.io/badge/Frontend-React%20%2B%20Three.js-purple" alt="Frontend React"></a>
+<a href="zig/"><img src="https://img.shields.io/badge/Backend-Zig%200.15.2-blue" alt="Zig Backend"></a>
+<a href="CLAUDE.md"><img src="https://img.shields.io/badge/Claude%20Code-Optimized-orange" alt="Claude Code Optimized"></a>
+
 </p>
 
 High-performance GPS route analysis and 3D visualization tool. Process large GPX files with interactive elevation profiles, real-time section analytics.
 
 ## Architecture
 
-**Web App**: React + Vite frontend with React Three Fiber for 3D visualization  
-**Web Workers**: Background GPS processing to maintain responsive UI  
+**Web App**: React + Vite frontend with React Three Fiber for 3D visualization
+**Web Workers**: Background GPS processing to maintain responsive UI
 **Zig WASM**: High-performance route calculations with optimized algorithms
 
 ## Features
@@ -29,7 +30,7 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 
 ## Tech Stack
 
-- **Frontend**: React 18, Vite, Zustand (state management with DevTools/persist)
+- **Frontend**: React 19, Vite, Zustand (state management with DevTools/persist)
 - **3D Graphics**: React Three Fiber, Three.js, Drei helpers
 - **Performance**: Zig 0.15.2 → WASM via Zigar bindings with zero-copy optimization
 - **Styling**: Styled-components with glass morphism theme
@@ -51,15 +52,15 @@ npm run dev
 
 The app will be available at `http://localhost:5173` (or next available port)
 
-## Copilot Instruction Setup
+## Claude Code Setup
 
-Our project uses structured Copilot instruction files:
+This project uses structured CLAUDE.md instruction files for Claude Code:
 
-- [`.github/copilot-instructions.md`](.github/copilot-instructions.md): Global repo guidance
-- [`.github/instructions/frontend.instructions.md`](.github/instructions/frontend.instructions.md): Frontend (TS/JS) conventions
-- [`.github/instructions/backend.instructions.md`](.github/instructions/backend.instructions.md): Backend (Zig) patterns and memory model
+- [`CLAUDE.md`](CLAUDE.md): Global project guidance, architecture, and commands
+- [`src/CLAUDE.md`](src/CLAUDE.md): Frontend conventions and patterns
+- [`zig/CLAUDE.md`](zig/CLAUDE.md): Zig/WASM conventions and memory model
 
-Copilot automatically applies the right set based on file type.
+Claude Code automatically applies the right context based on file type.
 
 ## Building
 
@@ -74,16 +75,15 @@ npm run build
 Run JavaScript/React tests:
 
 ```bash
-npm test              # Run Vitest tests
+npm test              # Run Vitest tests (watch mode)
 npm run test:coverage # Generate coverage report
 ```
 
 Run Zig unit tests:
 
 ```bash
-npm run test:zig           # Sequential test execution (cross-platform)
-npm run test:zig:parallel  # Parallel execution (Windows only, faster)
-npm run test:all           # Run both Zig and JavaScript tests
+npm run test:zig      # All Zig tests
+npm run test:all      # Run both Zig and JavaScript tests
 ```
 
 ## Project Structure
@@ -95,8 +95,7 @@ src/
     slices/             # Zustand state management slices
   helpers/              # Utility functions (colors, buffers, throttling)
   utils/                # Coordinate transformations
-  gpsWorker.js          # Web Worker for background GPS processing
-  theme/                # Styled-components theme definitions
+  gpxWorker.js          # Web Worker for background GPS processing
 
 zig/
   gpx.zig               # GPX file parsing
@@ -117,8 +116,3 @@ zig/
 4. Commit your changes (`git commit -m 'Add amazing feature'`)
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
-
-## Security Policy
-
-See [`.github/SECURITY.md`](.github/SECURITY.md) for environment rules and safe coding practices.  
-Copilot and contributors must follow these guidelines to prevent unsafe suggestions or accidental environment leaks.
