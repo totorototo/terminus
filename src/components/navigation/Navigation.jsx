@@ -8,6 +8,8 @@ import useStore from "../../store/store.js";
 import { ArrowUp, CornerUpLeft, CornerUpRight } from "@styled-icons/feather";
 import { ArrowDown } from "@styled-icons/feather";
 import { useProjectedLocation } from "../../store/store.js";
+import { format } from "date-fns";
+import { Clock } from "@styled-icons/feather";
 
 // Get arrow icon based on bearing direction
 function getArrowIcon(bearing) {
@@ -28,9 +30,6 @@ function getArrowIcon(bearing) {
 
 function Navigation({ className }) {
   const sections = useStore((state) => state.sections);
-  // const currentPositionIndex = useStore(
-  //   (state) => state.app.currentPositionIndex || 0,
-  // ); // HACK: default to 0 if undefined
 
   const projectedLocation = useProjectedLocation();
   const currentPositionIndex = projectedLocation.index || 0;
@@ -89,6 +88,11 @@ function Navigation({ className }) {
     <div className={className}>
       {transitions((style, section, _, index) => {
         const ArrowIcon = getArrowIcon(section.bearing);
+        const cutOffTime = format(
+          new Date(section.endTime * 1000),
+          "EEEEEE HH:mm",
+        );
+
         return (
           <animated.div
             className={`section${index === 0 ? " current" : ""}`}
@@ -96,6 +100,9 @@ function Navigation({ className }) {
           >
             <ArrowIcon size={40} />
             <div className="location-container">
+              <div className="location">
+                <span className="value">{section.endLocation}</span>
+              </div>
               <div className="distance-container">
                 {index === 0 ? (
                   <animated.div className="distance">
@@ -111,38 +118,42 @@ function Navigation({ className }) {
                   </div>
                 )}
               </div>
-              <div className="location">
-                <span className="value">{section.endLocation}</span>
-              </div>
             </div>
 
-            <div className="elevation-container">
-              {index === 0 ? (
-                <animated.div className="elevation gain">
-                  <animated.span>
-                    {elevation.to((n) => n.toFixed(0))}
-                  </animated.span>
-                  <span className="unit">m D+</span>
-                </animated.div>
-              ) : (
-                <div className="elevation gain">
-                  <span>{section.totalElevation.toFixed(0)}</span>
-                  <span className="unit">m D+</span>
-                </div>
-              )}
-              {index === 0 ? (
-                <animated.div className="elevation loss">
-                  <animated.span>
-                    {elevationLoss.to((n) => n.toFixed(0))}
-                  </animated.span>
-                  <span className="unit">m D-</span>
-                </animated.div>
-              ) : (
-                <div className="elevation loss">
-                  <span>{section.totalElevationLoss.toFixed(0)}</span>
-                  <span className="unit">m D-</span>
-                </div>
-              )}
+            <div className="meta-container">
+              <div className="cutoff-time">
+                <Clock size={16} />
+                <span>{cutOffTime}</span>
+              </div>
+
+              <div className="elevation-container">
+                {index === 0 ? (
+                  <animated.div className="elevation gain">
+                    <animated.span>
+                      {elevation.to((n) => n.toFixed(0))}
+                    </animated.span>
+                    <span className="unit">D+</span>
+                  </animated.div>
+                ) : (
+                  <div className="elevation gain">
+                    <span>{section.totalElevation.toFixed(0)}</span>
+                    <span className="unit">D+</span>
+                  </div>
+                )}
+                {index === 0 ? (
+                  <animated.div className="elevation loss">
+                    <animated.span>
+                      {elevationLoss.to((n) => n.toFixed(0))}
+                    </animated.span>
+                    <span className="unit">D-</span>
+                  </animated.div>
+                ) : (
+                  <div className="elevation loss">
+                    <span>{section.totalElevationLoss.toFixed(0)}</span>
+                    <span className="unit">D-</span>
+                  </div>
+                )}
+              </div>
             </div>
           </animated.div>
         );
