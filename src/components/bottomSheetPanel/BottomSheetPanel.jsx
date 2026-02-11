@@ -1,4 +1,3 @@
-import React from "react";
 import { useSpring, a, config } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import style from "./BottomSheetPanel.style.js";
@@ -61,6 +60,8 @@ function BottomSheetPanel({ children, className }) {
   return (
     <a.div
       className={className}
+      role="region"
+      aria-label="Trail data panel. Drag to open or close."
       {...bind()}
       style={{
         bottom: `calc(-100vh + ${height}px)`,

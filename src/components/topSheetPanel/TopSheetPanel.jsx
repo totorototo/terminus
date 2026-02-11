@@ -66,6 +66,8 @@ function ExpandablePanel({ children, className }) {
   return (
     <a.div
       className={className}
+      role="region"
+      aria-label="Navigation panel. Drag to expand or collapse."
       {...bind()}
       style={{
         height,
