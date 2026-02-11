@@ -1,8 +1,8 @@
 import style from "./LoadingSpinner.style.js";
 
-function LoadingSpinner() {
+function LoadingSpinner({ className }) {
   return (
-    <div className="loading-spinner-container">
+    <div className={className}>
       <div className="spinner" />
       <p>Loading 3D trail...</p>
     </div>
