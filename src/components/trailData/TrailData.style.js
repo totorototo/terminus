@@ -36,6 +36,7 @@ const style = (Component) => styled(Component)`
     background: rgba(255, 255, 255, 0.1);
     padding: 1.6rem;
     margin-top: 2rem;
+    margin-bottom: 1rem;
     height: 100%;
     border-radius: 1rem;
 
@@ -68,9 +69,9 @@ const style = (Component) => styled(Component)`
 
   .build-number {
     width: 100%;
-    height: 4rem;
+    height: 3rem;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: flex-end;
 
     span {
@@ -88,9 +89,6 @@ const style = (Component) => styled(Component)`
   .value {
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
-  }
-
-  .label {
   }
 `;
 
