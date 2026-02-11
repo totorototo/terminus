@@ -1,6 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
-import Scene from "./components/scene/Scene.jsx";
 import style from "./App.style.js";
 import useStore from "./store/store.js";
 import TrailData from "./components/trailData/TrailData.jsx";
@@ -9,6 +8,9 @@ import TopSheetPanel from "./components/topSheetPanel/TopSheetPanel.jsx";
 import Navigation from "./components/navigation/Navigation.jsx";
 import Commands from "./components/commands/Commands.jsx";
 import { useShallow } from "zustand/react/shallow";
+
+// Lazy load 3D Scene (imports Three.js, React Three Fiber, Drei)
+const Scene = lazy(() => import("./components/scene/Scene.jsx"));
 
 function App({ className }) {
   const { initGPXWorker, terminateGPXWorker, isWorkerReady, processGPXFile } =
@@ -44,9 +46,11 @@ function App({ className }) {
   return (
     isWorkerReady && (
       <div className={className}>
-        <AutoSizer>
-          {({ width, height }) => <Scene width={width} height={height} />}
-        </AutoSizer>
+        <Suspense fallback={<div style={{ width: "100%", height: "100%" }} />}>
+          <AutoSizer>
+            {({ width, height }) => <Scene width={width} height={height} />}
+          </AutoSizer>
+        </Suspense>
         <TopSheetPanel>
           <Navigation />
         </TopSheetPanel>

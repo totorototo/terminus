@@ -4,6 +4,7 @@ import zigar from "rollup-plugin-zigar";
 import { VitePWA } from "vite-plugin-pwa";
 import arraybuffer from "vite-plugin-arraybuffer";
 import { visualizer } from "rollup-plugin-visualizer";
+import compression from "vite-plugin-compression";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -32,10 +33,23 @@ export default defineConfig({
         },
       },
     },
+    // Enable compression for better delivery
+    minify: "terser",
+    chunkSizeWarningLimit: 1000,
   },
   plugins: [
     react(),
     arraybuffer(),
+    compression({
+      algorithm: "brotli",
+      ext: ".br",
+      deleteOriginFile: false,
+    }),
+    compression({
+      algorithm: "gzip",
+      ext: ".gz",
+      deleteOriginFile: false,
+    }),
     visualizer({ open: true }),
     VitePWA({
       registerType: "autoUpdate",
