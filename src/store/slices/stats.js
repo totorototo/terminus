@@ -9,7 +9,6 @@ export const createStatsSlice = (set, get) => ({
   setStats: (newStats) =>
     set(
       (state) => ({
-        ...state,
         stats: {
           ...state.stats,
           ...newStats,
@@ -29,7 +28,6 @@ export const createStatsSlice = (set, get) => ({
           }
         });
         return {
-          ...state,
           stats: updatedStats,
         };
       },

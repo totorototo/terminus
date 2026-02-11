@@ -1,4 +1,4 @@
-import { ELEVATION_GRADE } from "../constans.js";
+import { ELEVATION_GRADE } from "../constants.js";
 
 // Get elevation grade based on slope percentage
 export const getRange = (percent) => {

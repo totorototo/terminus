@@ -1,7 +1,7 @@
 import * as scale from "d3-scale";
 import * as shape from "d3-shape";
 import * as d3Array from "d3-array";
-import { ELEVATION_COLORS } from "../constans.js";
+import { ELEVATION_COLORS } from "../constants.js";
 
 const d3 = {
   scale,

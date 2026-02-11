@@ -218,6 +218,13 @@ function Profile({
   endIndex,
 }) {
   const geometryRef = useRef();
+  const materialRef = useRef();
+
+  useEffect(() => {
+    return () => {
+      materialRef.current?.dispose();
+    };
+  }, []);
 
   // Create slope attribute buffer from slopes array
   const slopeAttribute = useMemo(() => {
@@ -357,6 +364,7 @@ function Profile({
       </bufferGeometry>
       {showSlopeColors ? (
         <slopeMaterial
+          ref={materialRef}
           side={DoubleSide}
           transparent={false}
           progressColor={new Color(safeProgressColor)}
@@ -368,6 +376,7 @@ function Profile({
         />
       ) : (
         <solidColorMaterial
+          ref={materialRef}
           side={DoubleSide}
           transparent={false}
           baseColor={new Color(color)}

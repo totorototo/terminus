@@ -38,7 +38,6 @@ export const createGPSSlice = (set, get) => {
       buffer.flush();
       set(
         (state) => ({
-          ...state,
           gps: {
             ...state.gps,
             savedLocations: [],
@@ -54,7 +53,6 @@ export const createGPSSlice = (set, get) => {
     setLocation: (location) =>
       set(
         (state) => ({
-          ...state,
           gps: {
             ...state.gps,
             location: location,
@@ -67,7 +65,6 @@ export const createGPSSlice = (set, get) => {
     setProjectedLocation: (projectedLocation) =>
       set(
         (state) => ({
-          ...state,
           gps: {
             ...state.gps,
             projectedLocation: projectedLocation,

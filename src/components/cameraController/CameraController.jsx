@@ -20,6 +20,8 @@ export default function CameraController({
   const tmpModelDirection = useRef(new Vector3());
   const tmpCameraPosition = useRef(new Vector3());
   const tmpOffset = useRef(new Vector3());
+  const tmpCurrentCameraPos = useRef(new Vector3());
+  const tmpCurrentTarget = useRef(new Vector3());
 
   useEffect(() => {
     if (cameraControlsRef.current) {
@@ -56,17 +58,18 @@ export default function CameraController({
       const alpha = 1 - Math.exp(-responsiveness * delta);
 
       // Get current camera position for smooth interpolation
-      const currentCameraPos = new Vector3();
-      const currentTarget = new Vector3();
-      cameraControlsRef.current.getPosition(currentCameraPos);
-      cameraControlsRef.current.getTarget(currentTarget);
+      cameraControlsRef.current.getPosition(tmpCurrentCameraPos.current);
+      cameraControlsRef.current.getTarget(tmpCurrentTarget.current);
 
       // Smoothly interpolate camera position and target
-      const newCameraPos = currentCameraPos.lerp(
+      const newCameraPos = tmpCurrentCameraPos.current.lerp(
         tmpCameraPosition.current,
         alpha,
       );
-      const newTarget = currentTarget.lerp(tmpModelPosition.current, alpha);
+      const newTarget = tmpCurrentTarget.current.lerp(
+        tmpModelPosition.current,
+        alpha,
+      );
 
       // Apply the smoothly interpolated position and target
       cameraControlsRef.current.setPosition(

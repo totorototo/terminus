@@ -15,7 +15,6 @@ export const createAppSlice = (set, get) => {
     toggleTrackingMode: () =>
       set(
         (state) => ({
-          ...state,
           app: {
             ...state.app,
             trackingMode: !state.app.trackingMode,
@@ -28,7 +27,6 @@ export const createAppSlice = (set, get) => {
     toggleProfileMode: () =>
       set(
         (state) => ({
-          ...state,
           app: {
             ...state.app,
             profileMode: !state.app.profileMode,
@@ -40,7 +38,6 @@ export const createAppSlice = (set, get) => {
     toggleSlopesMode: () =>
       set(
         (state) => ({
-          ...state,
           app: {
             ...state.app,
             displaySlopes: !state.app.displaySlopes,

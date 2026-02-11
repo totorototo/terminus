@@ -51,12 +51,12 @@ function Navigation({ className }) {
 
   // currentPosition
 
-  const remaningSections = sections?.filter(
+  const remainingSections = sections?.filter(
     (section) => section.endIndex >= currentPositionIndex,
   );
 
   const currentSection =
-    remaningSections?.length > 0 ? remaningSections[0] : null;
+    remainingSections?.length > 0 ? remainingSections[0] : null;
 
   const { distance, elevation, elevationLoss } = useSpringWeb({
     distance:
@@ -77,7 +77,7 @@ function Navigation({ className }) {
     config: springConfig,
   });
 
-  const transitions = useTransition(remaningSections || [], {
+  const transitions = useTransition(remainingSections || [], {
     // animate height (and a subtle translate) only — leave opacity to CSS classes
     from: { height: 0, transform: "translateY(-6px)" },
     enter: { height: 66, transform: "translateY(0px)" },
@@ -122,12 +122,12 @@ function Navigation({ className }) {
                   <animated.span>
                     {elevation.to((n) => n.toFixed(0))}
                   </animated.span>
-                  <span className="unit">m ↗</span>
+                  <span className="unit">m D+</span>
                 </animated.div>
               ) : (
                 <div className="elevation gain">
                   <span>{section.totalElevation.toFixed(0)}</span>
-                  <span className="unit">m ↗</span>
+                  <span className="unit">m D+</span>
                 </div>
               )}
               {index === 0 ? (
@@ -135,12 +135,12 @@ function Navigation({ className }) {
                   <animated.span>
                     {elevationLoss.to((n) => n.toFixed(0))}
                   </animated.span>
-                  <span className="unit">m ↘</span>
+                  <span className="unit">m D-</span>
                 </animated.div>
               ) : (
                 <div className="elevation loss">
                   <span>{section.totalElevationLoss.toFixed(0)}</span>
-                  <span className="unit">m ↘</span>
+                  <span className="unit">m D-</span>
                 </div>
               )}
             </div>
