@@ -40,8 +40,19 @@ pub fn douglasPeuckerSimplify(
     points: []const [3]f64,
     epsilon: f64,
 ) ![][3]f64 {
-    if (points.len <= 2) {
-        // Can't simplify 2 or fewer points, return copy
+    return douglasPeuckerSimplifyDepth(allocator, points, epsilon, 0);
+}
+
+const MAX_RECURSION_DEPTH = 64;
+
+fn douglasPeuckerSimplifyDepth(
+    allocator: std.mem.Allocator,
+    points: []const [3]f64,
+    epsilon: f64,
+    depth: u32,
+) ![][3]f64 {
+    if (points.len <= 2 or depth >= MAX_RECURSION_DEPTH) {
+        // Can't simplify 2 or fewer points, or depth limit reached — return copy
         const result = try allocator.alloc([3]f64, points.len);
         @memcpy(result, points);
         return result;
@@ -65,10 +76,10 @@ pub fn douglasPeuckerSimplify(
     // If max distance exceeds epsilon, split and recurse
     if (max_distance > epsilon) {
         // Recursively simplify left and right segments
-        const left = try douglasPeuckerSimplify(allocator, points[0 .. max_index + 1], epsilon);
+        const left = try douglasPeuckerSimplifyDepth(allocator, points[0 .. max_index + 1], epsilon, depth + 1);
         errdefer allocator.free(left);
 
-        const right = try douglasPeuckerSimplify(allocator, points[max_index..], epsilon);
+        const right = try douglasPeuckerSimplifyDepth(allocator, points[max_index..], epsilon, depth + 1);
         defer allocator.free(right);
 
         // Merge results (right[0] == left[left.len-1], so skip it)

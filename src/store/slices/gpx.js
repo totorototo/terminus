@@ -15,7 +15,6 @@ export const createGpxSlice = (set, get) => ({
   setPeaks: (peaks) =>
     set(
       (state) => ({
-        ...state,
         gpx: {
           ...state.gpx,
           peaks,
@@ -28,7 +27,6 @@ export const createGpxSlice = (set, get) => ({
   setMetadata: (metadata) =>
     set(
       (state) => ({
-        ...state,
         gpx: {
           ...state.gpx,
           metadata: {
@@ -44,7 +42,6 @@ export const createGpxSlice = (set, get) => ({
   setGpxData: (data) =>
     set(
       (state) => ({
-        ...state,
         gpx: {
           ...state.gpx,
           data,
@@ -57,7 +54,6 @@ export const createGpxSlice = (set, get) => ({
   setSlopes: (slopes) =>
     set(
       (state) => ({
-        ...state,
         gpx: {
           ...state.gpx,
           slopes,
@@ -70,7 +66,6 @@ export const createGpxSlice = (set, get) => ({
   setCumulativeDistances: (distances) =>
     set(
       (state) => ({
-        ...state,
         gpx: {
           ...state.gpx,
           cumulativeDistances: distances,
@@ -83,7 +78,6 @@ export const createGpxSlice = (set, get) => ({
   setCumulativeElevations: (elevations) =>
     set(
       (state) => ({
-        ...state,
         gpx: {
           ...state.gpx,
           cumulativeElevations: elevations,
@@ -95,7 +89,6 @@ export const createGpxSlice = (set, get) => ({
   setCumulativeElevationLosses: (elevations) =>
     set(
       (state) => ({
-        ...state,
         gpx: {
           ...state.gpx,
           cumulativeElevationLosses: elevations,

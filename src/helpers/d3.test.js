@@ -6,7 +6,7 @@ import {
   getLine,
   createColorScale,
 } from "./d3";
-import { ELEVATION_GRADE, ELEVATION_COLORS } from "../constans.js";
+import { ELEVATION_GRADE, ELEVATION_COLORS } from "../constants.js";
 
 describe("D3 Helpers", () => {
   it("createXScale should create a linear scale with correct domain and range", () => {

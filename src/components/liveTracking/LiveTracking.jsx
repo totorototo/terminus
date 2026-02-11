@@ -5,13 +5,13 @@ import { Navigation } from "@styled-icons/feather/Navigation";
 
 function LiveTracking({ className }) {
   const cumulativeDistances = useStore(
-    (state) => state.gps.cumulativeDistances,
+    (state) => state.gpx.cumulativeDistances,
   );
   const cumulativeElevations = useStore(
-    (state) => state.gps.cumulativeElevations,
+    (state) => state.gpx.cumulativeElevations,
   );
   const cumulativeElevationLosses = useStore(
-    (state) => state.gps.cumulativeElevationLosses,
+    (state) => state.gpx.cumulativeElevationLosses,
   );
   const gpsData = useStore((state) => state.gps.data);
   const currentPositionIndex = useStore(
