@@ -12,7 +12,7 @@ const style = (Component) => styled(Component)`
   user-select: none;
   touch-action: none;
   position: absolute;
-  top: max(0.8rem, env(safe-area-inset-top));
+  top: max(0rem, env(safe-area-inset-top));
   left: 50%;
   width: 96vw;
   max-width: 600px;
