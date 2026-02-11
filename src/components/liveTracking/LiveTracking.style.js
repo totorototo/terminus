@@ -9,7 +9,8 @@ const style = (Component) => styled(Component)`
 
   pointer-events: none;
 
-  color: #a0a0a0;
+  color: ${(props) => props.theme.colors.dark["--color-text"]};
+  opacity: 0.8;
   line-height: 1.2;
   font-size: 15px;
   letter-spacing: 1.5px;

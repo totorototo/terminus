@@ -8,7 +8,8 @@ const style = (Component) => styled(Component)`
   justify-content: flex-start;
   pointer-events: none;
   max-width: 600px;
-  color: #a0a0a0;
+  color: ${(props) => props.theme.colors.dark["--color-text"]};
+  opacity: 0.8;
   line-height: 1.2;
   font-size: 15px;
   letter-spacing: 1.5px;
