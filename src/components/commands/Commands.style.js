@@ -47,10 +47,11 @@ const style = (Component) => styled(Component)`
     align-items: center;
     justify-content: center;
 
-    /* Remove focus outline */
-    &:focus {
-      outline: none;
-      box-shadow: none;
+    /* Focus indicator for keyboard navigation */
+    &:focus-visible {
+      outline: 2px solid
+        ${(props) => props.theme.colors.dark["--color-primary"]};
+      outline-offset: 2px;
     }
 
     /* Prevent scroll on touch */

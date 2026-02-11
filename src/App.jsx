@@ -7,6 +7,7 @@ import BottomSheetPanel from "./components/bottomSheetPanel/BottomSheetPanel.jsx
 import TopSheetPanel from "./components/topSheetPanel/TopSheetPanel.jsx";
 import Navigation from "./components/navigation/Navigation.jsx";
 import Commands from "./components/commands/Commands.jsx";
+import LoadingSpinner from "./components/loadingSpinner/LoadingSpinner.jsx";
 import { useShallow } from "zustand/react/shallow";
 
 // Lazy load 3D Scene (imports Three.js, React Three Fiber, Drei)
@@ -46,7 +47,7 @@ function App({ className }) {
   return (
     isWorkerReady && (
       <div className={className}>
-        <Suspense fallback={<div style={{ width: "100%", height: "100%" }} />}>
+        <Suspense fallback={<LoadingSpinner />}>
           <AutoSizer>
             {({ width, height }) => <Scene width={width} height={height} />}
           </AutoSizer>

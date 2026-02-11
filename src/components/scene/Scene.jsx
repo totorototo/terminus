@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
 import style from "./Scene.style";
@@ -25,64 +25,68 @@ function Scene({ width, height, className }) {
   }, [coordinates, profileMode]);
 
   return (
-    <Canvas
-      className={className}
-      style={{ width, height }}
-      shadows
-      camera={{
-        fov: 75,
-        near: 0.1,
-        far: 1000,
-        position: [15, 0, 0],
-      }}
-    >
-      {/* <Perf minimal position="bottom-right" /> */}
-      <ambientLight intensity={0.9} />
-      <spotLight
-        position={[10, 10, 10]}
-        angle={0.5}
-        penumbra={1}
-        decay={0}
-        intensity={5}
-        castShadow
-      />
-      <pointLight
-        position={[-10, 10, -10]}
-        decay={0}
-        intensity={0.5}
-        castShadow
-      />
+    <Suspense fallback={null}>
+      <Canvas
+        className={className}
+        style={{ width, height }}
+        shadows
+        camera={{
+          fov: 75,
+          near: 0.1,
+          far: 1000,
+          position: [15, 0, 0],
+        }}
+      >
+        {/* <Perf minimal position="bottom-right" /> */}
+        <ambientLight intensity={0.9} />
+        <spotLight
+          position={[10, 10, 10]}
+          angle={0.5}
+          penumbra={1}
+          decay={0}
+          intensity={5}
+          castShadow
+        />
+        <pointLight
+          position={[-10, 10, -10]}
+          decay={0}
+          intensity={0.5}
+          castShadow
+        />
 
-      {name && (
-        <Marker
-          position={[0, 1.5, 0]}
-          fontSize={0.15}
-          color={theme.colors.dark["--color-text"]}
-        >
-          {name}
-        </Marker>
-      )}
+        {name && (
+          <Marker
+            position={[0, 1.5, 0]}
+            fontSize={0.15}
+            color={theme.colors.dark["--color-text"]}
+          >
+            {name}
+          </Marker>
+        )}
 
-      <Peaks coordinateScales={coordinateScales} profileMode={profileMode} />
+        <Peaks coordinateScales={coordinateScales} profileMode={profileMode} />
 
-      <EnhancedProfile
-        coordinateScales={coordinateScales}
-        profileMode={profileMode}
-      />
+        <EnhancedProfile
+          coordinateScales={coordinateScales}
+          profileMode={profileMode}
+        />
 
-      <TrailFollower
-        speed={0.002}
-        height={0.08}
-        scale={0.05}
-        color="red"
-        modelRef={modelRef}
-        coordinateScales={coordinateScales}
-      />
+        <TrailFollower
+          speed={0.002}
+          height={0.08}
+          scale={0.05}
+          color="red"
+          modelRef={modelRef}
+          coordinateScales={coordinateScales}
+        />
 
-      <Model scale={0.01} coordinateScales={coordinateScales} />
+        <Suspense fallback={null}>
+          <Model scale={0.01} coordinateScales={coordinateScales} />
+        </Suspense>
 
-      <CameraController modelRef={modelRef} />
-    </Canvas>
+        <CameraController modelRef={modelRef} />
+      </Canvas>
+    </Suspense>
   );
 }
 
