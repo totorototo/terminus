@@ -21,14 +21,12 @@ const style = (Component) => styled(Component)`
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
-    gap: 0.5rem;
+    gap: 0.8rem;
     height: 66px;
     width: 100%;
     padding-left: 0.4rem;
-    position: relative;
-
     padding-right: 0.4rem;
+    position: relative;
   }
 
   /* Apply opacity to children so inline animated styles on the root don't override it */
@@ -41,6 +39,7 @@ const style = (Component) => styled(Component)`
   }
 
   .section > svg {
+    flex-shrink: 0;
     stroke: ${({ theme }) => theme.colors.dark["--colors-secondary"]};
     stroke-width: 2;
   }
@@ -50,11 +49,12 @@ const style = (Component) => styled(Component)`
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    margin-left: 1rem;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
   }
 
   .location {
-    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -63,37 +63,69 @@ const style = (Component) => styled(Component)`
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: 0.02em;
     opacity: 0.8;
+    width: 100%;
   }
 
   .distance-container {
     display: flex;
-    flex: 1;
     align-items: center;
     width: 100%;
+  }
+
+  .meta-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .cutoff-time {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+
+    svg {
+      stroke: ${({ theme }) => theme.colors.dark["--colors-secondary"]};
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
   }
 
   .elevation-container {
     display: flex;
     align-items: center;
-    min-width: 80px;
     gap: 0.8rem;
-    margin-left: auto;
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .distance {
     display: flex;
-    align-items: flex-start;
+    align-items: baseline;
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
-    // font-weight: ${(props) =>
-      props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
 
     .unit {
-      // opacity: 0.7;
       min-width: unset;
       padding-left: 0.4rem;
       color: ${(props) => props.theme.colors.dark["--color-text"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    }
+  }
+
+  .elevation {
+    display: flex;
+    align-items: baseline;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    color: ${(props) => props.theme.colors.dark["--color-text"]};
+
+    .unit {
+      min-width: unset;
+      padding-left: 0.3rem;
+      color: ${(props) => props.theme.colors.dark["--color-text"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     }
   }
 `;
