@@ -3,7 +3,7 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   z-index: 10;
   display: flex;
-  padding-top: 2rem;
+  padding-top: 1.2rem;
   padding-left: 1rem;
   padding-right: 1rem;
   flex-direction: row;
