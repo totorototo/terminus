@@ -6,9 +6,9 @@ import {
   transformSections,
   createCheckpoints,
 } from "../../utils/coordinateTransforms.js";
-import Marker from "../marker/Marker.jsx";
 import { useTheme } from "styled-components";
 import { getInterpolatedColor } from "../../helpers/colorInterpolation.js";
+import Checkpoints from "../checkpoints/Checkpoints.jsx";
 
 function EnhancedProfile({ coordinateScales, profileMode }) {
   const sections = useStore((state) => state.sections);
@@ -30,18 +30,15 @@ function EnhancedProfile({ coordinateScales, profileMode }) {
   );
 
   // Memoize transformed data for performance
-  const { sectionsPoints3D, checkpointsPoints3D } = useMemo(() => {
+  const sectionsPoints3D = useMemo(() => {
     // Transform sections to 3D using provided scales
-    const sectionsPoints3D = transformSections(sections, coordinateScales);
+    return transformSections(sections, coordinateScales);
+  }, [sections, coordinateScales]);
 
-    // Create checkpoints from sections using provided scales
-    const checkpointsPoints3D = createCheckpoints(sections, coordinateScales);
-
-    return {
-      sectionsPoints3D,
-      checkpointsPoints3D,
-    };
-  }, [sections, coordinateScales, profileMode]);
+  // Create checkpoints from sections using provided scales
+  const checkpointsPoints3D = useMemo(() => {
+    return createCheckpoints(sections, coordinateScales);
+  }, [sections, coordinateScales]);
 
   // Memoize the rendered section components so we only rebuild them when
   // the underlying section data or relevant props change.
@@ -71,23 +68,10 @@ function EnhancedProfile({ coordinateScales, profileMode }) {
     progressIndex,
   ]);
 
-  // Markers are independent of each section — render them once, memoized.
-  const markerElements = useMemo(() => {
-    if (!checkpointsPoints3D || checkpointsPoints3D.length === 0) return null;
-    return checkpointsPoints3D.map((cp, index) => (
-      <Marker
-        key={cp.name || index}
-        position={[cp.point3D[0], cp.point3D[1] + 0.2, cp.point3D[2]]}
-      >
-        {cp.name}
-      </Marker>
-    ));
-  }, [checkpointsPoints3D]);
-
   return (
     <>
       {sectionElements}
-      {markerElements}
+      <Checkpoints checkpointsPoints3D={checkpointsPoints3D} />
     </>
   );
 }
