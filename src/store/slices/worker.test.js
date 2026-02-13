@@ -2145,4 +2145,51 @@ describe("Worker Slice", () => {
       expect(store.getState().worker.processing).toBe(false);
     });
   });
+
+  // =========================================================================
+  // CATEGORY 13: WORKER LIFECYCLE EDGE CASES
+  // =========================================================================
+
+  describe("Worker Lifecycle Edge Cases", () => {
+    it("should handle worker onerror during active processing", () => {
+      store.getState().initGPXWorker();
+
+      // Start a request
+      store.getState().__TESTING_ONLY_sendWorkerMessage("TEST", {});
+
+      mockWorkerInstance.onerror(new Error("Worker crashed"));
+
+      // onerror should mark worker as not ready and set error state
+      expect(store.getState().worker.isReady).toBe(false);
+      expect(store.getState().worker.errorMessage).toBe(
+        "Worker initialization failed",
+      );
+
+      // Note: The pending promise won't automatically reject from onerror
+      // This is by design - onerror is for initialization failures,
+      // not for in-flight requests. Those use the timeout mechanism.
+    });
+
+    it("should handle worker reinitialization after onerror", () => {
+      // First initialization
+      store.getState().initGPXWorker();
+      expect(store.getState().worker.isReady).toBe(true);
+
+      // Simulate worker crash
+      mockWorkerInstance.onerror(new Error("Worker crashed"));
+      expect(store.getState().worker.isReady).toBe(false);
+      expect(store.getState().worker.errorMessage).toBe(
+        "Worker initialization failed",
+      );
+
+      // Terminate and reinitialize
+      store.getState().terminateGPXWorker();
+      expect(store.getState().worker.isReady).toBe(false);
+
+      // Reinitialize the worker
+      store.getState().initGPXWorker();
+      expect(store.getState().worker.isReady).toBe(true);
+      expect(store.getState().worker.errorMessage).toBe("");
+    });
+  });
 });
