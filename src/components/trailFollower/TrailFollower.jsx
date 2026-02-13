@@ -6,18 +6,6 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import useStore from "../../store/store";
 import { transformCoordinates } from "../../utils/coordinateTransforms";
 
-// function throttle(fn, delay) {
-//   let timeout = null;
-//   return (...args) => {
-//     if (!timeout) {
-//       fn(...args);
-//       timeout = setTimeout(() => {
-//         timeout = null;
-//       }, delay);
-//     }
-//   };
-// }
-
 export default function TrailFollower({
   speed = 0.02,
   height = 0.01,
@@ -49,8 +37,6 @@ export default function TrailFollower({
   );
   const setStartingDate = useStore((state) => state.setStartingDate);
   const coordinates = useStore((state) => state.gpx.data);
-
-  // const throttledSetIndex = useRef(throttle(setCurrentPositionIndex, 1000));
 
   const { nodes, animations } = useGLTF("/cartoon_plane.glb");
   const { actions } = useAnimations(animations, modelRef);
@@ -95,8 +81,8 @@ export default function TrailFollower({
     const nextIndex = Math.min(currentIndex + 1, scaledPath.length - 1);
 
     if (currentIndex) {
-      // Update position index with throttling
-      // throttledSetIndex.current({
+      // Update position index with throttling (disabled - causes perf issues)
+      // setCurrentPositionIndex({
       //   index: currentIndex,
       //   date: Date.now(),
       // });
