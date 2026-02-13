@@ -77,7 +77,11 @@ export const createGPSSlice = (set, get) => {
     spotMe: async () => {
       try {
         const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 30000,
+          });
         });
 
         // Store as [lat, lon, ele] to match Zig coordinate format
@@ -119,7 +123,33 @@ export const createGPSSlice = (set, get) => {
           undefined,
           "gps/setProjectedLocation",
         );
-      } catch (error) {}
+      } catch (error) {
+        let errorMessage = "Failed to get current location";
+
+        if (error.code === 1) {
+          errorMessage = "Location permission denied";
+        } else if (error.code === 2) {
+          errorMessage = "Location unavailable";
+        } else if (error.code === 3) {
+          errorMessage = "Location request timed out";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        console.error("Geolocation error:", errorMessage, error);
+
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...(state.worker || {}),
+              errorMessage,
+            },
+          }),
+          undefined,
+          "gps/spotMeError",
+        );
+      }
     },
 
     // Get all locations from buffer

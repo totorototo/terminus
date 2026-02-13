@@ -3,17 +3,32 @@ import { Film } from "@styled-icons/feather/Film";
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import { Map } from "@styled-icons/feather/Map";
 // import { Upload } from "@styled-icons/feather/upload";
+import { useShallow } from "zustand/react/shallow";
 import useStore from "../../store/store";
 import style from "./Commands.style";
 // import { useCallback } from "react";
 
 function Commands({ className }) {
-  const trackingMode = useStore((state) => state.app.trackingMode);
-  const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
-  const profileMode = useStore((state) => state.app.profileMode);
-  const toggleProfileMode = useStore((state) => state.toggleProfileMode);
-  const displaySlopes = useStore((state) => state.app.displaySlopes);
-  const toggleSlopesMode = useStore((state) => state.toggleSlopesMode);
+  // Use useShallow to batch related app state and actions into single subscription
+  const {
+    trackingMode,
+    profileMode,
+    displaySlopes,
+    toggleTrackingMode,
+    toggleProfileMode,
+    toggleSlopesMode,
+  } = useStore(
+    useShallow((state) => ({
+      trackingMode: state.app.trackingMode,
+      profileMode: state.app.profileMode,
+      displaySlopes: state.app.displaySlopes,
+      toggleTrackingMode: state.toggleTrackingMode,
+      toggleProfileMode: state.toggleProfileMode,
+      toggleSlopesMode: state.toggleSlopesMode,
+    })),
+  );
+
+  // These are top-level actions, select directly
   const findClosestLocation = useStore((state) => state.findClosestLocation);
   const spotMe = useStore((state) => state.spotMe);
   //const processGPXFile = useStore((state) => state.processGPXFile);
