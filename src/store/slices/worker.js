@@ -9,6 +9,98 @@ function createGPSWorker() {
   });
 }
 
+// Validation helpers for worker results
+function validateArray(value, name) {
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${name} to be an array, got ${typeof value}`);
+  }
+  return value;
+}
+
+function validateObject(value, name) {
+  if (!value || typeof value !== "object") {
+    throw new Error(`Expected ${name} to be an object, got ${typeof value}`);
+  }
+  return value;
+}
+
+function validateGPXResults(results) {
+  if (!results) throw new Error("No results returned from worker");
+
+  const trace = validateObject(results.trace, "results.trace");
+  validateArray(trace.points, "trace.points");
+  validateArray(trace.peaks, "trace.peaks");
+  validateArray(trace.slopes, "trace.slopes");
+  validateArray(trace.cumulativeDistances, "trace.cumulativeDistances");
+  validateArray(trace.cumulativeElevations, "trace.cumulativeElevations");
+  validateArray(trace.cumulativeElevationLoss, "trace.cumulativeElevationLoss");
+
+  if (typeof trace.totalDistance !== "number") {
+    throw new Error("Expected totalDistance to be a number");
+  }
+  if (typeof trace.totalElevation !== "number") {
+    throw new Error("Expected totalElevation to be a number");
+  }
+  if (typeof trace.totalElevationLoss !== "number") {
+    throw new Error("Expected totalElevationLoss to be a number");
+  }
+
+  validateArray(results.sections, "results.sections");
+  validateArray(results.waypoints, "results.waypoints");
+  validateObject(results.metadata, "results.metadata");
+
+  return true;
+}
+
+function validateGPSDataResults(results) {
+  if (!results) throw new Error("No results returned from worker");
+
+  validateArray(results.points, "results.points");
+  validateArray(results.slopes, "results.slopes");
+  validateArray(results.cumulativeDistances, "results.cumulativeDistances");
+  validateArray(results.cumulativeElevations, "results.cumulativeElevations");
+  validateArray(
+    results.cumulativeElevationLoss,
+    "results.cumulativeElevationLoss",
+  );
+
+  if (typeof results.totalDistance !== "number") {
+    throw new Error("Expected totalDistance to be a number");
+  }
+  if (typeof results.totalElevation !== "number") {
+    throw new Error("Expected totalElevation to be a number");
+  }
+  if (typeof results.totalElevationLoss !== "number") {
+    throw new Error("Expected totalElevationLoss to be a number");
+  }
+  if (typeof results.pointCount !== "number") {
+    throw new Error("Expected pointCount to be a number");
+  }
+
+  return true;
+}
+
+function validateSectionsResults(results) {
+  if (!results) throw new Error("No results returned from worker");
+
+  validateArray(results, "results");
+
+  if (typeof results.totalDistance !== "number") {
+    throw new Error("Expected totalDistance to be a number");
+  }
+  if (typeof results.totalElevationGain !== "number") {
+    throw new Error("Expected totalElevationGain to be a number");
+  }
+  if (typeof results.totalElevationLoss !== "number") {
+    throw new Error("Expected totalElevationLoss to be a number");
+  }
+  if (typeof results.pointCount !== "number") {
+    throw new Error("Expected pointCount to be a number");
+  }
+
+  return true;
+}
+
 export const createWorkerSlice = (set, get) => {
   // Worker Communication
   async function sendWorkerMessage(type, data, onProgress) {
@@ -265,6 +357,9 @@ export const createWorkerSlice = (set, get) => {
           onProgress,
         );
 
+        // Validate worker results before setting state
+        validateGPXResults(results);
+
         set(
           (state) => ({
             stats: {
@@ -319,6 +414,9 @@ export const createWorkerSlice = (set, get) => {
           onProgress,
         );
 
+        // Validate worker results before setting state
+        validateGPSDataResults(results);
+
         get().setGpxData(results.points);
         get().setSlopes(results.slopes);
         get().setCumulativeDistances(results.cumulativeDistances);
@@ -370,6 +468,11 @@ export const createWorkerSlice = (set, get) => {
           { coordinates, sections },
           onProgress,
         );
+
+        // Validate worker results before setting state
+        if (results) {
+          validateSectionsResults(results);
+        }
 
         get().setSections(results ?? []);
         get().updateStats({
