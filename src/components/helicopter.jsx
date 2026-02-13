@@ -7,7 +7,7 @@ Source: https://sketchfab.com/3d-models/simple-low-poly-helicopter-d7a4f68877ac4
 Title: Simple low poly helicopter
 */
 
-import React, { use, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { useProjectedLocation } from "../store/store.js";
 import { transformCoordinates } from "../utils/coordinateTransforms.js";
