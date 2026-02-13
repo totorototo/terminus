@@ -1,107 +1,113 @@
-let worker = null;
-const requests = new Map();
+import {
+  validateGPXResults,
+  validateGPSDataResults,
+  validateSectionsResults,
+} from "./workerValidation.js";
+import { MESSAGE_TYPES, SUCCESS_RESPONSE_TYPES } from "./workerTypes.js";
+
 const WORKER_TIMEOUT = 60000; // 60 seconds
 
-// Helper to create worker
+// Default worker factory (can be overridden for testing)
 function createGPSWorker() {
   return new Worker(new URL("../../gpxWorker.js", import.meta.url), {
     type: "module",
   });
 }
 
-// Validation helpers for worker results
-function validateArray(value, name) {
-  if (!Array.isArray(value)) {
-    throw new Error(`Expected ${name} to be an array, got ${typeof value}`);
+// Clean up a single pending request and cancel its timeout
+function cleanupRequest(requests, id) {
+  const request = requests.get(id);
+  if (request) {
+    clearTimeout(request.timeoutHandle);
   }
-  return value;
+  requests.delete(id);
 }
 
-function validateObject(value, name) {
-  if (!value || typeof value !== "object") {
-    throw new Error(`Expected ${name} to be an object, got ${typeof value}`);
+// Clean up all pending requests (e.g., on worker termination)
+function cleanupAllRequests(requests, error) {
+  for (const [id, request] of requests.entries()) {
+    clearTimeout(request.timeoutHandle);
+    request.reject(error);
   }
-  return value;
+  requests.clear();
 }
 
-function validateGPXResults(results) {
-  if (!results) throw new Error("No results returned from worker");
+// Create the message handler for the worker
+function createMessageHandler(set, get, requests) {
+  return function handleWorkerMessage(e) {
+    const {
+      type,
+      id,
+      results,
+      error,
+      progress: progressValue,
+      message,
+    } = e.data;
 
-  const trace = validateObject(results.trace, "results.trace");
-  validateArray(trace.points, "trace.points");
-  validateArray(trace.peaks, "trace.peaks");
-  validateArray(trace.slopes, "trace.slopes");
-  validateArray(trace.cumulativeDistances, "trace.cumulativeDistances");
-  validateArray(trace.cumulativeElevations, "trace.cumulativeElevations");
-  validateArray(trace.cumulativeElevationLoss, "trace.cumulativeElevationLoss");
+    const request = requests.get(id);
+    if (!request) return;
 
-  if (typeof trace.totalDistance !== "number") {
-    throw new Error("Expected totalDistance to be a number");
-  }
-  if (typeof trace.totalElevation !== "number") {
-    throw new Error("Expected totalElevation to be a number");
-  }
-  if (typeof trace.totalElevationLoss !== "number") {
-    throw new Error("Expected totalElevationLoss to be a number");
-  }
-
-  validateArray(results.sections, "results.sections");
-  validateArray(results.waypoints, "results.waypoints");
-  validateObject(results.metadata, "results.metadata");
-
-  return true;
+    if (type === MESSAGE_TYPES.RESPONSE.PROGRESS) {
+      set(
+        (state) => ({
+          ...state,
+          worker: {
+            ...state.worker,
+            progress: progressValue,
+            progressMessage: message,
+          },
+        }),
+        undefined,
+        "worker/setWorkerProgress",
+      );
+      request.onProgress?.(progressValue, message);
+    } else if (SUCCESS_RESPONSE_TYPES.has(type)) {
+      cleanupRequest(requests, id);
+      set(
+        (state) => ({
+          ...state,
+          worker: {
+            ...state.worker,
+            processing: false,
+            progress: 100,
+            errorMessage: "",
+          },
+        }),
+        undefined,
+        "worker/setWorkerComplete",
+      );
+      request.resolve(results ?? e.data);
+    } else if (type === MESSAGE_TYPES.RESPONSE.ERROR) {
+      cleanupRequest(requests, id);
+      set(
+        (state) => ({
+          ...state,
+          worker: {
+            ...state.worker,
+            processing: false,
+            progress: 0,
+            errorMessage: error ?? "Unknown worker error",
+          },
+        }),
+        undefined,
+        "worker/setWorkerError",
+      );
+      request.reject(new Error(error));
+    }
+  };
 }
 
-function validateGPSDataResults(results) {
-  if (!results) throw new Error("No results returned from worker");
+export const createWorkerSlice = (set, get, workerFactory) => {
+  // Handle case where Zustand middleware passes store API as 3rd parameter
+  // When used with slices, workerFactory may be undefined or the store API object
+  // In tests, workerFactory will be a function passed explicitly
+  const factory =
+    typeof workerFactory === "function" ? workerFactory : createGPSWorker;
 
-  validateArray(results.points, "results.points");
-  validateArray(results.slopes, "results.slopes");
-  validateArray(results.cumulativeDistances, "results.cumulativeDistances");
-  validateArray(results.cumulativeElevations, "results.cumulativeElevations");
-  validateArray(
-    results.cumulativeElevationLoss,
-    "results.cumulativeElevationLoss",
-  );
+  // Closure-local state (fresh for each store instance, no cross-test contamination)
+  let worker = null;
+  const requests = new Map();
 
-  if (typeof results.totalDistance !== "number") {
-    throw new Error("Expected totalDistance to be a number");
-  }
-  if (typeof results.totalElevation !== "number") {
-    throw new Error("Expected totalElevation to be a number");
-  }
-  if (typeof results.totalElevationLoss !== "number") {
-    throw new Error("Expected totalElevationLoss to be a number");
-  }
-  if (typeof results.pointCount !== "number") {
-    throw new Error("Expected pointCount to be a number");
-  }
-
-  return true;
-}
-
-function validateSectionsResults(results) {
-  if (!results) throw new Error("No results returned from worker");
-
-  validateArray(results, "results");
-
-  if (typeof results.totalDistance !== "number") {
-    throw new Error("Expected totalDistance to be a number");
-  }
-  if (typeof results.totalElevationGain !== "number") {
-    throw new Error("Expected totalElevationGain to be a number");
-  }
-  if (typeof results.totalElevationLoss !== "number") {
-    throw new Error("Expected totalElevationLoss to be a number");
-  }
-  if (typeof results.pointCount !== "number") {
-    throw new Error("Expected pointCount to be a number");
-  }
-
-  return true;
-}
-
-export const createWorkerSlice = (set, get) => {
   // Worker Communication
   async function sendWorkerMessage(type, data, onProgress) {
     return new Promise((resolve, reject) => {
@@ -127,7 +133,7 @@ export const createWorkerSlice = (set, get) => {
 
       // Set up timeout to cleanup if worker doesn't respond
       timeoutHandle = setTimeout(() => {
-        requests.delete(id);
+        cleanupRequest(requests, id);
         const errorMsg = `Worker request ${type} timed out after ${WORKER_TIMEOUT}ms`;
         set(
           (state) => ({
@@ -210,83 +216,11 @@ export const createWorkerSlice = (set, get) => {
       if (worker) return;
 
       try {
-        worker = createGPSWorker();
+        worker = factory();
 
-        worker.onmessage = (e) => {
-          const {
-            type,
-            id,
-            results,
-            error,
-            progress: progressValue,
-            message,
-          } = e.data;
-          const request = requests.get(id);
-          if (!request) return;
-
-          switch (type) {
-            case "PROGRESS":
-              set(
-                (state) => ({
-                  ...state,
-                  worker: {
-                    ...state.worker,
-                    progress: progressValue,
-                    progressMessage: message,
-                  },
-                }),
-                undefined,
-                "worker/setWorkerProgress",
-              );
-              request.onProgress?.(progressValue, message);
-              break;
-
-            case "GPX_FILE_PROCESSED":
-            case "GPS_DATA_PROCESSED":
-            case "SECTIONS_PROCESSED":
-            case "ROUTE_STATS_CALCULATED":
-            case "POINTS_FOUND":
-            case "ROUTE_SECTION_READY":
-            case "CLOSEST_POINT_FOUND":
-              requests.delete(id);
-              set(
-                (state) => ({
-                  ...state,
-                  worker: {
-                    ...state.worker,
-                    processing: false,
-                    progress: 100,
-                    errorMessage: "",
-                  },
-                }),
-                undefined,
-                "worker/setWorkerComplete",
-              );
-              request.resolve(results ?? e.data);
-              break;
-
-            case "ERROR":
-              requests.delete(id);
-              set(
-                (state) => ({
-                  ...state,
-                  worker: {
-                    ...state.worker,
-                    processing: false,
-                    progress: 0,
-                    errorMessage: error ?? "Unknown worker error",
-                  },
-                }),
-                undefined,
-                "worker/setWorkerError",
-              );
-              request.reject(new Error(error));
-              break;
-          }
-        };
+        worker.onmessage = createMessageHandler(set, get, requests);
 
         worker.onerror = (error) => {
-          console.error("GPS Worker error:", error);
           set(
             (state) => ({
               ...state,
@@ -314,7 +248,6 @@ export const createWorkerSlice = (set, get) => {
           "worker/setWorkerReady",
         );
       } catch (error) {
-        console.error("Failed to create GPS Worker:", error);
         set(
           (state) => ({
             ...state,
@@ -336,11 +269,7 @@ export const createWorkerSlice = (set, get) => {
       }
 
       // Reject all pending requests to prevent hanging promises
-      for (const [id, request] of requests.entries()) {
-        clearTimeout(request.timeoutHandle);
-        request.reject(new Error("Worker was terminated"));
-      }
-      requests.clear();
+      cleanupAllRequests(requests, new Error("Worker was terminated"));
 
       set(
         (state) => ({
@@ -362,7 +291,7 @@ export const createWorkerSlice = (set, get) => {
     processGPXFile: async (gpxBytes, onProgress) => {
       try {
         const results = await sendWorkerMessage(
-          "PROCESS_GPX_FILE",
+          MESSAGE_TYPES.REQUEST.PROCESS_GPX_FILE,
           { gpxBytes },
           onProgress,
         );
@@ -419,7 +348,7 @@ export const createWorkerSlice = (set, get) => {
     processGPSData: async (coordinates, onProgress) => {
       try {
         const results = await sendWorkerMessage(
-          "PROCESS_GPS_DATA",
+          MESSAGE_TYPES.REQUEST.PROCESS_GPS_DATA,
           { coordinates },
           onProgress,
         );
@@ -474,7 +403,7 @@ export const createWorkerSlice = (set, get) => {
     processSections: async (coordinates, sections, onProgress) => {
       try {
         const results = await sendWorkerMessage(
-          "PROCESS_SECTIONS",
+          MESSAGE_TYPES.REQUEST.PROCESS_SECTIONS,
           { coordinates, sections },
           onProgress,
         );
@@ -525,10 +454,13 @@ export const createWorkerSlice = (set, get) => {
 
     calculateRouteStats: async (coordinates, segments) => {
       try {
-        const results = await sendWorkerMessage("CALCULATE_ROUTE_STATS", {
-          coordinates,
-          segments,
-        });
+        const results = await sendWorkerMessage(
+          MESSAGE_TYPES.REQUEST.CALCULATE_ROUTE_STATS,
+          {
+            coordinates,
+            segments,
+          },
+        );
 
         get().updateStats({
           distance: results.distance,
@@ -570,10 +502,13 @@ export const createWorkerSlice = (set, get) => {
 
     findPointsAtDistances: async (coordinates, distances) => {
       try {
-        const results = await sendWorkerMessage("FIND_POINTS_AT_DISTANCES", {
-          coordinates,
-          distances,
-        });
+        const results = await sendWorkerMessage(
+          MESSAGE_TYPES.REQUEST.FIND_POINTS_AT_DISTANCES,
+          {
+            coordinates,
+            distances,
+          },
+        );
 
         set(
           (state) => ({
@@ -609,11 +544,14 @@ export const createWorkerSlice = (set, get) => {
 
     getRouteSection: async (coordinates, start, end) => {
       try {
-        const results = await sendWorkerMessage("GET_ROUTE_SECTION", {
-          coordinates,
-          start,
-          end,
-        });
+        const results = await sendWorkerMessage(
+          MESSAGE_TYPES.REQUEST.GET_ROUTE_SECTION,
+          {
+            coordinates,
+            start,
+            end,
+          },
+        );
 
         set(
           (state) => ({
@@ -668,17 +606,15 @@ export const createWorkerSlice = (set, get) => {
           return null;
         }
 
-        const results = await sendWorkerMessage("FIND_CLOSEST_LOCATION", {
-          coordinates,
-          target: point,
-        });
+        const results = await sendWorkerMessage(
+          MESSAGE_TYPES.REQUEST.FIND_CLOSEST_LOCATION,
+          {
+            coordinates,
+            target: point,
+          },
+        );
 
         if (results && results.closestLocation) {
-          const closestCoord = results.closestLocation;
-          const closestIndex = results.closestIndex;
-
-          // get().setClosestLocation(closestCoord, closestIndex);
-
           set(
             (state) => ({
               ...state,
@@ -713,13 +649,7 @@ export const createWorkerSlice = (set, get) => {
       }
     },
 
-    // Testing only: expose sendWorkerMessage for testing concurrent requests
+    // Testing only: expose sendWorkerMessage for testing internal message flow
     __TESTING_ONLY_sendWorkerMessage: sendWorkerMessage,
   };
 };
-
-// Testing only: reset module-level state
-export function __TESTING_ONLY_resetWorkerState() {
-  worker = null;
-  requests.clear();
-}
