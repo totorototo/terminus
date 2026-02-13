@@ -31,19 +31,28 @@ const calculateTimeMetrics = (location, cumulativeDistances, startingDate) => {
   const now = Date.now();
   const eta = startingDate + Math.round(estimatedTotalDuration);
 
-  // Format ETA as a readable date string
-  const etaDateStr = format(new Date(eta), "HH:mm");
+  // Format ETA as a readable date string with validation
+  const etaDateStr = Number.isFinite(eta)
+    ? format(new Date(eta), "HH:mm")
+    : "--:--";
 
   // Calculate remaining duration from now to ETA
   const remainingDuration = intervalToDuration({ start: now, end: eta });
 
   // Format remaining duration as a human-friendly string
-  const remainingStr = formatDuration(remainingDuration, {
-    format: ["days", "hours", "minutes", "seconds"],
-    locale: customLocale,
-  });
+  const remainingStr = remainingDuration
+    ? formatDuration(remainingDuration, {
+        format: ["days", "hours", "minutes", "seconds"],
+        locale: customLocale,
+      })
+    : "--";
 
-  return { etaDateStr, remainingStr, distanceDone, totalDistance };
+  return {
+    etaDateStr,
+    remainingStr,
+    distanceDone: Math.max(0, distanceDone),
+    totalDistance: Math.max(0, totalDistance),
+  };
 };
 
 const TrailData = memo(function TrailData({ className }) {

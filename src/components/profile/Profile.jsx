@@ -4,6 +4,25 @@ import { Color, DoubleSide, DynamicDrawUsage } from "three";
 import { createVertices } from "../../helpers/createVertices";
 import { shaderMaterial } from "@react-three/drei";
 
+// Shared progress coloring logic for shaders
+const PROGRESS_COLORING_LOGIC = `
+  if (progressIndex >= 0.0) {
+    if (progressIndex < startIndex) {
+      // Before progress starts, keep as is
+      baseColor = baseColor;
+    } else if (progressIndex >= endIndex) {
+      // After progress completes, use progress color
+      baseColor = progressColor;
+    } else {
+      // During progress, convert global index to section-relative
+      float relativeProgress = progressIndex - startIndex;
+      if (vVertexIndex < relativeProgress) {
+        baseColor = progressColor;
+      }
+    }
+  }
+`;
+
 // Slope-based shader material with lighting
 const SlopeMaterial = shaderMaterial(
   {
@@ -67,24 +86,9 @@ const SlopeMaterial = shaderMaterial(
   
   void main() {
     vec3 baseColor = getSlopeColor(vSlope);
-    
-    // Apply progress coloring if active
-    if (progressIndex >= 0.0) {
-      if (progressIndex < startIndex) {
-        // Before progress starts, keep as is
-        baseColor = baseColor;
-      } else if (progressIndex >= endIndex) {
-        // After progress completes, use progress color
-        baseColor = progressColor;
-      } else {
-        // During progress, convert global index to section-relative
-        float relativeProgress = progressIndex - startIndex;
-        if (vVertexIndex < relativeProgress) {
-          baseColor = progressColor;
-        }
-      }
-    }
-    
+
+    ${PROGRESS_COLORING_LOGIC}
+
     // Simple directional lighting (simulates sun from upper-right)
     vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
     vec3 normal = normalize(vNormal);
@@ -165,24 +169,9 @@ const SolidColorMaterial = shaderMaterial(
   
   void main() {
     vec3 finalBaseColor = baseColor;
-    
-    // Apply progress coloring if active
-    if (progressIndex >= 0.0) {
-      if (progressIndex < startIndex) {
-        // Before progress starts, keep as is
-        finalBaseColor = baseColor;
-      } else if (progressIndex >= endIndex) {
-        // After progress completes, use progress color
-        finalBaseColor = progressColor;
-      } else {
-        // During progress, convert global index to section-relative
-        float relativeProgress = progressIndex - startIndex;
-        if (vVertexIndex < relativeProgress) {
-          finalBaseColor = progressColor;
-        }
-      }
-    }
-    
+
+    ${PROGRESS_COLORING_LOGIC.replace(/baseColor/g, "finalBaseColor")}
+
     // Simple directional lighting (simulates sun from upper-right)
     vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
     vec3 normal = normalize(vNormal);
@@ -322,6 +311,15 @@ function Profile({
   const safeEndIndex = endIndex ?? 1;
   const safeProgressColor = progressColor ?? color;
 
+  // Memoize Color objects to avoid recreating them every render
+  const materialColors = useMemo(
+    () => ({
+      base: new Color(color),
+      progress: new Color(safeProgressColor),
+    }),
+    [color, safeProgressColor],
+  );
+
   return (
     <mesh
       castShadow
@@ -367,7 +365,7 @@ function Profile({
           ref={materialRef}
           side={DoubleSide}
           transparent={false}
-          progressColor={new Color(safeProgressColor)}
+          progressColor={materialColors.progress}
           progressIndex={safeProgressIndex}
           startIndex={safeStartIndex}
           endIndex={safeEndIndex}
@@ -379,8 +377,8 @@ function Profile({
           ref={materialRef}
           side={DoubleSide}
           transparent={false}
-          baseColor={new Color(color)}
-          progressColor={new Color(safeProgressColor)}
+          baseColor={materialColors.base}
+          progressColor={materialColors.progress}
           progressIndex={safeProgressIndex}
           startIndex={safeStartIndex}
           endIndex={safeEndIndex}
