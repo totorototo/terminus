@@ -5,6 +5,8 @@ import { Billboard, Text } from "@react-three/drei";
 import { useTheme } from "styled-components";
 import FadingText from "./FadingText.jsx";
 
+const ELEVATION_INDEX = 2; // [lat, lon, elevation]
+
 function Peaks({ coordinateScales, profileMode }) {
   const data = useStore((state) => state.gpx.data);
   const peaks = useStore((state) => state.gpx.peaks);
@@ -40,7 +42,7 @@ function Peaks({ coordinateScales, profileMode }) {
         fadeStrength={1}
         fadeFrom={1} // fade relative to camera
       >
-        {Math.round(data[peaks[idx]][2])}
+        {Math.round(data[peaks[idx]][ELEVATION_INDEX])}
       </FadingText>
     </Billboard>
   ));

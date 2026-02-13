@@ -3,6 +3,7 @@ import {
   animated,
   useTransition,
 } from "@react-spring/web";
+import { useMemo } from "react";
 import style from "./Navigation.style.js";
 import useStore from "../../store/store.js";
 import { ArrowUp, CornerUpLeft, CornerUpRight } from "@styled-icons/feather";
@@ -10,6 +11,10 @@ import { ArrowDown } from "@styled-icons/feather";
 import { useProjectedLocation } from "../../store/store.js";
 import { format } from "date-fns";
 import { Clock } from "@styled-icons/feather";
+
+// Animation configuration
+const SECTION_ITEM_HEIGHT = 66;
+const SECTION_ITEM_TRANSLATE = 6;
 
 // Get arrow icon based on bearing direction
 function getArrowIcon(bearing) {
@@ -49,9 +54,11 @@ function Navigation({ className }) {
   const springConfig = { tension: 170, friction: 26 };
 
   // currentPosition
-
-  const remainingSections = sections?.filter(
-    (section) => section.endIndex >= currentPositionIndex,
+  const remainingSections = useMemo(
+    () =>
+      sections?.filter((section) => section.endIndex >= currentPositionIndex) ??
+      [],
+    [sections, currentPositionIndex],
   );
 
   const currentSection =
@@ -78,9 +85,15 @@ function Navigation({ className }) {
 
   const transitions = useTransition(remainingSections || [], {
     // animate height (and a subtle translate) only — leave opacity to CSS classes
-    from: { height: 0, transform: "translateY(-6px)" },
-    enter: { height: 66, transform: "translateY(0px)" },
-    leave: { height: 0, transform: "translateY(-6px)" },
+    from: {
+      height: 0,
+      transform: `translateY(-${SECTION_ITEM_TRANSLATE}px)`,
+    },
+    enter: { height: SECTION_ITEM_HEIGHT, transform: "translateY(0px)" },
+    leave: {
+      height: 0,
+      transform: `translateY(-${SECTION_ITEM_TRANSLATE}px)`,
+    },
     keys: (section) => section.segmentId,
   });
 
