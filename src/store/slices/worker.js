@@ -128,11 +128,21 @@ export const createWorkerSlice = (set, get) => {
       // Set up timeout to cleanup if worker doesn't respond
       timeoutHandle = setTimeout(() => {
         requests.delete(id);
-        wrappedReject(
-          new Error(
-            `Worker request ${type} timed out after ${WORKER_TIMEOUT}ms`,
-          ),
+        const errorMsg = `Worker request ${type} timed out after ${WORKER_TIMEOUT}ms`;
+        set(
+          (state) => ({
+            ...state,
+            worker: {
+              ...state.worker,
+              processing: false,
+              progress: 0,
+              errorMessage: errorMsg,
+            },
+          }),
+          undefined,
+          "worker/setWorkerTimeout",
         );
+        wrappedReject(new Error(errorMsg));
       }, WORKER_TIMEOUT);
 
       requests.set(id, {
@@ -702,5 +712,14 @@ export const createWorkerSlice = (set, get) => {
         throw error;
       }
     },
+
+    // Testing only: expose sendWorkerMessage for testing concurrent requests
+    __TESTING_ONLY_sendWorkerMessage: sendWorkerMessage,
   };
 };
+
+// Testing only: reset module-level state
+export function __TESTING_ONLY_resetWorkerState() {
+  worker = null;
+  requests.clear();
+}
