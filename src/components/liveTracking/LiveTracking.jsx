@@ -21,36 +21,22 @@ function LiveTracking({ className }) {
 
   const springConfig = { tension: 170, friction: 26 };
 
-  const { distance } = useSpringWeb({
+  // Batch all spring animations into a single hook for better performance
+  const springs = useSpringWeb({
     distance: stats.distance - cumulativeDistances?.[currentPositionIndex] || 0,
-    config: springConfig,
-  });
-
-  const { elevation } = useSpringWeb({
     elevation:
       stats.elevationGain - cumulativeElevations?.[currentPositionIndex] || 0,
-    config: springConfig,
-  });
-
-  const { elevationLoss } = useSpringWeb({
     elevationLoss:
       stats.elevationLoss - cumulativeElevationLosses?.[currentPositionIndex] ||
       0,
-    config: springConfig,
-  });
-
-  const { altitude } = useSpringWeb({
     altitude: gpsData?.[currentPositionIndex]?.[2] || 0,
-    config: springConfig,
-  });
-
-  const { progress } = useSpringWeb({
     progress:
       gpsData && currentPositionIndex
         ? 100 - (currentPositionIndex * 100) / gpsData.length
         : 0,
     config: springConfig,
   });
+  const { distance, elevation, elevationLoss, altitude, progress } = springs;
 
   return (
     <div className={className}>

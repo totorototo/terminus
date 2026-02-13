@@ -19,25 +19,15 @@ const SectionData = function SectionData({ className }) {
     return undefined;
   }, [sections, currentPositionIndex]);
 
-  const { opacity } = useSpringWeb({
+  // Batch all spring animations into a single hook for better performance
+  const springs = useSpringWeb({
     opacity: section ? 1 : 0,
-    config: { tension: 170, friction: 26 },
-  });
-
-  const { distance } = useSpringWeb({
     distance: section?.totalDistance || 0,
-    config: { tension: 170, friction: 26 },
-  });
-
-  const { elevationGain } = useSpringWeb({
     elevationGain: section?.totalElevation || 0,
-    config: { tension: 170, friction: 26 },
-  });
-
-  const { elevationLoss } = useSpringWeb({
     elevationLoss: section?.totalElevationLoss || 0,
     config: { tension: 170, friction: 26 },
   });
+  const { opacity, distance, elevationGain, elevationLoss } = springs;
 
   return (
     <div className={className}>
