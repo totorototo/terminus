@@ -1004,6 +1004,146 @@ describe("Worker Slice", () => {
       expect(store.getState().stats.distance).toBe(100);
       expect(store.getState().stats.pointCount).toBe(2);
     });
+
+    it("should support onProgress callback during GPS data processing", async () => {
+      const onProgress = vi.fn();
+      const coordinates = [[1, 2, 3]];
+
+      const processPromise = store
+        .getState()
+        .processGPSData(coordinates, onProgress);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "PROGRESS",
+          id: message.id,
+          progress: 75,
+          message: "Processing GPS coordinates",
+        },
+      });
+
+      expect(onProgress).toHaveBeenCalledWith(75, "Processing GPS coordinates");
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "GPS_DATA_PROCESSED",
+          id: message.id,
+          results: {
+            points: coordinates,
+            slopes: [1.5],
+            cumulativeDistances: [0],
+            cumulativeElevations: [0],
+            cumulativeElevationLoss: [0],
+            totalDistance: 50,
+            totalElevation: 25,
+            totalElevationLoss: 10,
+            pointCount: 1,
+          },
+        },
+      });
+
+      await processPromise;
+    });
+
+    it("should handle validation error for GPS data results", async () => {
+      const coordinates = [[1, 2, 3]];
+      const invalidResults = {
+        points: "not an array", // Invalid
+        slopes: [1.5],
+        cumulativeDistances: [0],
+        cumulativeElevations: [0],
+        cumulativeElevationLoss: [0],
+        totalDistance: 50,
+        totalElevation: 25,
+        totalElevationLoss: 10,
+        pointCount: 1,
+      };
+
+      const processPromise = store
+        .getState()
+        .processGPSData(coordinates, undefined);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "GPS_DATA_PROCESSED",
+          id: message.id,
+          results: invalidResults,
+        },
+      });
+
+      await expect(processPromise).rejects.toThrow(
+        "Expected results.points to be an array",
+      );
+      expect(store.getState().worker.errorMessage).toContain("Expected");
+      expect(store.getState().worker.processing).toBe(false);
+    });
+
+    it("should handle worker error during GPS data processing", async () => {
+      const processPromise = store
+        .getState()
+        .processGPSData([[1, 2, 3]], undefined);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "Failed to process GPS coordinates",
+        },
+      });
+
+      await expect(processPromise).rejects.toThrow();
+      expect(store.getState().worker.errorMessage).toBe(
+        "Failed to process GPS coordinates",
+      );
+      expect(store.getState().worker.processing).toBe(false);
+    });
+
+    it("should clear error message on successful GPS data processing", async () => {
+      store.getState().setWorkerState({ errorMessage: "Previous GPS error" });
+
+      const coordinates = [[1, 2, 3]];
+      const processPromise = store
+        .getState()
+        .processGPSData(coordinates, undefined);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "GPS_DATA_PROCESSED",
+          id: message.id,
+          results: {
+            points: coordinates,
+            slopes: [1.5],
+            cumulativeDistances: [0],
+            cumulativeElevations: [0],
+            cumulativeElevationLoss: [0],
+            totalDistance: 50,
+            totalElevation: 25,
+            totalElevationLoss: 10,
+            pointCount: 1,
+          },
+        },
+      });
+
+      await processPromise;
+
+      expect(store.getState().worker.errorMessage).toBe("");
+    });
   });
 
   describe("findClosestLocation", () => {
@@ -1123,6 +1263,886 @@ describe("Worker Slice", () => {
 
       expect(result1).toEqual({ data: "response1" });
       expect(result2).toEqual({ data: "response2" });
+    });
+  });
+
+  // =========================================================================
+  // CATEGORY 7: processSections
+  // =========================================================================
+
+  describe("processSections", () => {
+    beforeEach(() => {
+      store.getState().initGPXWorker();
+    });
+
+    it("should process sections and update state", async () => {
+      const coordinates = [
+        [1, 2, 3],
+        [4, 5, 6],
+      ];
+      const sections = [{ id: 1 }, { id: 2 }];
+      const results = [
+        { id: 1, totalDistance: 100 },
+        { id: 2, totalDistance: 50 },
+      ];
+      results.totalDistance = 150;
+      results.totalElevationGain = 75;
+      results.totalElevationLoss = 50;
+      results.pointCount = 2;
+
+      const processPromise = store
+        .getState()
+        .processSections(coordinates, sections);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      expect(message.type).toBe("PROCESS_SECTIONS");
+      expect(message.data.coordinates).toEqual(coordinates);
+      expect(message.data.sections).toEqual(sections);
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "SECTIONS_PROCESSED",
+          id: message.id,
+          results,
+        },
+      });
+
+      await processPromise;
+
+      expect(store.getState().stats.distance).toBe(150);
+      expect(store.getState().stats.elevationGain).toBe(75);
+      expect(store.getState().stats.elevationLoss).toBe(50);
+      expect(store.getState().stats.pointCount).toBe(2);
+    });
+
+    it("should support onProgress callback", async () => {
+      const onProgress = vi.fn();
+      const coordinates = [[1, 2, 3]];
+      const sections = [];
+
+      const processPromise = store
+        .getState()
+        .processSections(coordinates, sections, onProgress);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "PROGRESS",
+          id: message.id,
+          progress: 50,
+          message: "Processing sections",
+        },
+      });
+
+      expect(onProgress).toHaveBeenCalledWith(50, "Processing sections");
+
+      const resultsArray = [{ id: 1 }];
+      resultsArray.totalDistance = 100;
+      resultsArray.totalElevationGain = 50;
+      resultsArray.totalElevationLoss = 30;
+      resultsArray.pointCount = 1;
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "SECTIONS_PROCESSED",
+          id: message.id,
+          results: resultsArray,
+        },
+      });
+
+      await processPromise;
+    });
+
+    it("should handle validation error for sections", async () => {
+      const coordinates = [[1, 2, 3]];
+      const sections = [];
+      const invalidResults = {
+        totalDistance: "not a number",
+        totalElevationGain: 50,
+        totalElevationLoss: 30,
+        pointCount: 1,
+      };
+
+      const processPromise = store
+        .getState()
+        .processSections(coordinates, sections);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "SECTIONS_PROCESSED",
+          id: message.id,
+          results: invalidResults,
+        },
+      });
+
+      await expect(processPromise).rejects.toThrow();
+      expect(store.getState().worker.errorMessage).toBeTruthy();
+    });
+
+    it("should handle worker error during sections processing", async () => {
+      const processPromise = store.getState().processSections([[1, 2, 3]], []);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "Failed to process sections",
+        },
+      });
+
+      await expect(processPromise).rejects.toThrow();
+      expect(store.getState().worker.errorMessage).toBe(
+        "Failed to process sections",
+      );
+      expect(store.getState().worker.processing).toBe(false);
+    });
+  });
+
+  // =========================================================================
+  // CATEGORY 8: calculateRouteStats
+  // =========================================================================
+
+  describe("calculateRouteStats", () => {
+    beforeEach(() => {
+      store.getState().initGPXWorker();
+    });
+
+    it("should calculate route stats and update state", async () => {
+      const coordinates = [
+        [1, 2, 3],
+        [4, 5, 6],
+      ];
+      const segments = [{ start: 0, end: 1 }];
+      const results = {
+        distance: 250,
+        elevationGain: 100,
+        elevationLoss: 75,
+        pointCount: 2,
+      };
+
+      const calculatePromise = store
+        .getState()
+        .calculateRouteStats(coordinates, segments);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      expect(message.type).toBe("CALCULATE_ROUTE_STATS");
+      expect(message.data.coordinates).toEqual(coordinates);
+      expect(message.data.segments).toEqual(segments);
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ROUTE_STATS_CALCULATED",
+          id: message.id,
+          results,
+        },
+      });
+
+      await calculatePromise;
+
+      expect(store.getState().stats.distance).toBe(250);
+      expect(store.getState().stats.elevationGain).toBe(100);
+      expect(store.getState().stats.elevationLoss).toBe(75);
+      expect(store.getState().stats.pointCount).toBe(2);
+    });
+
+    it("should handle worker error during stats calculation", async () => {
+      const calculatePromise = store
+        .getState()
+        .calculateRouteStats([[1, 2, 3]], []);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "Stats calculation failed",
+        },
+      });
+
+      await expect(calculatePromise).rejects.toThrow();
+      expect(store.getState().worker.errorMessage).toBe(
+        "Stats calculation failed",
+      );
+      expect(store.getState().worker.processing).toBe(false);
+    });
+
+    it("should clear error message on success", async () => {
+      store.getState().setWorkerState({ errorMessage: "Previous error" });
+
+      const calculatePromise = store
+        .getState()
+        .calculateRouteStats([[1, 2, 3]], []);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ROUTE_STATS_CALCULATED",
+          id: message.id,
+          results: {
+            distance: 100,
+            elevationGain: 50,
+            elevationLoss: 30,
+            pointCount: 1,
+          },
+        },
+      });
+
+      await calculatePromise;
+
+      expect(store.getState().worker.errorMessage).toBe("");
+    });
+  });
+
+  // =========================================================================
+  // CATEGORY 9: findPointsAtDistances
+  // =========================================================================
+
+  describe("findPointsAtDistances", () => {
+    beforeEach(() => {
+      store.getState().initGPXWorker();
+    });
+
+    it("should find points at specified distances", async () => {
+      const coordinates = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+      ];
+      const distances = [50, 100];
+      const results = {
+        points: [
+          [2.5, 3.5, 4.5],
+          [5.5, 6.5, 7.5],
+        ],
+      };
+
+      const findPromise = store
+        .getState()
+        .findPointsAtDistances(coordinates, distances);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      expect(message.type).toBe("FIND_POINTS_AT_DISTANCES");
+      expect(message.data.coordinates).toEqual(coordinates);
+      expect(message.data.distances).toEqual(distances);
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "POINTS_FOUND",
+          id: message.id,
+          results,
+        },
+      });
+
+      const result = await findPromise;
+
+      expect(result).toEqual(results);
+      expect(store.getState().worker.errorMessage).toBe("");
+    });
+
+    it("should handle worker error when finding points", async () => {
+      const findPromise = store
+        .getState()
+        .findPointsAtDistances([[1, 2, 3]], [50]);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "Cannot find points with invalid distances",
+        },
+      });
+
+      await expect(findPromise).rejects.toThrow();
+      expect(store.getState().worker.errorMessage).toContain("Cannot find");
+      expect(store.getState().worker.processing).toBe(false);
+    });
+  });
+
+  // =========================================================================
+  // CATEGORY 10: getRouteSection
+  // =========================================================================
+
+  describe("getRouteSection", () => {
+    beforeEach(() => {
+      store.getState().initGPXWorker();
+    });
+
+    it("should get route section between start and end", async () => {
+      const coordinates = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+      ];
+      const start = [1, 2, 3];
+      const end = [7, 8, 9];
+      const results = {
+        section: [
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9],
+        ],
+        distance: 200,
+        elevation: 50,
+      };
+
+      const getSectionPromise = store
+        .getState()
+        .getRouteSection(coordinates, start, end);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      expect(message.type).toBe("GET_ROUTE_SECTION");
+      expect(message.data.coordinates).toEqual(coordinates);
+      expect(message.data.start).toEqual(start);
+      expect(message.data.end).toEqual(end);
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ROUTE_SECTION_READY",
+          id: message.id,
+          results,
+        },
+      });
+
+      const result = await getSectionPromise;
+
+      expect(result).toEqual(results);
+      expect(store.getState().worker.errorMessage).toBe("");
+    });
+
+    it("should handle worker error when getting section", async () => {
+      const getSectionPromise = store
+        .getState()
+        .getRouteSection([[1, 2, 3]], [1, 2, 3], [4, 5, 6]);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "Route section not found",
+        },
+      });
+
+      await expect(getSectionPromise).rejects.toThrow();
+      expect(store.getState().worker.errorMessage).toBe(
+        "Route section not found",
+      );
+      expect(store.getState().worker.processing).toBe(false);
+    });
+
+    it("should clear error on successful section retrieval", async () => {
+      store.getState().setWorkerState({ errorMessage: "Previous error" });
+
+      const getSectionPromise = store
+        .getState()
+        .getRouteSection([[1, 2, 3]], [1, 2, 3], [1, 2, 3]);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ROUTE_SECTION_READY",
+          id: message.id,
+          results: { section: [[1, 2, 3]] },
+        },
+      });
+
+      await getSectionPromise;
+
+      expect(store.getState().worker.errorMessage).toBe("");
+    });
+  });
+
+  // =========================================================================
+  // CATEGORY 11: EDGE CASES & STATE MANAGEMENT
+  // =========================================================================
+
+  describe("Edge Cases & State Management", () => {
+    beforeEach(() => {
+      store.getState().initGPXWorker();
+    });
+
+    it("should handle multiple concurrent processGPXFile calls", async () => {
+      const gpxData1 = new ArrayBuffer(100);
+      const gpxData2 = new ArrayBuffer(200);
+
+      const promise1 = store.getState().processGPXFile(gpxData1);
+      const promise2 = store.getState().processGPXFile(gpxData2);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const calls = mockWorkerInstance.postMessage.mock.calls;
+      const message1 = calls[0][0];
+      const message2 = calls[1][0];
+
+      // Verify different request IDs
+      expect(message1.id).not.toBe(message2.id);
+
+      // Respond to second request first
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "GPX_FILE_PROCESSED",
+          id: message2.id,
+          results: {
+            trace: {
+              points: [],
+              peaks: [],
+              slopes: [],
+              cumulativeDistances: [],
+              cumulativeElevations: [],
+              cumulativeElevationLoss: [],
+              totalDistance: 200,
+              totalElevation: 100,
+              totalElevationLoss: 50,
+            },
+            sections: [],
+            waypoints: [],
+            metadata: {},
+          },
+        },
+      });
+
+      // Then respond to first request
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "GPX_FILE_PROCESSED",
+          id: message1.id,
+          results: {
+            trace: {
+              points: [],
+              peaks: [],
+              slopes: [],
+              cumulativeDistances: [],
+              cumulativeElevations: [],
+              cumulativeElevationLoss: [],
+              totalDistance: 100,
+              totalElevation: 50,
+              totalElevationLoss: 20,
+            },
+            sections: [],
+            waypoints: [],
+            metadata: {},
+          },
+        },
+      });
+
+      const result1 = await promise1;
+      const result2 = await promise2;
+
+      // Verify each resolved with correct data
+      expect(result1.trace.totalDistance).toBe(100);
+      expect(result2.trace.totalDistance).toBe(200);
+    });
+
+    it("should handle message with unregistered ID gracefully", async () => {
+      const fakeId = Date.now() + Math.random();
+
+      // Send a message with an ID that was never registered
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "GPX_FILE_PROCESSED",
+          id: fakeId,
+          results: { data: "orphaned" },
+        },
+      });
+
+      // Should not throw and state should remain unchanged
+      expect(store.getState().worker.processing).toBe(false);
+      expect(store.getState().worker.errorMessage).toBe("");
+    });
+
+    it("should handle empty arrays in valid results", async () => {
+      const processPromise = store
+        .getState()
+        .processGPXFile(new ArrayBuffer(100));
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      // Empty arrays are valid
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "GPX_FILE_PROCESSED",
+          id: message.id,
+          results: {
+            trace: {
+              points: [],
+              peaks: [],
+              slopes: [],
+              cumulativeDistances: [],
+              cumulativeElevations: [],
+              cumulativeElevationLoss: [],
+              totalDistance: 0,
+              totalElevation: 0,
+              totalElevationLoss: 0,
+            },
+            sections: [],
+            waypoints: [],
+            metadata: {},
+          },
+        },
+      });
+
+      const result = await processPromise;
+
+      expect(result.trace.points).toEqual([]);
+      expect(store.getState().stats.distance).toBe(0);
+      expect(store.getState().worker.processing).toBe(false);
+    });
+
+    it("should handle consecutive errors without state corruption", async () => {
+      // First request
+      const promise1 = store
+        .getState()
+        .__TESTING_ONLY_sendWorkerMessage("TEST_1", {});
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      let message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "First error",
+        },
+      });
+
+      await expect(promise1).rejects.toThrow("First error");
+      expect(store.getState().worker.errorMessage).toBe("First error");
+
+      // Clear errors for second attempt
+      store.getState().clearError();
+
+      // Second request
+      const promise2 = store
+        .getState()
+        .__TESTING_ONLY_sendWorkerMessage("TEST_2", {});
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      message = mockWorkerInstance.postMessage.mock.calls[1][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "Second error",
+        },
+      });
+
+      await expect(promise2).rejects.toThrow("Second error");
+      expect(store.getState().worker.errorMessage).toBe("Second error");
+    });
+
+    it("should maintain state consistency with partially failed batch operations", async () => {
+      store.setState({
+        gpx: {
+          ...store.getState().gpx,
+          data: [[1, 2, 3]],
+        },
+      });
+
+      // Start an operation
+      const promise = store
+        .getState()
+        .__TESTING_ONLY_sendWorkerMessage("OPERATION", { test: true });
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      // Simulate error
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "Operation failed",
+        },
+      });
+
+      await expect(promise).rejects.toThrow();
+
+      // Verify state consistency - GPX data should be preserved
+      expect(store.getState().gpx.data).toEqual([[1, 2, 3]]);
+      expect(store.getState().worker.processing).toBe(false);
+    });
+
+    it("should handle null coordinates gracefully in findClosestLocation", async () => {
+      store.setState({
+        gps: {
+          location: { timestamp: 0, coords: [] },
+          projectedLocation: { timestamp: 0, coords: [], index: null },
+          savedLocations: [],
+        },
+      });
+
+      const result = await store.getState().findClosestLocation();
+
+      expect(result).toBeNull();
+      expect(store.getState().worker.errorMessage).toContain(
+        "No location or GPS data available",
+      );
+    });
+
+    it("should reset processing state when terminating during active operation", async () => {
+      const promise = store
+        .getState()
+        .__TESTING_ONLY_sendWorkerMessage("LONG_OPERATION", {});
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(store.getState().worker.processing).toBe(true);
+
+      store.getState().terminateGPXWorker();
+
+      expect(store.getState().worker.processing).toBe(false);
+      expect(store.getState().worker.isReady).toBe(false);
+
+      await expect(promise).rejects.toThrow("Worker was terminated");
+    });
+
+    it("should handle rapid successive terminate calls", () => {
+      store.getState().terminateGPXWorker();
+      store.getState().terminateGPXWorker();
+      store.getState().terminateGPXWorker();
+
+      // Should not throw
+      expect(store.getState().worker.isReady).toBe(false);
+    });
+  });
+
+  // =========================================================================
+  // CATEGORY 12: ADDITIONAL ERROR SCENARIOS
+  // =========================================================================
+
+  describe("Additional Error Scenarios", () => {
+    beforeEach(() => {
+      store.getState().initGPXWorker();
+    });
+
+    it("should handle worker error with object error property", async () => {
+      const promise = store
+        .getState()
+        .__TESTING_ONLY_sendWorkerMessage("TEST", {});
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      // Error is an object instead of string
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: { message: "Nested error", code: "ERR_001" },
+        },
+      });
+
+      await expect(promise).rejects.toThrow();
+      // Should use toString() of the object
+      expect(store.getState().worker.errorMessage).toBeTruthy();
+    });
+
+    it("should reject pending request with specific type error message", async () => {
+      const promise = store
+        .getState()
+        .__TESTING_ONLY_sendWorkerMessage("SPECIFIC_REQUEST", {});
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "Failed to process SPECIFIC_REQUEST",
+        },
+      });
+
+      try {
+        await promise;
+        fail("Should have thrown");
+      } catch (error) {
+        expect(error.message).toContain("Failed to process SPECIFIC_REQUEST");
+      }
+    });
+
+    it("should handle multiple operations with mixed success and failure", async () => {
+      const promise1 = store
+        .getState()
+        .__TESTING_ONLY_sendWorkerMessage("OP_1", { data: 1 });
+      const promise2 = store
+        .getState()
+        .__TESTING_ONLY_sendWorkerMessage("OP_2", { data: 2 });
+      const promise3 = store
+        .getState()
+        .__TESTING_ONLY_sendWorkerMessage("OP_3", { data: 3 });
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const calls = mockWorkerInstance.postMessage.mock.calls;
+      const msg1 = calls[0][0];
+      const msg2 = calls[1][0];
+      const msg3 = calls[2][0];
+
+      // First succeeds
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "POINTS_FOUND",
+          id: msg1.id,
+          results: { success: true },
+        },
+      });
+
+      // Second fails
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: msg2.id,
+          error: "Second operation failed",
+        },
+      });
+
+      // Third succeeds
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "POINTS_FOUND",
+          id: msg3.id,
+          results: { success: true },
+        },
+      });
+
+      const result1 = await promise1;
+      expect(result1).toEqual({ success: true });
+
+      await expect(promise2).rejects.toThrow("Second operation failed");
+
+      const result3 = await promise3;
+      expect(result3).toEqual({ success: true });
+
+      // Error message is cleared when third operation succeeds
+      expect(store.getState().worker.errorMessage).toBe("");
+    });
+
+    it("should handle error during processGPXFile with partial state update", async () => {
+      const gpxData = new ArrayBuffer(100);
+
+      const promise = store.getState().processGPXFile(gpxData);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "ERROR",
+          id: message.id,
+          error: "Corrupted GPX data",
+        },
+      });
+
+      await expect(promise).rejects.toThrow();
+
+      // Verify error state is set
+      expect(store.getState().worker.errorMessage).toBe("Corrupted GPX data");
+      expect(store.getState().worker.processing).toBe(false);
+      expect(store.getState().worker.progress).toBe(0);
+    });
+
+    it("should recover from validation error and allow new request", async () => {
+      const coordinates = [[1, 2, 3]];
+
+      // First request with invalid results
+      const promise1 = store.getState().processGPSData(coordinates, undefined);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      let message = mockWorkerInstance.postMessage.mock.calls[0][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "GPS_DATA_PROCESSED",
+          id: message.id,
+          results: { points: "invalid" },
+        },
+      });
+
+      await expect(promise1).rejects.toThrow();
+      expect(store.getState().worker.errorMessage).toContain("Expected");
+
+      // Clear error and try again
+      store.getState().clearError();
+
+      // Second request with valid results
+      const promise2 = store.getState().processGPSData(coordinates, undefined);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      message = mockWorkerInstance.postMessage.mock.calls[1][0];
+
+      mockWorkerInstance.onmessage({
+        data: {
+          type: "GPS_DATA_PROCESSED",
+          id: message.id,
+          results: {
+            points: coordinates,
+            slopes: [1.5],
+            cumulativeDistances: [0],
+            cumulativeElevations: [0],
+            cumulativeElevationLoss: [0],
+            totalDistance: 50,
+            totalElevation: 25,
+            totalElevationLoss: 10,
+            pointCount: 1,
+          },
+        },
+      });
+
+      await promise2;
+
+      expect(store.getState().worker.errorMessage).toBe("");
+      expect(store.getState().worker.processing).toBe(false);
     });
   });
 });
