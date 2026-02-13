@@ -59,10 +59,8 @@ describe("store", () => {
 
       expect(state.app.trackingMode).toBe(false);
       expect(state.app.displaySlopes).toBe(false);
-      expect(state.app.currentPositionIndex).toEqual({ index: 0, date: 0 });
+      expect(state.app.profileMode).toBe(false);
       expect(state.app.locations).toEqual([]);
-      expect(state.app.currentLocation).toBeNull();
-      expect(state.app.currentClosestLocation).toBeNull();
       expect(state.app.startingDate).toBe(0);
     });
 
