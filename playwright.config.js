@@ -18,7 +18,9 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: "npm run build && npm run preview",
+    command: process.env.CI
+      ? "npm run preview"
+      : "npm run build && npm run preview",
     url: "http://localhost:5173",
     reuseExistingServer: !process.env.CI,
     timeout: 180_000, // 3 minutes for build + startup
