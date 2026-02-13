@@ -4,10 +4,6 @@ export const createAppSlice = (set, get) => {
       trackingMode: false,
       displaySlopes: false,
       profileMode: false,
-      currentPositionIndex: { index: 0, date: 0 },
-      currentLocation: null,
-      currentClosestLocation: null,
-      currentClosestLocationIndex: 0,
       startingDate: 0, //Unix timestamp
       locations: [],
     },
