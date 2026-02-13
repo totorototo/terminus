@@ -32,21 +32,25 @@ export default defineConfig({
     // Enable compression for better delivery
     minify: "terser",
     chunkSizeWarningLimit: 1000,
+    // Disable compression for faster builds in CI
+    sourcemap: !process.env.CI,
   },
   plugins: [
     react(),
     arraybuffer(),
-    compression({
-      algorithm: "brotli",
-      ext: ".br",
-      deleteOriginFile: false,
-    }),
-    compression({
-      algorithm: "gzip",
-      ext: ".gz",
-      deleteOriginFile: false,
-    }),
-    visualizer({ open: true }),
+    !process.env.CI &&
+      compression({
+        algorithm: "brotli",
+        ext: ".br",
+        deleteOriginFile: false,
+      }),
+    !process.env.CI &&
+      compression({
+        algorithm: "gzip",
+        ext: ".gz",
+        deleteOriginFile: false,
+      }),
+    process.env.ANALYZE && visualizer({ open: false }),
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
@@ -111,7 +115,7 @@ export default defineConfig({
   ],
   worker: {
     format: "es", // Enable ES modules in workers
-    plugins: [
+    plugins: () => [
       zigar({
         optimize: "ReleaseSmall",
         embedWASM: true,
