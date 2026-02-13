@@ -1,5 +1,6 @@
 let worker = null;
 const requests = new Map();
+const WORKER_TIMEOUT = 60000; // 60 seconds
 
 // Helper to create worker
 function createGPSWorker() {
@@ -19,7 +20,35 @@ export const createWorkerSlice = (set, get) => {
       }
 
       const id = Date.now() + Math.random();
-      requests.set(id, { resolve, reject, onProgress });
+      let timeoutHandle;
+
+      // Wrap resolve/reject to clear timeout before completing
+      const wrappedResolve = (result) => {
+        clearTimeout(timeoutHandle);
+        resolve(result);
+      };
+
+      const wrappedReject = (error) => {
+        clearTimeout(timeoutHandle);
+        reject(error);
+      };
+
+      // Set up timeout to cleanup if worker doesn't respond
+      timeoutHandle = setTimeout(() => {
+        requests.delete(id);
+        wrappedReject(
+          new Error(
+            `Worker request ${type} timed out after ${WORKER_TIMEOUT}ms`,
+          ),
+        );
+      }, WORKER_TIMEOUT);
+
+      requests.set(id, {
+        resolve: wrappedResolve,
+        reject: wrappedReject,
+        onProgress,
+        timeoutHandle,
+      });
 
       set(
         (state) => ({
@@ -203,7 +232,14 @@ export const createWorkerSlice = (set, get) => {
         worker.terminate();
         worker = null;
       }
+
+      // Reject all pending requests to prevent hanging promises
+      for (const [id, request] of requests.entries()) {
+        clearTimeout(request.timeoutHandle);
+        request.reject(new Error("Worker was terminated"));
+      }
       requests.clear();
+
       set(
         (state) => ({
           ...state,
@@ -213,6 +249,7 @@ export const createWorkerSlice = (set, get) => {
             processing: false,
             progress: 0,
             progressMessage: "",
+            errorMessage: "",
           },
         }),
         undefined,
