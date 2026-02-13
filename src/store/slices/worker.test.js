@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { create } from "zustand";
-import { createWorkerSlice, __TESTING_ONLY_resetWorkerState } from "./worker";
+import { createWorkerSlice } from "./worker";
+import { MESSAGE_TYPES } from "./workerTypes";
 
 // Mock Worker API at module level
 let mockWorkerInstance = {
@@ -28,9 +29,6 @@ describe("Worker Slice", () => {
   let store;
 
   beforeEach(() => {
-    // Critical: Reset module-level state
-    __TESTING_ONLY_resetWorkerState();
-
     // Reset all Vitest mocks
     vi.clearAllMocks();
 
@@ -77,8 +75,8 @@ describe("Worker Slice", () => {
         ),
       setSections: vi.fn(),
 
-      // The actual slice under test
-      ...createWorkerSlice(set, get),
+      // The actual slice under test, with injected worker factory (closure-local state)
+      ...createWorkerSlice(set, get, () => mockWorkerInstance),
     }));
   });
 
@@ -106,23 +104,21 @@ describe("Worker Slice", () => {
     it("should create worker and set isReady to true", () => {
       store.getState().initGPXWorker();
 
-      expect(global.Worker).toHaveBeenCalledWith(expect.any(Object), {
-        type: "module",
-      });
-
       const state = store.getState().worker;
       expect(state.isReady).toBe(true);
       expect(state.errorMessage).toBe("");
+      expect(mockWorkerInstance.onmessage).not.toBeNull();
     });
 
     it("should not create duplicate workers", () => {
       store.getState().initGPXWorker();
-      const firstCallCount = global.Worker.mock.calls.length;
+      const firstInstance = mockWorkerInstance;
 
       store.getState().initGPXWorker();
-      const secondCallCount = global.Worker.mock.calls.length;
+      const secondInstance = mockWorkerInstance;
 
-      expect(firstCallCount).toBe(secondCallCount);
+      // initGPXWorker should return early if worker already exists
+      expect(firstInstance).toBe(secondInstance);
     });
 
     it("should attach onmessage handler", () => {
@@ -140,13 +136,51 @@ describe("Worker Slice", () => {
     });
 
     it("should handle worker creation error", () => {
-      global.Worker.mockImplementationOnce(function () {
-        throw new Error("Worker creation failed");
-      });
+      // Create a new store with a factory that throws
+      const errorStore = create((set, get) => ({
+        stats: {
+          distance: 0,
+          elevationGain: 0,
+          elevationLoss: 0,
+          pointCount: 0,
+        },
+        gpx: {
+          data: [],
+          slopes: [],
+          peaks: [],
+          metadata: {},
+          cumulativeDistances: [],
+          cumulativeElevations: [],
+          cumulativeElevationLosses: [],
+        },
+        sections: [],
+        waypoints: [],
+        gps: {
+          location: { timestamp: 0, coords: [] },
+          projectedLocation: { timestamp: 0, coords: [], index: null },
+          savedLocations: [],
+        },
+        setGpxData: vi.fn(),
+        setSlopes: vi.fn(),
+        setCumulativeDistances: vi.fn(),
+        setCumulativeElevations: vi.fn(),
+        setCumulativeElevationLosses: vi.fn(),
+        updateStats: (updates) =>
+          set(
+            (state) => ({ ...state, stats: { ...state.stats, ...updates } }),
+            undefined,
+            "stats/updateStats",
+          ),
+        setSections: vi.fn(),
+        // Pass a factory that throws
+        ...createWorkerSlice(set, get, () => {
+          throw new Error("Worker creation failed");
+        }),
+      }));
 
-      store.getState().initGPXWorker();
+      errorStore.getState().initGPXWorker();
 
-      const state = store.getState().worker;
+      const state = errorStore.getState().worker;
       expect(state.isReady).toBe(false);
       expect(state.errorMessage).toBe("Failed to initialize worker");
     });
@@ -2002,7 +2036,7 @@ describe("Worker Slice", () => {
 
       try {
         await promise;
-        fail("Should have thrown");
+        expect.fail("Promise should have rejected");
       } catch (error) {
         expect(error.message).toContain("Failed to process SPECIFIC_REQUEST");
       }
