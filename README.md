@@ -76,7 +76,6 @@ Run JavaScript/React tests:
 
 ```bash
 npm test              # Run Vitest tests (watch mode)
-npm run test:coverage # Generate coverage report
 ```
 
 Run Zig unit tests:
@@ -99,6 +98,7 @@ src/
 
 zig/
   gpx.zig               # GPX file parsing
+  gpxdata.zig           # GPX data structures
   trace.zig             # Core GPS algorithms (distance, elevation)
   simplify.zig          # Douglas-Peucker simplification
   peaks.zig             # Peak detection algorithms
@@ -106,6 +106,7 @@ zig/
   time.zig              # Time/duration calculations
   waypoint.zig          # Waypoint data structure
   section.zig           # Section statistics structure
+  main.zig              # WASM entry point and bindings
 ```
 
 ## Contribute
