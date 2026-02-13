@@ -21,7 +21,7 @@ export default defineConfig({
     command: "npm run build && npm run preview",
     url: "http://localhost:5173",
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 180_000, // 3 minutes for build + startup
   },
   projects: [
     {
