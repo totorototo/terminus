@@ -33,18 +33,18 @@ export default defineConfig({
     minify: "terser",
     chunkSizeWarningLimit: 1000,
     // Disable compression for faster builds in CI
-    sourcemap: !process.env.CI,
+    sourcemap: !process.env.GITHUB_ACTIONS,
   },
   plugins: [
     react(),
     arraybuffer(),
-    !process.env.CI &&
+    !process.env.GITHUB_ACTIONS &&
       compression({
         algorithm: "brotli",
         ext: ".br",
         deleteOriginFile: false,
       }),
-    !process.env.CI &&
+    !process.env.GITHUB_ACTIONS &&
       compression({
         algorithm: "gzip",
         ext: ".gz",
@@ -112,7 +112,7 @@ export default defineConfig({
       embedWASM: true,
       topLevelAwait: false,
     }),
-  ],
+  ].filter(Boolean),
   worker: {
     format: "es", // Enable ES modules in workers
     plugins: () => [
