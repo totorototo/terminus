@@ -10,19 +10,24 @@ test.describe("App Loading", () => {
   });
 
   test("should initialize without errors", async ({ page }) => {
-    const errors = [];
     const pageErrors = [];
+    const consoleMessages = [];
 
-    // Capture console errors
+    // Capture all console messages for debugging
     page.on("console", (msg) => {
-      if (msg.type() === "error") {
-        errors.push(msg.text());
-      }
+      consoleMessages.push({
+        type: msg.type(),
+        text: msg.text(),
+      });
     });
 
-    // Capture page errors
+    // Capture page errors with full error details
     page.on("pageerror", (err) => {
-      pageErrors.push(err.message);
+      pageErrors.push({
+        message: err.message,
+        stack: err.stack,
+        name: err.name,
+      });
     });
 
     await page.goto("/");
@@ -30,6 +35,27 @@ test.describe("App Loading", () => {
     // Wait for canvas to render
     const canvas = page.locator("canvas").first();
     await expect(canvas).toBeVisible({ timeout: 10000 });
+
+    // Debug output if there are errors
+    if (pageErrors.length > 0) {
+      console.error("🔴 Page errors detected:");
+      pageErrors.forEach((err) => {
+        console.error(`  - ${err.name}: ${err.message}`);
+        if (err.stack) {
+          console.error(
+            `    Stack: ${err.stack.split("\n").slice(0, 3).join("\n    ")}`,
+          );
+        }
+      });
+    }
+
+    const errorMessages = consoleMessages.filter((m) => m.type === "error");
+    if (errorMessages.length > 0) {
+      console.error("🔴 Console errors detected:");
+      errorMessages.forEach((msg) => {
+        console.error(`  - ${msg.text}`);
+      });
+    }
 
     // Verify no critical errors
     expect(pageErrors).toEqual([]);
