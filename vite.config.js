@@ -8,10 +8,6 @@ import compression from "vite-plugin-compression";
 
 // https://vite.dev/config/
 export default defineConfig({
-  test: {
-    environment: "jsdom",
-    globals: true,
-  },
   build: {
     rollupOptions: {
       output: {
