@@ -35,6 +35,12 @@ export default defineConfig({
     // Disable compression for faster builds in CI
     sourcemap: !process.env.GITHUB_ACTIONS,
   },
+  ssr: {
+    noExternal: ["zigar-runtime"],
+  },
+  optimizeDeps: {
+    exclude: ["zigar-runtime"],
+  },
   plugins: [
     react(),
     arraybuffer(),
