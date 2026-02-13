@@ -7,37 +7,12 @@ import { readGPXComplete } from "../zig/gpx.zig";
 
 // Initialize Zig/WASM in worker context
 let isInitialized = false;
-let initError = null;
 
 async function initializeZig() {
-  if (isInitialized) return;
-  if (initError) throw initError;
-
-  try {
-    console.log("🔧 GPS Worker: Starting Zig WASM initialization...");
-    console.log("🔧 GPS Worker: __zigar type:", typeof __zigar);
-    console.log("🔧 GPS Worker: __zigar.init type:", typeof __zigar?.init);
-
-    if (!__zigar) {
-      throw new Error("__zigar is undefined - WASM module failed to load");
-    }
-
+  if (!isInitialized) {
     const { init } = __zigar;
-    if (typeof init !== "function") {
-      throw new Error(
-        `Expected __zigar.init to be a function, got ${typeof init}. Available properties: ${Object.keys(__zigar).join(", ")}`,
-      );
-    }
-
-    console.log("🔧 GPS Worker: Calling __zigar.init()...");
     await init();
     isInitialized = true;
-    console.log("🔧 GPS Worker: Zig WASM initialized successfully");
-  } catch (error) {
-    initError = error;
-    console.error("❌ GPS Worker: Failed to initialize Zig WASM:", error);
-    console.error("❌ Error stack:", error.stack);
-    throw error;
   }
 }
 
@@ -81,13 +56,11 @@ self.onmessage = async function (e) {
         throw new Error(`Unknown message type: ${type}`);
     }
   } catch (error) {
-    console.error("❌ GPS Worker: Message handler error:", error);
-    console.error("❌ Error stack:", error?.stack);
     // Send error back to main thread
     self.postMessage({
       type: "ERROR",
       id,
-      error: error?.message || String(error),
+      error: error.message,
     });
   }
 };
