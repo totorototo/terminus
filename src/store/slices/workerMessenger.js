@@ -4,6 +4,7 @@ const WORKER_TIMEOUT = 60000; // 60 seconds
 
 export function createWorkerMessenger(worker, callbacks) {
   const requests = new Map();
+  let requestIdCounter = 0;
 
   // Clean up a single pending request and cancel its timeout
   function cleanupRequest(id) {
@@ -60,7 +61,7 @@ export function createWorkerMessenger(worker, callbacks) {
         return;
       }
 
-      const id = Date.now() + Math.random();
+      const id = ++requestIdCounter;
       let timeoutHandle;
 
       // Wrap resolve/reject to clear timeout before completing
