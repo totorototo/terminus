@@ -3,98 +3,13 @@ import {
   validateGPSDataResults,
   validateSectionsResults,
 } from "./workerValidation.js";
-import { MESSAGE_TYPES, SUCCESS_RESPONSE_TYPES } from "./workerTypes.js";
-
-const WORKER_TIMEOUT = 60000; // 60 seconds
+import { createWorkerMessenger } from "./workerMessenger.js";
 
 // Default worker factory (can be overridden for testing)
 function createGPSWorker() {
   return new Worker(new URL("../../gpxWorker.js", import.meta.url), {
     type: "module",
   });
-}
-
-// Clean up a single pending request and cancel its timeout
-function cleanupRequest(requests, id) {
-  const request = requests.get(id);
-  if (request) {
-    clearTimeout(request.timeoutHandle);
-  }
-  requests.delete(id);
-}
-
-// Clean up all pending requests (e.g., on worker termination)
-function cleanupAllRequests(requests, error) {
-  for (const [id, request] of requests.entries()) {
-    clearTimeout(request.timeoutHandle);
-    request.reject(error);
-  }
-  requests.clear();
-}
-
-// Create the message handler for the worker
-function createMessageHandler(set, get, requests) {
-  return function handleWorkerMessage(e) {
-    const {
-      type,
-      id,
-      results,
-      error,
-      progress: progressValue,
-      message,
-    } = e.data;
-
-    const request = requests.get(id);
-    if (!request) return;
-
-    if (type === MESSAGE_TYPES.RESPONSE.PROGRESS) {
-      set(
-        (state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            progress: progressValue,
-            progressMessage: message,
-          },
-        }),
-        undefined,
-        "worker/setWorkerProgress",
-      );
-      request.onProgress?.(progressValue, message);
-    } else if (SUCCESS_RESPONSE_TYPES.has(type)) {
-      cleanupRequest(requests, id);
-      set(
-        (state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: false,
-            progress: 100,
-            errorMessage: "",
-          },
-        }),
-        undefined,
-        "worker/setWorkerComplete",
-      );
-      request.resolve(results ?? e.data);
-    } else if (type === MESSAGE_TYPES.RESPONSE.ERROR) {
-      cleanupRequest(requests, id);
-      set(
-        (state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: false,
-            progress: 0,
-            errorMessage: error ?? "Unknown worker error",
-          },
-        }),
-        undefined,
-        "worker/setWorkerError",
-      );
-      request.reject(new Error(error));
-    }
-  };
 }
 
 export const createWorkerSlice = (set, get, workerFactory) => {
@@ -106,76 +21,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
   // Closure-local state (fresh for each store instance, no cross-test contamination)
   let worker = null;
-  const requests = new Map();
-
-  // Worker Communication
-  async function sendWorkerMessage(type, data, onProgress) {
-    return new Promise((resolve, reject) => {
-      const state = get();
-      if (!worker || !state.worker.isReady) {
-        reject(new Error("Worker not ready"));
-        return;
-      }
-
-      const id = Date.now() + Math.random();
-      let timeoutHandle;
-
-      // Wrap resolve/reject to clear timeout before completing
-      const wrappedResolve = (result) => {
-        clearTimeout(timeoutHandle);
-        resolve(result);
-      };
-
-      const wrappedReject = (error) => {
-        clearTimeout(timeoutHandle);
-        reject(error);
-      };
-
-      // Set up timeout to cleanup if worker doesn't respond
-      timeoutHandle = setTimeout(() => {
-        cleanupRequest(requests, id);
-        const errorMsg = `Worker request ${type} timed out after ${WORKER_TIMEOUT}ms`;
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 0,
-              errorMessage: errorMsg,
-            },
-          }),
-          undefined,
-          "worker/setWorkerTimeout",
-        );
-        wrappedReject(new Error(errorMsg));
-      }, WORKER_TIMEOUT);
-
-      requests.set(id, {
-        resolve: wrappedResolve,
-        reject: wrappedReject,
-        onProgress,
-        timeoutHandle,
-      });
-
-      set(
-        (state) => ({
-          ...state,
-          worker: {
-            ...state.worker,
-            processing: true,
-            progress: 0,
-            progressMessage: "Starting...",
-            errorMessage: "",
-          },
-        }),
-        undefined,
-        "worker/sendWorkerMessage",
-      );
-
-      worker.postMessage({ type, data, id });
-    });
-  }
+  let messenger = null;
 
   return {
     worker: {
@@ -218,7 +64,86 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       try {
         worker = factory();
 
-        worker.onmessage = createMessageHandler(set, get, requests);
+        // Create messenger with state update callbacks
+        messenger = createWorkerMessenger(worker, {
+          onProgress: (progressValue, message) => {
+            set(
+              (state) => ({
+                ...state,
+                worker: {
+                  ...state.worker,
+                  progress: progressValue,
+                  progressMessage: message,
+                },
+              }),
+              undefined,
+              "worker/setWorkerProgress",
+            );
+          },
+          onComplete: () => {
+            set(
+              (state) => ({
+                ...state,
+                worker: {
+                  ...state.worker,
+                  processing: false,
+                  progress: 100,
+                  errorMessage: "",
+                },
+              }),
+              undefined,
+              "worker/setWorkerComplete",
+            );
+          },
+          onError: (error) => {
+            set(
+              (state) => ({
+                ...state,
+                worker: {
+                  ...state.worker,
+                  processing: false,
+                  progress: 0,
+                  errorMessage: error,
+                },
+              }),
+              undefined,
+              "worker/setWorkerError",
+            );
+          },
+          onTimeout: (errorMsg) => {
+            set(
+              (state) => ({
+                ...state,
+                worker: {
+                  ...state.worker,
+                  processing: false,
+                  progress: 0,
+                  errorMessage: errorMsg,
+                },
+              }),
+              undefined,
+              "worker/setWorkerTimeout",
+            );
+          },
+          onProcessingStart: () => {
+            set(
+              (state) => ({
+                ...state,
+                worker: {
+                  ...state.worker,
+                  processing: true,
+                  progress: 0,
+                  progressMessage: "Starting...",
+                  errorMessage: "",
+                },
+              }),
+              undefined,
+              "worker/sendWorkerMessage",
+            );
+          },
+        });
+
+        worker.onmessage = (e) => messenger.handleMessage(e);
 
         worker.onerror = (error) => {
           set(
@@ -269,7 +194,10 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       }
 
       // Reject all pending requests to prevent hanging promises
-      cleanupAllRequests(requests, new Error("Worker was terminated"));
+      if (messenger) {
+        messenger.cleanup(new Error("Worker was terminated"));
+        messenger = null;
+      }
 
       set(
         (state) => ({
@@ -290,8 +218,12 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
     processGPXFile: async (gpxBytes, onProgress) => {
       try {
-        const results = await sendWorkerMessage(
-          MESSAGE_TYPES.REQUEST.PROCESS_GPX_FILE,
+        if (!messenger) {
+          throw new Error("Worker not initialized");
+        }
+
+        const results = await messenger.send(
+          "PROCESS_GPX_FILE",
           { gpxBytes },
           onProgress,
         );
@@ -347,8 +279,12 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
     processGPSData: async (coordinates, onProgress) => {
       try {
-        const results = await sendWorkerMessage(
-          MESSAGE_TYPES.REQUEST.PROCESS_GPS_DATA,
+        if (!messenger) {
+          throw new Error("Worker not initialized");
+        }
+
+        const results = await messenger.send(
+          "PROCESS_GPS_DATA",
           { coordinates },
           onProgress,
         );
@@ -402,8 +338,12 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
     processSections: async (coordinates, sections, onProgress) => {
       try {
-        const results = await sendWorkerMessage(
-          MESSAGE_TYPES.REQUEST.PROCESS_SECTIONS,
+        if (!messenger) {
+          throw new Error("Worker not initialized");
+        }
+
+        const results = await messenger.send(
+          "PROCESS_SECTIONS",
           { coordinates, sections },
           onProgress,
         );
@@ -454,13 +394,14 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
     calculateRouteStats: async (coordinates, segments) => {
       try {
-        const results = await sendWorkerMessage(
-          MESSAGE_TYPES.REQUEST.CALCULATE_ROUTE_STATS,
-          {
-            coordinates,
-            segments,
-          },
-        );
+        if (!messenger) {
+          throw new Error("Worker not initialized");
+        }
+
+        const results = await messenger.send("CALCULATE_ROUTE_STATS", {
+          coordinates,
+          segments,
+        });
 
         get().updateStats({
           distance: results.distance,
@@ -502,13 +443,14 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
     findPointsAtDistances: async (coordinates, distances) => {
       try {
-        const results = await sendWorkerMessage(
-          MESSAGE_TYPES.REQUEST.FIND_POINTS_AT_DISTANCES,
-          {
-            coordinates,
-            distances,
-          },
-        );
+        if (!messenger) {
+          throw new Error("Worker not initialized");
+        }
+
+        const results = await messenger.send("FIND_POINTS_AT_DISTANCES", {
+          coordinates,
+          distances,
+        });
 
         set(
           (state) => ({
@@ -544,14 +486,15 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
     getRouteSection: async (coordinates, start, end) => {
       try {
-        const results = await sendWorkerMessage(
-          MESSAGE_TYPES.REQUEST.GET_ROUTE_SECTION,
-          {
-            coordinates,
-            start,
-            end,
-          },
-        );
+        if (!messenger) {
+          throw new Error("Worker not initialized");
+        }
+
+        const results = await messenger.send("GET_ROUTE_SECTION", {
+          coordinates,
+          start,
+          end,
+        });
 
         set(
           (state) => ({
@@ -606,13 +549,14 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           return null;
         }
 
-        const results = await sendWorkerMessage(
-          MESSAGE_TYPES.REQUEST.FIND_CLOSEST_LOCATION,
-          {
-            coordinates,
-            target: point,
-          },
-        );
+        if (!messenger) {
+          throw new Error("Worker not initialized");
+        }
+
+        const results = await messenger.send("FIND_CLOSEST_LOCATION", {
+          coordinates,
+          target: point,
+        });
 
         if (results && results.closestLocation) {
           set(
@@ -648,8 +592,5 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         throw error;
       }
     },
-
-    // Testing only: expose sendWorkerMessage for testing internal message flow
-    __TESTING_ONLY_sendWorkerMessage: sendWorkerMessage,
   };
 };

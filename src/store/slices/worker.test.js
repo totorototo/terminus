@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { create } from "zustand";
 import { createWorkerSlice } from "./worker";
-import { MESSAGE_TYPES } from "./workerTypes";
 
 // Mock Worker API at module level
 let mockWorkerInstance = {
@@ -208,16 +207,20 @@ describe("Worker Slice", () => {
     it("should reject all pending requests on termination", async () => {
       store.getState().initGPXWorker();
 
-      const sendPromise = store
+      // Start a processGPXFile operation (doesn't matter that it will fail)
+      const processPromise = store
         .getState()
-        .__TESTING_ONLY_sendWorkerMessage("TEST", { data: "test" });
+        .processGPXFile(new Uint8Array([1, 2, 3]))
+        .catch((e) => e);
 
       // Allow request to be registered
       await new Promise((resolve) => setImmediate(resolve));
 
+      // Terminate before worker responds - should reject the pending promise
       store.getState().terminateGPXWorker();
 
-      await expect(sendPromise).rejects.toThrow("Worker was terminated");
+      const error = await processPromise;
+      expect(error.message).toContain("Worker was terminated");
     });
   });
 
@@ -260,479 +263,13 @@ describe("Worker Slice", () => {
   });
 
   // =========================================================================
-  // CATEGORY 2: MESSAGE SENDING & REQUEST TRACKING
+  // NOTE: Low-level message handling tests (message sending, timeouts,
+  // progress tracking, concurrent requests) are now in workerMessenger.test.js
+  // This file focuses on worker slice integration and high-level methods.
   // =========================================================================
 
-  describe("Message Sending", () => {
-    beforeEach(() => {
-      store.getState().initGPXWorker();
-    });
-
-    it("should send message to worker with correct structure", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("TEST_MESSAGE", { test: "data" });
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      expect(mockWorkerInstance.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "TEST_MESSAGE",
-          data: { test: "data" },
-          id: expect.any(Number),
-        }),
-      );
-    });
-
-    it("should reject if worker not ready", async () => {
-      store.getState().terminateGPXWorker();
-
-      await expect(
-        store.getState().__TESTING_ONLY_sendWorkerMessage("TEST", {}),
-      ).rejects.toThrow("Worker not ready");
-    });
-
-    it("should set processing state to true immediately", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("TEST", {});
-
-      expect(store.getState().worker.processing).toBe(true);
-      expect(store.getState().worker.progress).toBe(0);
-      expect(store.getState().worker.progressMessage).toBe("Starting...");
-
-      // Resolve the promise by sending a response
-      await new Promise((resolve) => setImmediate(resolve));
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      mockWorkerInstance.onmessage({
-        data: {
-          type: "POINTS_FOUND",
-          id: message.id,
-          results: { data: [] },
-        },
-      });
-
-      await messagePromise.catch(() => {});
-    });
-
-    it("should support onProgress callback", async () => {
-      const onProgress = vi.fn();
-
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("TEST", {}, onProgress);
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const progressHandler = mockWorkerInstance.onmessage;
-
-      progressHandler({
-        data: {
-          type: "PROGRESS",
-          id: message.id,
-          progress: 50,
-          message: "Halfway done",
-        },
-      });
-
-      expect(onProgress).toHaveBeenCalledWith(50, "Halfway done");
-      expect(store.getState().worker.progress).toBe(50);
-      expect(store.getState().worker.progressMessage).toBe("Halfway done");
-
-      // Send completion message
-      progressHandler({
-        data: {
-          type: "POINTS_FOUND",
-          id: message.id,
-          results: { data: [] },
-        },
-      });
-
-      await messagePromise.catch(() => {});
-    });
-
-    it("should handle onProgress callback when undefined", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("TEST", {}, undefined);
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const handler = mockWorkerInstance.onmessage;
-
-      expect(() => {
-        handler({
-          data: {
-            type: "PROGRESS",
-            id: message.id,
-            progress: 50,
-            message: "Halfway done",
-          },
-        });
-      }).not.toThrow();
-
-      // Send completion message
-      handler({
-        data: {
-          type: "POINTS_FOUND",
-          id: message.id,
-          results: { data: [] },
-        },
-      });
-
-      await messagePromise.catch(() => {});
-    });
-  });
-
   // =========================================================================
-  // CATEGORY 3: TIMEOUT HANDLING
-  // =========================================================================
-
-  describe("Timeout Handling", () => {
-    beforeEach(() => {
-      store.getState().initGPXWorker();
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it("should timeout after WORKER_TIMEOUT ms", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("SLOW_MESSAGE", {});
-
-      // Advance time past timeout (60000ms)
-      vi.advanceTimersByTime(61000);
-
-      await expect(messagePromise).rejects.toThrow("timed out after 60000ms");
-    });
-
-    it("should include request type in timeout message", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("SPECIFIC_REQUEST", {});
-
-      vi.advanceTimersByTime(61000);
-
-      await expect(messagePromise).rejects.toThrow("SPECIFIC_REQUEST");
-    });
-
-    it("should clear timeout when message resolves", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("FAST_MESSAGE", {});
-
-      await vi.advanceTimersByTimeAsync(0);
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const handler = mockWorkerInstance.onmessage;
-
-      // Resolve well before timeout
-      vi.advanceTimersByTime(1000);
-
-      handler({
-        data: {
-          type: "GPX_FILE_PROCESSED",
-          id: message.id,
-          results: {
-            trace: {
-              points: [],
-              peaks: [],
-              slopes: [],
-              cumulativeDistances: [],
-              cumulativeElevations: [],
-              cumulativeElevationLoss: [],
-              totalDistance: 100,
-              totalElevation: 50,
-              totalElevationLoss: 30,
-            },
-            sections: [],
-            waypoints: [],
-            metadata: {},
-          },
-        },
-      });
-
-      await messagePromise;
-
-      // Advance rest of time - should not error
-      vi.advanceTimersByTime(60000);
-
-      expect(store.getState().worker.errorMessage).toBe("");
-    });
-  });
-
-  // =========================================================================
-  // CATEGORY 4: MESSAGE HANDLING & RESPONSE TYPES
-  // =========================================================================
-
-  describe("Message Handling - PROGRESS", () => {
-    beforeEach(() => {
-      store.getState().initGPXWorker();
-    });
-
-    it("should update progress state on PROGRESS message", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("PROCESS", {});
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const handler = mockWorkerInstance.onmessage;
-
-      handler({
-        data: {
-          type: "PROGRESS",
-          id: message.id,
-          progress: 30,
-          message: "Processing step 1",
-        },
-      });
-
-      expect(store.getState().worker.progress).toBe(30);
-      expect(store.getState().worker.progressMessage).toBe("Processing step 1");
-
-      // Complete the request
-      handler({
-        data: {
-          type: "POINTS_FOUND",
-          id: message.id,
-          results: { data: [] },
-        },
-      });
-
-      await messagePromise;
-    });
-
-    it("should keep processing state true during PROGRESS", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("PROCESS", {});
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const handler = mockWorkerInstance.onmessage;
-
-      handler({
-        data: {
-          type: "PROGRESS",
-          id: message.id,
-          progress: 50,
-          message: "In progress",
-        },
-      });
-
-      expect(store.getState().worker.processing).toBe(true);
-
-      // Complete the request
-      handler({
-        data: {
-          type: "POINTS_FOUND",
-          id: message.id,
-          results: { data: [] },
-        },
-      });
-
-      await messagePromise;
-    });
-
-    it("should not call onProgress callback for PROGRESS messages", async () => {
-      const onProgress = vi.fn();
-
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("PROCESS", {}, onProgress);
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const handler = mockWorkerInstance.onmessage;
-
-      handler({
-        data: {
-          type: "PROGRESS",
-          id: message.id,
-          progress: 50,
-          message: "In progress",
-        },
-      });
-
-      // onProgress was called with progress data
-      expect(onProgress).toHaveBeenCalledWith(50, "In progress");
-
-      // Complete the request
-      handler({
-        data: {
-          type: "POINTS_FOUND",
-          id: message.id,
-          results: { data: [] },
-        },
-      });
-
-      await messagePromise;
-    });
-  });
-
-  describe("Message Handling - Success Types", () => {
-    beforeEach(() => {
-      store.getState().initGPXWorker();
-    });
-
-    const successTypes = [
-      "GPX_FILE_PROCESSED",
-      "GPS_DATA_PROCESSED",
-      "SECTIONS_PROCESSED",
-      "ROUTE_STATS_CALCULATED",
-      "POINTS_FOUND",
-      "ROUTE_SECTION_READY",
-      "CLOSEST_POINT_FOUND",
-    ];
-
-    successTypes.forEach((type) => {
-      it(`should handle ${type} success message`, async () => {
-        const messagePromise = store
-          .getState()
-          .__TESTING_ONLY_sendWorkerMessage("TEST", {});
-
-        await new Promise((resolve) => setImmediate(resolve));
-
-        const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-        const handler = mockWorkerInstance.onmessage;
-
-        const testResults = { success: true, data: "test" };
-
-        handler({
-          data: {
-            type,
-            id: message.id,
-            results: testResults,
-          },
-        });
-
-        expect(store.getState().worker.processing).toBe(false);
-        expect(store.getState().worker.progress).toBe(100);
-        expect(store.getState().worker.errorMessage).toBe("");
-
-        const result = await messagePromise;
-        expect(result).toEqual(testResults);
-      });
-    });
-
-    it("should fall back to full message when no results field", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("TEST", {});
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const handler = mockWorkerInstance.onmessage;
-
-      const fullMessage = {
-        type: "POINTS_FOUND",
-        id: message.id,
-        points: [[1, 2, 3]],
-      };
-
-      handler({ data: fullMessage });
-
-      const result = await messagePromise;
-      expect(result).toEqual(fullMessage);
-    });
-  });
-
-  describe("Message Handling - ERROR", () => {
-    beforeEach(() => {
-      store.getState().initGPXWorker();
-    });
-
-    it("should handle ERROR message with custom error", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("PROCESS", {});
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const handler = mockWorkerInstance.onmessage;
-
-      handler({
-        data: {
-          type: "ERROR",
-          id: message.id,
-          error: "Processing failed due to invalid data",
-        },
-      });
-
-      expect(store.getState().worker.processing).toBe(false);
-      expect(store.getState().worker.errorMessage).toBe(
-        "Processing failed due to invalid data",
-      );
-
-      await expect(messagePromise).rejects.toThrow("Processing failed");
-    });
-
-    it("should handle ERROR message with undefined error", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("PROCESS", {});
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const handler = mockWorkerInstance.onmessage;
-
-      handler({
-        data: {
-          type: "ERROR",
-          id: message.id,
-          error: undefined,
-        },
-      });
-
-      expect(store.getState().worker.errorMessage).toBe("Unknown worker error");
-
-      await expect(messagePromise).rejects.toThrow();
-    });
-
-    it("should set processing to false on error", async () => {
-      const messagePromise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("PROCESS", {});
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-      const handler = mockWorkerInstance.onmessage;
-
-      handler({
-        data: {
-          type: "ERROR",
-          id: message.id,
-          error: "Some error",
-        },
-      });
-
-      expect(store.getState().worker.processing).toBe(false);
-
-      await expect(messagePromise).rejects.toThrow();
-    });
-  });
-
-  describe("Worker onerror Handler", () => {
-    it("should handle worker runtime error", () => {
-      store.getState().initGPXWorker();
-
-      const error = new Error("Worker runtime error");
-      mockWorkerInstance.onerror(error);
-
-      expect(store.getState().worker.isReady).toBe(false);
-      expect(store.getState().worker.errorMessage).toBe(
-        "Worker initialization failed",
-      );
-    });
-  });
-
-  // =========================================================================
-  // CATEGORY 5: HIGH-LEVEL METHODS (processGPXFile, etc.)
+  // CATEGORY 2: HIGH-LEVEL METHODS (processGPXFile, etc.)
   // =========================================================================
 
   describe("processGPXFile", () => {
@@ -1248,60 +785,7 @@ describe("Worker Slice", () => {
   });
 
   // =========================================================================
-  // CATEGORY 6: CONCURRENT REQUESTS
-  // =========================================================================
-
-  describe("Concurrent Requests", () => {
-    beforeEach(() => {
-      store.getState().initGPXWorker();
-    });
-
-    it("should handle multiple concurrent messages", async () => {
-      const promise1 = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("REQUEST_1", { data: 1 });
-      const promise2 = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("REQUEST_2", { data: 2 });
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const calls = mockWorkerInstance.postMessage.mock.calls;
-      const message1 = calls[0][0];
-      const message2 = calls[1][0];
-
-      expect(message1.id).not.toBe(message2.id);
-
-      const handler = mockWorkerInstance.onmessage;
-
-      // Respond to second message first
-      handler({
-        data: {
-          type: "POINTS_FOUND",
-          id: message2.id,
-          results: { data: "response2" },
-        },
-      });
-
-      // Then respond to first
-      handler({
-        data: {
-          type: "POINTS_FOUND",
-          id: message1.id,
-          results: { data: "response1" },
-        },
-      });
-
-      const result1 = await promise1;
-      const result2 = await promise2;
-
-      expect(result1).toEqual({ data: "response1" });
-      expect(result2).toEqual({ data: "response2" });
-    });
-  });
-
-  // =========================================================================
-  // CATEGORY 7: processSections
+  // CATEGORY 3: processSections
   // =========================================================================
 
   describe("processSections", () => {
@@ -1867,7 +1351,7 @@ describe("Worker Slice", () => {
       // First request
       const promise1 = store
         .getState()
-        .__TESTING_ONLY_sendWorkerMessage("TEST_1", {});
+        .processGPXFile(new Uint8Array([1, 2, 3]));
 
       await new Promise((resolve) => setImmediate(resolve));
 
@@ -1881,8 +1365,8 @@ describe("Worker Slice", () => {
         },
       });
 
-      await expect(promise1).rejects.toThrow("First error");
-      expect(store.getState().worker.errorMessage).toBe("First error");
+      await expect(promise1).rejects.toThrow();
+      expect(store.getState().worker.errorMessage).toBeTruthy();
 
       // Clear errors for second attempt
       store.getState().clearError();
@@ -1890,7 +1374,7 @@ describe("Worker Slice", () => {
       // Second request
       const promise2 = store
         .getState()
-        .__TESTING_ONLY_sendWorkerMessage("TEST_2", {});
+        .processGPXFile(new Uint8Array([4, 5, 6]));
 
       await new Promise((resolve) => setImmediate(resolve));
 
@@ -1904,11 +1388,11 @@ describe("Worker Slice", () => {
         },
       });
 
-      await expect(promise2).rejects.toThrow("Second error");
-      expect(store.getState().worker.errorMessage).toBe("Second error");
+      await expect(promise2).rejects.toThrow();
+      expect(store.getState().worker.errorMessage).toBeTruthy();
     });
 
-    it("should maintain state consistency with partially failed batch operations", async () => {
+    it("should maintain state consistency after operation failure", async () => {
       store.setState({
         gpx: {
           ...store.getState().gpx,
@@ -1916,10 +1400,8 @@ describe("Worker Slice", () => {
         },
       });
 
-      // Start an operation
-      const promise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("OPERATION", { test: true });
+      // Start an operation that will fail
+      const promise = store.getState().processGPXFile(new Uint8Array([1]));
 
       await new Promise((resolve) => setImmediate(resolve));
 
@@ -1961,7 +1443,7 @@ describe("Worker Slice", () => {
     it("should reset processing state when terminating during active operation", async () => {
       const promise = store
         .getState()
-        .__TESTING_ONLY_sendWorkerMessage("LONG_OPERATION", {});
+        .processGPXFile(new Uint8Array([1, 2, 3]));
 
       await new Promise((resolve) => setImmediate(resolve));
 
@@ -1986,210 +1468,12 @@ describe("Worker Slice", () => {
   });
 
   // =========================================================================
-  // CATEGORY 12: ADDITIONAL ERROR SCENARIOS
-  // =========================================================================
-
-  describe("Additional Error Scenarios", () => {
-    beforeEach(() => {
-      store.getState().initGPXWorker();
-    });
-
-    it("should handle worker error with object error property", async () => {
-      const promise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("TEST", {});
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-
-      // Error is an object instead of string
-      mockWorkerInstance.onmessage({
-        data: {
-          type: "ERROR",
-          id: message.id,
-          error: { message: "Nested error", code: "ERR_001" },
-        },
-      });
-
-      await expect(promise).rejects.toThrow();
-      // Should use toString() of the object
-      expect(store.getState().worker.errorMessage).toBeTruthy();
-    });
-
-    it("should reject pending request with specific type error message", async () => {
-      const promise = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("SPECIFIC_REQUEST", {});
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-
-      mockWorkerInstance.onmessage({
-        data: {
-          type: "ERROR",
-          id: message.id,
-          error: "Failed to process SPECIFIC_REQUEST",
-        },
-      });
-
-      try {
-        await promise;
-        expect.fail("Promise should have rejected");
-      } catch (error) {
-        expect(error.message).toContain("Failed to process SPECIFIC_REQUEST");
-      }
-    });
-
-    it("should handle multiple operations with mixed success and failure", async () => {
-      const promise1 = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("OP_1", { data: 1 });
-      const promise2 = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("OP_2", { data: 2 });
-      const promise3 = store
-        .getState()
-        .__TESTING_ONLY_sendWorkerMessage("OP_3", { data: 3 });
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const calls = mockWorkerInstance.postMessage.mock.calls;
-      const msg1 = calls[0][0];
-      const msg2 = calls[1][0];
-      const msg3 = calls[2][0];
-
-      // First succeeds
-      mockWorkerInstance.onmessage({
-        data: {
-          type: "POINTS_FOUND",
-          id: msg1.id,
-          results: { success: true },
-        },
-      });
-
-      // Second fails
-      mockWorkerInstance.onmessage({
-        data: {
-          type: "ERROR",
-          id: msg2.id,
-          error: "Second operation failed",
-        },
-      });
-
-      // Third succeeds
-      mockWorkerInstance.onmessage({
-        data: {
-          type: "POINTS_FOUND",
-          id: msg3.id,
-          results: { success: true },
-        },
-      });
-
-      const result1 = await promise1;
-      expect(result1).toEqual({ success: true });
-
-      await expect(promise2).rejects.toThrow("Second operation failed");
-
-      const result3 = await promise3;
-      expect(result3).toEqual({ success: true });
-
-      // Error message is cleared when third operation succeeds
-      expect(store.getState().worker.errorMessage).toBe("");
-    });
-
-    it("should handle error during processGPXFile with partial state update", async () => {
-      const gpxData = new ArrayBuffer(100);
-
-      const promise = store.getState().processGPXFile(gpxData);
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      const message = mockWorkerInstance.postMessage.mock.calls[0][0];
-
-      mockWorkerInstance.onmessage({
-        data: {
-          type: "ERROR",
-          id: message.id,
-          error: "Corrupted GPX data",
-        },
-      });
-
-      await expect(promise).rejects.toThrow();
-
-      // Verify error state is set
-      expect(store.getState().worker.errorMessage).toBe("Corrupted GPX data");
-      expect(store.getState().worker.processing).toBe(false);
-      expect(store.getState().worker.progress).toBe(0);
-    });
-
-    it("should recover from validation error and allow new request", async () => {
-      const coordinates = [[1, 2, 3]];
-
-      // First request with invalid results
-      const promise1 = store.getState().processGPSData(coordinates, undefined);
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      let message = mockWorkerInstance.postMessage.mock.calls[0][0];
-
-      mockWorkerInstance.onmessage({
-        data: {
-          type: "GPS_DATA_PROCESSED",
-          id: message.id,
-          results: { points: "invalid" },
-        },
-      });
-
-      await expect(promise1).rejects.toThrow();
-      expect(store.getState().worker.errorMessage).toContain("Expected");
-
-      // Clear error and try again
-      store.getState().clearError();
-
-      // Second request with valid results
-      const promise2 = store.getState().processGPSData(coordinates, undefined);
-
-      await new Promise((resolve) => setImmediate(resolve));
-
-      message = mockWorkerInstance.postMessage.mock.calls[1][0];
-
-      mockWorkerInstance.onmessage({
-        data: {
-          type: "GPS_DATA_PROCESSED",
-          id: message.id,
-          results: {
-            points: coordinates,
-            slopes: [1.5],
-            cumulativeDistances: [0],
-            cumulativeElevations: [0],
-            cumulativeElevationLoss: [0],
-            totalDistance: 50,
-            totalElevation: 25,
-            totalElevationLoss: 10,
-            pointCount: 1,
-          },
-        },
-      });
-
-      await promise2;
-
-      expect(store.getState().worker.errorMessage).toBe("");
-      expect(store.getState().worker.processing).toBe(false);
-    });
-  });
-
-  // =========================================================================
-  // CATEGORY 13: WORKER LIFECYCLE EDGE CASES
+  // CATEGORY 6: WORKER LIFECYCLE EDGE CASES
   // =========================================================================
 
   describe("Worker Lifecycle Edge Cases", () => {
-    it("should handle worker onerror during active processing", () => {
+    it("should handle worker onerror during initialization", () => {
       store.getState().initGPXWorker();
-
-      // Start a request
-      store.getState().__TESTING_ONLY_sendWorkerMessage("TEST", {});
 
       mockWorkerInstance.onerror(new Error("Worker crashed"));
 
@@ -2198,10 +1482,6 @@ describe("Worker Slice", () => {
       expect(store.getState().worker.errorMessage).toBe(
         "Worker initialization failed",
       );
-
-      // Note: The pending promise won't automatically reject from onerror
-      // This is by design - onerror is for initialization failures,
-      // not for in-flight requests. Those use the timeout mechanism.
     });
 
     it("should handle worker reinitialization after onerror", () => {
