@@ -76,3 +76,38 @@ export function validateSectionsResults(results) {
 
   return true;
 }
+
+export function validateRouteStatsResults(results) {
+  if (!results) throw new Error("No results returned from worker");
+
+  validateNumber(results.distance, "results.distance");
+  validateNumber(results.elevationGain, "results.elevationGain");
+  validateNumber(results.elevationLoss, "results.elevationLoss");
+  validateNumber(results.pointCount, "results.pointCount");
+
+  return true;
+}
+
+export function validatePointsAtDistancesResults(results) {
+  if (!results) throw new Error("No results returned from worker");
+
+  validateObject(results, "results");
+  validateArray(results.points, "results.points");
+
+  return true;
+}
+
+export function validateRouteSectionResults(results) {
+  if (!results) throw new Error("No results returned from worker");
+
+  validateObject(results, "results");
+  validateArray(results.section, "results.section");
+  // distance is optional but must be a number if provided
+  if (results.distance !== undefined && typeof results.distance !== "number") {
+    throw new Error(
+      `Expected results.distance to be a number, got ${typeof results.distance}`,
+    );
+  }
+
+  return true;
+}

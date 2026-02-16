@@ -2,6 +2,9 @@ import {
   validateGPXResults,
   validateGPSDataResults,
   validateSectionsResults,
+  validateRouteStatsResults,
+  validatePointsAtDistancesResults,
+  validateRouteSectionResults,
 } from "./workerValidation.js";
 import { createWorkerMessenger } from "./workerMessenger.js";
 
@@ -11,6 +14,19 @@ function createGPSWorker() {
     type: "module",
   });
 }
+
+// Error messages for consistent user feedback and i18n support
+const ERROR_MESSAGES = {
+  GPX_FILE: "Failed to process GPX File",
+  GPS_DATA: "Failed to process GPS Data",
+  SECTIONS: "Failed to process Sections",
+  ROUTE_STATS: "Failed to calculate Route Stats",
+  POINTS_AT_DISTANCES: "Failed to find points at distances",
+  ROUTE_SECTION: "Failed to get route section",
+  CLOSEST_LOCATION: "Failed to find closest point",
+  NOT_INITIALIZED: "Worker not initialized",
+  NO_LOCATION: "No location or GPS data available",
+};
 
 export const createWorkerSlice = (set, get, workerFactory) => {
   // Handle case where Zustand middleware passes store API as 3rd parameter
@@ -22,6 +38,38 @@ export const createWorkerSlice = (set, get, workerFactory) => {
   // Closure-local state (fresh for each store instance, no cross-test contamination)
   let worker = null;
   let messenger = null;
+
+  // Helper: Update worker state on successful operation
+  const updateWorkerSuccess = () =>
+    set(
+      (state) => ({
+        ...state,
+        worker: {
+          ...state.worker,
+          errorMessage: "",
+        },
+      }),
+      undefined,
+      "worker/updateWorkerSuccess",
+    );
+
+  // Helper: Handle worker operation errors and update state
+  const handleWorkerError = (error, defaultMessage) => {
+    set(
+      (state) => ({
+        ...state,
+        worker: {
+          ...state.worker,
+          processing: false,
+          progress: 0,
+          errorMessage: error.message || defaultMessage,
+        },
+      }),
+      undefined,
+      "worker/setWorkerError",
+    );
+    throw error;
+  };
 
   return {
     worker: {
@@ -219,7 +267,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
     processGPXFile: async (gpxBytes, onProgress) => {
       try {
         if (!messenger) {
-          throw new Error("Worker not initialized");
+          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
         }
 
         const results = await messenger.send(
@@ -260,27 +308,14 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
         return results;
       } catch (error) {
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 0,
-              errorMessage: error.message || "Failed to process GPX File",
-            },
-          }),
-          undefined,
-          "worker/setWorkerError",
-        );
-        throw error;
+        handleWorkerError(error, ERROR_MESSAGES.GPX_FILE);
       }
     },
 
     processGPSData: async (coordinates, onProgress) => {
       try {
         if (!messenger) {
-          throw new Error("Worker not initialized");
+          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
         }
 
         const results = await messenger.send(
@@ -319,27 +354,14 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
         return results;
       } catch (error) {
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 0,
-              errorMessage: error.message || "Failed to process GPS Data",
-            },
-          }),
-          undefined,
-          "worker/setWorkerError",
-        );
-        throw error;
+        handleWorkerError(error, ERROR_MESSAGES.GPS_DATA);
       }
     },
 
     processSections: async (coordinates, sections, onProgress) => {
       try {
         if (!messenger) {
-          throw new Error("Worker not initialized");
+          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
         }
 
         const results = await messenger.send(
@@ -375,33 +397,23 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
         return results;
       } catch (error) {
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 0,
-              errorMessage: error.message || "Failed to process Sections",
-            },
-          }),
-          undefined,
-          "worker/setWorkerError",
-        );
-        throw error;
+        handleWorkerError(error, ERROR_MESSAGES.SECTIONS);
       }
     },
 
     calculateRouteStats: async (coordinates, segments) => {
       try {
         if (!messenger) {
-          throw new Error("Worker not initialized");
+          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
         }
 
         const results = await messenger.send("CALCULATE_ROUTE_STATS", {
           coordinates,
           segments,
         });
+
+        // Validate worker results before setting state
+        validateRouteStatsResults(results);
 
         get().updateStats({
           distance: results.distance,
@@ -424,33 +436,23 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
         return results;
       } catch (error) {
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 0,
-              errorMessage: error.message || "Failed to calculate Route Stats",
-            },
-          }),
-          undefined,
-          "worker/setWorkerError",
-        );
-        throw error;
+        handleWorkerError(error, ERROR_MESSAGES.ROUTE_STATS);
       }
     },
 
     findPointsAtDistances: async (coordinates, distances) => {
       try {
         if (!messenger) {
-          throw new Error("Worker not initialized");
+          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
         }
 
         const results = await messenger.send("FIND_POINTS_AT_DISTANCES", {
           coordinates,
           distances,
         });
+
+        // Validate worker results before returning
+        validatePointsAtDistancesResults(results);
 
         set(
           (state) => ({
@@ -466,28 +468,14 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
         return results;
       } catch (error) {
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 0,
-              errorMessage:
-                error.message || "Failed to find points at distances",
-            },
-          }),
-          undefined,
-          "worker/setWorkerError",
-        );
-        throw error;
+        handleWorkerError(error, ERROR_MESSAGES.POINTS_AT_DISTANCES);
       }
     },
 
     getRouteSection: async (coordinates, start, end) => {
       try {
         if (!messenger) {
-          throw new Error("Worker not initialized");
+          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
         }
 
         const results = await messenger.send("GET_ROUTE_SECTION", {
@@ -496,6 +484,9 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           end,
         });
 
+        // Validate worker results before returning
+        validateRouteSectionResults(results);
+
         set(
           (state) => ({
             ...state,
@@ -510,27 +501,19 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
         return results;
       } catch (error) {
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 0,
-              errorMessage: error.message || "Failed to get route section",
-            },
-          }),
-          undefined,
-          "worker/setWorkerError",
-        );
-        throw error;
+        handleWorkerError(error, ERROR_MESSAGES.ROUTE_SECTION);
       }
     },
 
     findClosestLocation: async () => {
       try {
-        const point = get().gps.location.coords;
-        const coordinates = get().gpx.data;
+        if (!messenger) {
+          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
+        }
+
+        const { gps, gpx } = get();
+        const point = gps.location.coords;
+        const coordinates = gpx.data;
 
         if (!point || !coordinates || coordinates.length === 0) {
           set(
@@ -540,17 +523,13 @@ export const createWorkerSlice = (set, get, workerFactory) => {
                 ...state.worker,
                 processing: false,
                 progress: 0,
-                errorMessage: "No location or GPS data available",
+                errorMessage: ERROR_MESSAGES.NO_LOCATION,
               },
             }),
             undefined,
             "worker/setWorkerState",
           );
           return null;
-        }
-
-        if (!messenger) {
-          throw new Error("Worker not initialized");
         }
 
         const results = await messenger.send("FIND_CLOSEST_LOCATION", {
@@ -576,20 +555,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
         return results;
       } catch (error) {
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              processing: false,
-              progress: 0,
-              errorMessage: error.message || "Failed to find closest point",
-            },
-          }),
-          undefined,
-          "worker/setWorkerError",
-        );
-        throw error;
+        handleWorkerError(error, ERROR_MESSAGES.CLOSEST_LOCATION);
       }
     },
   };
