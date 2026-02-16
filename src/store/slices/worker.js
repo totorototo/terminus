@@ -62,6 +62,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           ...state.worker,
           processing: false,
           progress: 0,
+          progressMessage: "",
           errorMessage: error.message || defaultMessage,
         },
       }),
@@ -300,7 +301,6 @@ export const createWorkerSlice = (set, get, workerFactory) => {
             },
             sections: results.sections,
             waypoints: results.waypoints,
-            worker: { ...state.worker, errorMessage: "" },
           }),
           undefined,
           "worker/processGPXFile",
@@ -340,18 +340,6 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           pointCount: results.pointCount ?? 0,
         });
 
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              errorMessage: "",
-            },
-          }),
-          undefined,
-          "worker/setWorkerState",
-        );
-
         return results;
       } catch (error) {
         handleWorkerError(error, ERROR_MESSAGES.GPS_DATA);
@@ -383,18 +371,6 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           pointCount: results?.pointCount ?? 0,
         });
 
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              errorMessage: "",
-            },
-          }),
-          undefined,
-          "worker/setWorkerState",
-        );
-
         return results;
       } catch (error) {
         handleWorkerError(error, ERROR_MESSAGES.SECTIONS);
@@ -421,18 +397,6 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           elevationLoss: results.elevationLoss,
           pointCount: results.pointCount,
         });
-
-        set(
-          (state) => ({
-            ...state,
-            worker: {
-              ...state.worker,
-              errorMessage: "",
-            },
-          }),
-          undefined,
-          "worker/setWorkerState",
-        );
 
         return results;
       } catch (error) {
@@ -536,22 +500,6 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           coordinates,
           target: point,
         });
-
-        if (results && results.closestLocation) {
-          set(
-            (state) => ({
-              ...state,
-              worker: {
-                ...state.worker,
-                processing: false,
-                progress: 100,
-                errorMessage: "",
-              },
-            }),
-            undefined,
-            "worker/setWorkerState",
-          );
-        }
 
         return results;
       } catch (error) {
