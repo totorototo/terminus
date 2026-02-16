@@ -280,30 +280,32 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         // Validate worker results before setting state
         validateGPXResults(results);
 
+        // Update all slices using their individual setters
+        get().setGpxData(results.trace.points);
+        get().setSlopes(results.trace.slopes);
+        get().setCumulativeDistances(results.trace.cumulativeDistances);
+        get().setCumulativeElevations(results.trace.cumulativeElevations);
+        get().setCumulativeElevationLosses(
+          results.trace.cumulativeElevationLoss,
+        );
+        get().setMetadata(results.metadata);
+        get().setPeaks(results.trace.peaks);
+
+        get().updateStats({
+          distance: results.trace.totalDistance ?? 0,
+          elevationGain: results.trace.totalElevation ?? 0,
+          elevationLoss: results.trace.totalElevationLoss ?? 0,
+          pointCount: results.trace.points.length ?? 0,
+        });
+
         set(
           (state) => ({
-            stats: {
-              ...state.stats,
-              distance: results.trace.totalDistance ?? 0,
-              elevationGain: results.trace.totalElevation ?? 0,
-              elevationLoss: results.trace.totalElevationLoss ?? 0,
-              pointCount: results.trace.points.length ?? 0,
-            },
-            gpx: {
-              ...state.gpx,
-              metadata: { ...state.gpx.metadata, ...results.metadata },
-              peaks: results.trace.peaks,
-              data: results.trace.points,
-              slopes: results.trace.slopes,
-              cumulativeDistances: results.trace.cumulativeDistances,
-              cumulativeElevations: results.trace.cumulativeElevations,
-              cumulativeElevationLosses: results.trace.cumulativeElevationLoss,
-            },
+            ...state,
             sections: results.sections,
             waypoints: results.waypoints,
           }),
           undefined,
-          "worker/processGPXFile",
+          "worker/setSectionsAndWaypoints",
         );
 
         return results;

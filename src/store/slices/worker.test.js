@@ -58,11 +58,72 @@ describe("Worker Slice", () => {
       },
 
       // Mock store methods that worker slice calls
-      setGpxData: vi.fn(),
-      setSlopes: vi.fn(),
-      setCumulativeDistances: vi.fn(),
-      setCumulativeElevations: vi.fn(),
-      setCumulativeElevationLosses: vi.fn(),
+      setGpxData: (data) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: { ...state.gpx, data },
+          }),
+          undefined,
+          "gpx/setGpxData",
+        ),
+      setSlopes: (slopes) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: { ...state.gpx, slopes },
+          }),
+          undefined,
+          "gpx/setSlopes",
+        ),
+      setCumulativeDistances: (cumulativeDistances) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: { ...state.gpx, cumulativeDistances },
+          }),
+          undefined,
+          "gpx/setCumulativeDistances",
+        ),
+      setCumulativeElevations: (cumulativeElevations) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: { ...state.gpx, cumulativeElevations },
+          }),
+          undefined,
+          "gpx/setCumulativeElevations",
+        ),
+      setCumulativeElevationLosses: (cumulativeElevationLosses) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: { ...state.gpx, cumulativeElevationLosses },
+          }),
+          undefined,
+          "gpx/setCumulativeElevationLosses",
+        ),
+      setMetadata: (metadata) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: {
+              ...state.gpx,
+              metadata: { ...state.gpx.metadata, ...metadata },
+            },
+          }),
+          undefined,
+          "gpx/setMetadata",
+        ),
+      setPeaks: (peaks) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: { ...state.gpx, peaks },
+          }),
+          undefined,
+          "gpx/setPeaks",
+        ),
       updateStats: (updates) =>
         set(
           (state) => ({
@@ -72,7 +133,15 @@ describe("Worker Slice", () => {
           undefined,
           "stats/updateStats",
         ),
-      setSections: vi.fn(),
+      setSections: (sections) =>
+        set(
+          (state) => ({
+            ...state,
+            sections,
+          }),
+          undefined,
+          "sections/setSections",
+        ),
 
       // The actual slice under test, with injected worker factory (closure-local state)
       ...createWorkerSlice(set, get, () => mockWorkerInstance),
@@ -159,18 +228,87 @@ describe("Worker Slice", () => {
           projectedLocation: { timestamp: 0, coords: [], index: null },
           savedLocations: [],
         },
-        setGpxData: vi.fn(),
-        setSlopes: vi.fn(),
-        setCumulativeDistances: vi.fn(),
-        setCumulativeElevations: vi.fn(),
-        setCumulativeElevationLosses: vi.fn(),
+        setGpxData: (data) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: { ...state.gpx, data },
+            }),
+            undefined,
+            "gpx/setGpxData",
+          ),
+        setSlopes: (slopes) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: { ...state.gpx, slopes },
+            }),
+            undefined,
+            "gpx/setSlopes",
+          ),
+        setCumulativeDistances: (cumulativeDistances) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: { ...state.gpx, cumulativeDistances },
+            }),
+            undefined,
+            "gpx/setCumulativeDistances",
+          ),
+        setCumulativeElevations: (cumulativeElevations) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: { ...state.gpx, cumulativeElevations },
+            }),
+            undefined,
+            "gpx/setCumulativeElevations",
+          ),
+        setCumulativeElevationLosses: (cumulativeElevationLosses) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: { ...state.gpx, cumulativeElevationLosses },
+            }),
+            undefined,
+            "gpx/setCumulativeElevationLosses",
+          ),
+        setMetadata: (metadata) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: {
+                ...state.gpx,
+                metadata: { ...state.gpx.metadata, ...metadata },
+              },
+            }),
+            undefined,
+            "gpx/setMetadata",
+          ),
+        setPeaks: (peaks) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: { ...state.gpx, peaks },
+            }),
+            undefined,
+            "gpx/setPeaks",
+          ),
         updateStats: (updates) =>
           set(
             (state) => ({ ...state, stats: { ...state.stats, ...updates } }),
             undefined,
             "stats/updateStats",
           ),
-        setSections: vi.fn(),
+        setSections: (sections) =>
+          set(
+            (state) => ({
+              ...state,
+              sections,
+            }),
+            undefined,
+            "sections/setSections",
+          ),
         // Pass a factory that throws
         ...createWorkerSlice(set, get, () => {
           throw new Error("Worker creation failed");
