@@ -47,11 +47,4 @@ stats.html
 
 # Claude analysis and reports
 .claude/
-ANALYSIS*.md
-COMPONENT*.md
-FEATURE*.md
-PRODUCT*.md
-QA*.md
-TERMINUS_*.md
-QUICK_FIXES.md
-README_ANALYSIS.md
+[A-Z]*.md
