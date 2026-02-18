@@ -61,7 +61,6 @@ const TrailData = memo(function TrailData({ className }) {
   const flush = useStore((state) => state.flush);
   const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
   const trackingMode = useStore((state) => state.app.trackingMode);
-  const profileMode = useStore((state) => state.app.profileMode);
   const stats = useStats();
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
@@ -129,8 +128,6 @@ const TrailData = memo(function TrailData({ className }) {
     ],
   );
 
-  console.log(trackingMode);
-
   const { remainingDistance, remainingElevation, remainingElevationLoss } =
     useSpringWeb({
       ...remainingValues,
@@ -159,16 +156,14 @@ const TrailData = memo(function TrailData({ className }) {
       <div className={"command-container"}>
         <div className={`command-content`}>
           <button
-            className={profileMode ? "active" : ""}
+            className={trackingMode ? "active" : undefined}
             onClick={toggleTrackingMode}
           >
             Demo
           </button>
         </div>
         <div className="command-content">
-          <button className={profileMode ? "active" : ""} onClick={flush}>
-            Flush Data
-          </button>
+          <button onClick={flush}>Flush Data</button>
         </div>
       </div>
       <div className="build-number">

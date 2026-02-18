@@ -61,11 +61,6 @@ const style = (Component) => styled(Component)`
         transition: background 0.3s ease;
         width: 100%;
 
-        &:hover {
-          background: ${(props) =>
-            props.theme.colors.dark["--color-secondary"]};
-        }
-
         &.active {
           background: ${(props) =>
             props.theme.colors.dark["--color-secondary"]};
