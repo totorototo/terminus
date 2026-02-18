@@ -159,7 +159,7 @@ const TrailData = memo(function TrailData({ className }) {
             className={trackingMode ? "active" : undefined}
             onClick={toggleTrackingMode}
           >
-            Demo
+            Fly-by
           </button>
         </div>
         <div className="command-content">

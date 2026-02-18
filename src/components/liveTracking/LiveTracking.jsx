@@ -23,12 +23,15 @@ function LiveTracking({ className }) {
 
   // Batch all spring animations into a single hook for better performance
   const springs = useSpringWeb({
-    distance: stats.distance - cumulativeDistances?.[currentPositionIndex] || 0,
+    distance:
+      (stats?.distance || 0) -
+      (cumulativeDistances?.[currentPositionIndex] || 0),
     elevation:
-      stats.elevationGain - cumulativeElevations?.[currentPositionIndex] || 0,
+      (stats?.elevationGain || 0) -
+      (cumulativeElevations?.[currentPositionIndex] || 0),
     elevationLoss:
-      stats.elevationLoss - cumulativeElevationLosses?.[currentPositionIndex] ||
-      0,
+      (stats?.elevationLoss || 0) -
+      (cumulativeElevationLosses?.[currentPositionIndex] || 0),
     altitude: gpsData?.[currentPositionIndex]?.[2] || 0,
     progress:
       gpsData && currentPositionIndex

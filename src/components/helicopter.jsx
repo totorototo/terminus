@@ -48,12 +48,17 @@ export function Model({ coordinateScales, ...props }) {
   useEffect(() => {
     if (!transformedLocation) return;
 
+    const x = transformedLocation[0];
+    const y = transformedLocation[1];
+    const z = transformedLocation[2];
+
+    // Ensure all values are valid numbers before animating
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+      return;
+    }
+
     api.start({
-      position: [
-        transformedLocation[0],
-        transformedLocation[1] + 0.2,
-        transformedLocation[2],
-      ],
+      position: [x, y + 0.2, z],
     });
   }, [transformedLocation, api]);
 
