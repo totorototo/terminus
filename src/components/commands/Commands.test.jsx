@@ -36,7 +36,6 @@ vi.mock("./Commands.style.js", () => ({
 }));
 
 describe("Commands Component", () => {
-  let mockToggleTrackingMode;
   let mockToggleProfileMode;
   let mockToggleSlopesMode;
   let mockShareLocation;
@@ -44,7 +43,6 @@ describe("Commands Component", () => {
   let mockSpotMe;
 
   beforeEach(() => {
-    mockToggleTrackingMode = vi.fn();
     mockToggleProfileMode = vi.fn();
     mockToggleSlopesMode = vi.fn();
     mockShareLocation = vi.fn();
@@ -58,7 +56,6 @@ describe("Commands Component", () => {
           profileMode: false,
           displaySlopes: false,
         },
-        toggleTrackingMode: mockToggleTrackingMode,
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
@@ -76,7 +73,6 @@ describe("Commands Component", () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Toggle slope colors")).toBeInTheDocument();
     expect(screen.getByLabelText("Toggle 2D profile view")).toBeInTheDocument();
-    expect(screen.getByLabelText("Toggle animation mode")).toBeInTheDocument();
     expect(
       screen.getByLabelText("Share my current location"),
     ).toBeInTheDocument();
@@ -109,15 +105,6 @@ describe("Commands Component", () => {
     expect(mockToggleProfileMode).toHaveBeenCalledTimes(1);
   });
 
-  it("should call toggleTrackingMode when tracking button is clicked", () => {
-    render(<Commands />);
-    const trackingButton = screen.getByLabelText("Toggle animation mode");
-
-    fireEvent.click(trackingButton);
-
-    expect(mockToggleTrackingMode).toHaveBeenCalledTimes(1);
-  });
-
   it("should call shareLocation when share button is clicked", () => {
     render(<Commands />);
     const shareButton = screen.getByLabelText("Share my current location");
@@ -135,7 +122,6 @@ describe("Commands Component", () => {
           profileMode: false,
           displaySlopes: true,
         },
-        toggleTrackingMode: mockToggleTrackingMode,
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
@@ -146,11 +132,9 @@ describe("Commands Component", () => {
 
     render(<Commands />);
 
-    const trackingButton = screen.getByLabelText("Toggle animation mode");
     const slopesButton = screen.getByLabelText("Toggle slope colors");
     const profileButton = screen.getByLabelText("Toggle 2D profile view");
 
-    expect(trackingButton).toHaveClass("on");
     expect(slopesButton).toHaveClass("on");
     expect(profileButton).toHaveClass("on");
   });
@@ -158,13 +142,11 @@ describe("Commands Component", () => {
   it("should apply 'off' class to inactive buttons", () => {
     render(<Commands />);
 
-    const trackingButton = screen.getByLabelText("Toggle animation mode");
     const slopesButton = screen.getByLabelText("Toggle slope colors");
     const profileButton = screen.getByLabelText("Toggle 2D profile view");
     const locationButton = screen.getByLabelText("Find my current location");
     const shareButton = screen.getByLabelText("Share my current location");
 
-    expect(trackingButton).toHaveClass("off");
     expect(slopesButton).toHaveClass("off");
     // Profile button has inverted logic - when profileMode is false, it shows "on"
     expect(profileButton).toHaveClass("on");
@@ -180,7 +162,6 @@ describe("Commands Component", () => {
           profileMode: false,
           displaySlopes: true,
         },
-        toggleTrackingMode: mockToggleTrackingMode,
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
@@ -191,11 +172,9 @@ describe("Commands Component", () => {
 
     render(<Commands />);
 
-    const trackingButton = screen.getByLabelText("Toggle animation mode");
     const slopesButton = screen.getByLabelText("Toggle slope colors");
     const profileButton = screen.getByLabelText("Toggle 2D profile view");
 
-    expect(trackingButton).toHaveAttribute("aria-pressed", "true");
     expect(slopesButton).toHaveAttribute("aria-pressed", "true");
     expect(profileButton).toHaveAttribute("aria-pressed", "false");
   });

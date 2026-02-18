@@ -9,19 +9,15 @@ import style from "./Commands.style";
 function Commands({ className }) {
   // Use useShallow to batch related app state and actions into single subscription
   const {
-    trackingMode,
     profileMode,
     displaySlopes,
-    toggleTrackingMode,
     toggleProfileMode,
     toggleSlopesMode,
     shareLocation,
   } = useStore(
     useShallow((state) => ({
-      trackingMode: state.app.trackingMode,
       profileMode: state.app.profileMode,
       displaySlopes: state.app.displaySlopes,
-      toggleTrackingMode: state.toggleTrackingMode,
       toggleProfileMode: state.toggleProfileMode,
       toggleSlopesMode: state.toggleSlopesMode,
       shareLocation: state.shareLocation,
