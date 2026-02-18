@@ -29,8 +29,10 @@ const style = (Component) => styled(Component)`
 
   .command-container {
     display: flex;
+    flex-direction: column;
     width: 100%;
-    justify-content: center;
+    gap: 1rem;
+    justify-content: flex-start;
     align-items: flex-start;
     margin-top: 1rem;
     background: rgba(255, 255, 255, 0.1);
@@ -60,6 +62,11 @@ const style = (Component) => styled(Component)`
         width: 100%;
 
         &:hover {
+          background: ${(props) =>
+            props.theme.colors.dark["--color-secondary"]};
+        }
+
+        &.active {
           background: ${(props) =>
             props.theme.colors.dark["--color-secondary"]};
         }
