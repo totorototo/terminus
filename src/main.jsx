@@ -55,20 +55,21 @@ html {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
-  min-width: 320px;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
   min-height: 100vh;
-  height: 100vh;
-  
+  min-width: 320px;
+
   /* Use CSS custom properties for better compatibility */
   padding-top: var(--safe-area-inset-top);
   padding-right: var(--safe-area-inset-right);
   padding-bottom: var(--safe-area-inset-bottom);
   padding-left: var(--safe-area-inset-left);
-  
+
   /* Ensure full coverage */
   background-color: #262424ff;
-  
+
   /* iOS PWA specific fixes */
   -webkit-user-select: none;
   -webkit-touch-callout: none;
@@ -79,6 +80,7 @@ body {
 #root {
   width: 100%;
   height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
