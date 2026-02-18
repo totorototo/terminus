@@ -1,12 +1,12 @@
 import { MapPin } from "@styled-icons/feather/MapPin";
-import { Film } from "@styled-icons/feather/Film";
+import { Video } from "@styled-icons/feather/Video";
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import { Map } from "@styled-icons/feather/Map";
-// import { Upload } from "@styled-icons/feather/upload";
+import { Share2 } from "@styled-icons/feather/Share2";
 import { useShallow } from "zustand/react/shallow";
 import useStore from "../../store/store";
 import style from "./Commands.style";
-// import { useCallback } from "react";
+import { Share } from "@styled-icons/feather";
 
 function Commands({ className }) {
   // Use useShallow to batch related app state and actions into single subscription
@@ -17,6 +17,7 @@ function Commands({ className }) {
     toggleTrackingMode,
     toggleProfileMode,
     toggleSlopesMode,
+    shareLocation,
   } = useStore(
     useShallow((state) => ({
       trackingMode: state.app.trackingMode,
@@ -25,6 +26,7 @@ function Commands({ className }) {
       toggleTrackingMode: state.toggleTrackingMode,
       toggleProfileMode: state.toggleProfileMode,
       toggleSlopesMode: state.toggleSlopesMode,
+      shareLocation: state.shareLocation,
     })),
   );
 
@@ -84,7 +86,14 @@ function Commands({ className }) {
         aria-label="Toggle animation mode"
         aria-pressed={trackingMode}
       >
-        <Film size={24} />
+        <Video size={24} />
+      </button>
+      <button
+        className={"off"}
+        onClick={shareLocation}
+        aria-label="Share my current location"
+      >
+        <Share2 size={24} />
       </button>
     </div>
   );
