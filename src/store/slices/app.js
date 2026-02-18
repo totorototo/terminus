@@ -4,7 +4,6 @@ export const createAppSlice = (set, get) => {
       trackingMode: false,
       displaySlopes: false,
       profileMode: false,
-      startingDate: 0, //Unix timestamp
       locations: [],
     },
 

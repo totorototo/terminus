@@ -61,7 +61,6 @@ describe("store", () => {
       expect(state.app.displaySlopes).toBe(false);
       expect(state.app.profileMode).toBe(false);
       expect(state.app.locations).toEqual([]);
-      expect(state.app.startingDate).toBe(0);
     });
 
     it("should have gpx slice with correct initial state", () => {
