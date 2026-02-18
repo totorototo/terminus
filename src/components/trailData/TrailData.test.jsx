@@ -274,15 +274,15 @@ describe("TrailData Component", () => {
     });
   });
 
-  describe("profileMode button styling", () => {
-    it("should not have active class when profileMode is false", () => {
+  describe("trackingMode button styling", () => {
+    it("should not have active class when trackingMode is false", () => {
       storeModule.default.mockImplementation((selector) => {
         const state = {
           sections: mockSections,
           flush: vi.fn(),
           toggleTrackingMode: vi.fn(),
           app: {
-            profileMode: false,
+            trackingMode: false,
           },
           gpx: {
             cumulativeDistances: mockCumulativeDistances,
@@ -301,14 +301,14 @@ describe("TrailData Component", () => {
       expect(flushButton).not.toHaveClass("active");
     });
 
-    it("should have active class when profileMode is true", () => {
+    it("should have active class when trackingMode is true", () => {
       storeModule.default.mockImplementation((selector) => {
         const state = {
           sections: mockSections,
           flush: vi.fn(),
           toggleTrackingMode: vi.fn(),
           app: {
-            profileMode: true,
+            trackingMode: true,
           },
           gpx: {
             cumulativeDistances: mockCumulativeDistances,
@@ -324,7 +324,7 @@ describe("TrailData Component", () => {
       const flushButton = screen.getByText("Flush Data");
 
       expect(demoButton).toHaveClass("active");
-      expect(flushButton).toHaveClass("active");
+      expect(flushButton).not.toHaveClass("active");
     });
   });
 
