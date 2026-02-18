@@ -71,6 +71,10 @@ describe("TrailData Component", () => {
       const state = {
         sections: mockSections,
         flush: vi.fn(),
+        toggleTrackingMode: vi.fn(),
+        app: {
+          profileMode: false,
+        },
         gpx: {
           cumulativeDistances: mockCumulativeDistances,
           cumulativeElevations: mockCumulativeElevations,
@@ -132,6 +136,10 @@ describe("TrailData Component", () => {
         const state = {
           sections: mockSections,
           flush: vi.fn(),
+          toggleTrackingMode: vi.fn(),
+          app: {
+            profileMode: false,
+          },
           gpx: {
             cumulativeDistances: [],
             cumulativeElevations: [],
@@ -150,6 +158,10 @@ describe("TrailData Component", () => {
         const state = {
           sections: null,
           flush: vi.fn(),
+          toggleTrackingMode: vi.fn(),
+          app: {
+            profileMode: false,
+          },
           gpx: {
             cumulativeDistances: mockCumulativeDistances,
             cumulativeElevations: mockCumulativeElevations,
@@ -168,6 +180,10 @@ describe("TrailData Component", () => {
         const state = {
           sections: [],
           flush: vi.fn(),
+          toggleTrackingMode: vi.fn(),
+          app: {
+            profileMode: false,
+          },
           gpx: {
             cumulativeDistances: mockCumulativeDistances,
             cumulativeElevations: mockCumulativeElevations,
@@ -197,9 +213,39 @@ describe("TrailData Component", () => {
   });
 
   describe("button functionality", () => {
+    it("should render Demo button", () => {
+      render(<TrailData />);
+      expect(screen.getByText("Demo")).toBeInTheDocument();
+    });
+
     it("should render flush data button", () => {
       render(<TrailData />);
       expect(screen.getByText("Flush Data")).toBeInTheDocument();
+    });
+
+    it("should call toggleTrackingMode when Demo button is clicked", () => {
+      const mockToggleTrackingMode = vi.fn();
+      storeModule.default.mockImplementation((selector) => {
+        const state = {
+          sections: mockSections,
+          flush: vi.fn(),
+          toggleTrackingMode: mockToggleTrackingMode,
+          app: {
+            profileMode: false,
+          },
+          gpx: {
+            cumulativeDistances: mockCumulativeDistances,
+            cumulativeElevations: mockCumulativeElevations,
+            cumulativeElevationLosses: mockCumulativeElevationLosses,
+          },
+        };
+        return selector(state);
+      });
+
+      render(<TrailData />);
+      const button = screen.getByText("Demo");
+      button.click();
+      expect(mockToggleTrackingMode).toHaveBeenCalled();
     });
 
     it("should call flush when button is clicked", () => {
@@ -208,6 +254,10 @@ describe("TrailData Component", () => {
         const state = {
           sections: mockSections,
           flush: mockFlush,
+          toggleTrackingMode: vi.fn(),
+          app: {
+            profileMode: false,
+          },
           gpx: {
             cumulativeDistances: mockCumulativeDistances,
             cumulativeElevations: mockCumulativeElevations,
@@ -221,6 +271,60 @@ describe("TrailData Component", () => {
       const button = screen.getByText("Flush Data");
       button.click();
       expect(mockFlush).toHaveBeenCalled();
+    });
+  });
+
+  describe("profileMode button styling", () => {
+    it("should not have active class when profileMode is false", () => {
+      storeModule.default.mockImplementation((selector) => {
+        const state = {
+          sections: mockSections,
+          flush: vi.fn(),
+          toggleTrackingMode: vi.fn(),
+          app: {
+            profileMode: false,
+          },
+          gpx: {
+            cumulativeDistances: mockCumulativeDistances,
+            cumulativeElevations: mockCumulativeElevations,
+            cumulativeElevationLosses: mockCumulativeElevationLosses,
+          },
+        };
+        return selector(state);
+      });
+
+      render(<TrailData />);
+      const demoButton = screen.getByText("Demo");
+      const flushButton = screen.getByText("Flush Data");
+
+      expect(demoButton).not.toHaveClass("active");
+      expect(flushButton).not.toHaveClass("active");
+    });
+
+    it("should have active class when profileMode is true", () => {
+      storeModule.default.mockImplementation((selector) => {
+        const state = {
+          sections: mockSections,
+          flush: vi.fn(),
+          toggleTrackingMode: vi.fn(),
+          app: {
+            profileMode: true,
+          },
+          gpx: {
+            cumulativeDistances: mockCumulativeDistances,
+            cumulativeElevations: mockCumulativeElevations,
+            cumulativeElevationLosses: mockCumulativeElevationLosses,
+          },
+        };
+        return selector(state);
+      });
+
+      render(<TrailData />);
+      const demoButton = screen.getByText("Demo");
+      const flushButton = screen.getByText("Flush Data");
+
+      expect(demoButton).toHaveClass("active");
+      expect(flushButton).toHaveClass("active");
     });
   });
 

@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
@@ -59,6 +59,9 @@ const TrailData = memo(function TrailData({ className }) {
   // Use optimized selectors for better performance
   const projectedLocation = useProjectedLocation();
   const flush = useStore((state) => state.flush);
+  const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
+  const trackingMode = useStore((state) => state.app.trackingMode);
+  const profileMode = useStore((state) => state.app.profileMode);
   const stats = useStats();
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
@@ -72,8 +75,6 @@ const TrailData = memo(function TrailData({ className }) {
   const sections = useStore((state) => state.sections);
   const startingDate =
     sections && sections.length > 0 && sections[0].startTime * 1000;
-
-  // const [startingDate] = useState(Date.now());
 
   // Memoize expensive time calculations
   const timeMetrics = useMemo(() => {
@@ -128,6 +129,8 @@ const TrailData = memo(function TrailData({ className }) {
     ],
   );
 
+  console.log(trackingMode);
+
   const { remainingDistance, remainingElevation, remainingElevationLoss } =
     useSpringWeb({
       ...remainingValues,
@@ -154,8 +157,18 @@ const TrailData = memo(function TrailData({ className }) {
       </div>
 
       <div className={"command-container"}>
+        <div className={`command-content`}>
+          <button
+            className={profileMode ? "active" : ""}
+            onClick={toggleTrackingMode}
+          >
+            Demo
+          </button>
+        </div>
         <div className="command-content">
-          <button onClick={flush}>Flush Data</button>
+          <button className={profileMode ? "active" : ""} onClick={flush}>
+            Flush Data
+          </button>
         </div>
       </div>
       <div className="build-number">

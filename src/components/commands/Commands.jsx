@@ -1,12 +1,10 @@
 import { MapPin } from "@styled-icons/feather/MapPin";
-import { Video } from "@styled-icons/feather/Video";
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import { Map } from "@styled-icons/feather/Map";
 import { Share2 } from "@styled-icons/feather/Share2";
 import { useShallow } from "zustand/react/shallow";
 import useStore from "../../store/store";
 import style from "./Commands.style";
-import { Share } from "@styled-icons/feather";
 
 function Commands({ className }) {
   // Use useShallow to batch related app state and actions into single subscription
@@ -79,14 +77,6 @@ function Commands({ className }) {
         aria-pressed={profileMode}
       >
         <Map size={24} />
-      </button>
-      <button
-        className={trackingMode ? "on" : "off"}
-        onClick={toggleTrackingMode}
-        aria-label="Toggle animation mode"
-        aria-pressed={trackingMode}
-      >
-        <Video size={24} />
       </button>
       <button
         className={"off"}
