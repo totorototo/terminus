@@ -213,9 +213,9 @@ describe("TrailData Component", () => {
   });
 
   describe("button functionality", () => {
-    it("should render Demo button", () => {
+    it("should render Fly-by button", () => {
       render(<TrailData />);
-      expect(screen.getByText("Demo")).toBeInTheDocument();
+      expect(screen.getByText("Fly-by")).toBeInTheDocument();
     });
 
     it("should render flush data button", () => {
@@ -223,7 +223,7 @@ describe("TrailData Component", () => {
       expect(screen.getByText("Flush Data")).toBeInTheDocument();
     });
 
-    it("should call toggleTrackingMode when Demo button is clicked", () => {
+    it("should call toggleTrackingMode when Fly-by button is clicked", () => {
       const mockToggleTrackingMode = vi.fn();
       storeModule.default.mockImplementation((selector) => {
         const state = {
@@ -243,7 +243,7 @@ describe("TrailData Component", () => {
       });
 
       render(<TrailData />);
-      const button = screen.getByText("Demo");
+      const button = screen.getByText("Fly-by");
       button.click();
       expect(mockToggleTrackingMode).toHaveBeenCalled();
     });
@@ -294,10 +294,10 @@ describe("TrailData Component", () => {
       });
 
       render(<TrailData />);
-      const demoButton = screen.getByText("Demo");
+      const flyByButton = screen.getByText("Fly-by");
       const flushButton = screen.getByText("Flush Data");
 
-      expect(demoButton).not.toHaveClass("active");
+      expect(flyByButton).not.toHaveClass("active");
       expect(flushButton).not.toHaveClass("active");
     });
 
@@ -320,11 +320,9 @@ describe("TrailData Component", () => {
       });
 
       render(<TrailData />);
-      const demoButton = screen.getByText("Demo");
-      const flushButton = screen.getByText("Flush Data");
+      const flyByButton = screen.getByText("Fly-by");
 
-      expect(demoButton).toHaveClass("active");
-      expect(flushButton).not.toHaveClass("active");
+      expect(flyByButton).toHaveClass("active");
     });
   });
 

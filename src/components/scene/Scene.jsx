@@ -13,8 +13,10 @@ import Peaks from "../peaks/Peaks.jsx";
 
 function Scene({ width, height, className }) {
   const profileMode = useStore((state) => state.app.profileMode);
+  const trackingMode = useStore((state) => state.app.trackingMode);
   const coordinates = useStore((state) => state.gpx.data);
   const { name } = useStore((state) => state.gpx.metadata);
+  const projectedLocation = useStore((state) => state.gps.projectedLocation);
 
   const modelRef = useRef();
   const theme = useTheme();
@@ -71,18 +73,22 @@ function Scene({ width, height, className }) {
           profileMode={profileMode}
         />
 
-        <TrailFollower
-          speed={0.002}
-          height={0.08}
-          scale={0.05}
-          color="red"
-          modelRef={modelRef}
-          coordinateScales={coordinateScales}
-        />
+        {trackingMode && (
+          <TrailFollower
+            speed={0.002}
+            height={0.08}
+            scale={0.05}
+            color="red"
+            modelRef={modelRef}
+            coordinateScales={coordinateScales}
+          />
+        )}
 
-        <Suspense fallback={null}>
-          <Model scale={0.01} coordinateScales={coordinateScales} />
-        </Suspense>
+        {projectedLocation && projectedLocation.timestamp !== 0 && (
+          <Suspense fallback={null}>
+            <Model scale={0.01} coordinateScales={coordinateScales} />
+          </Suspense>
+        )}
 
         <CameraController modelRef={modelRef} />
       </Canvas>
