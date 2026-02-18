@@ -168,4 +168,115 @@ describe("GPS Slice", () => {
       expect(store.getState().gps.location.timestamp).toBe(0);
     });
   });
+
+  describe("shareLocation", () => {
+    let mockShare;
+    let mockClipboard;
+
+    beforeEach(() => {
+      mockShare = vi.fn();
+      mockClipboard = {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      };
+
+      // Set up initial location
+      store.setState({
+        gps: {
+          ...store.getState().gps,
+          projectedLocation: {
+            timestamp: 123,
+            coords: [45.5, -122.7, 100],
+            index: 0,
+          },
+        },
+      });
+    });
+
+    it("should use navigator.share when available", async () => {
+      Object.defineProperty(navigator, "share", {
+        value: mockShare.mockResolvedValue(undefined),
+        writable: true,
+        configurable: true,
+      });
+
+      await store.getState().shareLocation();
+
+      expect(mockShare).toHaveBeenCalledWith({
+        title: "My Location",
+        text: "My current location: 45.5, -122.7",
+        url: "https://www.google.com/maps?q=45.5,-122.7",
+      });
+    });
+
+    it("should handle user canceling share (AbortError)", async () => {
+      const abortError = new Error("User cancelled");
+      abortError.name = "AbortError";
+
+      Object.defineProperty(navigator, "share", {
+        value: mockShare.mockRejectedValue(abortError),
+        writable: true,
+        configurable: true,
+      });
+
+      await expect(store.getState().shareLocation()).resolves.not.toThrow();
+      expect(mockShare).toHaveBeenCalled();
+    });
+
+    it("should fall back to clipboard when navigator.share is not available", async () => {
+      Object.defineProperty(navigator, "share", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+
+      Object.defineProperty(navigator, "clipboard", {
+        value: mockClipboard,
+        writable: true,
+        configurable: true,
+      });
+
+      await store.getState().shareLocation();
+
+      expect(mockClipboard.writeText).toHaveBeenCalledWith(
+        "My current location: 45.5, -122.7\nhttps://www.google.com/maps?q=45.5,-122.7",
+      );
+    });
+
+    it("should handle missing location gracefully", async () => {
+      store.setState({
+        gps: {
+          ...store.getState().gps,
+          projectedLocation: { timestamp: 0, coords: [], index: null },
+        },
+      });
+
+      Object.defineProperty(navigator, "share", {
+        value: mockShare,
+        writable: true,
+        configurable: true,
+      });
+
+      await store.getState().shareLocation();
+
+      expect(mockShare).not.toHaveBeenCalled();
+    });
+
+    it("should handle clipboard error gracefully", async () => {
+      Object.defineProperty(navigator, "share", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+
+      Object.defineProperty(navigator, "clipboard", {
+        value: {
+          writeText: vi.fn().mockRejectedValue(new Error("Clipboard denied")),
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      await expect(store.getState().shareLocation()).resolves.not.toThrow();
+    });
+  });
 });

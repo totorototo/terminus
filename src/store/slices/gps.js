@@ -164,5 +164,42 @@ export const createGPSSlice = (set, get) => {
         isEmpty: buffer.isEmpty(),
       };
     },
+
+    shareLocation: async () => {
+      const location = get().gps.projectedLocation;
+      if (!location || !location.coords || location.coords.length < 2) {
+        console.warn("No location available to share");
+        return;
+      }
+
+      const [lat, lon] = location.coords;
+      const text = `My current location: ${lat}, ${lon}`;
+      const url = `https://www.google.com/maps?q=${lat},${lon}`;
+
+      // Try Web Share API first (mobile-friendly)
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "My Location",
+            text: text,
+            url: url,
+          });
+          console.log("Location shared successfully");
+        } catch (error) {
+          // User cancelled or share failed
+          if (error.name !== "AbortError") {
+            console.error("Error sharing location:", error);
+          }
+        }
+      } else {
+        // Fallback to clipboard for desktop browsers
+        try {
+          await navigator.clipboard.writeText(`${text}\n${url}`);
+          console.log("Location copied to clipboard");
+        } catch (error) {
+          console.error("Error copying location to clipboard:", error);
+        }
+      }
+    },
   };
 };
