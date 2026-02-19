@@ -16,14 +16,13 @@ const style = (Component) => styled(Component)`
   user-select: none;
   padding-left: 1rem;
   padding-right: 1rem;
-  gap: 0.5rem;
+  gap: 1rem;
 
   .section {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 0.8rem;
-    height: 116px;
     width: 100%;
     position: relative;
   }
@@ -43,10 +42,24 @@ const style = (Component) => styled(Component)`
     stroke-width: 2;
   }
 
-  .distance-container {
+  .container {
     display: flex;
     flex-direction: column;
     width: 100%;
+    height: 100%;
+    justify-content: flex-start;
+    gap: 0.2rem;
+    padding-top: 0.3rem;
+  }
+
+  .elevation-container {
+    display: flex;
+    padding-top: 0.2rem;
+    gap: 1rem;
+  }
+
+  .location {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
   }
 
   .distance {
