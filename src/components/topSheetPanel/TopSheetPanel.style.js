@@ -36,9 +36,6 @@ const style = (Component) => styled(Component)`
     border-radius: 2px;
     z-index: 1;
   }
-
-  /* Add padding to accommodate drag handle */
-  padding-bottom: 12px;
 `;
 
 export default style;
