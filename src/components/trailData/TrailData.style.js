@@ -11,7 +11,7 @@ const style = (Component) => styled(Component)`
   justify-content: flex-start;
   flex-direction: column;
   width: 100%;
-  height: 27rem;
+  height: 23rem;
   pointer-events: auto;
 
   color: ${(props) => props.theme.colors.dark["--color-text"]};
