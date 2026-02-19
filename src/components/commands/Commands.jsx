@@ -14,6 +14,7 @@ function Commands({ className }) {
     toggleProfileMode,
     toggleSlopesMode,
     shareLocation,
+    projectedLocation,
   } = useStore(
     useShallow((state) => ({
       profileMode: state.app.profileMode,
@@ -21,6 +22,7 @@ function Commands({ className }) {
       toggleProfileMode: state.toggleProfileMode,
       toggleSlopesMode: state.toggleSlopesMode,
       shareLocation: state.shareLocation,
+      projectedLocation: state.gps.projectedLocation,
     })),
   );
 
@@ -75,6 +77,7 @@ function Commands({ className }) {
         <Map size={24} />
       </button>
       <button
+        disabled={projectedLocation.timestamp === 0}
         className={"off"}
         onClick={shareLocation}
         aria-label="Share my current location"
