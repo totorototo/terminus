@@ -23,7 +23,7 @@ const style = (Component) => styled(Component)`
     flex-direction: row;
     align-items: center;
     gap: 0.8rem;
-    height: 94px;
+    height: 116px;
     width: 100%;
     position: relative;
   }
@@ -43,61 +43,10 @@ const style = (Component) => styled(Component)`
     stroke-width: 2;
   }
 
-  .location-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 0.4rem;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .location {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
-    letter-spacing: 0.02em;
-    opacity: 0.8;
-    width: 100%;
-  }
-
   .distance-container {
     display: flex;
     flex-direction: column;
     width: 100%;
-  }
-
-  .meta-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 0.4rem;
-    flex-shrink: 0;
-  }
-
-  .cutoff-time {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-
-    svg {
-      stroke: ${({ theme }) => theme.colors.dark["--colors-secondary"]};
-      stroke-width: 2;
-      flex-shrink: 0;
-    }
-  }
-
-  .elevation-container {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    flex-direction: row;
   }
 
   .distance {

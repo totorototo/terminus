@@ -3,8 +3,8 @@ import { useSpring, a, config } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import style from "./TopSheetPanel.style.js";
 
-const COLLAPSED_HEIGHT = 100;
-const EXPANDED_HEIGHT = 324;
+const COLLAPSED_HEIGHT = 116;
+const EXPANDED_HEIGHT = 380;
 
 function ExpandablePanel({ children, className }) {
   const [{ height }, api] = useSpring(() => ({ height: COLLAPSED_HEIGHT }));

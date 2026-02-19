@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { Clock } from "@styled-icons/feather";
 
 // Animation configuration
-const SECTION_ITEM_HEIGHT = 94;
+const SECTION_ITEM_HEIGHT = 116;
 const SECTION_ITEM_TRANSLATE = 6;
 
 // Get arrow icon based on bearing direction
