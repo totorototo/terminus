@@ -81,6 +81,16 @@ const style = (Component) => styled(Component)`
       transition: transform 0.1s;
     }
 
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      pointer-events: none;
+
+      &:hover {
+        transform: none;
+      }
+    }
+
     /* Icon styling */
     svg {
       transition: all 0.2s ease;
@@ -142,6 +152,16 @@ const style = (Component) => styled(Component)`
     &:active {
       transform: translateY(0);
       transition: transform 0.1s;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      pointer-events: none;
+
+      &:hover {
+        transform: none;
+      }
     }
 
     /* Icon styling */
