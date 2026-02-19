@@ -56,6 +56,11 @@ describe("Commands Component", () => {
           profileMode: false,
           displaySlopes: false,
         },
+        gps: {
+          projectedLocation: {
+            timestamp: 1,
+          },
+        },
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
@@ -122,6 +127,11 @@ describe("Commands Component", () => {
           profileMode: false,
           displaySlopes: true,
         },
+        gps: {
+          projectedLocation: {
+            timestamp: 1,
+          },
+        },
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
@@ -162,6 +172,11 @@ describe("Commands Component", () => {
           profileMode: false,
           displaySlopes: true,
         },
+        gps: {
+          projectedLocation: {
+            timestamp: 1,
+          },
+        },
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
@@ -177,5 +192,33 @@ describe("Commands Component", () => {
 
     expect(slopesButton).toHaveAttribute("aria-pressed", "true");
     expect(profileButton).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("should disable share button when projectedLocation.timestamp is 0", () => {
+    useStore.mockImplementation((selector) =>
+      selector({
+        app: {
+          trackingMode: false,
+          profileMode: false,
+          displaySlopes: false,
+        },
+        gps: {
+          projectedLocation: {
+            timestamp: 0,
+          },
+        },
+        toggleProfileMode: mockToggleProfileMode,
+        toggleSlopesMode: mockToggleSlopesMode,
+        shareLocation: mockShareLocation,
+        findClosestLocation: mockFindClosestLocation,
+        spotMe: mockSpotMe,
+      }),
+    );
+
+    render(<Commands />);
+
+    const shareButton = screen.getByLabelText("Share my current location");
+
+    expect(shareButton).toBeDisabled();
   });
 });
