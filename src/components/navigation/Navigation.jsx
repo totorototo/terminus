@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { Clock } from "@styled-icons/feather";
 
 // Animation configuration
-const SECTION_ITEM_HEIGHT = 66;
+const SECTION_ITEM_HEIGHT = 94;
 const SECTION_ITEM_TRANSLATE = 6;
 
 // Get arrow icon based on bearing direction
@@ -100,72 +100,54 @@ function Navigation({ className }) {
   return (
     <div className={className}>
       {transitions((style, section, _, index) => {
+        const isCurrent = index === 0;
         const ArrowIcon = getArrowIcon(section.bearing);
-        const cutOffTime = format(
-          new Date(section.endTime * 1000),
-          "EEEEEE HH:mm",
-        );
+        const cutOffTime = format(new Date(section.endTime * 1000), "E HH:mm");
 
         return (
           <animated.div
-            className={`section${index === 0 ? " current" : ""}`}
+            className={`section${isCurrent ? " current" : ""}`}
             style={style}
           >
             <ArrowIcon size={40} />
-            <div className="location-container">
-              <div className="location">
-                <span className="value">{section.endLocation}</span>
-              </div>
-              <div className="distance-container">
-                {index === 0 ? (
-                  <animated.div className="distance">
+            <div className="distance-container">
+              <div className="distance">
+                <div>
+                  {isCurrent ? (
                     <animated.span>
-                      {distance.to((n) => (n / 1000).toFixed(1))}
+                      {distance.to((n) => `${(n / 1000).toFixed(1)} km`)}
                     </animated.span>
-                    <span className="unit">km</span>
-                  </animated.div>
-                ) : (
-                  <div className="distance">
-                    <span>{(section.totalDistance / 1000).toFixed(2)}</span>
-                    <span className="unit">km</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="meta-container">
-              <div className="cutoff-time">
-                <Clock size={16} />
-                <span>{cutOffTime}</span>
-              </div>
-
-              <div className="elevation-container">
-                {index === 0 ? (
-                  <animated.div className="elevation gain">
-                    <animated.span>
-                      {elevation.to((n) => n.toFixed(0))}
-                    </animated.span>
-                    <span className="unit">D+</span>
-                  </animated.div>
-                ) : (
+                  ) : (
+                    <span>{(section.totalDistance / 1000).toFixed()} km</span>
+                  )}
+                </div>
+                {/* <div>
                   <div className="elevation gain">
-                    <span>{section.totalElevation.toFixed(0)}</span>
+                    {isCurrent ? (
+                      <animated.span>
+                        {elevation.to((n) => n.toFixed(0))}
+                      </animated.span>
+                    ) : (
+                      <span>{section.totalElevation.toFixed(0)}</span>
+                    )}
                     <span className="unit">D+</span>
                   </div>
-                )}
-                {index === 0 ? (
-                  <animated.div className="elevation loss">
-                    <animated.span>
-                      {elevationLoss.to((n) => n.toFixed(0))}
-                    </animated.span>
-                    <span className="unit">D-</span>
-                  </animated.div>
-                ) : (
+                </div> */}
+                {/* <div>
                   <div className="elevation loss">
-                    <span>{section.totalElevationLoss.toFixed(0)}</span>
+                    {isCurrent ? (
+                      <animated.span>
+                        {elevationLoss.to((n) => n.toFixed(0))}
+                      </animated.span>
+                    ) : (
+                      <span>{section.totalElevationLoss.toFixed(0)}</span>
+                    )}
                     <span className="unit">D-</span>
                   </div>
-                )}
+                </div> */}
+              </div>
+              <div className="location">
+                <span className="value">{`${section.endLocation} - ${cutOffTime}`}</span>
               </div>
             </div>
           </animated.div>

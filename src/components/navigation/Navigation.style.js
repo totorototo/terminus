@@ -14,7 +14,8 @@ const style = (Component) => styled(Component)`
   font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
   letter-spacing: 1.5px;
   user-select: none;
-  padding: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
   gap: 0.5rem;
 
   .section {
@@ -22,10 +23,8 @@ const style = (Component) => styled(Component)`
     flex-direction: row;
     align-items: center;
     gap: 0.8rem;
-    height: 66px;
+    height: 94px;
     width: 100%;
-    padding-left: 0.4rem;
-    padding-right: 0.4rem;
     position: relative;
   }
 
@@ -68,7 +67,7 @@ const style = (Component) => styled(Component)`
 
   .distance-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     width: 100%;
   }
 
@@ -104,14 +103,17 @@ const style = (Component) => styled(Component)`
   .distance {
     display: flex;
     align-items: baseline;
-    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xlarge"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
 
     .unit {
       min-width: unset;
       padding-left: 0.4rem;
       color: ${(props) => props.theme.colors.dark["--color-text"]};
-      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
+      font-weight: ${(props) =>
+        props.theme.font.weights["--font-weight-light"]};
     }
   }
 
