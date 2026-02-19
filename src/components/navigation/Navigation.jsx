@@ -110,7 +110,7 @@ function Navigation({ className }) {
             style={style}
           >
             <ArrowIcon size={40} />
-            <div className="distance-container">
+            <div className="container">
               <div className="distance">
                 <div>
                   {isCurrent ? (
@@ -121,19 +121,35 @@ function Navigation({ className }) {
                     <span>{(section.totalDistance / 1000).toFixed()} km</span>
                   )}
                 </div>
-                {/* <div>
-                  <div className="elevation gain">
-                    {isCurrent ? (
-                      <animated.span>
-                        {elevation.to((n) => n.toFixed(0))}
-                      </animated.span>
-                    ) : (
-                      <span>{section.totalElevation.toFixed(0)}</span>
-                    )}
-                    <span className="unit">D+</span>
-                  </div>
-                </div> */}
-                {/* <div>
+              </div>
+              <div className="location">
+                <span className="value">{`${section.endLocation} - ${cutOffTime}`}</span>
+              </div>
+              <div className="elevation-container">
+                <div className="elevation gain">
+                  {isCurrent ? (
+                    <animated.span>
+                      {elevation.to((n) => n.toFixed(0))}
+                    </animated.span>
+                  ) : (
+                    <span>{section.totalElevation.toFixed(0)}</span>
+                  )}
+                  <span className="unit">D+</span>
+                </div>
+                <div className="elevation loss">
+                  {isCurrent ? (
+                    <animated.span>
+                      {elevationLoss.to((n) => n.toFixed(0))}
+                    </animated.span>
+                  ) : (
+                    <span>{section.totalElevationLoss.toFixed(0)}</span>
+                  )}
+                  <span className="unit">D-</span>
+                </div>
+              </div>
+            </div>
+
+            {/* <div>
                   <div className="elevation loss">
                     {isCurrent ? (
                       <animated.span>
@@ -145,11 +161,6 @@ function Navigation({ className }) {
                     <span className="unit">D-</span>
                   </div>
                 </div> */}
-              </div>
-              <div className="location">
-                <span className="value">{`${section.endLocation} - ${cutOffTime}`}</span>
-              </div>
-            </div>
           </animated.div>
         );
       })}
