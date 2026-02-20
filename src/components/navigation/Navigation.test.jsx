@@ -64,6 +64,11 @@ vi.mock("@styled-icons/feather", () => ({
 // Mock date-fns
 vi.mock("date-fns", () => ({
   format: () => "Monday 14:30",
+  formatDuration: () => "1h 30m",
+  intervalToDuration: (interval) => ({
+    hours: 1,
+    minutes: 30,
+  }),
 }));
 
 // Mock Navigation.style
