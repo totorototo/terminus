@@ -130,9 +130,9 @@ describe("Navigation Component", () => {
 
       render(<Navigation />);
 
-      expect(screen.getByText(/Location 1 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 2 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 3 - Monday 14:30/)).toBeInTheDocument();
+      expect(screen.getByText("Location 1")).toBeInTheDocument();
+      expect(screen.getByText("Location 2")).toBeInTheDocument();
+      expect(screen.getByText("Location 3")).toBeInTheDocument();
     });
 
     it("should filter sections based on current position", () => {
@@ -153,11 +153,9 @@ describe("Navigation Component", () => {
       render(<Navigation />);
 
       // Only sections with endIndex >= 150 should be shown
-      expect(screen.getByText(/Location 2 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 3 - Monday 14:30/)).toBeInTheDocument();
-      expect(
-        screen.queryByText(/Location 1 - Monday 14:30/),
-      ).not.toBeInTheDocument();
+      expect(screen.getByText("Location 2")).toBeInTheDocument();
+      expect(screen.getByText("Location 3")).toBeInTheDocument();
+      expect(screen.queryByText("Location 1")).not.toBeInTheDocument();
     });
 
     it("should render nothing when no sections remain", () => {
@@ -177,15 +175,9 @@ describe("Navigation Component", () => {
 
       render(<Navigation />);
 
-      expect(
-        screen.queryByText(/Location 1 - Monday 14:30/),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByText(/Location 2 - Monday 14:30/),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByText(/Location 3 - Monday 14:30/),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText("Location 1")).not.toBeInTheDocument();
+      expect(screen.queryByText("Location 2")).not.toBeInTheDocument();
+      expect(screen.queryByText("Location 3")).not.toBeInTheDocument();
     });
 
     it("should handle empty sections array", () => {
@@ -357,9 +349,9 @@ describe("Navigation Component", () => {
 
       render(<Navigation />);
 
-      expect(screen.getByText(/Location 1 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 2 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 3 - Monday 14:30/)).toBeInTheDocument();
+      expect(screen.getByText("Location 1")).toBeInTheDocument();
+      expect(screen.getByText("Location 2")).toBeInTheDocument();
+      expect(screen.getByText("Location 3")).toBeInTheDocument();
     });
 
     it("should display cutoff time for sections", () => {
@@ -403,7 +395,7 @@ describe("Navigation Component", () => {
       render(<Navigation />);
 
       // Should treat index as 0 and show all sections
-      expect(screen.getByText(/Location 1 - Monday 14:30/)).toBeInTheDocument();
+      expect(screen.getByText("Location 1")).toBeInTheDocument();
     });
 
     it("should handle missing cumulative data", () => {
@@ -424,7 +416,7 @@ describe("Navigation Component", () => {
       render(<Navigation />);
 
       // Should render sections but with 0 values
-      expect(screen.getByText(/Location 1 - Monday 14:30/)).toBeInTheDocument();
+      expect(screen.getByText("Location 1")).toBeInTheDocument();
     });
   });
 });

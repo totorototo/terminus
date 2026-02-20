@@ -3,94 +3,123 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   z-index: 10;
   display: flex;
-  padding-top: 1.2rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: flex-start;
   flex-direction: column;
+  align-items: center;
   width: 100%;
-  height: 23rem;
+  max-width: 380px;
+  padding: 2rem 1.25rem 1.25rem;
+  border-radius: 1.75rem;
   pointer-events: auto;
+  height: 25rem;
+  // background-color:pink;
 
-  color: ${(props) => props.theme.colors.dark["--color-text"]};
-  line-height: 1.2;
-  font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-  letter-spacing: 1.5px;
-  user-select: none;
-
-  .data-container {
+  /* Stats container */
+  .stats-container {
     display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
     width: 100%;
-    justify-content: space-around;
-    flex: 1;
+    margin-bottom: 1.5rem;
   }
 
-  .command-container {
+  .stat-item {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    gap: 1rem;
-    justify-content: flex-start;
-    align-items: flex-start;
-    margin-top: 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 1.6rem;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    height: 100%;
-    border-radius: 1rem;
+    align-items: center;
+    flex: 1;
 
-    .command-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      width: 100%;
+    &:first-child {
+      align-items: flex-start;
+    }
 
-      button {
-        padding: 0.8rem 1.6rem;
-        font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-        color: ${(props) => props.theme.colors.dark["--color-text"]};
-        background: ${(props) => props.theme.colors.dark["--color-primary"]};
-        border: none;
-        border-radius: 0.5rem;
-        cursor: pointer;
-        transition: background 0.3s ease;
-        width: 100%;
-
-        &.active {
-          background: ${(props) =>
-            props.theme.colors.dark["--color-secondary"]};
-        }
-      }
+    &:last-child {
+      align-items: flex-end;
     }
   }
 
   .build-number {
-    width: 100%;
-    height: 3rem;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-
-    span {
-      margin-left: auto;
-    }
+    margin-top: auto;
+    align-self: flex-end;
   }
 
-  .item {
+  .stat-value {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: 36px;
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: 11px;
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    color: rgba(244, 247, 245, 0.3);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    line-height: 1;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 48px;
+    background: rgba(244, 247, 245, 0.07);
+    align-self: center;
+  }
+
+  /* Content divider */
+  .content-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(244, 247, 245, 0.07) 20%,
+      rgba(244, 247, 245, 0.07) 80%,
+      transparent
+    );
+    margin-bottom: 1rem;
+  }
+
+  /* Button container */
+  .button-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    gap: 10px;
+    width: 100%;
   }
 
-  .value {
-    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+  .action-button {
+    width: 100%;
+    height: 52px;
+    border-radius: 1rem;
+    font-family: ${(props) =>
+      props.theme.font.family["--font-family-sansSerif"]};
+    font-size: 15px;
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(242, 175, 41, 0.25);
+    background: rgba(242, 175, 41, 0.12);
+    color: ${(props) => props.theme.colors.dark["--color-primary"]};
+
+    &:hover {
+      border-color: rgba(242, 175, 41, 0.35);
+      background: rgba(242, 175, 41, 0.15);
+    }
+
+    &:active,
+    &.active {
+      border-color: rgba(242, 175, 41, 0.5);
+      background: ${(props) => props.theme.colors.dark["--color-primary"]};
+      color: ${(props) => props.theme.colors.dark["--color-background"]};
+    }
   }
 `;
 

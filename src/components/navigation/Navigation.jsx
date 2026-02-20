@@ -3,57 +3,75 @@ import {
   animated,
   useTransition,
 } from "@react-spring/web";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import style from "./Navigation.style.js";
 import useStore from "../../store/store.js";
 import { ArrowUp, CornerUpLeft, CornerUpRight } from "@styled-icons/feather";
 import { ArrowDown } from "@styled-icons/feather";
 import { useProjectedLocation } from "../../store/store.js";
 import { format } from "date-fns";
-import { Clock } from "@styled-icons/feather";
 
 // Animation configuration
-const SECTION_ITEM_HEIGHT = 116;
+const SECTION_ITEM_HEIGHT = 100;
 const SECTION_ITEM_TRANSLATE = 6;
 
 // Get arrow icon based on bearing direction
 function getArrowIcon(bearing) {
-  // Normalize bearing to 0-360
   const normalizedBearing = ((bearing % 360) + 360) % 360;
 
-  // Divide into 4 quadrants
   if (normalizedBearing >= 315 || normalizedBearing < 45) {
-    return ArrowUp; // North
+    return ArrowUp;
   } else if (normalizedBearing >= 45 && normalizedBearing < 135) {
-    return CornerUpRight; // East
+    return CornerUpRight;
   } else if (normalizedBearing >= 135 && normalizedBearing < 225) {
-    return ArrowDown; // South
+    return ArrowDown;
   } else {
-    return CornerUpLeft; // West
+    return CornerUpLeft;
   }
 }
 
+// SVG Arrow icons for elevation indicators
+const UpArrow = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    style={{ color: "inherit" }}
+  >
+    <path d="M12 4l8 14H4z" />
+  </svg>
+);
+
+const DownArrow = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    style={{ color: "inherit" }}
+  >
+    <path d="M12 20l-8-14h16z" />
+  </svg>
+);
+
 function Navigation({ className }) {
   const sections = useStore((state) => state.sections);
-
   const projectedLocation = useProjectedLocation();
   const currentPositionIndex = projectedLocation.index || 0;
 
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances,
   );
-
   const cumulativeElevations = useStore(
     (state) => state.gpx.cumulativeElevations,
   );
-
   const cumulativeElevationLosses = useStore(
     (state) => state.gpx.cumulativeElevationLosses,
   );
 
   const springConfig = { tension: 170, friction: 26 };
 
-  // currentPosition
   const remainingSections = useMemo(
     () =>
       sections?.filter((section) => section.endIndex >= currentPositionIndex) ??
@@ -84,7 +102,6 @@ function Navigation({ className }) {
   });
 
   const transitions = useTransition(remainingSections || [], {
-    // animate height (and a subtle translate) only — leave opacity to CSS classes
     from: {
       height: 0,
       transform: `translateY(-${SECTION_ITEM_TRANSLATE}px)`,
@@ -99,7 +116,7 @@ function Navigation({ className }) {
 
   return (
     <div className={className}>
-      {transitions((style, section, _, index) => {
+      {transitions((animStyle, section, _, index) => {
         const isCurrent = index === 0;
         const ArrowIcon = getArrowIcon(section.bearing);
         const cutOffTime = format(new Date(section.endTime * 1000), "E HH:mm");
@@ -107,26 +124,33 @@ function Navigation({ className }) {
         return (
           <animated.div
             className={`section${isCurrent ? " current" : ""}`}
-            style={style}
+            style={animStyle}
           >
-            <ArrowIcon size={40} />
-            <div className="container">
-              <div className="distance">
-                <div>
-                  {isCurrent ? (
-                    <animated.span>
-                      {distance.to((n) => `${(n / 1000).toFixed(1)} km`)}
-                    </animated.span>
-                  ) : (
-                    <span>{(section.totalDistance / 1000).toFixed()} km</span>
-                  )}
-                </div>
+            {/* Arrow icon in circle */}
+            <div className="arrow-container">
+              <ArrowIcon size={22} />
+            </div>
+
+            {/* Vertical separator */}
+            <div className="separator" />
+
+            {/* Distance section - large number */}
+            <div className="distance-section">
+              <div className="distance-value">
+                {isCurrent ? (
+                  <animated.span>
+                    {distance.to((n) => `${(n / 1000).toFixed(1)}`)}
+                  </animated.span>
+                ) : (
+                  <span>{(section.totalDistance / 1000).toFixed(1)}</span>
+                )}
+                <div className="distance-unit">km</div>
               </div>
-              <div className="location">
-                <span className="value">{`${section.endLocation} - ${cutOffTime}`}</span>
-              </div>
-              <div className="elevation-container">
-                <div className="elevation gain">
+
+              {/* Elevation indicators */}
+              <div className="elevation-section">
+                <div className="elevation-item gain">
+                  <UpArrow />
                   {isCurrent ? (
                     <animated.span>
                       {elevation.to((n) => n.toFixed(0))}
@@ -134,9 +158,10 @@ function Navigation({ className }) {
                   ) : (
                     <span>{section.totalElevation.toFixed(0)}</span>
                   )}
-                  <span className="unit">D+</span>
+                  <span className="unit">m</span>
                 </div>
-                <div className="elevation loss">
+                <div className="elevation-item loss">
+                  <DownArrow />
                   {isCurrent ? (
                     <animated.span>
                       {elevationLoss.to((n) => n.toFixed(0))}
@@ -144,23 +169,21 @@ function Navigation({ className }) {
                   ) : (
                     <span>{section.totalElevationLoss.toFixed(0)}</span>
                   )}
-                  <span className="unit">D-</span>
+                  <span className="unit">m</span>
                 </div>
               </div>
             </div>
 
-            {/* <div>
-                  <div className="elevation loss">
-                    {isCurrent ? (
-                      <animated.span>
-                        {elevationLoss.to((n) => n.toFixed(0))}
-                      </animated.span>
-                    ) : (
-                      <span>{section.totalElevationLoss.toFixed(0)}</span>
-                    )}
-                    <span className="unit">D-</span>
-                  </div>
-                </div> */}
+            {/* Vertical separator */}
+            <div className="separator" />
+
+            {/* Waypoint and time info */}
+            <div className="info-section">
+              <div className="waypoint">{section.endLocation}</div>
+              <div className="time-row">
+                <span className="time-value">{cutOffTime}</span>
+              </div>
+            </div>
           </animated.div>
         );
       })}
