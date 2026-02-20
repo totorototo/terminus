@@ -131,9 +131,6 @@ function Navigation({ className }) {
               <ArrowIcon size={22} />
             </div>
 
-            {/* Vertical separator */}
-            <div className="separator" />
-
             {/* Distance section - large number */}
             <div className="distance-section">
               <div className="distance-value">
@@ -173,9 +170,6 @@ function Navigation({ className }) {
                 </div>
               </div>
             </div>
-
-            {/* Vertical separator */}
-            <div className="separator" />
 
             {/* Waypoint and time info */}
             <div className="info-section">

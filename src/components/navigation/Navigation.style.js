@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { rgba } from "polished";
 
 const style = (Component) => styled(Component)`
   z-index: 10;
@@ -21,6 +22,7 @@ const style = (Component) => styled(Component)`
     position: relative;
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
     align-items: center;
     width: 100%;
     height: 100%;
@@ -37,9 +39,10 @@ const style = (Component) => styled(Component)`
     background: linear-gradient(
       90deg,
       ${(props) => props.theme.colors.dark["--color-primary"]},
-      rgba(242, 175, 41, 0.4)
+      ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.4)}
     );
-    box-shadow: 0 0 8px rgba(242, 175, 41, 0.8);
+    box-shadow: 0 0 0.5rem
+      ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.8)};
     width: var(--progress-width, 0%);
     transition: width 0.3s ease;
     z-index: 2;
@@ -54,8 +57,8 @@ const style = (Component) => styled(Component)`
     justify-content: center;
 
     svg {
-      width: 22px;
-      height: 22px;
+      width: 1.375rem;
+      height: 1.375rem;
       stroke: ${(props) => props.theme.colors.dark["--color-primary"]};
       stroke-width: 2;
       color: ${(props) => props.theme.colors.dark["--color-primary"]};
@@ -64,11 +67,13 @@ const style = (Component) => styled(Component)`
       &::before {
         content: "";
         position: absolute;
-        width: 50px;
-        height: 50px;
+        width: 3.125rem;
+        height: 3.125rem;
         border-radius: 50%;
-        background: rgba(242, 175, 41, 0.1);
-        border: 1.5px solid rgba(242, 175, 41, 0.28);
+        background: ${(props) =>
+          rgba(props.theme.colors.dark["--color-primary"], 0.1)};
+        border: 0.09375rem solid
+          ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.28)};
         z-index: -1;
       }
     }
@@ -79,41 +84,34 @@ const style = (Component) => styled(Component)`
     &::before {
       content: "";
       position: absolute;
-      width: 50px;
-      height: 50px;
+      width: 3.125rem;
+      height: 3.125rem;
       border-radius: 50%;
-      background: rgba(242, 175, 41, 0.1);
-      border: 1.5px solid rgba(242, 175, 41, 0.28);
+      background: ${(props) =>
+        rgba(props.theme.colors.dark["--color-primary"], 0.1)};
+      border: 0.09375rem solid
+        ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.28)};
       z-index: -1;
     }
   }
 
-  /* Vertical separator */
-  .separator {
-    width: 1px;
-    height: 56px;
-    background: rgba(244, 247, 245, 0.07);
-    flex-shrink: 0;
-  }
-
   /* Large distance display */
   .distance-section {
-    width: 120px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 0.125rem;
   }
 
   .distance-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 3.3rem;
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xxlarge"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
-    letter-spacing: -2px;
-    line-height: 1;
+    letter-spacing: -0.125rem;
+    line-height: 0.7;
     display: flex;
     flex-direction: row;
     gap: 0.4rem;
@@ -121,31 +119,30 @@ const style = (Component) => styled(Component)`
 
   .distance-unit {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 0.8rem;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
-    color: rgba(244, 247, 245, 0.3);
-    letter-spacing: 2px;
+    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    letter-spacing: 0.125rem;
     text-transform: uppercase;
     align-self: flex-end;
   }
 
   /* Waypoint and time info */
   .info-section {
-    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     padding: 0 1rem;
     min-width: 0;
-    gap: 6px;
+    gap: 0.4rem;
   }
 
   .waypoint {
     font-family: ${(props) =>
       props.theme.font.family["--font-family-sansSerif"]};
-    font-size: 18px;
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: rgba(244, 247, 245, 0.95);
+    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    color: ${(props) => props.theme.colors.dark["--color-text"]};
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -155,14 +152,14 @@ const style = (Component) => styled(Component)`
   .time-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 0.4rem;
   }
 
   .time-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 14px;
+    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
-    color: rgba(242, 175, 41, 0.85);
+    color: ${(props) => props.theme.colors.dark["--color-primary"]};
     line-height: 1;
   }
 
@@ -170,22 +167,21 @@ const style = (Component) => styled(Component)`
   .elevation-section {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-right: 1rem;
+    gap: 0.625rem;
   }
 
   .elevation-item {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 0.1875rem;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 13px;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
-    letter-spacing: -0.3px;
+    letter-spacing: -0.01875rem;
 
     svg {
-      width: 11px;
-      height: 11px;
+      width: 0.6875rem;
+      height: 0.6875rem;
       flex-shrink: 0;
     }
 
@@ -199,7 +195,7 @@ const style = (Component) => styled(Component)`
   }
 
   .elevation-item .unit {
-    font-size: 10px;
+    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
   }
 
   /* Non-current sections styling */
@@ -209,7 +205,8 @@ const style = (Component) => styled(Component)`
 
   .section.current {
     /* Enhance current section */
-    border-color: rgba(242, 175, 41, 0.3);
+    border-color: ${(props) =>
+      rgba(props.theme.colors.dark["--color-primary"], 0.3)};
   }
 
   .section.current > * {
