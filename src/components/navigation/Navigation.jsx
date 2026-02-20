@@ -3,16 +3,17 @@ import {
   animated,
   useTransition,
 } from "@react-spring/web";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import style from "./Navigation.style.js";
 import useStore from "../../store/store.js";
 import { ArrowUp, CornerUpLeft, CornerUpRight } from "@styled-icons/feather";
 import { ArrowDown } from "@styled-icons/feather";
 import { useProjectedLocation } from "../../store/store.js";
-import { format } from "date-fns";
+import { format, formatDuration, intervalToDuration } from "date-fns";
+import { customLocale } from "../trailData/TrailData.jsx";
 
 // Animation configuration
-const SECTION_ITEM_HEIGHT = 100;
+const SECTION_ITEM_HEIGHT = 140;
 const SECTION_ITEM_TRANSLATE = 6;
 
 // Get arrow icon based on bearing direction
@@ -120,6 +121,22 @@ function Navigation({ className }) {
         const isCurrent = index === 0;
         const ArrowIcon = getArrowIcon(section.bearing);
         const cutOffTime = format(new Date(section.endTime * 1000), "E HH:mm");
+        const duration = section.endTime - section.startTime;
+
+        const durationFromStart = section.endTime - sections[0].startTime;
+        const distranceFromStart = cumulativeDistances
+          ? cumulativeDistances[section.endIndex] || 0
+          : 0;
+        const averagePaceFromStart =
+          (distranceFromStart / durationFromStart) * 3.6; // km/h
+
+        const formattedDuration = formatDuration(
+          intervalToDuration({ start: 0, end: duration * 1000 }),
+          {
+            format: ["hours", "minutes"],
+            locale: customLocale,
+          },
+        );
 
         return (
           <animated.div
@@ -143,6 +160,8 @@ function Navigation({ className }) {
                 )}
                 <div className="distance-unit">km</div>
               </div>
+
+              <div className="waypoint">{section.endLocation}</div>
 
               {/* Elevation indicators */}
               <div className="elevation-section">
@@ -173,10 +192,18 @@ function Navigation({ className }) {
 
             {/* Waypoint and time info */}
             <div className="info-section">
-              <div className="waypoint">{section.endLocation}</div>
+              {/* <div className="waypoint">{section.endLocation}</div> */}
               <div className="time-row">
                 <span className="time-value">{cutOffTime}</span>
               </div>
+              <div className="duration-row">
+                <span className="duration-value">{formattedDuration}</span>
+              </div>
+              {/* <div className="pace-row">
+                <span className="pace-value">
+                  {averagePaceFromStart.toFixed(1)} km/h
+                </span>
+              </div> */}
             </div>
           </animated.div>
         );

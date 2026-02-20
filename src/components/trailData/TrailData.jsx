@@ -4,7 +4,7 @@ import style from "./TrailData.style.js";
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 
-const customLocale = {
+export const customLocale = {
   formatDistance: (token, count) => {
     const units = {
       xSeconds: `${count} sec`,

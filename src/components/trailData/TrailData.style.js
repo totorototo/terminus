@@ -10,7 +10,7 @@ const style = (Component) => styled(Component)`
   padding: 2rem 1.25rem 1.25rem;
   border-radius: 1.75rem;
   pointer-events: auto;
-  height: 25rem;
+  height: 22rem;
   // background-color:pink;
 
   /* Stats container */

@@ -7,8 +7,6 @@ const style = (Component) => styled(Component)`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 1rem;
   pointer-events: none;
   width: 100%;
   border: 1px solid rgba(244, 247, 245, 0.12);
@@ -28,6 +26,7 @@ const style = (Component) => styled(Component)`
     height: 100%;
     pointer-events: auto;
     gap: 0.75rem;
+    padding: 1rem;
   }
 
   .section::before {
@@ -97,21 +96,20 @@ const style = (Component) => styled(Component)`
 
   /* Large distance display */
   .distance-section {
-    flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    gap: 0.125rem;
+    gap: 0.325rem;
   }
 
   .distance-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-xxlarge"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: -0.125rem;
-    line-height: 0.7;
+    line-height: 0.6;
     display: flex;
     flex-direction: row;
     gap: 0.4rem;
@@ -134,7 +132,7 @@ const style = (Component) => styled(Component)`
     justify-content: center;
     padding: 0 1rem;
     min-width: 0;
-    gap: 0.4rem;
+    gap: 0.1rem;
   }
 
   .waypoint {
@@ -157,17 +155,39 @@ const style = (Component) => styled(Component)`
 
   .time-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
-    color: ${(props) => props.theme.colors.dark["--color-primary"]};
+    color: ${(props) => props.theme.colors.dark["--color-text"]};
     line-height: 1;
+  }
+
+  .duration-row {
+    .duration-value {
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+      font-weight: ${(props) =>
+        props.theme.font.weights["--font-weight-medium"]};
+      color: ${(props) => props.theme.colors.dark["--color-text"]};
+      line-height: 1;
+    }
+  }
+
+  .pace-row {
+    .pace-value {
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+      font-weight: ${(props) =>
+        props.theme.font.weights["--font-weight-medium"]};
+      color: ${(props) => props.theme.colors.dark["--color-primary"]};
+      line-height: 1;
+    }
   }
 
   /* Elevation indicators - moved inside section */
   .elevation-section {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: 0.425rem;
   }
 
   .elevation-item {
@@ -175,7 +195,7 @@ const style = (Component) => styled(Component)`
     align-items: center;
     gap: 0.1875rem;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
     letter-spacing: -0.01875rem;
 
@@ -190,7 +210,7 @@ const style = (Component) => styled(Component)`
     }
 
     &.loss {
-      color: ${(props) => props.theme.colors.dark["--color-secondary"]};
+      color: ${(props) => props.theme.colors.dark["--color-primary"]};
     }
   }
 
