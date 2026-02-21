@@ -122,10 +122,9 @@ function Navigation({ className }) {
       {transitions((animStyle, section, _, index) => {
         const isCurrent = index === 0;
         const ArrowIcon = getArrowIcon(section.bearing);
-        const cutOffTime = format(
-          new Date(section.endTime * 1000),
-          "EEE:HH:mm",
-        );
+        const endDate = new Date(section.endTime * 1000);
+        const cutOffDay = format(endDate, "EEE");
+        const cutOffTime = format(endDate, "HH:mm");
         const duration = section.endTime - section.startTime;
 
         const durationFromStart = section.endTime - sections[0].startTime;
@@ -141,7 +140,7 @@ function Navigation({ className }) {
             format: ["hours", "minutes"],
             locale: customLocale,
           },
-        );
+        ).replace(/\s+/g, "");
 
         return (
           <animated.div
@@ -199,6 +198,7 @@ function Navigation({ className }) {
             {/* Waypoint and time info */}
             <div className="info-section">
               <div className="time-row">
+                <span className="time-value">{cutOffDay}</span>
                 <span className="time-value">{cutOffTime}</span>
               </div>
               <div className="duration-row">

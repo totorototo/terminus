@@ -108,8 +108,8 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-xxlarge"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
-    letter-spacing: -0.125rem;
-    line-height: 0.6;
+    letter-spacing: -0.225rem;
+    line-height: 1;
     display: flex;
     flex-direction: row;
     gap: 0.4rem;
@@ -118,39 +118,43 @@ const style = (Component) => styled(Component)`
   .distance-unit {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: 0.125rem;
     text-transform: uppercase;
     align-self: flex-end;
+    opacity: 0.8;
   }
 
   /* Waypoint and time info */
   .info-section {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     padding: 0 1rem;
     min-width: 0;
     gap: 0.1rem;
+    transform: rotate(90deg);
   }
 
   .waypoint {
     font-family: ${(props) =>
       props.theme.font.family["--font-family-sansSerif"]};
-    font-size: 1.8rem;
+    font-size: 1.7rem;
     font-weight: 500;
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1;
+    line-height: 0.8;
   }
 
   .time-row {
+    display: flex;
+    flex-direction: column;
     gap: 0.2rem;
-    dispay: grid;
-    place-items: center;
+    align-items: flex-start;
+    justify-content: center;
   }
 
   .time-value {
@@ -159,15 +163,15 @@ const style = (Component) => styled(Component)`
     font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     line-height: 1;
+    // display: inline-block;
   }
 
   .duration-row {
     .duration-value {
       font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
       font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
-      font-weight: ${(props) =>
-        props.theme.font.weights["--font-weight-medium"]};
-      color: ${(props) => props.theme.colors.dark["--color-text"]};
+      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+      color: ${(props) => props.theme.colors.dark["--color-secondary"]};
       line-height: 1;
     }
   }
