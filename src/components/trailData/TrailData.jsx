@@ -8,9 +8,9 @@ export const customLocale = {
   formatDistance: (token, count) => {
     const units = {
       xSeconds: `${count} sec`,
-      xMinutes: `${count} min`,
-      xHours: `${count} h`,
-      xDays: `${count} d`,
+      xMinutes: `${count}m`,
+      xHours: `${count}h`,
+      xDays: `${count}d`,
       // include other units as needed
     };
     return units[token] || "";

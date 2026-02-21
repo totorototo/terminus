@@ -11,6 +11,7 @@ import { ArrowDown } from "@styled-icons/feather";
 import { useProjectedLocation } from "../../store/store.js";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 import { customLocale } from "../trailData/TrailData.jsx";
+import { useTheme } from "styled-components";
 
 // Animation configuration
 const SECTION_ITEM_HEIGHT = 140;
@@ -60,6 +61,7 @@ function Navigation({ className }) {
   const sections = useStore((state) => state.sections);
   const projectedLocation = useProjectedLocation();
   const currentPositionIndex = projectedLocation.index || 0;
+  const theme = useTheme();
 
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances,
@@ -120,7 +122,10 @@ function Navigation({ className }) {
       {transitions((animStyle, section, _, index) => {
         const isCurrent = index === 0;
         const ArrowIcon = getArrowIcon(section.bearing);
-        const cutOffTime = format(new Date(section.endTime * 1000), "E HH:mm");
+        const cutOffTime = format(
+          new Date(section.endTime * 1000),
+          "EEE:HH:mm",
+        );
         const duration = section.endTime - section.startTime;
 
         const durationFromStart = section.endTime - sections[0].startTime;
@@ -143,10 +148,11 @@ function Navigation({ className }) {
             className={`section${isCurrent ? " current" : ""}`}
             style={animStyle}
           >
-            {/* Arrow icon in circle */}
-            <div className="arrow-container">
-              <ArrowIcon size={22} />
-            </div>
+            <ArrowIcon
+              size={50}
+              strokeWidth={2}
+              stroke={theme.colors.dark["--color-text"]}
+            />
 
             {/* Distance section - large number */}
             <div className="distance-section">
@@ -192,18 +198,12 @@ function Navigation({ className }) {
 
             {/* Waypoint and time info */}
             <div className="info-section">
-              {/* <div className="waypoint">{section.endLocation}</div> */}
               <div className="time-row">
                 <span className="time-value">{cutOffTime}</span>
               </div>
               <div className="duration-row">
                 <span className="duration-value">{formattedDuration}</span>
               </div>
-              {/* <div className="pace-row">
-                <span className="pace-value">
-                  {averagePaceFromStart.toFixed(1)} km/h
-                </span>
-              </div> */}
             </div>
           </animated.div>
         );

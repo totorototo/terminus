@@ -56,8 +56,8 @@ const style = (Component) => styled(Component)`
     justify-content: center;
 
     svg {
-      width: 1.375rem;
-      height: 1.375rem;
+      width: 2rem;
+      height: 2rem;
       stroke: ${(props) => props.theme.colors.dark["--color-primary"]};
       stroke-width: 2;
       color: ${(props) => props.theme.colors.dark["--color-primary"]};
@@ -78,7 +78,7 @@ const style = (Component) => styled(Component)`
     }
 
     /* Create circle effect another way */
-    position: relative;
+    // position: relative;
 
     &::before {
       content: "";
@@ -138,8 +138,8 @@ const style = (Component) => styled(Component)`
   .waypoint {
     font-family: ${(props) =>
       props.theme.font.family["--font-family-sansSerif"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    font-size: 1.8rem;
+    font-weight: 500;
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     white-space: nowrap;
     overflow: hidden;
@@ -148,9 +148,9 @@ const style = (Component) => styled(Component)`
   }
 
   .time-row {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+    gap: 0.2rem;
+    dispay: grid;
+    place-items: center;
   }
 
   .time-value {
@@ -220,7 +220,7 @@ const style = (Component) => styled(Component)`
 
   /* Non-current sections styling */
   .section:not(.current) > * {
-    opacity: 0.8;
+    opacity: 0.4;
   }
 
   .section.current {
