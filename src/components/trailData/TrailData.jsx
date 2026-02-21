@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
@@ -7,7 +7,7 @@ import { format, formatDuration, intervalToDuration } from "date-fns";
 export const customLocale = {
   formatDistance: (token, count) => {
     const units = {
-      xSeconds: `${count} sec`,
+      xSeconds: `${count}sec`,
       xMinutes: `${count}m`,
       xHours: `${count}h`,
       xDays: `${count}d`,
@@ -56,9 +56,6 @@ const calculateTimeMetrics = (location, cumulativeDistances, startingDate) => {
 };
 
 const TrailData = memo(function TrailData({ className }) {
-  const [flybyPressed, setFlybyPressed] = useState(false);
-  const [flushPressed, setFlushPressed] = useState(false);
-
   // Use optimized selectors for better performance
   const projectedLocation = useProjectedLocation();
   const flush = useStore((state) => state.flush);
@@ -68,12 +65,7 @@ const TrailData = memo(function TrailData({ className }) {
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
   );
-  const cumulativeElevations = useStore(
-    (state) => state.gpx.cumulativeElevations || [],
-  );
-  const cumulativeElevationLosses = useStore(
-    (state) => state.gpx.cumulativeElevationLosses || [],
-  );
+
   const sections = useStore((state) => state.sections);
   const startingDate =
     sections && sections.length > 0 && sections[0].startTime * 1000;
@@ -117,19 +109,8 @@ const TrailData = memo(function TrailData({ className }) {
     config: { tension: 170, friction: 26 },
   });
 
-  const handleFlybyMouseDown = () => setFlybyPressed(true);
-  const handleFlybyMouseUp = () => setFlybyPressed(false);
-  const handleFlushMouseDown = () => setFlushPressed(true);
-  const handleFlushMouseUp = () => setFlushPressed(false);
-
-  const handleFlybyClick = () => {
-    toggleTrackingMode();
-  };
-
   return (
     <div className={className}>
-      {/* Handle bar */}
-
       {/* Stats container */}
       <div className="stats-container">
         <div className="stat-item">
@@ -161,20 +142,11 @@ const TrailData = memo(function TrailData({ className }) {
       <div className="button-container">
         <button
           className={`action-button ${trackingMode ? "active" : ""}`}
-          onMouseDown={handleFlybyMouseDown}
-          onMouseUp={handleFlybyMouseUp}
-          onMouseLeave={handleFlybyMouseUp}
-          onClick={handleFlybyClick}
+          onClick={toggleTrackingMode}
         >
           Fly-by
         </button>
-        <button
-          className="action-button"
-          onMouseDown={handleFlushMouseDown}
-          onMouseUp={handleFlushMouseUp}
-          onMouseLeave={handleFlushMouseUp}
-          onClick={flush}
-        >
+        <button className="action-button" onClick={flush}>
           Flush Data
         </button>
       </div>
