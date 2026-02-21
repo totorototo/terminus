@@ -3,6 +3,8 @@ import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import { format, formatDuration, intervalToDuration } from "date-fns";
+import TrailActions from "./TrailActions/TrailActions.jsx";
+import TrailProgression from "./TrailProgression/TrailProgression.jsx";
 
 export const customLocale = {
   formatDistance: (token, count) => {
@@ -58,9 +60,6 @@ const calculateTimeMetrics = (location, cumulativeDistances, startingDate) => {
 const TrailData = memo(function TrailData({ className }) {
   // Use optimized selectors for better performance
   const projectedLocation = useProjectedLocation();
-  const flush = useStore((state) => state.flush);
-  const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
-  const trackingMode = useStore((state) => state.app.trackingMode);
   const stats = useStats();
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
@@ -97,14 +96,19 @@ const TrailData = memo(function TrailData({ className }) {
   ]);
 
   // Memoize remaining values for spring animation
-  const remainingValues = useMemo(
-    () => ({
-      totalKm: Math.max(0, (stats?.distance || 0) / 1000),
-    }),
-    [stats],
-  );
+  const remainingValues = useMemo(() => {
+    const currentPositionIndex = projectedLocation?.index || 0;
+    const distanceDone = cumulativeDistances[currentPositionIndex] || 0;
+    const totalDistance =
+      cumulativeDistances[cumulativeDistances.length - 1] || 0;
+    const remainingDistance = Math.max(0, totalDistance - distanceDone);
 
-  const { totalKm } = useSpringWeb({
+    return {
+      remainingKm: remainingDistance / 1000,
+    };
+  }, [projectedLocation?.index, cumulativeDistances]);
+
+  const { remainingKm } = useSpringWeb({
     ...remainingValues,
     config: { tension: 170, friction: 26 },
   });
@@ -115,9 +119,9 @@ const TrailData = memo(function TrailData({ className }) {
       <div className="stats-container">
         <div className="stat-item">
           <animated.div className="stat-value">
-            {totalKm.to((n) => n.toFixed(1))}
+            {remainingKm.to((n) => n.toFixed(1))}
           </animated.div>
-          <div className="stat-label">km</div>
+          <div className="stat-label">km left</div>
         </div>
 
         <div className="stat-divider" />
@@ -138,17 +142,14 @@ const TrailData = memo(function TrailData({ className }) {
       {/* Divider line */}
       <div className="content-divider" />
 
-      {/* Button container */}
-      <div className="button-container">
-        <button
-          className={`action-button ${trackingMode ? "active" : ""}`}
-          onClick={toggleTrackingMode}
-        >
-          Fly-by
-        </button>
-        <button className="action-button" onClick={flush}>
-          Flush Data
-        </button>
+      {/* Components container */}
+      <div className="component-container">
+        <div className="component-children">
+          <TrailProgression />
+        </div>
+        <div className="component-children">
+          <TrailActions />
+        </div>
       </div>
       <div className="build-number">
         <span>Build Number: {import.meta.env.VITE_NUMBER || "dev"}</span>

@@ -83,43 +83,32 @@ const style = (Component) => styled(Component)`
     margin-bottom: 1rem;
   }
 
-  /* Button container */
-  .button-container {
+  .component-container {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
     width: 100%;
+    scrollbar-width: none;
+    ::-webkit-scrollbar {
+      display: none; /* Safari and Chrome */
+    }
+    scroll-snap-type: x mandatory;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 1;
+    flex-flow: row nowrap;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1.5rem;
   }
 
-  .action-button {
-    width: 100%;
-    height: 52px;
-    border-radius: 1rem;
-    font-family: ${(props) =>
-      props.theme.font.family["--font-family-sansSerif"]};
-    font-size: 15px;
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    letter-spacing: 0.2px;
-    cursor: pointer;
-    transition: all 0.15s ease;
+  .component-children {
     display: flex;
+    width: 100%;
+    height: 100%;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(242, 175, 41, 0.25);
-    background: rgba(242, 175, 41, 0.12);
-    color: ${(props) => props.theme.colors.dark["--color-primary"]};
-
-    &:hover {
-      border-color: rgba(242, 175, 41, 0.35);
-      background: rgba(242, 175, 41, 0.15);
-    }
-
-    &:active,
-    &.active {
-      border-color: rgba(242, 175, 41, 0.5);
-      background: ${(props) => props.theme.colors.dark["--color-primary"]};
-      color: ${(props) => props.theme.colors.dark["--color-background"]};
-    }
+    scroll-snap-align: center;
+    flex-shrink: 0;
+    padding-left: 0.2rem;
+    padding-right: 0.2rem;
   }
 `;
 
