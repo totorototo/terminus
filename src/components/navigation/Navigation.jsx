@@ -10,8 +10,20 @@ import { ArrowUp, CornerUpLeft, CornerUpRight } from "@styled-icons/feather";
 import { ArrowDown } from "@styled-icons/feather";
 import { useProjectedLocation } from "../../store/store.js";
 import { format, formatDuration, intervalToDuration } from "date-fns";
-import { customLocale } from "../trailData/TrailData.jsx";
 import { useTheme } from "styled-components";
+
+// Custom locale for duration formatting
+const customLocale = {
+  formatDistance: (token, count) => {
+    const units = {
+      xSeconds: `${count}sec`,
+      xMinutes: `${count}m`,
+      xHours: `${count}h`,
+      xDays: `${count}d`,
+    };
+    return units[token] || "";
+  },
+};
 
 // Animation configuration
 const SECTION_ITEM_HEIGHT = 140;

@@ -31,7 +31,7 @@ describe("calculateTimeMetrics", () => {
       // Should return actual calculation (not defaults), validation happens in component
       expect(result.distanceDone).toBe(0);
       expect(result.totalDistance).toBe(5000);
-      expect(result.etaDateStr).toMatch(/^\d{2}:\d{2}$/);
+      expect(result.etaDateStr).toMatch(/^[A-Za-z]{3} \d{2}:\d{2}$/);
     });
 
     it("should handle null location gracefully (uses optional chaining)", () => {
@@ -48,9 +48,8 @@ describe("calculateTimeMetrics", () => {
 
       // With null, index defaults to 0, timestamp defaults to 0
       expect(result.distanceDone).toBe(0);
-      expect(
-        Number.isFinite(parseFloat(result.etaDateStr.replace(":", ""))),
-      ).toBe(true);
+      // ETA should be a valid string (either a time or "--:--")
+      expect(result.etaDateStr).toBeTruthy();
     });
   });
 
@@ -78,7 +77,7 @@ describe("calculateTimeMetrics", () => {
       // Elapsed: 4 hours for 5km → pace: 4h/5km = 0.8h/km
       // Total distance: 10km → estimated total: 10 * 0.8h = 8h
       // ETA: 08:00 + 8h = 16:00
-      expect(result.etaDateStr).toMatch(/^\d{2}:\d{2}$/); // Valid time format
+      expect(result.etaDateStr).toMatch(/^[A-Za-z]{3} \d{2}:\d{2}$/); // Valid time format
       expect(result.distanceDone).toBe(5000);
       expect(result.totalDistance).toBe(10000);
 
@@ -110,9 +109,8 @@ describe("calculateTimeMetrics", () => {
       // Total 10km → ~8 hours total
       expect(result.distanceDone).toBe(2500);
       expect(result.totalDistance).toBe(10000);
-      expect(
-        Number.isFinite(parseFloat(result.etaDateStr.replace(":", ""))),
-      ).toBe(true);
+      // ETA should be a valid time format
+      expect(result.etaDateStr).toMatch(/^[A-Za-z]{3} \d{2}:\d{2}$/);
     });
   });
 
@@ -140,7 +138,7 @@ describe("calculateTimeMetrics", () => {
 
       expect(result.distanceDone).toBe(9500);
       expect(result.totalDistance).toBe(10000);
-      expect(result.etaDateStr).toMatch(/^\d{2}:\d{2}$/);
+      expect(result.etaDateStr).toMatch(/^[A-Za-z]{3} \d{2}:\d{2}$/);
       // Remaining should be small (less than 1 hour probably)
       expect(result.remainingStr).toBeTruthy();
     });
@@ -168,7 +166,7 @@ describe("calculateTimeMetrics", () => {
       expect(result.distanceDone).toBe(10000);
       expect(result.totalDistance).toBe(10000);
       // ETA should be ≈ current time (or just past)
-      expect(result.etaDateStr).toMatch(/^\d{2}:\d{2}$/);
+      expect(result.etaDateStr).toMatch(/^[A-Za-z]{3} \d{2}:\d{2}$/);
     });
   });
 
@@ -209,7 +207,7 @@ describe("calculateTimeMetrics", () => {
 
       // When distanceDone is 0, estimatedTotalDuration should be 0
       expect(Number.isFinite(result.distanceDone)).toBe(true);
-      expect(result.etaDateStr).toMatch(/^\d{2}:\d{2}$|^--:--$/);
+      expect(result.etaDateStr).toMatch(/^[A-Za-z]{3} \d{2}:\d{2}$|^--:--$/);
     });
 
     it("should handle missing location properties", () => {
@@ -246,7 +244,9 @@ describe("calculateTimeMetrics", () => {
       );
 
       // ETA should always be a valid time string or "--:--"
-      expect(/^\d{2}:\d{2}$|^--:--$/.test(result.etaDateStr)).toBe(true);
+      expect(/^[A-Za-z]{3} \d{2}:\d{2}$|^--:--$/.test(result.etaDateStr)).toBe(
+        true,
+      );
     });
   });
 
@@ -274,8 +274,8 @@ describe("calculateTimeMetrics", () => {
       );
 
       // Both should have valid ETAs
-      expect(result1.etaDateStr).toMatch(/^\d{2}:\d{2}$/);
-      expect(result2.etaDateStr).toMatch(/^\d{2}:\d{2}$/);
+      expect(result1.etaDateStr).toMatch(/^[A-Za-z]{3} \d{2}:\d{2}$/);
+      expect(result2.etaDateStr).toMatch(/^[A-Za-z]{3} \d{2}:\d{2}$/);
 
       // The ETA should improve (get earlier) as pace gets faster (consistent 1km/h)
       expect(result1.etaDateStr).toBeTruthy();

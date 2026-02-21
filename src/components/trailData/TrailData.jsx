@@ -2,22 +2,9 @@ import { memo, useMemo } from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
-import { format, formatDuration, intervalToDuration } from "date-fns";
+import { format } from "date-fns";
 import TrailActions from "./TrailActions/TrailActions.jsx";
 import TrailProgression from "./TrailProgression/TrailProgression.jsx";
-
-export const customLocale = {
-  formatDistance: (token, count) => {
-    const units = {
-      xSeconds: `${count}sec`,
-      xMinutes: `${count}m`,
-      xHours: `${count}h`,
-      xDays: `${count}d`,
-      // include other units as needed
-    };
-    return units[token] || "";
-  },
-};
 
 // Helper function to calculate ETA and remaining time
 export const calculateTimeMetrics = (
@@ -39,19 +26,19 @@ export const calculateTimeMetrics = (
 
   // Format ETA as a readable date string with validation
   const etaDateStr = Number.isFinite(eta)
-    ? format(new Date(eta), "HH:mm")
+    ? format(new Date(eta), "EEE HH:mm")
     : "--:--";
 
-  // Calculate remaining duration from now to ETA
-  const remainingDuration = intervalToDuration({ start: now, end: eta });
+  // Calculate remaining duration in milliseconds
+  const remainingMs = Math.max(0, eta - now);
 
-  // Format remaining duration as a human-friendly string
-  const remainingStr = remainingDuration
-    ? formatDuration(remainingDuration, {
-        format: ["days", "hours", "minutes", "seconds"],
-        locale: customLocale,
-      })
-    : "--";
+  // Convert to total hours and minutes (1 day = 24 hours)
+  const totalMinutes = Math.floor(remainingMs / (1000 * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  // Format remaining duration as hours and minutes only
+  const remainingStr = remainingMs > 0 ? `${hours}h ${minutes}m` : "--";
 
   return {
     etaDateStr,
@@ -71,7 +58,10 @@ const TrailData = memo(function TrailData({ className }) {
 
   const sections = useStore((state) => state.sections);
   const startingDate =
-    sections && sections.length > 0 && sections[0].startTime * 1000;
+    sections &&
+    sections.length > 0 &&
+    sections[0].startTime != null &&
+    sections[0].startTime * 1000;
 
   // Memoize expensive time calculations
   const timeMetrics = useMemo(() => {
