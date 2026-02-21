@@ -384,7 +384,8 @@ describe("Navigation Component", () => {
       renderWithTheme(<Navigation />);
 
       // The mocked format returns "Monday 14:30"
-      expect(screen.getAllByText(/Monday 14:30/)).toHaveLength(3);
+      // Day and time are rendered separately, so 2 spans per section × 3 sections = 6 matches
+      expect(screen.getAllByText(/Monday 14:30/)).toHaveLength(6);
     });
   });
 
