@@ -27,7 +27,7 @@ const THEME = {
     weights: {
       "--font-weight-bold": "600",
       "--font-weight-medium": "400",
-      "--font-weight-light": "300",
+      "--font-weight-light": "200",
     },
     sizes: {
       "--font-size-small": "14px",

@@ -14,14 +14,8 @@ vi.mock("../../store/store.js", () => ({
 // Mock react-spring
 vi.mock("@react-spring/web", () => ({
   useSpring: vi.fn((values) => ({
-    remainingDistance: {
-      to: (fn) => fn(values.remainingDistance),
-    },
-    remainingElevation: {
-      to: (fn) => fn(values.remainingElevation),
-    },
-    remainingElevationLoss: {
-      to: (fn) => fn(values.remainingElevationLoss),
+    totalKm: {
+      to: (fn) => fn(values.totalKm),
     },
   })),
   animated: {
@@ -73,7 +67,7 @@ describe("TrailData Component", () => {
         flush: vi.fn(),
         toggleTrackingMode: vi.fn(),
         app: {
-          profileMode: false,
+          trackingMode: false,
         },
         gpx: {
           cumulativeDistances: mockCumulativeDistances,
@@ -326,14 +320,6 @@ describe("TrailData Component", () => {
     });
   });
 
-  describe("build number display", () => {
-    it("should display build number", () => {
-      render(<TrailData />);
-      // The build number will be "dev" or whatever VITE_NUMBER is set to
-      expect(screen.getByText(/Build Number:/)).toBeInTheDocument();
-    });
-  });
-
   describe("data calculations", () => {
     it("should calculate remaining distance based on stats and current position", () => {
       render(<TrailData />);
@@ -412,19 +398,19 @@ describe("TrailData Component", () => {
   });
 
   describe("layout and structure", () => {
-    it("should render data container", () => {
+    it("should render stats container", () => {
       const { container } = render(<TrailData />);
-      expect(container.querySelector(".data-container")).toBeInTheDocument();
+      expect(container.querySelector(".stats-container")).toBeInTheDocument();
     });
 
-    it("should render command container", () => {
+    it("should render button container", () => {
       const { container } = render(<TrailData />);
-      expect(container.querySelector(".command-container")).toBeInTheDocument();
+      expect(container.querySelector(".button-container")).toBeInTheDocument();
     });
 
-    it("should have data items", () => {
+    it("should have stat items", () => {
       const { container } = render(<TrailData />);
-      const items = container.querySelectorAll(".item");
+      const items = container.querySelectorAll(".stat-item");
       expect(items.length).toBeGreaterThan(0);
     });
   });
