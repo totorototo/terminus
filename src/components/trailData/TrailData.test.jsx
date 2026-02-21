@@ -14,8 +14,8 @@ vi.mock("../../store/store.js", () => ({
 // Mock react-spring
 vi.mock("@react-spring/web", () => ({
   useSpring: vi.fn((values) => ({
-    totalKm: {
-      to: (fn) => fn(values.totalKm),
+    remainingKm: {
+      to: (fn) => fn(values.remainingKm),
     },
   })),
   animated: {
@@ -37,6 +37,16 @@ vi.mock("date-fns", () => ({
 // Mock TrailData.style
 vi.mock("./TrailData.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
+}));
+
+// Mock TrailActions component
+vi.mock("./TrailActions/TrailActions.jsx", () => ({
+  default: () => <div data-testid="trail-actions">TrailActions</div>,
+}));
+
+// Mock TrailProgression component
+vi.mock("./TrailProgression/TrailProgression.jsx", () => ({
+  default: () => <div data-testid="trail-progression">TrailProgression</div>,
 }));
 
 describe("TrailData Component", () => {
@@ -108,9 +118,9 @@ describe("TrailData Component", () => {
       expect(screen.getByText("1d 2h 30min")).toBeInTheDocument();
     });
 
-    it("should display distance unit (km)", () => {
+    it("should display distance unit (km left)", () => {
       render(<TrailData />);
-      expect(screen.getByText("km")).toBeInTheDocument();
+      expect(screen.getByText("km left")).toBeInTheDocument();
     });
 
     it("should display eta label", () => {
@@ -206,125 +216,23 @@ describe("TrailData Component", () => {
     });
   });
 
-  describe("button functionality", () => {
-    it("should render Fly-by button", () => {
+  describe("button and action components", () => {
+    it("should render TrailActions component", () => {
       render(<TrailData />);
-      expect(screen.getByText("Fly-by")).toBeInTheDocument();
+      expect(screen.getByTestId("trail-actions")).toBeInTheDocument();
     });
 
-    it("should render flush data button", () => {
+    it("should render TrailProgression component", () => {
       render(<TrailData />);
-      expect(screen.getByText("Flush Data")).toBeInTheDocument();
-    });
-
-    it("should call toggleTrackingMode when Fly-by button is clicked", () => {
-      const mockToggleTrackingMode = vi.fn();
-      storeModule.default.mockImplementation((selector) => {
-        const state = {
-          sections: mockSections,
-          flush: vi.fn(),
-          toggleTrackingMode: mockToggleTrackingMode,
-          app: {
-            profileMode: false,
-          },
-          gpx: {
-            cumulativeDistances: mockCumulativeDistances,
-            cumulativeElevations: mockCumulativeElevations,
-            cumulativeElevationLosses: mockCumulativeElevationLosses,
-          },
-        };
-        return selector(state);
-      });
-
-      render(<TrailData />);
-      const button = screen.getByText("Fly-by");
-      button.click();
-      expect(mockToggleTrackingMode).toHaveBeenCalled();
-    });
-
-    it("should call flush when button is clicked", () => {
-      const mockFlush = vi.fn();
-      storeModule.default.mockImplementation((selector) => {
-        const state = {
-          sections: mockSections,
-          flush: mockFlush,
-          toggleTrackingMode: vi.fn(),
-          app: {
-            profileMode: false,
-          },
-          gpx: {
-            cumulativeDistances: mockCumulativeDistances,
-            cumulativeElevations: mockCumulativeElevations,
-            cumulativeElevationLosses: mockCumulativeElevationLosses,
-          },
-        };
-        return selector(state);
-      });
-
-      render(<TrailData />);
-      const button = screen.getByText("Flush Data");
-      button.click();
-      expect(mockFlush).toHaveBeenCalled();
-    });
-  });
-
-  describe("trackingMode button styling", () => {
-    it("should not have active class when trackingMode is false", () => {
-      storeModule.default.mockImplementation((selector) => {
-        const state = {
-          sections: mockSections,
-          flush: vi.fn(),
-          toggleTrackingMode: vi.fn(),
-          app: {
-            trackingMode: false,
-          },
-          gpx: {
-            cumulativeDistances: mockCumulativeDistances,
-            cumulativeElevations: mockCumulativeElevations,
-            cumulativeElevationLosses: mockCumulativeElevationLosses,
-          },
-        };
-        return selector(state);
-      });
-
-      render(<TrailData />);
-      const flyByButton = screen.getByText("Fly-by");
-      const flushButton = screen.getByText("Flush Data");
-
-      expect(flyByButton).not.toHaveClass("active");
-      expect(flushButton).not.toHaveClass("active");
-    });
-
-    it("should have active class when trackingMode is true", () => {
-      storeModule.default.mockImplementation((selector) => {
-        const state = {
-          sections: mockSections,
-          flush: vi.fn(),
-          toggleTrackingMode: vi.fn(),
-          app: {
-            trackingMode: true,
-          },
-          gpx: {
-            cumulativeDistances: mockCumulativeDistances,
-            cumulativeElevations: mockCumulativeElevations,
-            cumulativeElevationLosses: mockCumulativeElevationLosses,
-          },
-        };
-        return selector(state);
-      });
-
-      render(<TrailData />);
-      const flyByButton = screen.getByText("Fly-by");
-
-      expect(flyByButton).toHaveClass("active");
+      expect(screen.getByTestId("trail-progression")).toBeInTheDocument();
     });
   });
 
   describe("data calculations", () => {
-    it("should calculate remaining distance based on stats and current position", () => {
+    it("should calculate remaining distance based on projected location", () => {
       render(<TrailData />);
       // Component should render with calculated remaining values
-      expect(screen.getByText("km")).toBeInTheDocument();
+      expect(screen.getByText("km left")).toBeInTheDocument();
     });
 
     it("should update when projected location changes", () => {
@@ -336,20 +244,31 @@ describe("TrailData Component", () => {
       });
 
       rerender(<TrailData />);
-      expect(screen.getByText("km")).toBeInTheDocument();
+      expect(screen.getByText("km left")).toBeInTheDocument();
     });
 
-    it("should update when stats change", () => {
+    it("should update when cumulative distances change", () => {
       const { rerender } = render(<TrailData />);
 
-      storeModule.useStats.mockReturnValue({
-        distance: 15000,
-        elevationGain: 1500,
-        elevationLoss: 750,
+      storeModule.default.mockImplementation((selector) => {
+        const state = {
+          sections: mockSections,
+          flush: vi.fn(),
+          toggleTrackingMode: vi.fn(),
+          app: {
+            trackingMode: false,
+          },
+          gpx: {
+            cumulativeDistances: [0, 1000, 2000, 3000, 4000, 6000], // Updated
+            cumulativeElevations: mockCumulativeElevations,
+            cumulativeElevationLosses: mockCumulativeElevationLosses,
+          },
+        };
+        return selector(state);
       });
 
       rerender(<TrailData />);
-      expect(screen.getByText("km")).toBeInTheDocument();
+      expect(screen.getByText("km left")).toBeInTheDocument();
     });
   });
 
@@ -403,9 +322,11 @@ describe("TrailData Component", () => {
       expect(container.querySelector(".stats-container")).toBeInTheDocument();
     });
 
-    it("should render button container", () => {
+    it("should render component container", () => {
       const { container } = render(<TrailData />);
-      expect(container.querySelector(".button-container")).toBeInTheDocument();
+      expect(
+        container.querySelector(".component-container"),
+      ).toBeInTheDocument();
     });
 
     it("should have stat items", () => {
