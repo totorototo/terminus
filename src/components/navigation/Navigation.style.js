@@ -159,11 +159,10 @@ const style = (Component) => styled(Component)`
 
   .time-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) => props.theme.colors.dark["--color-accent"]};
     line-height: 1;
-    // display: inline-block;
   }
 
   .duration-row {
