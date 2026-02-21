@@ -69,7 +69,7 @@ const style = (Component) => styled(Component)`
 
   .elevation-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 10px;
+    font-size: 12px;
     font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     color: rgba(244, 247, 245, 0.3);
     letter-spacing: 0.5px;
@@ -78,7 +78,7 @@ const style = (Component) => styled(Component)`
 
   .elevation-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 14px;
+    font-size: 20px;
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
   }
