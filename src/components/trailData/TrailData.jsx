@@ -20,7 +20,11 @@ export const customLocale = {
 };
 
 // Helper function to calculate ETA and remaining time
-const calculateTimeMetrics = (location, cumulativeDistances, startingDate) => {
+export const calculateTimeMetrics = (
+  location,
+  cumulativeDistances,
+  startingDate,
+) => {
   const distanceDone = cumulativeDistances[location?.index || 0] || 0;
   const totalDistance =
     cumulativeDistances[cumulativeDistances.length - 1] || 1;
