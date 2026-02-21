@@ -44,8 +44,7 @@ const style = (Component) => styled(Component)`
 
   .stat-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 16px;
-    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    font-size: 20px;
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: -1px;
@@ -58,12 +57,12 @@ const style = (Component) => styled(Component)`
 
   .stat-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 11px;
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
-    color: rgba(244, 247, 245, 0.3);
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(244, 247, 245, 0.5);
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    margin-top: 4px;
+    margin-top: 8px;
     line-height: 1;
   }
 
