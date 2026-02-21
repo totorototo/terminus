@@ -44,11 +44,16 @@ const style = (Component) => styled(Component)`
 
   .stat-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 36px;
+    font-size: 16px;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: -1px;
     line-height: 1;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+    max-width: 100%;
   }
 
   .stat-label {

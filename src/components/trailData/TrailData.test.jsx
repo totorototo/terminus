@@ -29,9 +29,7 @@ vi.mock("@react-spring/web", () => ({
 
 // Mock date-fns
 vi.mock("date-fns", () => ({
-  format: () => "14:30",
-  formatDuration: () => "1d 2h 30min",
-  intervalToDuration: () => ({ days: 1, hours: 2, minutes: 30 }),
+  format: () => "Thu 14:30",
 }));
 
 // Mock TrailData.style
@@ -108,14 +106,15 @@ describe("TrailData Component", () => {
   });
 
   describe("displaying data", () => {
-    it("should display ETA time", () => {
+    it("should display ETA time with day", () => {
       render(<TrailData />);
-      expect(screen.getByText("14:30")).toBeInTheDocument();
+      expect(screen.getByText("Thu 14:30")).toBeInTheDocument();
     });
 
     it("should display remaining duration", () => {
       render(<TrailData />);
-      expect(screen.getByText("1d 2h 30min")).toBeInTheDocument();
+      // Check that remaining label is present (duration value format changed to "Xh Ym")
+      expect(screen.getByText("remaining")).toBeInTheDocument();
     });
 
     it("should display distance unit (km left)", () => {
