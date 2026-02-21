@@ -2,7 +2,7 @@ import { useSpring, a, config } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import style from "./BottomSheetPanel.style.js";
 
-const height = 294;
+const height = 254;
 
 function BottomSheetPanel({ children, className }) {
   const [{ y }, api] = useSpring(() => ({ y: height }));

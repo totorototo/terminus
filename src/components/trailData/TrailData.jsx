@@ -1,16 +1,16 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { useSpring as useSpringWeb, animated } from "@react-spring/web";
 import style from "./TrailData.style.js";
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 
-const customLocale = {
+export const customLocale = {
   formatDistance: (token, count) => {
     const units = {
       xSeconds: `${count} sec`,
-      xMinutes: `${count} min`,
-      xHours: `${count} h`,
-      xDays: `${count} d`,
+      xMinutes: `${count}m`,
+      xHours: `${count}h`,
+      xDays: `${count}d`,
       // include other units as needed
     };
     return units[token] || "";
@@ -56,6 +56,9 @@ const calculateTimeMetrics = (location, cumulativeDistances, startingDate) => {
 };
 
 const TrailData = memo(function TrailData({ className }) {
+  const [flybyPressed, setFlybyPressed] = useState(false);
+  const [flushPressed, setFlushPressed] = useState(false);
+
   // Use optimized selectors for better performance
   const projectedLocation = useProjectedLocation();
   const flush = useStore((state) => state.flush);
@@ -100,71 +103,80 @@ const TrailData = memo(function TrailData({ className }) {
     cumulativeDistances,
     startingDate,
   ]);
+
   // Memoize remaining values for spring animation
   const remainingValues = useMemo(
     () => ({
-      remainingDistance: Math.max(
-        0,
-        (stats?.distance || 0) -
-          (cumulativeDistances?.[projectedLocation?.index || 0] || 0),
-      ),
-      remainingElevation: Math.max(
-        0,
-        (stats?.elevationGain || 0) -
-          (cumulativeElevations?.[projectedLocation?.index || 0] || 0),
-      ),
-      remainingElevationLoss: Math.max(
-        0,
-        (stats?.elevationLoss || 0) -
-          (cumulativeElevationLosses?.[projectedLocation?.index || 0] || 0),
-      ),
+      totalKm: Math.max(0, (stats?.distance || 0) / 1000),
     }),
-    [
-      stats,
-      cumulativeDistances,
-      cumulativeElevations,
-      cumulativeElevationLosses,
-      projectedLocation,
-    ],
+    [stats],
   );
 
-  const { remainingDistance, remainingElevation, remainingElevationLoss } =
-    useSpringWeb({
-      ...remainingValues,
-      config: { tension: 170, friction: 26 },
-    });
+  const { totalKm } = useSpringWeb({
+    ...remainingValues,
+    config: { tension: 170, friction: 26 },
+  });
+
+  const handleFlybyMouseDown = () => setFlybyPressed(true);
+  const handleFlybyMouseUp = () => setFlybyPressed(false);
+  const handleFlushMouseDown = () => setFlushPressed(true);
+  const handleFlushMouseUp = () => setFlushPressed(false);
+
+  const handleFlybyClick = () => {
+    toggleTrackingMode();
+  };
 
   return (
     <div className={className}>
-      <div className="data-container">
-        <div className="item">
-          <animated.div className="value">
-            {remainingDistance.to((n) => `${(n / 1000).toFixed(1)}`)}
+      {/* Handle bar */}
+
+      {/* Stats container */}
+      <div className="stats-container">
+        <div className="stat-item">
+          <animated.div className="stat-value">
+            {totalKm.to((n) => n.toFixed(1))}
           </animated.div>
-          <div className="label">km</div>
+          <div className="stat-label">km</div>
         </div>
-        <div className="item">
-          <div className="value">{timeMetrics.etaDateStr}</div>
-          <div className="label">eta</div>
+
+        <div className="stat-divider" />
+
+        <div className="stat-item">
+          <div className="stat-value">{timeMetrics.etaDateStr}</div>
+          <div className="stat-label">eta</div>
         </div>
-        <div className="item">
-          <div className="value">{timeMetrics.remainingStr}</div>
-          <div className="label">remaining</div>
+
+        <div className="stat-divider" />
+
+        <div className="stat-item">
+          <div className="stat-value">{timeMetrics.remainingStr}</div>
+          <div className="stat-label">remaining</div>
         </div>
       </div>
 
-      <div className={"command-container"}>
-        <div className={`command-content`}>
-          <button
-            className={trackingMode ? "active" : undefined}
-            onClick={toggleTrackingMode}
-          >
-            Fly-by
-          </button>
-        </div>
-        <div className="command-content">
-          <button onClick={flush}>Flush Data</button>
-        </div>
+      {/* Divider line */}
+      <div className="content-divider" />
+
+      {/* Button container */}
+      <div className="button-container">
+        <button
+          className={`action-button ${trackingMode ? "active" : ""}`}
+          onMouseDown={handleFlybyMouseDown}
+          onMouseUp={handleFlybyMouseUp}
+          onMouseLeave={handleFlybyMouseUp}
+          onClick={handleFlybyClick}
+        >
+          Fly-by
+        </button>
+        <button
+          className="action-button"
+          onMouseDown={handleFlushMouseDown}
+          onMouseUp={handleFlushMouseUp}
+          onMouseLeave={handleFlushMouseUp}
+          onClick={flush}
+        >
+          Flush Data
+        </button>
       </div>
       <div className="build-number">
         <span>Build Number: {import.meta.env.VITE_NUMBER || "dev"}</span>

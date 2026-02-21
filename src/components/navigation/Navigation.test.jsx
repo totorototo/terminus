@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import { ThemeProvider } from "styled-components";
 import Navigation from "./Navigation.jsx";
 import useStore from "../../store/store.js";
 import * as hooks from "../../store/store.js";
+import THEME from "../../theme/Theme";
 
 // Mock the store and hooks
 vi.mock("../../store/store.js", () => ({
@@ -64,12 +66,22 @@ vi.mock("@styled-icons/feather", () => ({
 // Mock date-fns
 vi.mock("date-fns", () => ({
   format: () => "Monday 14:30",
+  formatDuration: () => "1h 30m",
+  intervalToDuration: (interval) => ({
+    hours: 1,
+    minutes: 30,
+  }),
 }));
 
 // Mock Navigation.style
 vi.mock("./Navigation.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
+
+// Helper to render with ThemeProvider
+const renderWithTheme = (component) => {
+  return render(<ThemeProvider theme={THEME}>{component}</ThemeProvider>);
+};
 
 describe("Navigation Component", () => {
   const mockSections = [
@@ -128,11 +140,11 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      render(<Navigation />);
+      renderWithTheme(<Navigation />);
 
-      expect(screen.getByText(/Location 1 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 2 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 3 - Monday 14:30/)).toBeInTheDocument();
+      expect(screen.getByText("Location 1")).toBeInTheDocument();
+      expect(screen.getByText("Location 2")).toBeInTheDocument();
+      expect(screen.getByText("Location 3")).toBeInTheDocument();
     });
 
     it("should filter sections based on current position", () => {
@@ -150,14 +162,12 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 150 });
 
-      render(<Navigation />);
+      renderWithTheme(<Navigation />);
 
       // Only sections with endIndex >= 150 should be shown
-      expect(screen.getByText(/Location 2 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 3 - Monday 14:30/)).toBeInTheDocument();
-      expect(
-        screen.queryByText(/Location 1 - Monday 14:30/),
-      ).not.toBeInTheDocument();
+      expect(screen.getByText("Location 2")).toBeInTheDocument();
+      expect(screen.getByText("Location 3")).toBeInTheDocument();
+      expect(screen.queryByText("Location 1")).not.toBeInTheDocument();
     });
 
     it("should render nothing when no sections remain", () => {
@@ -175,17 +185,11 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 500 });
 
-      render(<Navigation />);
+      renderWithTheme(<Navigation />);
 
-      expect(
-        screen.queryByText(/Location 1 - Monday 14:30/),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByText(/Location 2 - Monday 14:30/),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByText(/Location 3 - Monday 14:30/),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText("Location 1")).not.toBeInTheDocument();
+      expect(screen.queryByText("Location 2")).not.toBeInTheDocument();
+      expect(screen.queryByText("Location 3")).not.toBeInTheDocument();
     });
 
     it("should handle empty sections array", () => {
@@ -203,7 +207,7 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      render(<Navigation />);
+      renderWithTheme(<Navigation />);
 
       // Should render without error, just empty
       expect(screen.queryByText(/Location/)).not.toBeInTheDocument();
@@ -230,7 +234,7 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      const { container } = render(<Navigation />);
+      const { container } = renderWithTheme(<Navigation />);
 
       expect(
         container.querySelector('[data-icon="arrow-up"]'),
@@ -256,7 +260,7 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      const { container } = render(<Navigation />);
+      const { container } = renderWithTheme(<Navigation />);
 
       expect(
         container.querySelector('[data-icon="arrow-down"]'),
@@ -282,7 +286,7 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      const { container } = render(<Navigation />);
+      const { container } = renderWithTheme(<Navigation />);
 
       expect(
         container.querySelector('[data-icon="corner-up-right"]'),
@@ -308,7 +312,7 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      const { container } = render(<Navigation />);
+      const { container } = renderWithTheme(<Navigation />);
 
       expect(
         container.querySelector('[data-icon="corner-up-left"]'),
@@ -332,7 +336,7 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      const { container } = render(<Navigation />);
+      const { container } = renderWithTheme(<Navigation />);
 
       const currentSection = container.querySelector("div.section.current");
       expect(currentSection).toBeInTheDocument();
@@ -355,11 +359,11 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      render(<Navigation />);
+      renderWithTheme(<Navigation />);
 
-      expect(screen.getByText(/Location 1 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 2 - Monday 14:30/)).toBeInTheDocument();
-      expect(screen.getByText(/Location 3 - Monday 14:30/)).toBeInTheDocument();
+      expect(screen.getByText("Location 1")).toBeInTheDocument();
+      expect(screen.getByText("Location 2")).toBeInTheDocument();
+      expect(screen.getByText("Location 3")).toBeInTheDocument();
     });
 
     it("should display cutoff time for sections", () => {
@@ -377,7 +381,7 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      render(<Navigation />);
+      renderWithTheme(<Navigation />);
 
       // The mocked format returns "Monday 14:30"
       expect(screen.getAllByText(/Monday 14:30/)).toHaveLength(3);
@@ -400,10 +404,10 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({});
 
-      render(<Navigation />);
+      renderWithTheme(<Navigation />);
 
       // Should treat index as 0 and show all sections
-      expect(screen.getByText(/Location 1 - Monday 14:30/)).toBeInTheDocument();
+      expect(screen.getByText("Location 1")).toBeInTheDocument();
     });
 
     it("should handle missing cumulative data", () => {
@@ -421,10 +425,10 @@ describe("Navigation Component", () => {
 
       hooks.useProjectedLocation.mockReturnValue({ index: 0 });
 
-      render(<Navigation />);
+      renderWithTheme(<Navigation />);
 
       // Should render sections but with 0 values
-      expect(screen.getByText(/Location 1 - Monday 14:30/)).toBeInTheDocument();
+      expect(screen.getByText("Location 1")).toBeInTheDocument();
     });
   });
 });
