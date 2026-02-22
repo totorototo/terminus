@@ -58,14 +58,14 @@ const TrailProgression = memo(function TrailProgression({ className }) {
 
       <div className="elevation-container">
         <div className="elevation-item">
-          <span className="elevation-label">Elevation Gain</span>
+          <span className="progression-label">Elevation Gain</span>
           <span className="elevation-value">
             {stats.elevationGain.toFixed(0)} m
           </span>
         </div>
         <div className="elevation-divider" />
         <div className="elevation-item">
-          <span className="elevation-label">Elevation Loss</span>
+          <span className="progression-label">Elevation Loss</span>
           <span className="elevation-value">
             {stats.elevationLoss.toFixed(0)} m
           </span>

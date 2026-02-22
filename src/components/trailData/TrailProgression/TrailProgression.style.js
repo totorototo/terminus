@@ -78,7 +78,7 @@ const style = (Component) => styled(Component)`
 
   .elevation-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 20px;
+    font-size: 24px;
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
   }
