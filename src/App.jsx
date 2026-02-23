@@ -10,13 +10,15 @@ function App({ className }) {
   const pendingUrl = useStore((state) => state.app.pendingUrl);
   const setPendingUrl = useStore((state) => state.setPendingUrl);
 
+  const [location] = useLocation();
+
   // Safari → PWA handoff: save current URL to the persisted store
   useEffect(() => {
     if (!window.navigator.standalone) {
       const url = window.location.pathname + window.location.search;
       setPendingUrl(url);
     }
-  }, [setPendingUrl]);
+  }, [location, setPendingUrl]);
 
   // PWA launch: restore the URL saved from Safari (fires after store rehydrates)
   useEffect(() => {
