@@ -203,8 +203,7 @@ describe("GPS Slice", () => {
 
       expect(mockShare).toHaveBeenCalledWith({
         title: "My Location",
-        text: "My current location: 45.5, -122.7",
-        url: "https://www.google.com/maps?q=45.5,-122.7",
+        url: "http://localhost:5173/follower?q=45.5,-122.7&index=0&timestamp=123",
       });
     });
 
@@ -238,7 +237,7 @@ describe("GPS Slice", () => {
       await store.getState().shareLocation();
 
       expect(mockClipboard.writeText).toHaveBeenCalledWith(
-        "My current location: 45.5, -122.7\nhttps://www.google.com/maps?q=45.5,-122.7",
+        "http://localhost:5173/follower?q=45.5,-122.7&index=0&timestamp=123",
       );
     });
 

@@ -108,7 +108,7 @@ describe("TrailData Component", () => {
   describe("displaying data", () => {
     it("should display ETA time with day", () => {
       render(<TrailData />);
-      expect(screen.getByText("Thu 14:30")).toBeInTheDocument();
+      expect(screen.getByText("THU 14:30")).toBeInTheDocument();
     });
 
     it("should display remaining duration", () => {
