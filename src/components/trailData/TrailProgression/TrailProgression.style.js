@@ -6,7 +6,7 @@ const style = (Component) => styled(Component)`
   gap: 1rem;
   width: 100%;
   height: 100%;
-  padding: 1.5rem 1rem;
+  padding: 0rem 1rem;
 
   .progression-header {
     display: flex;
