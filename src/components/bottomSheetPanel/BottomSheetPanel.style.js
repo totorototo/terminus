@@ -10,7 +10,7 @@ const style = (Component) => styled(Component)`
     lighten(0.1, theme.colors.dark["--color-background"])};
   border-radius: 24px;
   color: #222;
-  touch-action: none;
+  touch-action: pan-x;
   display: flex;
   flex-direction: column;
   align-items: center;

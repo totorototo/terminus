@@ -6,7 +6,9 @@ import useStore from "../../store/store.js";
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
 import BottomSheetPanel from "../bottomSheetPanel/BottomSheetPanel.jsx";
+import TopSheetPanel from "../topSheetPanel/TopSheetPanel.jsx";
 import TrailData from "../trailData/TrailData.jsx";
+import LocationFreshness from "./LocationFreshness/LocationFreshness.jsx";
 import { useShallow } from "zustand/react/shallow";
 
 const Scene = lazy(() => import("../scene/Scene.jsx"));
@@ -49,8 +51,11 @@ function Follower({ className }) {
         <AutoSizer>
           {({ width, height }) => <Scene width={width} height={height} />}
         </AutoSizer>
+        <TopSheetPanel>
+          <LocationFreshness />
+        </TopSheetPanel>
         <BottomSheetPanel>
-          <TrailData />
+          <TrailData showElevationProfile />
         </BottomSheetPanel>
       </Suspense>
     </div>

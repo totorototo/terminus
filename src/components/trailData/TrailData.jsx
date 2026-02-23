@@ -5,6 +5,7 @@ import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import { format } from "date-fns";
 import TrailActions from "./TrailActions/TrailActions.jsx";
 import TrailProgression from "./TrailProgression/TrailProgression.jsx";
+import ElevationProfile from "./ElevationProfile/ElevationProfile.jsx";
 
 // Helper function to calculate ETA and remaining time
 export const calculateTimeMetrics = (
@@ -48,7 +49,7 @@ export const calculateTimeMetrics = (
   };
 };
 
-const TrailData = memo(function TrailData({ className }) {
+const TrailData = memo(function TrailData({ className, showElevationProfile }) {
   // Use optimized selectors for better performance
   const projectedLocation = useProjectedLocation();
   const stats = useStats();
@@ -140,6 +141,11 @@ const TrailData = memo(function TrailData({ className }) {
 
       {/* Components container */}
       <div className="component-container">
+        {showElevationProfile && (
+          <div className="component-children">
+            <ElevationProfile />
+          </div>
+        )}
         <div className="component-children">
           <TrailProgression />
         </div>
