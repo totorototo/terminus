@@ -50,6 +50,7 @@ function BottomSheetPanel({ children, className }) {
       else api.start({ y: oy, immediate: true });
     },
     {
+      axis: "y",
       from: () => [0, y.get()],
       filterTaps: true,
       bounds: { top: 0 },
