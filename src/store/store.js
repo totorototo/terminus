@@ -27,6 +27,7 @@ const useStore = create(
             trackingMode: state.app.trackingMode,
             displaySlopes: state.app.displaySlopes,
             profileMode: state.app.profileMode,
+            pendingUrl: state.app.pendingUrl,
           },
           gps: {
             location: state.gps.location,

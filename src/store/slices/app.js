@@ -5,6 +5,7 @@ export const createAppSlice = (set, get) => {
       displaySlopes: false,
       profileMode: false,
       locations: [],
+      pendingUrl: null,
     },
 
     toggleTrackingMode: () =>
@@ -40,6 +41,13 @@ export const createAppSlice = (set, get) => {
         }),
         undefined,
         "app/toggleSlopesMode",
+      ),
+
+    setPendingUrl: (url) =>
+      set(
+        (state) => ({ app: { ...state.app, pendingUrl: url } }),
+        undefined,
+        "app/setPendingUrl",
       ),
   };
 };
