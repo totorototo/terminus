@@ -3,6 +3,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { useSearch } from "wouter";
 import style from "./Follower.style";
 import useStore from "../../store/store.js";
+import { useGPXWorker } from "../../hooks/useGPXWorker.js";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
 import BottomSheetPanel from "../bottomSheetPanel/BottomSheetPanel.jsx";
 import TrailData from "../trailData/TrailData.jsx";
@@ -11,41 +12,14 @@ import { useShallow } from "zustand/react/shallow";
 const Scene = lazy(() => import("../scene/Scene.jsx"));
 
 function Follower({ className }) {
-  const {
-    initGPXWorker,
-    terminateGPXWorker,
-    isWorkerReady,
-    processGPXFile,
-    setProjectedLocation,
-    gpsData,
-  } = useStore(
+  useGPXWorker();
+
+  const { setProjectedLocation, gpsData } = useStore(
     useShallow((state) => ({
-      initGPXWorker: state.initGPXWorker,
-      terminateGPXWorker: state.terminateGPXWorker,
-      isWorkerReady: state.worker.isReady,
-      processGPXFile: state.processGPXFile,
       setProjectedLocation: state.setProjectedLocation,
       gpsData: state.gpx.data,
     })),
   );
-
-  useEffect(() => {
-    initGPXWorker();
-
-    return () => terminateGPXWorker();
-  }, []);
-
-  useEffect(() => {
-    if (!isWorkerReady) return;
-
-    async function loadAndProcessGPX() {
-      const response = await fetch("/vvx-xgtv-2026.gpx");
-      const gpxArrayBuffer = await response.arrayBuffer();
-      await processGPXFile(gpxArrayBuffer);
-    }
-
-    loadAndProcessGPX();
-  }, [isWorkerReady, processGPXFile]);
 
   // Get query parameters - index and timestamp (latitude and longitude are not used yet)
   const search = useSearch();
