@@ -173,15 +173,14 @@ export const createGPSSlice = (set, get) => {
       }
 
       const [lat, lon] = location.coords;
-      const text = `My current location: ${lat}, ${lon}`;
-      const url = `https://www.google.com/maps?q=${lat},${lon}`;
+      const { timestamp, index } = location;
+      const url = `${import.meta.env.PROD ? "https://terminus-beta.netlify.app/follower" : "http://localhost:5173/follower"}?q=${lat},${lon}&index=${index}&timestamp=${timestamp}`;
 
       // Try Web Share API first (mobile-friendly)
       if (navigator.share) {
         try {
           await navigator.share({
             title: "My Location",
-            text: text,
             url: url,
           });
           console.log("Location shared successfully");
@@ -194,7 +193,7 @@ export const createGPSSlice = (set, get) => {
       } else {
         // Fallback to clipboard for desktop browsers
         try {
-          await navigator.clipboard.writeText(`${text}\n${url}`);
+          await navigator.clipboard.writeText(url);
           console.log("Location copied to clipboard");
         } catch (error) {
           console.error("Error copying location to clipboard:", error);

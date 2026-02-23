@@ -38,6 +38,7 @@
     "styled-components": "6.1.19",
     "styled-icons": "10.47.1",
     "three": "0.181.2",
+    "wouter": "^3.9.0",
     "zustand": "5.0.9"
   },
   "devDependencies": {
