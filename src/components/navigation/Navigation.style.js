@@ -9,7 +9,7 @@ const style = (Component) => styled(Component)`
   justify-content: center;
   pointer-events: none;
   width: 100%;
-  border: 1px solid rgba(244, 247, 245, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
   /* Glassmorphism effect */
   background: rgba(61, 59, 59, 0.8);

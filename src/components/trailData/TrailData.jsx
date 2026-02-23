@@ -121,7 +121,9 @@ const TrailData = memo(function TrailData({ className }) {
         <div className="stat-divider" />
 
         <div className="stat-item">
-          <div className="stat-value">{timeMetrics.etaDateStr}</div>
+          <div className="stat-value">
+            {timeMetrics.etaDateStr.toUpperCase()}
+          </div>
           <div className="stat-label">eta</div>
         </div>
 
