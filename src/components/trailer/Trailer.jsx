@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import style from "./Trailer.style";
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
@@ -8,12 +8,21 @@ import Navigation from "../navigation/Navigation.jsx";
 import BottomSheetPanel from "../bottomSheetPanel/BottomSheetPanel.jsx";
 import TrailData from "../trailData/TrailData.jsx";
 import Commands from "../commands/Commands.jsx";
+import useStore from "../../store/store.js";
 
 // Lazy load 3D Scene (imports Three.js, React Three Fiber, Drei)
 const Scene = lazy(() => import("../scene/Scene.jsx"));
 
 function Trailer({ className }) {
   const { isWorkerReady } = useGPXWorker();
+  const disconnectTrailerSession = useStore(
+    (state) => state.disconnectTrailerSession,
+  );
+
+  // Close the trailer PartySocket when the component unmounts (role switch / app close)
+  useEffect(() => {
+    return () => disconnectTrailerSession();
+  }, [disconnectTrailerSession]);
 
   return (
     isWorkerReady && (
