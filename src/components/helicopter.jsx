@@ -62,14 +62,13 @@ export function Model({ coordinateScales, ...props }) {
     });
   }, [transformedLocation, api]);
 
-  if (!transformedLocation) return null;
-
   useEffect(() => {
+    if (!transformedLocation) return;
     if (actions && Object.keys(actions).length > 0) {
       const firstAction = Object.values(actions)[0];
       firstAction.setEffectiveTimeScale(1.5).play();
     }
-  }, [actions]);
+  }, [actions, transformedLocation]);
 
   useFrame(({ clock }) => {
     if (!group.current) return;
@@ -79,6 +78,8 @@ export function Model({ coordinateScales, ...props }) {
       (0.01 + Math.sin(t * 0.7) * 0.008) * Math.cos(t * 0.3);
     group.current.rotation.z = Math.cos(t * 0.4) * 0.2;
   });
+
+  if (!transformedLocation) return null;
 
   return (
     <a.group

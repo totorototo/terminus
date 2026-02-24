@@ -6,6 +6,9 @@ export const createAppSlice = (set, get) => {
       profileMode: false,
       locations: [],
       pendingUrl: null,
+      liveSessionId: Math.random().toString(36).slice(2, 8).toUpperCase(),
+      mode: null,
+      followerRoomId: null,
     },
 
     toggleTrackingMode: () =>
@@ -48,6 +51,27 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, pendingUrl: url } }),
         undefined,
         "app/setPendingUrl",
+      ),
+
+    setLiveSessionId: (id) =>
+      set(
+        (state) => ({ app: { ...state.app, liveSessionId: id } }),
+        undefined,
+        "app/setLiveSessionId",
+      ),
+
+    setMode: (mode) =>
+      set(
+        (state) => ({ app: { ...state.app, mode } }),
+        undefined,
+        "app/setMode",
+      ),
+
+    setFollowerRoomId: (id) =>
+      set(
+        (state) => ({ app: { ...state.app, followerRoomId: id } }),
+        undefined,
+        "app/setFollowerRoomId",
       ),
   };
 };

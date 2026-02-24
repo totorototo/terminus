@@ -1,6 +1,6 @@
 import { useEffect, lazy, Suspense } from "react";
+import PartySocket from "partysocket";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { useSearch } from "wouter";
 import style from "./Follower.style";
 import useStore from "../../store/store.js";
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
@@ -11,39 +11,41 @@ import TrailData from "../trailData/TrailData.jsx";
 import LocationFreshness from "./LocationFreshness/LocationFreshness.jsx";
 import { useShallow } from "zustand/react/shallow";
 
+const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";
+
 const Scene = lazy(() => import("../scene/Scene.jsx"));
 
 function Follower({ className }) {
   useGPXWorker();
 
-  const { setProjectedLocation, gpsData } = useStore(
+  const { setProjectedLocation, followerRoomId } = useStore(
     useShallow((state) => ({
       setProjectedLocation: state.setProjectedLocation,
-      gpsData: state.gpx.data,
+      followerRoomId: state.app.followerRoomId,
     })),
   );
 
-  // Get query parameters - index and timestamp (latitude and longitude are not used yet)
-  const search = useSearch();
-  const searchParams = new URLSearchParams(search);
-  const index = searchParams.get("index");
-  const timestamp = searchParams.get("timestamp");
-
-  // Update store with projected location if query params are defined
   useEffect(() => {
-    if (index !== null && timestamp !== null && gpsData?.length) {
-      const pointIndex = parseInt(index);
-      const point = gpsData[pointIndex];
+    if (!followerRoomId) return;
 
-      if (point) {
+    const socket = new PartySocket({
+      host: PARTYKIT_HOST,
+      room: followerRoomId,
+    });
+
+    socket.addEventListener("message", (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === "location") {
         setProjectedLocation({
-          timestamp: parseInt(timestamp),
-          coords: point,
-          index: pointIndex,
+          timestamp: msg.timestamp,
+          coords: msg.coords,
+          index: msg.index,
         });
       }
-    }
-  }, [index, timestamp, gpsData, setProjectedLocation]);
+    });
+
+    return () => socket.close();
+  }, [followerRoomId, setProjectedLocation]);
 
   return (
     <div className={className}>

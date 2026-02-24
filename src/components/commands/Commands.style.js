@@ -1,5 +1,10 @@
-import styled from "styled-components";
-import { rgba, lighten, darken } from "polished";
+import styled, { keyframes } from "styled-components";
+import { rgba } from "polished";
+
+const pulse = keyframes`
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 80, 80, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 80, 80, 0); }
+`;
 
 const style = (Component) => styled(Component)`
   position: absolute;
@@ -208,6 +213,22 @@ const style = (Component) => styled(Component)`
         0 1px 2px
           ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.3)}
       );
+    }
+  }
+
+  button.live {
+    background: rgba(255, 80, 80, 0.2);
+    color: rgb(255, 100, 100);
+    border-color: rgba(255, 80, 80, 0.5);
+    animation: ${pulse} 2s ease-in-out infinite;
+
+    &:hover {
+      background: rgba(255, 80, 80, 0.3);
+      border-color: rgba(255, 80, 80, 0.7);
+    }
+
+    svg {
+      filter: drop-shadow(0 1px 2px rgba(255, 80, 80, 0.4));
     }
   }
 

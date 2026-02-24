@@ -28,6 +28,9 @@ const useStore = create(
             displaySlopes: state.app.displaySlopes,
             profileMode: state.app.profileMode,
             pendingUrl: state.app.pendingUrl,
+            liveSessionId: state.app.liveSessionId,
+            mode: state.app.mode,
+            followerRoomId: state.app.followerRoomId,
           },
           gps: {
             location: state.gps.location,

@@ -16,7 +16,8 @@
     "clean": "rimraf node_modules",
     "test:zig": "cd zig && zig test gpx.zig && zig test trace.zig && zig test simplify.zig && zig test time.zig && zig test gpspoint.zig && zig test peaks.zig",
     "test:zig:parallel": "cd zig && powershell -c \"$dir = Get-Location; $jobs = @(); @('gpx.zig', 'trace.zig', 'simplify.zig', 'time.zig', 'gpspoint.zig', 'peaks.zig', 'csv.zig') | ForEach-Object { $jobs += Start-Job -ScriptBlock { param($f, $d) Set-Location $d; zig test $f } -ArgumentList $_, $dir }; $jobs | Wait-Job | Receive-Job; $jobs | Remove-Job\"",
-    "test:all": "npm run test:zig && npm run test"
+    "test:all": "npm run test:zig && npm run test",
+    "party": "partykit dev --port 1999"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
@@ -31,6 +32,7 @@
     "d3-scale": "4.0.2",
     "d3-shape": "3.2.0",
     "date-fns": "4.1.0",
+    "partysocket": "^1.1.15",
     "polished": "4.3.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
@@ -38,6 +40,7 @@
     "styled-components": "6.1.19",
     "styled-icons": "10.47.1",
     "three": "0.181.2",
+    "unenv": "^2.0.0-rc.0",
     "wouter": "^3.9.0",
     "zustand": "5.0.9"
   },
@@ -58,6 +61,7 @@
     "husky": "9.1.7",
     "jsdom": "27.2.0",
     "lint-staged": "16.2.7",
+    "partykit": "^0.0.115",
     "prettier": "3.7.4",
     "r3f-perf": "7.2.3",
     "rimraf": "6.1.2",
