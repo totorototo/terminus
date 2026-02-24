@@ -3,8 +3,6 @@ import createRingBuffer from "../../helpers/createRingBuffer";
 
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";
 
-console.log(PARTYKIT_HOST);
-
 const generateSessionId = () =>
   Math.random().toString(36).slice(2, 8).toUpperCase();
 
