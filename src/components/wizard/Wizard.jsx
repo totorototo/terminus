@@ -18,7 +18,7 @@ function Wizard({ className }) {
 
   const handleConfirm = () => {
     const trimmed = code.trim().toUpperCase();
-    if (trimmed.length < 4) return;
+    if (trimmed.length < 6) return;
     setFollowerRoomId(trimmed);
     setMode("follower");
   };
@@ -36,11 +36,9 @@ function Wizard({ className }) {
             <p className="subtitle">What are you doing today?</p>
             <div className="choices">
               <button className="choice-btn primary" onClick={handleRunner}>
-                <span className="choice-icon">🏃</span>
                 <span className="choice-label">I&apos;m running</span>
               </button>
               <button className="choice-btn" onClick={handleFollowerNext}>
-                <span className="choice-icon">👁️</span>
                 <span className="choice-label">I&apos;m following</span>
               </button>
             </div>
@@ -72,7 +70,7 @@ function Wizard({ className }) {
             <button
               className="confirm-btn"
               onClick={handleConfirm}
-              disabled={code.trim().length < 4}
+              disabled={code.trim().length < 6}
             >
               Follow
             </button>

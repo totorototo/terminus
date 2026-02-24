@@ -3,6 +3,8 @@ import createRingBuffer from "../../helpers/createRingBuffer";
 
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";
 
+console.log(PARTYKIT_HOST);
+
 const generateSessionId = () =>
   Math.random().toString(36).slice(2, 8).toUpperCase();
 
@@ -12,10 +14,24 @@ export const createGPSSlice = (set, get) => {
   let locationBuffer = null;
   let partySocket = null;
   let followerSocket = null;
+  let pendingMessage = null;
 
   const ensureSocket = (sessionId) => {
-    if (!partySocket || partySocket.readyState === WebSocket.CLOSED) {
+    const isUnusable =
+      !partySocket ||
+      partySocket.readyState === WebSocket.CLOSED ||
+      partySocket.readyState === WebSocket.CLOSING;
+
+    if (isUnusable) {
       partySocket = new PartySocket({ host: PARTYKIT_HOST, room: sessionId });
+      // Drain the single pending-message slot on every (re)connect
+      const socket = partySocket;
+      socket.addEventListener("open", () => {
+        if (pendingMessage) {
+          socket.send(pendingMessage);
+          pendingMessage = null;
+        }
+      });
     }
   };
 
@@ -31,9 +47,8 @@ export const createGPSSlice = (set, get) => {
     if (partySocket.readyState === WebSocket.OPEN) {
       partySocket.send(message);
     } else {
-      partySocket.addEventListener("open", () => partySocket.send(message), {
-        once: true,
-      });
+      // Overwrite — only the latest location matters
+      pendingMessage = message;
     }
   };
 
@@ -139,6 +154,7 @@ export const createGPSSlice = (set, get) => {
         );
 
         const projectedLocation = await get().findClosestLocation();
+        if (!projectedLocation) return; // GPX not loaded yet
 
         const projected = {
           timestamp: location.date,
@@ -240,8 +256,13 @@ export const createGPSSlice = (set, get) => {
       });
 
       followerSocket.addEventListener("message", (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "location") {
+        let msg;
+        try {
+          msg = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+        if (msg.type === "location" && Array.isArray(msg.coords)) {
           get().setProjectedLocation({
             timestamp: msg.timestamp,
             coords: msg.coords,
@@ -256,6 +277,14 @@ export const createGPSSlice = (set, get) => {
         followerSocket.close();
         followerSocket = null;
       }
+    },
+
+    disconnectTrailerSession: () => {
+      if (partySocket) {
+        partySocket.close();
+        partySocket = null;
+      }
+      pendingMessage = null;
     },
   };
 };

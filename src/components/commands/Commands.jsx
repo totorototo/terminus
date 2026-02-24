@@ -75,7 +75,7 @@ function Commands({ className }) {
         <Map size={24} />
       </button>
       <button
-        className={liveSessionId ? "live" : "off"}
+        className={"off"}
         onClick={shareLocation}
         aria-label="Share my room code"
       >

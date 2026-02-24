@@ -6,7 +6,7 @@ export const createAppSlice = (set, get) => {
       profileMode: false,
       locations: [],
       pendingUrl: null,
-      liveSessionId: Math.random().toString(36).slice(2, 8).toUpperCase(),
+      liveSessionId: null,
       mode: null,
       followerRoomId: null,
     },
@@ -60,12 +60,18 @@ export const createAppSlice = (set, get) => {
         "app/setLiveSessionId",
       ),
 
-    setMode: (mode) =>
+    setMode: (mode) => {
       set(
         (state) => ({ app: { ...state.app, mode } }),
         undefined,
         "app/setMode",
-      ),
+      );
+      // Clear follower room when returning to the wizard so the app
+      // doesn't auto-reconnect to the previous session on next cold start
+      if (mode === null) {
+        get().setFollowerRoomId(null);
+      }
+    },
 
     setFollowerRoomId: (id) =>
       set(
