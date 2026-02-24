@@ -1,39 +1,17 @@
-import { useEffect } from "react";
 import style from "./App.style.js";
-import { Switch, Route, useLocation } from "wouter";
+import useStore from "./store/store.js";
 import Follower from "./components/follower/Follower.jsx";
 import Trailer from "./components/trailer/Trailer.jsx";
-import useStore from "./store/store.js";
+import Wizard from "./components/wizard/Wizard.jsx";
 
 function App({ className }) {
-  const [, navigate] = useLocation();
-  const pendingUrl = useStore((state) => state.app.pendingUrl);
-  const setPendingUrl = useStore((state) => state.setPendingUrl);
-
-  const [location] = useLocation();
-
-  // Safari → PWA handoff: save current URL to the persisted store
-  useEffect(() => {
-    if (!window.navigator.standalone) {
-      const url = window.location.pathname + window.location.search;
-      setPendingUrl(url);
-    }
-  }, [location, setPendingUrl]);
-
-  // PWA launch: restore the URL saved from Safari (fires after store rehydrates)
-  useEffect(() => {
-    if (window.navigator.standalone && pendingUrl) {
-      setPendingUrl(null);
-      navigate(pendingUrl);
-    }
-  }, [pendingUrl, navigate, setPendingUrl]);
+  const mode = useStore((state) => state.app.mode);
 
   return (
     <div className={className}>
-      <Switch>
-        <Route path="follower" component={Follower} />
-        <Route component={Trailer} />
-      </Switch>
+      {!mode && <Wizard />}
+      {mode === "follower" && <Follower />}
+      {mode === "trailer" && <Trailer />}
     </div>
   );
 }

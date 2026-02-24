@@ -45,6 +45,9 @@ stats.html
 # mcp
 .playwright-mcp/
 
+# PartyKit build cache
+.partykit/
+
 # Claude analysis and reports
 .claude/
 [A-Z]*.md

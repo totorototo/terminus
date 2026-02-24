@@ -6,6 +6,7 @@ const TrailActions = memo(function TrailActions({ className }) {
   const flush = useStore((state) => state.flush);
   const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
   const trackingMode = useStore((state) => state.app.trackingMode);
+  const setMode = useStore((state) => state.setMode);
 
   return (
     <div className={className}>
@@ -17,6 +18,9 @@ const TrailActions = memo(function TrailActions({ className }) {
       </button>
       <button className="action-button" onClick={flush}>
         Flush Data
+      </button>
+      <button className="action-button" onClick={() => setMode(null)}>
+        Switch Role
       </button>
     </div>
   );

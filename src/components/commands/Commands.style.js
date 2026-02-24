@@ -1,5 +1,5 @@
-import styled from "styled-components";
-import { rgba, lighten, darken } from "polished";
+import styled, { keyframes } from "styled-components";
+import { rgba } from "polished";
 
 const style = (Component) => styled(Component)`
   position: absolute;

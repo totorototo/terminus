@@ -11,23 +11,21 @@ function Commands({ className }) {
   const {
     profileMode,
     displaySlopes,
+    liveSessionId,
     toggleProfileMode,
     toggleSlopesMode,
     shareLocation,
-    projectedLocation,
   } = useStore(
     useShallow((state) => ({
       profileMode: state.app.profileMode,
       displaySlopes: state.app.displaySlopes,
+      liveSessionId: state.app.liveSessionId,
       toggleProfileMode: state.toggleProfileMode,
       toggleSlopesMode: state.toggleSlopesMode,
       shareLocation: state.shareLocation,
-      projectedLocation: state.gps.projectedLocation,
     })),
   );
 
-  // These are top-level actions, select directly
-  const findClosestLocation = useStore((state) => state.findClosestLocation);
   const spotMe = useStore((state) => state.spotMe);
   //const processGPXFile = useStore((state) => state.processGPXFile);
 
@@ -77,10 +75,9 @@ function Commands({ className }) {
         <Map size={24} />
       </button>
       <button
-        disabled={projectedLocation.timestamp === 0}
         className={"off"}
         onClick={shareLocation}
-        aria-label="Share my current location"
+        aria-label="Share my room code"
       >
         <Share2 size={24} />
       </button>
