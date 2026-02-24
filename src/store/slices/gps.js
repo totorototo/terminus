@@ -11,6 +11,7 @@ export const createGPSSlice = (set, get) => {
   // Will be initialized lazily to handle rehydration
   let locationBuffer = null;
   let partySocket = null;
+  let followerSocket = null;
 
   const ensureSocket = (sessionId) => {
     if (!partySocket || partySocket.readyState === WebSocket.CLOSED) {
@@ -222,6 +223,38 @@ export const createGPSSlice = (set, get) => {
         } catch (error) {
           console.error("Error copying room code to clipboard:", error);
         }
+      }
+    },
+
+    connectToFollowerSession: (roomId) => {
+      if (!roomId) return;
+
+      // Close existing follower socket if any
+      if (followerSocket) {
+        followerSocket.close();
+      }
+
+      followerSocket = new PartySocket({
+        host: PARTYKIT_HOST,
+        room: roomId,
+      });
+
+      followerSocket.addEventListener("message", (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "location") {
+          get().setProjectedLocation({
+            timestamp: msg.timestamp,
+            coords: msg.coords,
+            index: msg.index,
+          });
+        }
+      });
+    },
+
+    disconnectFollowerSession: () => {
+      if (followerSocket) {
+        followerSocket.close();
+        followerSocket = null;
       }
     },
   };

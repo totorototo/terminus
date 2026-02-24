@@ -1,5 +1,4 @@
 import { useEffect, lazy, Suspense } from "react";
-import PartySocket from "partysocket";
 import AutoSizer from "react-virtualized-auto-sizer";
 import style from "./Follower.style";
 import useStore from "../../store/store.js";
@@ -11,16 +10,19 @@ import TrailData from "../trailData/TrailData.jsx";
 import LocationFreshness from "./LocationFreshness/LocationFreshness.jsx";
 import { useShallow } from "zustand/react/shallow";
 
-const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";
-
 const Scene = lazy(() => import("../scene/Scene.jsx"));
 
 function Follower({ className }) {
   useGPXWorker();
 
-  const { setProjectedLocation, followerRoomId } = useStore(
+  const {
+    connectToFollowerSession,
+    disconnectFollowerSession,
+    followerRoomId,
+  } = useStore(
     useShallow((state) => ({
-      setProjectedLocation: state.setProjectedLocation,
+      connectToFollowerSession: state.connectToFollowerSession,
+      disconnectFollowerSession: state.disconnectFollowerSession,
       followerRoomId: state.app.followerRoomId,
     })),
   );
@@ -28,24 +30,10 @@ function Follower({ className }) {
   useEffect(() => {
     if (!followerRoomId) return;
 
-    const socket = new PartySocket({
-      host: PARTYKIT_HOST,
-      room: followerRoomId,
-    });
+    connectToFollowerSession(followerRoomId);
 
-    socket.addEventListener("message", (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "location") {
-        setProjectedLocation({
-          timestamp: msg.timestamp,
-          coords: msg.coords,
-          index: msg.index,
-        });
-      }
-    });
-
-    return () => socket.close();
-  }, [followerRoomId, setProjectedLocation]);
+    return () => disconnectFollowerSession();
+  }, [followerRoomId, connectToFollowerSession, disconnectFollowerSession]);
 
   return (
     <div className={className}>
