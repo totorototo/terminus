@@ -44,6 +44,17 @@ describe("GPS Slice", () => {
     store = create((set, get) => ({
       ...createGPSSlice(set, get),
       findClosestLocation: mockFindClosestLocation,
+      app: {
+        liveSessionId: null,
+      },
+      setLiveSessionId: vi.fn((id) => {
+        set({
+          app: {
+            ...get().app,
+            liveSessionId: id,
+          },
+        });
+      }),
     }));
   });
 
@@ -202,9 +213,10 @@ describe("GPS Slice", () => {
       await store.getState().shareLocation();
 
       expect(mockShare).toHaveBeenCalledWith({
-        title: "My Location",
-        url: "http://localhost:5173/follower?q=45.5,-122.7&index=0&timestamp=123",
+        title: "Follow my run",
+        text: expect.any(String),
       });
+      expect(store.getState().setLiveSessionId).toHaveBeenCalled();
     });
 
     it("should handle user canceling share (AbortError)", async () => {
@@ -236,12 +248,11 @@ describe("GPS Slice", () => {
 
       await store.getState().shareLocation();
 
-      expect(mockClipboard.writeText).toHaveBeenCalledWith(
-        "http://localhost:5173/follower?q=45.5,-122.7&index=0&timestamp=123",
-      );
+      expect(mockClipboard.writeText).toHaveBeenCalledWith(expect.any(String));
+      expect(store.getState().setLiveSessionId).toHaveBeenCalled();
     });
 
-    it("should handle missing location gracefully", async () => {
+    it("should share session ID even without location", async () => {
       store.setState({
         gps: {
           ...store.getState().gps,
@@ -250,14 +261,17 @@ describe("GPS Slice", () => {
       });
 
       Object.defineProperty(navigator, "share", {
-        value: mockShare,
+        value: mockShare.mockResolvedValue(undefined),
         writable: true,
         configurable: true,
       });
 
       await store.getState().shareLocation();
 
-      expect(mockShare).not.toHaveBeenCalled();
+      expect(mockShare).toHaveBeenCalledWith({
+        title: "Follow my run",
+        text: expect.any(String),
+      });
     });
 
     it("should handle clipboard error gracefully", async () => {

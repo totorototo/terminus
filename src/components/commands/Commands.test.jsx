@@ -78,9 +78,7 @@ describe("Commands Component", () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Toggle slope colors")).toBeInTheDocument();
     expect(screen.getByLabelText("Toggle 2D profile view")).toBeInTheDocument();
-    expect(
-      screen.getByLabelText("Share my current location"),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Share my room code")).toBeInTheDocument();
   });
 
   it("should call spotMe when location button is clicked", () => {
@@ -112,7 +110,7 @@ describe("Commands Component", () => {
 
   it("should call shareLocation when share button is clicked", () => {
     render(<Commands />);
-    const shareButton = screen.getByLabelText("Share my current location");
+    const shareButton = screen.getByLabelText("Share my room code");
 
     fireEvent.click(shareButton);
 
@@ -155,7 +153,7 @@ describe("Commands Component", () => {
     const slopesButton = screen.getByLabelText("Toggle slope colors");
     const profileButton = screen.getByLabelText("Toggle 2D profile view");
     const locationButton = screen.getByLabelText("Find my current location");
-    const shareButton = screen.getByLabelText("Share my current location");
+    const shareButton = screen.getByLabelText("Share my room code");
 
     expect(slopesButton).toHaveClass("off");
     // Profile button has inverted logic - when profileMode is false, it shows "on"
@@ -194,17 +192,18 @@ describe("Commands Component", () => {
     expect(profileButton).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("should disable share button when projectedLocation.timestamp is 0", () => {
+  it("should show 'live' class when there is an active session", () => {
     useStore.mockImplementation((selector) =>
       selector({
         app: {
           trackingMode: false,
           profileMode: false,
           displaySlopes: false,
+          liveSessionId: "ABC123",
         },
         gps: {
           projectedLocation: {
-            timestamp: 0,
+            timestamp: 123,
           },
         },
         toggleProfileMode: mockToggleProfileMode,
@@ -217,8 +216,8 @@ describe("Commands Component", () => {
 
     render(<Commands />);
 
-    const shareButton = screen.getByLabelText("Share my current location");
+    const shareButton = screen.getByLabelText("Share my room code");
 
-    expect(shareButton).toBeDisabled();
+    expect(shareButton).toHaveClass("live");
   });
 });
