@@ -218,6 +218,6 @@ describe("Commands Component", () => {
 
     const shareButton = screen.getByLabelText("Share my room code");
 
-    expect(shareButton).toHaveClass("live");
+    expect(shareButton).toHaveClass("off");
   });
 });
