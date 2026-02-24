@@ -8,7 +8,7 @@
 
 </p>
 
-High-performance GPS route analysis and 3D visualization tool. Process large GPX files with interactive elevation profiles, real-time section analytics.
+High-performance GPS route analysis and 3D visualization tool. Process large GPX files with interactive elevation profiles and real-time section analytics. Supports live location sharing between runners and followers via WebSocket relay.
 
 ## Architecture
 
@@ -26,6 +26,8 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 - **Peak Detection**: Automatic identification and visualization of peaks
 - **Checkpoint Markers**: Location labels with occlusion detection and distance-based visibility
 - **Live GPS Tracking**: Real-time position updates with closest point finding
+- **Live Location Sharing**: WebSocket relay via PartyKit for real-time position broadcasting to followers
+- **Runner / Follower Modes**: First-run wizard for role selection — runners broadcast their position, followers track it on the 3D trail
 - **Performance Optimized**: Web Workers + WASM for smooth 60fps rendering
 
 ## Tech Stack
@@ -33,6 +35,7 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 - **Frontend**: React 19, Vite, Zustand (state management with DevTools/persist)
 - **3D Graphics**: React Three Fiber, Three.js, Drei helpers
 - **Performance**: Zig 0.15.2 → WASM via Zigar bindings with zero-copy optimization
+- **Real-time**: PartyKit WebSocket relay for live location sharing
 - **Styling**: Styled-components with glass morphism theme
 
 ## Prerequisites
@@ -95,6 +98,9 @@ src/
   helpers/              # Utility functions (colors, buffers, throttling)
   utils/                # Coordinate transformations
   gpxWorker.js          # Web Worker for background GPS processing
+
+party/
+  server.js             # PartyKit WebSocket relay server for live location sharing
 
 zig/
   gpx.zig               # GPX file parsing
