@@ -38,6 +38,7 @@ jobs:
       - name: Build with build number
         run: |
           echo "VITE_NUMBER=${{ github.run_number }}" > .env
+          echo "VITE_PARTYKIT_HOST=terminus.${{ secrets.PARTYKIT_LOGIN }}.partykit.dev" >> .env
           npm run build
 
       - name: Install Playwright Browsers
