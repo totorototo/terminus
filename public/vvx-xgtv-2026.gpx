@@ -8,31 +8,31 @@
     <desc>VVX XGTV 2026 Trail with Checkpoints</desc>
   </metadata>
   <wpt lat="45.081830" lon="2.747700">
-    <time>2026-02-22T10:00:00Z</time>
+    <time>2026-05-13T10:00:00Z</time>
     <name>Station Lioran</name>
   </wpt>
   <wpt lat="45.110770" lon="2.683600">
-    <time>2026-02-22T20:00:00Z</time>
+    <time>2026-05-13T20:00:00Z</time>
     <name>Col d'Eylac</name>
   </wpt>
   <wpt lat="45.338430" lon="2.755600">
-    <time>2026-02-23T06:20:00Z</time>
+    <time>2026-05-14T06:20:00Z</time>
     <name>Candat</name>
   </wpt>
   <wpt lat="45.502160" lon="2.910070">
-    <time>2026-02-23T16:35:00Z</time>
+    <time>2026-05-14T16:35:00Z</time>
     <name>Pertuyzat</name>
   </wpt>
   <wpt lat="45.571720" lon="2.808990">
-    <time>2026-02-23T23:40:00Z</time>
+    <time>2026-05-14T23:40:00Z</time>
     <name>Mont-Dore</name>
   </wpt>
   <wpt lat="45.687170" lon="2.951540">
-    <time>2026-02-24T14:25:00Z</time>
+    <time>2026-05-15T14:25:00Z</time>
     <name>Montlosier</name>
   </wpt>
   <wpt lat="45.871670" lon="3.027770">
-    <time>2026-02-25T00:00:00Z</time>
+    <time>2026-05-16T00:00:00Z</time>
     <name>Volvic</name>
   </wpt>
   <trk>
