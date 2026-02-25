@@ -1,3 +1,4 @@
+import { rgba } from "polished";
 import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
@@ -23,7 +24,8 @@ const style = (Component) => styled(Component)`
 
   .freshness-divider {
     width: 1px;
-    background: rgba(244, 247, 245, 0.08);
+    background: ${(props) =>
+      rgba(props.theme.colors.dark["--color-text"], 0.08)};
     align-self: stretch;
     flex-shrink: 0;
   }
@@ -42,7 +44,7 @@ const style = (Component) => styled(Component)`
 
   .freshness-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 20px;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: -0.5px;
@@ -51,8 +53,8 @@ const style = (Component) => styled(Component)`
 
   .freshness-sublabel {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 11px;
-    color: rgba(244, 247, 245, 0.4);
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.4)};
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }

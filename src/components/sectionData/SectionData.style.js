@@ -11,15 +11,15 @@ const style = (Component) => styled(Component)`
   color: ${(props) => props.theme.colors.dark["--color-text"]};
   opacity: 0.8;
   line-height: 1.2;
-  font-size: 15px;
+  font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
   letter-spacing: 1.5px;
   user-select: none;
 
   h1 {
     pointer-events: none;
-    color: white;
-    font-size: 2em;
-    font-weight: 100;
+    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xlarge"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     line-height: 1em;
     margin: 0;
     margin-bottom: 0.25em;

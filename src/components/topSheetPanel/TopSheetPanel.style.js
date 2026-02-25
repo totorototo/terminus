@@ -7,7 +7,8 @@ const style = (Component) => styled(Component)`
     lighten(0.1, theme.colors.dark["--color-background"])};
   overflow: hidden;
   border-radius: ${({ theme }) => theme.borderRadius["--border-radius-lg"]};
-  border: 1px solid #2d2c2cff;
+  border: 1px solid
+    ${({ theme }) => rgba(theme.colors.dark["--color-text"], 0.12)};
   cursor: ns-resize;
   user-select: none;
   touch-action: none;

@@ -1,3 +1,4 @@
+import { rgba } from "polished";
 import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
@@ -44,7 +45,7 @@ const style = (Component) => styled(Component)`
 
   .stat-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 20px;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     letter-spacing: -1px;
@@ -57,9 +58,9 @@ const style = (Component) => styled(Component)`
 
   .stat-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(244, 247, 245, 0.5);
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.5)};
     letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-top: 8px;
@@ -69,7 +70,8 @@ const style = (Component) => styled(Component)`
   .stat-divider {
     width: 1px;
     height: 48px;
-    background: rgba(244, 247, 245, 0.07);
+    background: ${(props) =>
+      rgba(props.theme.colors.dark["--color-text"], 0.07)};
     align-self: center;
   }
 
@@ -80,8 +82,8 @@ const style = (Component) => styled(Component)`
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(244, 247, 245, 0.07) 20%,
-      rgba(244, 247, 245, 0.07) 80%,
+      ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.07)} 20%,
+      ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.07)} 80%,
       transparent
     );
     margin-bottom: 1rem;
