@@ -1,3 +1,4 @@
+import { rgba } from "polished";
 import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
@@ -25,9 +26,9 @@ const style = (Component) => styled(Component)`
 
   .ep-label {
     position: absolute;
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 9px;
-    color: rgba(244, 247, 245, 0.35);
+    font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
+    color: ${({ theme }) => rgba(theme.colors.dark["--color-text"], 0.35)};
     text-transform: uppercase;
     letter-spacing: 0.04em;
     line-height: 1;
@@ -58,9 +59,9 @@ const style = (Component) => styled(Component)`
 
   .ep-section-name {
     position: absolute;
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 9px;
-    color: rgba(244, 247, 245, 0.3);
+    font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
+    color: ${({ theme }) => rgba(theme.colors.dark["--color-text"], 0.3)};
     letter-spacing: 0.03em;
     line-height: 1;
     white-space: nowrap;
@@ -68,9 +69,9 @@ const style = (Component) => styled(Component)`
 
   .ep-runner-value {
     position: absolute;
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 9px;
-    color: #ecbc3e;
+    font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
+    color: ${({ theme }) => theme.colors.dark["--color-primary"]};
     letter-spacing: 0.04em;
     line-height: 1;
     white-space: nowrap;
