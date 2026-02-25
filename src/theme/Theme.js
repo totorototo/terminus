@@ -45,6 +45,31 @@ const THEME = {
       "--font-size-xxlarge": "48px",
     },
   },
+
+  borderRadius: {
+    "--border-radius-xs": "2px",
+    "--border-radius-sm": "4px",
+    "--border-radius-md": "12px",
+    "--border-radius-base": "16px",
+    "--border-radius-lg": "24px",
+    "--border-radius-xl": "28px",
+    "--border-radius-full": "50%",
+  },
+
+  zIndex: {
+    "--z-index-overlay": "10",
+    "--z-index-modal": "1000",
+  },
+
+  transitions: {
+    "--transition-instant": "0.1s ease",
+    "--transition-fast": "0.15s ease",
+    "--transition-base": "0.2s ease",
+    "--transition-slow": "0.3s ease",
+    "--transition-standard": "0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    "--transition-xslow": "0.4s ease",
+  },
+
   spacing: [0, 2, 4, 8, 16, 32, 64, 128, 256],
   breakpoints: ["40em", "52em", "64em"],
 };

@@ -1,12 +1,13 @@
 import { rgba } from "polished";
 import styled from "styled-components";
+import { glassMorphism } from "../../theme/mixins";
 
 const style = (Component) => styled(Component)`
-  z-index: 1000;
+  z-index: ${({ theme }) => theme.zIndex["--z-index-modal"]};
   position: fixed;
   opacity: 0.9;
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: ${({ theme }) => theme.borderRadius["--border-radius-lg"]};
   touch-action: pan-x;
   display: flex;
   flex-direction: column;
@@ -15,13 +16,9 @@ const style = (Component) => styled(Component)`
   margin-left: calc(env(safe-area-inset-left) - env(safe-area-inset-right));
   padding-bottom: env(safe-area-inset-bottom);
 
-  /* Glassmorphism effect */
-  background: ${({ theme }) => rgba(theme.colors.dark["--color-surface"], 0.8)};
-  backdrop-filter: blur(10px);
+  ${glassMorphism}
   border: 1px solid
     ${({ theme }) => rgba(theme.colors.dark["--color-text"], 0.12)};
-  box-shadow: 0 8px 32px 0
-    ${({ theme }) => rgba(theme.colors.dark["--color-background"], 0.1)};
 
   color: ${({ theme }) => theme.colors.dark["--color-text"]};
   line-height: 1.2;
@@ -42,7 +39,8 @@ const style = (Component) => styled(Component)`
       transparent 100%
     );
     pointer-events: none;
-    border-radius: 1.75rem 1.75rem 0 0;
+    border-radius: ${({ theme }) => theme.borderRadius["--border-radius-xl"]}
+      ${({ theme }) => theme.borderRadius["--border-radius-xl"]} 0 0;
   }
 
   /* Drag handle indicator */
@@ -56,7 +54,7 @@ const style = (Component) => styled(Component)`
     height: 4px;
     background-color: ${({ theme }) => theme.colors.dark["--color-text"]};
     opacity: 0.3;
-    border-radius: 2px;
+    border-radius: ${({ theme }) => theme.borderRadius["--border-radius-xs"]};
     z-index: 1;
   }
 

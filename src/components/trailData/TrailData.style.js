@@ -1,14 +1,14 @@
 import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
-  z-index: 10;
+  z-index: ${(props) => props.theme.zIndex["--z-index-overlay"]};
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
   max-width: 380px;
   padding: 2rem 1.25rem 1.25rem;
-  border-radius: 1.75rem;
+  border-radius: ${(props) => props.theme.borderRadius["--border-radius-xl"]};
   pointer-events: auto;
   height: 22rem;
   // background-color:pink;

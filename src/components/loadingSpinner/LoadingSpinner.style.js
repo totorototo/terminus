@@ -17,7 +17,8 @@ const style = (Component) => styled(Component)`
     border: 3px solid
       ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.2)};
     border-top-color: ${(props) => props.theme.colors.dark["--color-primary"]};
-    border-radius: 50%;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-full"]};
     animation: spin 0.8s linear infinite;
   }
 

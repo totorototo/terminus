@@ -1,3 +1,4 @@
+import { rgba } from "polished";
 import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
@@ -11,29 +12,35 @@ const style = (Component) => styled(Component)`
   .action-button {
     width: 100%;
     height: 52px;
-    border-radius: 1rem;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-base"]};
     font-family: ${(props) =>
       props.theme.font.family["--font-family-sansSerif"]};
     font-size: 15px;
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     letter-spacing: 0.2px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all ${(props) => props.theme.transitions["--transition-fast"]};
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(242, 175, 41, 0.25);
-    background: rgba(242, 175, 41, 0.12);
+    border: 1px solid
+      ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.25)};
+    background: ${(props) =>
+      rgba(props.theme.colors.dark["--color-primary"], 0.12)};
     color: ${(props) => props.theme.colors.dark["--color-primary"]};
 
     &:hover {
-      border-color: rgba(242, 175, 41, 0.35);
-      background: rgba(242, 175, 41, 0.15);
+      border-color: ${(props) =>
+        rgba(props.theme.colors.dark["--color-primary"], 0.35)};
+      background: ${(props) =>
+        rgba(props.theme.colors.dark["--color-primary"], 0.15)};
     }
 
     &:active,
     &.active {
-      border-color: rgba(242, 175, 41, 0.5);
+      border-color: ${(props) =>
+        rgba(props.theme.colors.dark["--color-primary"], 0.5)};
       background: ${(props) => props.theme.colors.dark["--color-primary"]};
       color: ${(props) => props.theme.colors.dark["--color-background"]};
     }

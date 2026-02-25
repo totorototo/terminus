@@ -1,8 +1,9 @@
 import { rgba } from "polished";
 import styled from "styled-components";
+import { glassMorphism } from "../../theme/mixins";
 
 const style = (Component) => styled(Component)`
-  z-index: 10;
+  z-index: ${(props) => props.theme.zIndex["--z-index-overlay"]};
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -10,12 +11,7 @@ const style = (Component) => styled(Component)`
   pointer-events: none;
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0);
-  box-shadow: 0 8px 32px 0
-    ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)};
-  /* Glassmorphism effect */
-  background: ${(props) =>
-    rgba(props.theme.colors.dark["--color-surface"], 0.8)};
-  backdrop-filter: blur(10px);
+  ${glassMorphism}
   overflow: hidden;
 
   .section {
@@ -45,7 +41,7 @@ const style = (Component) => styled(Component)`
     box-shadow: 0 0 0.5rem
       ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.8)};
     width: var(--progress-width, 0%);
-    transition: width 0.3s ease;
+    transition: width ${(props) => props.theme.transitions["--transition-slow"]};
     z-index: 2;
   }
 
@@ -70,7 +66,8 @@ const style = (Component) => styled(Component)`
         position: absolute;
         width: 3.125rem;
         height: 3.125rem;
-        border-radius: 50%;
+        border-radius: ${(props) =>
+          props.theme.borderRadius["--border-radius-full"]};
         background: ${(props) =>
           rgba(props.theme.colors.dark["--color-primary"], 0.1)};
         border: 0.09375rem solid
@@ -87,7 +84,8 @@ const style = (Component) => styled(Component)`
       position: absolute;
       width: 3.125rem;
       height: 3.125rem;
-      border-radius: 50%;
+      border-radius: ${(props) =>
+        props.theme.borderRadius["--border-radius-full"]};
       background: ${(props) =>
         rgba(props.theme.colors.dark["--color-primary"], 0.1)};
       border: 0.09375rem solid

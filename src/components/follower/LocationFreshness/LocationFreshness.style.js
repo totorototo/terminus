@@ -32,9 +32,11 @@ const style = (Component) => styled(Component)`
     display: inline-block;
     width: 10px;
     height: 10px;
-    border-radius: 50%;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-full"]};
     flex-shrink: 0;
-    transition: background 0.4s ease;
+    transition: background
+      ${(props) => props.theme.transitions["--transition-xslow"]};
     margin-bottom: 0.25rem;
   }
 
