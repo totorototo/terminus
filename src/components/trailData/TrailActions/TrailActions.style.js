@@ -16,7 +16,7 @@ const style = (Component) => styled(Component)`
       props.theme.borderRadius["--border-radius-base"]};
     font-family: ${(props) =>
       props.theme.font.family["--font-family-sansSerif"]};
-    font-size: 15px;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     letter-spacing: 0.2px;
     cursor: pointer;
