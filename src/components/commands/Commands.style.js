@@ -1,5 +1,5 @@
 import { rgba } from "polished";
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
   position: absolute;
@@ -21,11 +21,13 @@ const style = (Component) => styled(Component)`
   button {
     width: 48px;
     height: 48px;
-    border-radius: 50%;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-full"]};
     border: 1px solid
       ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.2)};
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all
+      ${(props) => props.theme.transitions["--transition-standard"]};
 
     /* Glass morphism effect */
     backdrop-filter: blur(12px);
@@ -78,7 +80,8 @@ const style = (Component) => styled(Component)`
 
     &:active {
       transform: translateY(0);
-      transition: transform 0.1s;
+      transition: transform
+        ${(props) => props.theme.transitions["--transition-instant"]};
     }
 
     &:disabled {
@@ -93,7 +96,7 @@ const style = (Component) => styled(Component)`
 
     /* Icon styling */
     svg {
-      transition: all 0.2s ease;
+      transition: all ${(props) => props.theme.transitions["--transition-base"]};
     }
   }
 
@@ -101,11 +104,13 @@ const style = (Component) => styled(Component)`
   label.file-upload-button {
     width: 48px;
     height: 48px;
-    border-radius: 50%;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-full"]};
     border: 1px solid
       ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.2)};
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all
+      ${(props) => props.theme.transitions["--transition-standard"]};
 
     /* Glass morphism effect */
     backdrop-filter: blur(12px);
@@ -151,7 +156,8 @@ const style = (Component) => styled(Component)`
 
     &:active {
       transform: translateY(0);
-      transition: transform 0.1s;
+      transition: transform
+        ${(props) => props.theme.transitions["--transition-instant"]};
     }
 
     &:disabled {
@@ -166,7 +172,7 @@ const style = (Component) => styled(Component)`
 
     /* Icon styling */
     svg {
-      transition: all 0.2s ease;
+      transition: all ${(props) => props.theme.transitions["--transition-base"]};
     }
 
     &.off {

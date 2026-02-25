@@ -4,7 +4,7 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: ${(props) => props.theme.zIndex["--z-index-modal"]};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,7 +13,7 @@ const style = (Component) => styled(Component)`
   .card {
     width: min(380px, 90vw);
     padding: 2.5rem 2rem;
-    border-radius: 1.5rem;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
     border: 1px solid
       ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.12)};
     background: ${(props) =>
@@ -52,7 +52,8 @@ const style = (Component) => styled(Component)`
   .choice-btn {
     width: 100%;
     padding: 1.1rem 1.5rem;
-    border-radius: 1rem;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-base"]};
     border: 1px solid
       ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.15)};
     background: ${(props) =>
@@ -62,7 +63,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     gap: 1rem;
-    transition: all 0.2s ease;
+    transition: all ${(props) => props.theme.transitions["--transition-base"]};
     -webkit-tap-highlight-color: transparent;
 
     &:hover {
@@ -119,7 +120,7 @@ const style = (Component) => styled(Component)`
   .code-input {
     width: 100%;
     padding: 1rem 1.25rem;
-    border-radius: 0.75rem;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     border: 1px solid
       ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.2)};
     background: ${(props) =>
@@ -147,7 +148,7 @@ const style = (Component) => styled(Component)`
   .confirm-btn {
     width: 100%;
     padding: 1rem;
-    border-radius: 0.75rem;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     border: 1px solid
       ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.4)};
     background: ${(props) =>
@@ -156,7 +157,7 @@ const style = (Component) => styled(Component)`
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all ${(props) => props.theme.transitions["--transition-base"]};
     -webkit-tap-highlight-color: transparent;
 
     &:hover:not(:disabled) {

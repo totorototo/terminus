@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
-  z-index: 10;
+  z-index: ${(props) => props.theme.zIndex["--z-index-overlay"]};
   display: flex;
   flex-direction: column;
   align-items: flex-start;

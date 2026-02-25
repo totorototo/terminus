@@ -35,7 +35,7 @@ const style = (Component) => styled(Component)`
     width: 100%;
     height: 8px;
     background: rgba(244, 247, 245, 0.1);
-    border-radius: 4px;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
     overflow: hidden;
   }
 
@@ -46,8 +46,8 @@ const style = (Component) => styled(Component)`
       ${(props) => props.theme.colors.dark["--color-primary"]},
       ${(props) => props.theme.colors.dark["--color-primary"]}cc
     );
-    border-radius: 4px;
-    transition: width 0.3s ease;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
+    transition: width ${(props) => props.theme.transitions["--transition-slow"]};
   }
 
   .elevation-container {
