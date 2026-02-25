@@ -1,12 +1,12 @@
+import { createWorkerMessenger } from "./workerMessenger.js";
 import {
-  validateGPXResults,
   validateGPSDataResults,
-  validateSectionsResults,
-  validateRouteStatsResults,
+  validateGPXResults,
   validatePointsAtDistancesResults,
   validateRouteSectionResults,
+  validateRouteStatsResults,
+  validateSectionsResults,
 } from "./workerValidation.js";
-import { createWorkerMessenger } from "./workerMessenger.js";
 
 // Default worker factory (can be overridden for testing)
 function createGPSWorker() {

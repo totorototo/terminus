@@ -1,14 +1,17 @@
-import { useEffect, lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
+
 import AutoSizer from "react-virtualized-auto-sizer";
-import style from "./Follower.style";
-import useStore from "../../store/store.js";
+import { useShallow } from "zustand/react/shallow";
+
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
-import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
+import useStore from "../../store/store.js";
 import BottomSheetPanel from "../bottomSheetPanel/BottomSheetPanel.jsx";
+import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
 import TopSheetPanel from "../topSheetPanel/TopSheetPanel.jsx";
 import TrailData from "../trailData/TrailData.jsx";
 import LocationFreshness from "./LocationFreshness/LocationFreshness.jsx";
-import { useShallow } from "zustand/react/shallow";
+
+import style from "./Follower.style";
 
 const Scene = lazy(() => import("../scene/Scene.jsx"));
 

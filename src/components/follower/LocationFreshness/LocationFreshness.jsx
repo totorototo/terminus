@@ -1,5 +1,7 @@
-import { memo, useState, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
+
 import { useProjectedLocation } from "../../../store/store.js";
+
 import style from "./LocationFreshness.style.js";
 
 function formatAge(ageMs) {

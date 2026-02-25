@@ -1,6 +1,6 @@
 import { Text } from "@react-three/drei";
-import { useTheme } from "styled-components";
 import { Billboard } from "@react-three/drei";
+import { useTheme } from "styled-components";
 
 function Marker({ children, position, ...props }) {
   const theme = useTheme();

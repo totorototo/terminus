@@ -1,16 +1,20 @@
+import { useMemo } from "react";
+
 import {
-  useSpring as useSpringWeb,
   animated,
+  useSpring as useSpringWeb,
   useTransition,
 } from "@react-spring/web";
-import { useMemo } from "react";
-import style from "./Navigation.style.js";
-import useStore from "../../store/store.js";
 import { ArrowUp, CornerUpLeft, CornerUpRight } from "@styled-icons/feather";
 import { ArrowDown } from "@styled-icons/feather";
-import { useProjectedLocation } from "../../store/store.js";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 import { useTheme } from "styled-components";
+import { useShallow } from "zustand/react/shallow";
+
+import useStore from "../../store/store.js";
+import { useProjectedLocation } from "../../store/store.js";
+
+import style from "./Navigation.style.js";
 
 // Custom locale for duration formatting
 const customLocale = {
@@ -70,20 +74,22 @@ const DownArrow = () => (
 );
 
 function Navigation({ className }) {
-  const sections = useStore((state) => state.sections);
+  const {
+    sections,
+    cumulativeDistances,
+    cumulativeElevations,
+    cumulativeElevationLosses,
+  } = useStore(
+    useShallow((state) => ({
+      sections: state.sections,
+      cumulativeDistances: state.gpx.cumulativeDistances,
+      cumulativeElevations: state.gpx.cumulativeElevations,
+      cumulativeElevationLosses: state.gpx.cumulativeElevationLosses,
+    })),
+  );
   const projectedLocation = useProjectedLocation();
   const currentPositionIndex = projectedLocation.index || 0;
   const theme = useTheme();
-
-  const cumulativeDistances = useStore(
-    (state) => state.gpx.cumulativeDistances,
-  );
-  const cumulativeElevations = useStore(
-    (state) => state.gpx.cumulativeElevations,
-  );
-  const cumulativeElevationLosses = useStore(
-    (state) => state.gpx.cumulativeElevationLosses,
-  );
 
   const springConfig = { tension: 170, friction: 26 };
 

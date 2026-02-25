@@ -1,11 +1,14 @@
 import { memo, useMemo } from "react";
-import { useSpring as useSpringWeb, animated } from "@react-spring/web";
-import style from "./TrailData.style.js";
-import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
+
+import { animated, useSpring as useSpringWeb } from "@react-spring/web";
 import { format } from "date-fns";
+
+import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
+import ElevationProfile from "./ElevationProfile/ElevationProfile.jsx";
 import TrailActions from "./TrailActions/TrailActions.jsx";
 import TrailProgression from "./TrailProgression/TrailProgression.jsx";
-import ElevationProfile from "./ElevationProfile/ElevationProfile.jsx";
+
+import style from "./TrailData.style.js";
 
 // Helper function to calculate ETA and remaining time
 export const calculateTimeMetrics = (

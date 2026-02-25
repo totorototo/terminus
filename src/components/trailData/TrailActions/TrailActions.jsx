@@ -1,5 +1,7 @@
 import { memo } from "react";
+
 import useStore from "../../../store/store.js";
+
 import style from "./TrailActions.style.js";
 
 const TrailActions = memo(function TrailActions({ className }) {

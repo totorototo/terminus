@@ -1,5 +1,7 @@
 import { useState } from "react";
+
 import useStore from "../../store/store.js";
+
 import style from "./Wizard.style.js";
 
 function Wizard({ className }) {

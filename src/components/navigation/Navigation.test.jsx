@@ -1,11 +1,13 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { ThemeProvider } from "styled-components";
-import Navigation from "./Navigation.jsx";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import useStore from "../../store/store.js";
 import * as hooks from "../../store/store.js";
 import THEME from "../../theme/Theme";
+import Navigation from "./Navigation.jsx";
+
+import "@testing-library/jest-dom/vitest";
 
 // Mock the store and hooks
 vi.mock("../../store/store.js", () => ({

@@ -1,8 +1,10 @@
 import { useMemo } from "react";
-import { transformCoordinate } from "../../utils/coordinateTransforms";
-import useStore from "../../store/store.js";
+
 import { Billboard, Text } from "@react-three/drei";
 import { useTheme } from "styled-components";
+
+import useStore from "../../store/store.js";
+import { transformCoordinate } from "../../utils/coordinateTransforms";
 import FadingText from "./FadingText.jsx";
 
 const ELEVATION_INDEX = 2; // [lat, lon, elevation]

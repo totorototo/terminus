@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
-import TrailData from "./TrailData.jsx";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import * as storeModule from "../../store/store.js";
+import TrailData from "./TrailData.jsx";
+
+import "@testing-library/jest-dom/vitest";
 
 // Mock store hooks
 vi.mock("../../store/store.js", () => ({

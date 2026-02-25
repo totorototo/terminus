@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { createWorkerMessenger } from "./workerMessenger.js";
 import { MESSAGE_TYPES } from "./workerTypes.js";
 

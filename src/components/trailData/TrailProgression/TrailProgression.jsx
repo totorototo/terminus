@@ -1,6 +1,8 @@
 import { memo, useMemo } from "react";
+
 import { useProjectedLocation } from "../../../store/store.js";
 import useStore from "../../../store/store.js";
+
 import style from "./TrailProgression.style.js";
 
 const TrailProgression = memo(function TrailProgression({ className }) {

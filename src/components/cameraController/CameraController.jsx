@@ -1,7 +1,9 @@
-import { useRef, useEffect } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+
 import { CameraControls } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Vector3 } from "three";
+
 import useStore from "../../store/store.js";
 
 export default function CameraController({

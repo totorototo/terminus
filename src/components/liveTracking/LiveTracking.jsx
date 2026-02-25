@@ -1,23 +1,29 @@
-import { useSpring as useSpringWeb, animated } from "@react-spring/web";
-import style from "./LiveTracking.style";
-import useStore from "../../store/store.js";
+import { animated, useSpring as useSpringWeb } from "@react-spring/web";
 import { Navigation } from "@styled-icons/feather/Navigation";
+import { useShallow } from "zustand/react/shallow";
+
+import useStore from "../../store/store.js";
+
+import style from "./LiveTracking.style";
 
 function LiveTracking({ className }) {
-  const cumulativeDistances = useStore(
-    (state) => state.gpx.cumulativeDistances,
+  const {
+    cumulativeDistances,
+    cumulativeElevations,
+    cumulativeElevationLosses,
+    gpsData,
+    currentPositionIndex,
+    stats,
+  } = useStore(
+    useShallow((state) => ({
+      cumulativeDistances: state.gpx.cumulativeDistances,
+      cumulativeElevations: state.gpx.cumulativeElevations,
+      cumulativeElevationLosses: state.gpx.cumulativeElevationLosses,
+      gpsData: state.gps.data,
+      currentPositionIndex: state.app.currentPositionIndex,
+      stats: state.stats,
+    })),
   );
-  const cumulativeElevations = useStore(
-    (state) => state.gpx.cumulativeElevations,
-  );
-  const cumulativeElevationLosses = useStore(
-    (state) => state.gpx.cumulativeElevationLosses,
-  );
-  const gpsData = useStore((state) => state.gps.data);
-  const currentPositionIndex = useStore(
-    (state) => state.app.currentPositionIndex,
-  );
-  const stats = useStore((state) => state.stats);
 
   const springConfig = { tension: 170, friction: 26 };
 

@@ -1,12 +1,14 @@
 import { useMemo } from "react";
-import style from "./EnhancedProfile.style.js";
+
 import useStore from "../../store/store.js";
 import {
-  transformSections,
   createCheckpoints,
+  transformSections,
 } from "../../utils/coordinateTransforms.js";
-import Sections from "../sections/Sections.jsx";
 import Checkpoints from "../checkpoints/Checkpoints.jsx";
+import Sections from "../sections/Sections.jsx";
+
+import style from "./EnhancedProfile.style.js";
 
 function EnhancedProfile({ coordinateScales }) {
   const sections = useStore((state) => state.sections);

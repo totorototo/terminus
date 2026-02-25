@@ -1,6 +1,6 @@
-import React from "react";
-import { useSpring, a, config } from "@react-spring/web";
+import { a, config, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
+
 import style from "./TopSheetPanel.style.js";
 
 const COLLAPSED_HEIGHT = 140;
@@ -9,7 +9,7 @@ const EXPANDED_HEIGHT = 420;
 function ExpandablePanel({ children, className }) {
   const [{ height }, api] = useSpring(() => ({ height: COLLAPSED_HEIGHT }));
 
-  const expand = ({ canceled }) => {
+  const handleExpand = ({ canceled }) => {
     // when cancel is true, it means that the user passed the downwards threshold
     // so we change the spring config to create a nice wobbly effect
     api.start({
@@ -19,7 +19,7 @@ function ExpandablePanel({ children, className }) {
     });
   };
 
-  const collapse = (velocity = 0) => {
+  const handleCollapse = (velocity = 0) => {
     api.start({
       height: COLLAPSED_HEIGHT,
       immediate: false,
@@ -44,8 +44,8 @@ function ExpandablePanel({ children, className }) {
       // the threshold for it to collapse, or if we reset it to its expanded position
       if (last) {
         oy < (EXPANDED_HEIGHT - COLLAPSED_HEIGHT) * 0.5 || (vy < -0.5 && dy < 0)
-          ? collapse(Math.abs(vy))
-          : expand({ canceled });
+          ? handleCollapse(Math.abs(vy))
+          : handleExpand({ canceled });
       }
       // when the user keeps dragging, we just move the sheet according to
       // the cursor position

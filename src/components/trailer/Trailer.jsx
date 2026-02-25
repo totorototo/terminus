@@ -1,14 +1,17 @@
 import { lazy, Suspense, useEffect } from "react";
+
 import AutoSizer from "react-virtualized-auto-sizer";
-import style from "./Trailer.style";
+
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
-import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
-import TopSheetPanel from "../topSheetPanel/TopSheetPanel.jsx";
-import Navigation from "../navigation/Navigation.jsx";
-import BottomSheetPanel from "../bottomSheetPanel/BottomSheetPanel.jsx";
-import TrailData from "../trailData/TrailData.jsx";
-import Commands from "../commands/Commands.jsx";
 import useStore from "../../store/store.js";
+import BottomSheetPanel from "../bottomSheetPanel/BottomSheetPanel.jsx";
+import Commands from "../commands/Commands.jsx";
+import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
+import Navigation from "../navigation/Navigation.jsx";
+import TopSheetPanel from "../topSheetPanel/TopSheetPanel.jsx";
+import TrailData from "../trailData/TrailData.jsx";
+
+import style from "./Trailer.style";
 
 // Lazy load 3D Scene (imports Three.js, React Three Fiber, Drei)
 const Scene = lazy(() => import("../scene/Scene.jsx"));

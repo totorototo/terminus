@@ -1,8 +1,10 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
+
+import { a, useSpring } from "@react-spring/three";
+import { Box } from "@react-three/drei";
+
 import { useProjectedLocation } from "../../store/store.js";
 import { transformCoordinates } from "../../utils/coordinateTransforms.js";
-import { Box } from "@react-three/drei";
-import { a, useSpring } from "@react-spring/three";
 
 const AnimatedBox = a(Box);
 

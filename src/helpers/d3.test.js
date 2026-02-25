@@ -1,12 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { ELEVATION_COLORS, ELEVATION_GRADE } from "../constants.js";
 import {
-  getArea,
+  createColorScale,
   createXScale,
   createYScale,
+  getArea,
   getLine,
-  createColorScale,
 } from "./d3";
-import { ELEVATION_GRADE, ELEVATION_COLORS } from "../constants.js";
 
 describe("D3 Helpers", () => {
   it("createXScale should create a linear scale with correct domain and range", () => {
