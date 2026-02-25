@@ -7,6 +7,7 @@ const THEME = {
       "--color-secondary": "#3e7cb1",
       "--color-accent": "#ad343e",
       "--color-progress": "#8b8e8c",
+      "--color-surface": "#e2e5e3",
     },
     dark: {
       "--color-background": "#262424",
@@ -15,6 +16,7 @@ const THEME = {
       "--color-secondary": "#3e7cb1",
       "--color-accent": "#ad343e",
       "--color-progress": "#8da192",
+      "--color-surface": "#3d3b3b",
     },
   },
 
@@ -26,10 +28,15 @@ const THEME = {
     },
     weights: {
       "--font-weight-bold": "600",
+      "--font-weight-semibold": "500",
       "--font-weight-medium": "400",
+      "--font-weight-thin": "300",
       "--font-weight-light": "200",
     },
     sizes: {
+      "--font-size-xxsmall": "9px",
+      "--font-size-xsmall": "10px",
+      "--font-size-tiny": "12px",
       "--font-size-small": "14px",
       "--font-size": "16px",
       "--font-size-medium": "20px",

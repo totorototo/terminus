@@ -10,9 +10,11 @@ const style = (Component) => styled(Component)`
   pointer-events: none;
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  box-shadow: 0 8px 32px 0
+    ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)};
   /* Glassmorphism effect */
-  background: rgba(61, 59, 59, 0.8);
+  background: ${(props) =>
+    rgba(props.theme.colors.dark["--color-surface"], 0.8)};
   backdrop-filter: blur(10px);
   overflow: hidden;
 
@@ -140,8 +142,9 @@ const style = (Component) => styled(Component)`
   .waypoint {
     font-family: ${(props) =>
       props.theme.font.family["--font-family-sansSerif"]};
-    font-size: 1.7rem;
-    font-weight: 500;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
+    font-weight: ${(props) =>
+      props.theme.font.weights["--font-weight-semibold"]};
     color: ${(props) => props.theme.colors.dark["--color-text"]};
     white-space: nowrap;
     overflow: hidden;

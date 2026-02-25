@@ -9,10 +9,10 @@ const style = (Component) => styled(Component)`
 
   pointer-events: none;
 
-  color: ${(props) => props.theme.colors.dark["--color-text"]};
+  color: ${({ theme }) => theme.colors.dark["--color-text"]};
   opacity: 0.8;
   line-height: 1.2;
-  font-size: 15px;
+  font-size: ${({ theme }) => theme.font.sizes["--font-size-small"]};
   letter-spacing: 1.5px;
   user-select: none;
   padding: 1rem;
@@ -30,14 +30,14 @@ const style = (Component) => styled(Component)`
     // background-color: rgba(255, 255, 255, 0.1);
     width: 100%;
     padding-left: 0.4rem;
-    font-size: 1.5rem;
-    font-weight: 300;
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-large"]};
+    font-weight: ${({ theme }) => theme.font.weights["--font-weight-thin"]};
   }
 
   .distance svg {
-    color: #f2af29;
+    color: ${({ theme }) => theme.colors.dark["--color-primary"]};
     stroke-width: 1.5px;
-    fill: #f2af29;
+    fill: ${({ theme }) => theme.colors.dark["--color-primary"]};
   }
 
   // // todo: draw line  below the icon and text
