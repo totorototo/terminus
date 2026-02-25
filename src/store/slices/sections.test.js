@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { create } from "zustand";
+
 import { createSectionsSlice } from "./sections";
 
 describe("sectionsSlice", () => {

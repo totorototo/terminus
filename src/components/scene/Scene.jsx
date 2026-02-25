@@ -1,22 +1,31 @@
-import { useRef, useMemo, Suspense } from "react";
+import { Suspense, useMemo, useRef } from "react";
+
 import { Canvas } from "@react-three/fiber";
-import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
-import style from "./Scene.style";
-import TrailFollower from "../trailFollower/TrailFollower";
-import useStore from "../../store/store.js";
-import CameraController from "../cameraController/CameraController.jsx";
-import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
-import { Model } from "../helicopter.jsx";
-import Marker from "../marker/Marker.jsx";
 import { useTheme } from "styled-components";
+import { useShallow } from "zustand/react/shallow";
+
+import useStore from "../../store/store.js";
+import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
+import CameraController from "../cameraController/CameraController.jsx";
+import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
+import { Helicopter } from "../helicopter/Helicopter.jsx";
+import Marker from "../marker/Marker.jsx";
 import Peaks from "../peaks/Peaks.jsx";
+import TrailFollower from "../trailFollower/TrailFollower";
+
+import style from "./Scene.style";
 
 function Scene({ width, height, className }) {
-  const profileMode = useStore((state) => state.app.profileMode);
-  const trackingMode = useStore((state) => state.app.trackingMode);
-  const coordinates = useStore((state) => state.gpx.data);
-  const { name } = useStore((state) => state.gpx.metadata);
-  const projectedLocation = useStore((state) => state.gps.projectedLocation);
+  const { profileMode, trackingMode, coordinates, name, projectedLocation } =
+    useStore(
+      useShallow((state) => ({
+        profileMode: state.app.profileMode,
+        trackingMode: state.app.trackingMode,
+        coordinates: state.gpx.data,
+        name: state.gpx.metadata.name,
+        projectedLocation: state.gps.projectedLocation,
+      })),
+    );
 
   const modelRef = useRef();
   const theme = useTheme();
@@ -86,7 +95,7 @@ function Scene({ width, height, className }) {
 
         {projectedLocation && projectedLocation.timestamp !== 0 && (
           <Suspense fallback={null}>
-            <Model scale={0.01} coordinateScales={coordinateScales} />
+            <Helicopter scale={0.01} coordinateScales={coordinateScales} />
           </Suspense>
         )}
 

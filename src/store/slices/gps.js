@@ -1,4 +1,5 @@
 import PartySocket from "partysocket";
+
 import createRingBuffer from "../../helpers/createRingBuffer";
 
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";

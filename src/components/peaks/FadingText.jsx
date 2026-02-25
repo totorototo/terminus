@@ -1,6 +1,7 @@
+import { useMemo, useRef } from "react";
+
 import { Text } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, useMemo } from "react";
 import * as THREE from "three";
 
 function FadingText({

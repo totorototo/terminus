@@ -1,5 +1,5 @@
-import styled from "styled-components";
 import { rgba } from "polished";
+import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
   z-index: 10;

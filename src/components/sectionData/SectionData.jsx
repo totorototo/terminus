@@ -1,7 +1,10 @@
-import { useSpring as useSpringWeb, animated } from "@react-spring/web";
-import style from "./SectionData.style.js";
-import useStore from "../../store/store.js";
 import { useMemo } from "react";
+
+import { animated, useSpring as useSpringWeb } from "@react-spring/web";
+
+import useStore from "../../store/store.js";
+
+import style from "./SectionData.style.js";
 
 const SectionData = function SectionData({ className }) {
   const currentPositionIndex = useStore((state) => state.currentPositionIndex);

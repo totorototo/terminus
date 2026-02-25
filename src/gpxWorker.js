@@ -2,8 +2,8 @@
 // This runs GPS computations off the main thread to prevent UI freezing
 // All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
 
-import { Trace, __zigar } from "../zig/trace.zig";
 import { readGPXComplete } from "../zig/gpx.zig";
+import { __zigar, Trace } from "../zig/trace.zig";
 
 // Initialize Zig/WASM in worker context
 let isInitialized = false;

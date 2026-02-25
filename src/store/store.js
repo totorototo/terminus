@@ -1,12 +1,13 @@
 import { create } from "zustand";
-import { devtools, subscribeWithSelector, persist } from "zustand/middleware";
+import { devtools, persist, subscribeWithSelector } from "zustand/middleware";
+
 import { createAppSlice } from "./slices/app";
-import { createGpxSlice } from "./slices/gpx";
-import { createStatsSlice } from "./slices/stats";
-import { createWorkerSlice } from "./slices/worker";
-import { createWayPointsSlice } from "./slices/wayPoints";
-import { createSectionsSlice } from "./slices/sections";
 import { createGPSSlice } from "./slices/gps";
+import { createGpxSlice } from "./slices/gpx";
+import { createSectionsSlice } from "./slices/sections";
+import { createStatsSlice } from "./slices/stats";
+import { createWayPointsSlice } from "./slices/wayPoints";
+import { createWorkerSlice } from "./slices/worker";
 
 const useStore = create(
   devtools(

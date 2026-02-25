@@ -8,13 +8,15 @@ Title: Simple low poly helicopter
 */
 
 import { useEffect, useMemo, useRef } from "react";
-import { useGLTF, useAnimations } from "@react-three/drei";
-import { useProjectedLocation } from "../store/store.js";
-import { transformCoordinates } from "../utils/coordinateTransforms.js";
+
 import { a, useSpring } from "@react-spring/three";
+import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 
-export function Model({ coordinateScales, ...props }) {
+import { useProjectedLocation } from "../../store/store.js";
+import { transformCoordinates } from "../../utils/coordinateTransforms.js";
+
+export function Helicopter({ coordinateScales, ...props }) {
   const group = useRef();
   const { nodes, materials, animations } = useGLTF(
     "/simple_low_poly_helicopter.glb",

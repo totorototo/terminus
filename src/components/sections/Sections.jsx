@@ -1,8 +1,10 @@
-import { useMemo, memo } from "react";
+import { memo, useMemo } from "react";
+
 import { useTheme } from "styled-components";
-import Profile from "../profile/Profile.jsx";
-import useStore from "../../store/store.js";
+
 import { getInterpolatedColor } from "../../helpers/colorInterpolation.js";
+import useStore from "../../store/store.js";
+import Profile from "../profile/Profile.jsx";
 
 const MemoizedProfile = memo(Profile);
 

@@ -1,9 +1,11 @@
-import { MapPin } from "@styled-icons/feather/MapPin";
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import { Map } from "@styled-icons/feather/Map";
+import { MapPin } from "@styled-icons/feather/MapPin";
 import { Share2 } from "@styled-icons/feather/Share2";
 import { useShallow } from "zustand/react/shallow";
+
 import useStore from "../../store/store";
+
 import style from "./Commands.style";
 
 function Commands({ className }) {

@@ -1,8 +1,10 @@
-import { useRef, useEffect, useMemo } from "react";
-import { useFrame, extend } from "@react-three/fiber";
-import { Color, DoubleSide, DynamicDrawUsage } from "three";
-import { createVertices } from "../../helpers/createVertices";
+import { useEffect, useMemo, useRef } from "react";
+
 import { shaderMaterial } from "@react-three/drei";
+import { extend, useFrame } from "@react-three/fiber";
+import { Color, DoubleSide, DynamicDrawUsage } from "three";
+
+import { createVertices } from "../../helpers/createVertices";
 
 // Shared progress coloring logic for shaders
 const PROGRESS_COLORING_LOGIC = `

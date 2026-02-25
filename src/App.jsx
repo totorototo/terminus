@@ -1,8 +1,9 @@
-import style from "./App.style.js";
-import useStore from "./store/store.js";
 import Follower from "./components/follower/Follower.jsx";
 import Trailer from "./components/trailer/Trailer.jsx";
 import Wizard from "./components/wizard/Wizard.jsx";
+import useStore from "./store/store.js";
+
+import style from "./App.style.js";
 
 function App({ className }) {
   const mode = useStore((state) => state.app.mode);

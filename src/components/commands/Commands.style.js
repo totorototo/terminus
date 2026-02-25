@@ -1,5 +1,5 @@
-import styled, { keyframes } from "styled-components";
 import { rgba } from "polished";
+import styled, { keyframes } from "styled-components";
 
 const style = (Component) => styled(Component)`
   position: absolute;

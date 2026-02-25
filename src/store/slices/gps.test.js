@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { create } from "zustand";
-import { createGPSSlice } from "./gps";
+
 import createRingBuffer from "../../helpers/createRingBuffer";
+import { createGPSSlice } from "./gps";
 
 // Static mock at top of file (SIMPLEST approach)
 vi.mock("../../helpers/createRingBuffer", () => ({

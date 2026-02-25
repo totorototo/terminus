@@ -1,8 +1,9 @@
-import { useRef, useEffect, useState } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useEffect, useRef, useState } from "react";
 
-import { Vector3 } from "three";
 import { useAnimations, useGLTF } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { Vector3 } from "three";
+
 import useStore from "../../store/store";
 import { transformCoordinates } from "../../utils/coordinateTransforms";
 

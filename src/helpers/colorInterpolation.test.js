@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import {
-  interpolateColor,
   getInterpolatedColor,
+  interpolateColor,
 } from "./colorInterpolation.js";
 
 describe("colorInterpolation test suite", () => {

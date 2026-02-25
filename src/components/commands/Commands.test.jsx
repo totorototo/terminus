@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
-import Commands from "./Commands.jsx";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import useStore from "../../store/store.js";
+import Commands from "./Commands.jsx";
+
+import "@testing-library/jest-dom/vitest";
 
 // Mock the store
 vi.mock("../../store/store.js", () => ({

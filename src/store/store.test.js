@@ -1,15 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import useStore, {
   useAppState,
-  useGpxData,
-  useStats,
-  useWorkerState,
-  useTrackingMode,
-  useDisplaySlopes,
-  useProjectedLocation,
   useCurrentClosestLocation,
+  useDisplaySlopes,
   useGpxCoordinates,
+  useGpxData,
   useProcessingState,
+  useProjectedLocation,
+  useStats,
+  useTrackingMode,
+  useWorkerState,
 } from "./store";
 
 // Mock external dependencies only (per official Zustand testing docs)

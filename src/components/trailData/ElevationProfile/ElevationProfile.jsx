@@ -1,11 +1,13 @@
 import { memo, useMemo } from "react";
-import useStore, { useProjectedLocation } from "../../../store/store.js";
+
 import {
   createXScale,
   createYScale,
-  getLine,
   getArea,
+  getLine,
 } from "../../../helpers/d3.js";
+import useStore, { useProjectedLocation } from "../../../store/store.js";
+
 import style from "./ElevationProfile.style.js";
 
 const WIDTH = 300;

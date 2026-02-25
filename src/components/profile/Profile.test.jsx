@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import Profile from "./Profile.jsx";
+
+import "@testing-library/jest-dom/vitest";
 
 // Mock React Three Fiber and Three.js since this is a 3D component
 vi.mock("@react-three/fiber", () => ({
