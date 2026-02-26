@@ -63,6 +63,7 @@ test.describe("Location Sharing", () => {
         await expect(kmLeftValue(runnerPage)).toHaveText(/^\d+\.\d$/, {
           timeout: 30_000,
         });
+
         const kmLeftBefore = parseFloat(
           await kmLeftValue(runnerPage).textContent(),
         );
@@ -92,6 +93,17 @@ test.describe("Location Sharing", () => {
           { timeout: 5_000 },
         );
 
+        // Wait for GPX to finish loading before snapshotting — without this,
+        // cumulativeDistances may still be empty → totalDistance = 0 →
+        // kmLeftBeforeFollower = 0.0 → the post-update assertion always fails.
+        await expect(kmLeftValue(followerPage)).toHaveText(/^\d+\.\d$/, {
+          timeout: 30_000,
+        });
+
+        const kmLeftBeforeFollower = parseFloat(
+          await kmLeftValue(followerPage).textContent(),
+        );
+
         // ── 4. Runner shares their location ───────────────────────────────
         await runnerPage
           .getByRole("button", { name: "Find my current location" })
@@ -111,14 +123,27 @@ test.describe("Location Sharing", () => {
 
         // Runner: km left decreased — position is now at the trail midpoint,
         // not at the start, so roughly half the route remains.
-        await expect(kmLeftValue(runnerPage)).not.toHaveText(
+        await expect(kmLeftValue(followerPage)).not.toHaveText(
           kmLeftBefore.toFixed(1),
           { timeout: 10_000 },
         );
-        const kmLeftAfter = parseFloat(
-          await kmLeftValue(runnerPage).textContent(),
-        );
-        expect(kmLeftAfter).toBeLessThan(kmLeftBefore);
+        // Give PartyKit time to broadcast the update to the follower and for
+        // the animated counter to begin its transition before we start polling.
+        await followerPage.waitForTimeout(1_000);
+
+        // Wait for the animated counter to settle: poll until two consecutive
+        // reads return the same value, meaning the animation has finished.
+        let stable = NaN;
+        for (let i = 0; i < 200; i++) {
+          await followerPage.waitForTimeout(100);
+          const next = parseFloat(
+            await kmLeftValue(followerPage).textContent(),
+          );
+          if (next === stable) break;
+          stable = next;
+        }
+
+        expect(stable).toBeLessThan(kmLeftBeforeFollower);
       } finally {
         await runnerCtx.close();
         await followerCtx.close();
