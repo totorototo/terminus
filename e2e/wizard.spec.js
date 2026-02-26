@@ -4,7 +4,9 @@ test.describe("Wizard", () => {
   test("should show wizard on initial load", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByText("Terminus")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Terminus" })).toBeVisible({
+      timeout: 10000,
+    });
     await expect(page.getByText("What are you doing today?")).toBeVisible();
   });
 
@@ -43,9 +45,9 @@ test.describe("Wizard", () => {
       .getByRole("button", { name: "I'm following" })
       .click({ timeout: 10000 });
 
-    await expect(page.getByText("Enter Room Code")).toBeVisible();
+    await expect(page.getByText("Enter Code")).toBeVisible();
     await expect(
-      page.getByText("Ask the runner to share their 6-character code"),
+      page.getByText("Ask the runner for their room code."),
     ).toBeVisible();
   });
 
@@ -93,12 +95,12 @@ test.describe("Wizard", () => {
   test("step 2 — back button returns to step 1", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "I'm following" }).click();
-    await expect(page.getByText("Enter Room Code")).toBeVisible();
+    await expect(page.getByText("Enter Code")).toBeVisible();
 
     await page.getByRole("button", { name: /Back/ }).click();
 
     await expect(page.getByText("What are you doing today?")).toBeVisible();
-    await expect(page.getByText("Enter Room Code")).not.toBeVisible();
+    await expect(page.getByText("Enter Code")).not.toBeVisible();
   });
 
   test("step 2 — pressing Enter submits a valid code", async ({ page }) => {

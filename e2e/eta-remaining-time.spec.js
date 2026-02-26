@@ -18,9 +18,13 @@ test.describe("ETA and Remaining Time", () => {
     });
     await expect(trailDataPanel).toBeVisible({ timeout: 5000 });
 
-    await expect(page.getByText("eta")).toBeVisible();
-    await expect(page.getByText("remaining")).toBeVisible();
-    await expect(page.getByText("km left")).toBeVisible();
+    await expect(page.locator(".stat-label", { hasText: "eta" })).toBeVisible();
+    await expect(
+      page.locator(".stat-label", { hasText: "remaining" }),
+    ).toBeVisible();
+    await expect(
+      page.locator(".stat-label", { hasText: "km left" }),
+    ).toBeVisible();
   });
 
   test("before location projected - should show defaults", async ({ page }) => {
