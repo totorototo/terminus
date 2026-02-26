@@ -184,6 +184,19 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  .footer {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: 0.6875rem;
+    color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.25)};
+    letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+
   .confirm-btn {
     width: 100%;
     padding: 1rem;
