@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 
 import AutoSizer from "react-virtualized-auto-sizer";
+import { useShallow } from "zustand/react/shallow";
 
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
 import useStore from "../../store/store.js";
@@ -18,14 +19,21 @@ const Scene = lazy(() => import("../scene/Scene.jsx"));
 
 function Trailer({ className }) {
   const { isWorkerReady } = useGPXWorker();
-  const disconnectTrailerSession = useStore(
-    (state) => state.disconnectTrailerSession,
+  const { disconnectTrailerSession, setMode } = useStore(
+    useShallow((state) => ({
+      disconnectTrailerSession: state.disconnectTrailerSession,
+      setMode: state.setMode,
+    })),
   );
 
-  // Close the trailer PartySocket when the component unmounts (role switch / app close)
+  // Set trailer mode on mount so GPS slice knows to broadcast, clean up on unmount
   useEffect(() => {
-    return () => disconnectTrailerSession();
-  }, [disconnectTrailerSession]);
+    setMode("trailer");
+    return () => {
+      disconnectTrailerSession();
+      setMode(null);
+    };
+  }, [setMode, disconnectTrailerSession]);
 
   return (
     isWorkerReady && (

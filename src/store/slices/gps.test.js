@@ -215,7 +215,7 @@ describe("GPS Slice", () => {
 
       expect(mockShare).toHaveBeenCalledWith({
         title: "Follow my run",
-        text: expect.any(String),
+        url: expect.stringMatching(/\/follow\/[A-Z0-9]{6}$/),
       });
       expect(store.getState().setLiveSessionId).toHaveBeenCalled();
     });
@@ -271,7 +271,7 @@ describe("GPS Slice", () => {
 
       expect(mockShare).toHaveBeenCalledWith({
         title: "Follow my run",
-        text: expect.any(String),
+        url: expect.stringMatching(/\/follow\/[A-Z0-9]{6}$/),
       });
     });
 

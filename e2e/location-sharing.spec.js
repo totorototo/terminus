@@ -73,8 +73,11 @@ test.describe("Location Sharing", () => {
           .getByRole("button", { name: "Share my room code" })
           .click();
 
-        const roomCode = await runnerPage.evaluate(() => window.__capturedCode);
-        expect(roomCode).toMatch(/^[A-Z0-9]{6}$/);
+        const capturedUrl = await runnerPage.evaluate(
+          () => window.__capturedCode,
+        );
+        expect(capturedUrl).toMatch(/\/follow\/[A-Z0-9]{6}$/);
+        const roomCode = capturedUrl.split("/").pop();
 
         // ── 3. Follower goes through the wizard with that code ─────────────
         const followerPage = await followerCtx.newPage();
