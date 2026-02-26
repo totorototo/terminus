@@ -1,6 +1,5 @@
 import { rgba } from "polished";
 import styled from "styled-components";
-import { glassMorphism } from "../../theme/mixins";
 
 const style = (Component) => styled(Component)`
   z-index: ${(props) => props.theme.zIndex["--z-index-overlay"]};
@@ -10,8 +9,6 @@ const style = (Component) => styled(Component)`
   justify-content: center;
   pointer-events: none;
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0);
-  ${glassMorphism}
   overflow: hidden;
 
   .section {
@@ -47,50 +44,24 @@ const style = (Component) => styled(Component)`
 
   /* Arrow icon in circle */
   .arrow-container {
+    position: relative;
     width: 3rem;
+    height: 3rem;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
 
-    svg {
-      width: 2rem;
-      height: 2rem;
-      stroke: ${(props) => props.theme.colors.dark["--color-primary"]};
-      stroke-width: 2;
-      color: ${(props) => props.theme.colors.dark["--color-primary"]};
-
-      /* Circle background behind arrow */
-      &::before {
-        content: "";
-        position: absolute;
-        width: 3.125rem;
-        height: 3.125rem;
-        border-radius: ${(props) =>
-          props.theme.borderRadius["--border-radius-full"]};
-        background: ${(props) =>
-          rgba(props.theme.colors.dark["--color-primary"], 0.1)};
-        border: 0.09375rem solid
-          ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.28)};
-        z-index: -1;
-      }
-    }
-
-    /* Create circle effect another way */
-    // position: relative;
-
     &::before {
       content: "";
       position: absolute;
-      width: 3.125rem;
-      height: 3.125rem;
+      inset: 0;
       border-radius: ${(props) =>
         props.theme.borderRadius["--border-radius-full"]};
       background: ${(props) =>
         rgba(props.theme.colors.dark["--color-primary"], 0.1)};
-      border: 0.09375rem solid
+      border: 1px solid
         ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.28)};
-      z-index: -1;
     }
   }
 
@@ -134,7 +105,6 @@ const style = (Component) => styled(Component)`
     padding: 0 1rem;
     min-width: 0;
     gap: 0.1rem;
-    transform: rotate(90deg);
   }
 
   .waypoint {
@@ -176,18 +146,7 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  .pace-row {
-    .pace-value {
-      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-      font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
-      font-weight: ${(props) =>
-        props.theme.font.weights["--font-weight-medium"]};
-      color: ${(props) => props.theme.colors.dark["--color-primary"]};
-      line-height: 1;
-    }
-  }
-
-  /* Elevation indicators - moved inside section */
+  /* Elevation indicators */
   .elevation-section {
     display: flex;
     align-items: center;
@@ -214,7 +173,7 @@ const style = (Component) => styled(Component)`
     }
 
     &.loss {
-      color: ${(props) => props.theme.colors.dark["--color-primary"]};
+      color: ${(props) => props.theme.colors.dark["--color-accent"]};
     }
   }
 

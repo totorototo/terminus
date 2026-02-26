@@ -145,13 +145,6 @@ function Navigation({ className }) {
         const cutOffTime = format(endDate, "HH:mm");
         const duration = section.endTime - section.startTime;
 
-        const durationFromStart = section.endTime - sections[0].startTime;
-        const distranceFromStart = cumulativeDistances
-          ? cumulativeDistances[section.endIndex] || 0
-          : 0;
-        const averagePaceFromStart =
-          (distranceFromStart / durationFromStart) * 3.6; // km/h
-
         const formattedDuration = formatDuration(
           intervalToDuration({ start: 0, end: duration * 1000 }),
           {
@@ -165,11 +158,13 @@ function Navigation({ className }) {
             className={`section${isCurrent ? " current" : ""}`}
             style={animStyle}
           >
-            <ArrowIcon
-              size={50}
-              strokeWidth={2}
-              stroke={theme.colors.dark["--color-text"]}
-            />
+            <div className="arrow-container">
+              <ArrowIcon
+                size={32}
+                strokeWidth={2}
+                stroke={theme.colors.dark["--color-primary"]}
+              />
+            </div>
 
             {/* Distance section - large number */}
             <div className="distance-section">
