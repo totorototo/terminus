@@ -141,7 +141,7 @@ const style = (Component) => styled(Component)`
       font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
       font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
       font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-      color: ${(props) => props.theme.colors.dark["--color-secondary"]};
+      color: ${(props) => props.theme.colors.dark["--color-accent"]};
       line-height: 1;
     }
   }
@@ -173,7 +173,7 @@ const style = (Component) => styled(Component)`
     }
 
     &.loss {
-      color: ${(props) => props.theme.colors.dark["--color-accent"]};
+      color: ${(props) => props.theme.colors.dark["--color-secondary"]};
     }
   }
 
