@@ -1,5 +1,7 @@
 import { memo, useEffect, useMemo, useState } from "react";
 
+import { useTheme } from "styled-components";
+
 import { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./LocationFreshness.style.js";
@@ -14,16 +16,11 @@ function formatAge(ageMs) {
   return `Updated ${hours}h ${remainingMinutes}m ago`;
 }
 
-function getFreshnessColor(ageMs) {
-  const minutes = ageMs / 1000 / 60;
-  if (minutes > 15) return "#E1351D";
-  if (minutes > 5) return "#EA8827";
-  return "#F4F7F5";
-}
-
 const LocationFreshness = memo(function LocationFreshness({ className }) {
   const projectedLocation = useProjectedLocation();
   const [now, setNow] = useState(Date.now());
+  const theme = useTheme();
+  const colors = theme.colors.dark;
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
@@ -35,28 +32,41 @@ const LocationFreshness = memo(function LocationFreshness({ className }) {
     const elev = projectedLocation?.coords?.[2];
 
     if (!ts) {
-      return { label: "No data", color: "#F4F7F5", elevation: null };
+      return {
+        label: "No data",
+        color: colors["--color-text"],
+        elevation: null,
+      };
     }
 
     const ageMs = Math.max(0, now - ts);
+    const minutes = ageMs / 1000 / 60;
+    const freshnessColor =
+      minutes > 15
+        ? colors["--color-accent"]
+        : minutes > 5
+          ? colors["--color-primary"]
+          : colors["--color-text"];
+
     return {
       label: formatAge(ageMs),
-      color: getFreshnessColor(ageMs),
+      color: freshnessColor,
       elevation: elev != null ? `${Math.round(elev)} m` : null,
     };
-  }, [projectedLocation, now]);
+  }, [projectedLocation, now, colors]);
 
   return (
     <div className={className}>
-      <div className="freshness-col">
-        <span className="freshness-dot" style={{ background: color }} />
-        <span className="freshness-value" data-testid="freshness-label">
-          {label}
-        </span>
+      <div className="freshness-left">
+        <div className="freshness-status">
+          <span className="freshness-dot" style={{ background: color }} />
+          <span className="freshness-value" data-testid="freshness-label">
+            {label}
+          </span>
+        </div>
         <span className="freshness-sublabel">last position</span>
       </div>
-      <div className="freshness-divider" />
-      <div className="freshness-col freshness-col--right">
+      <div className="freshness-right">
         <span className="freshness-value" data-testid="freshness-elevation">
           {elevation ?? "--"}
         </span>
