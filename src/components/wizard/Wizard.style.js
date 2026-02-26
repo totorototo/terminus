@@ -1,7 +1,12 @@
 import { rgba } from "polished";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 
 import { glassMorphism } from "../../theme/mixins";
+
+const stepEnter = keyframes`
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
 
 const style = (Component) => styled(Component)`
   position: fixed;
@@ -15,7 +20,6 @@ const style = (Component) => styled(Component)`
   .card {
     position: relative;
     width: min(380px, 90vw);
-    height: 360px;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
     border: 1px solid
       ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.2)};
@@ -42,14 +46,12 @@ const style = (Component) => styled(Component)`
   }
 
   .step {
-    position: absolute;
-    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.875rem;
     padding: 2rem;
-    z-index: 1;
+    animation: ${stepEnter} 0.2s ease both;
   }
 
   .title {
