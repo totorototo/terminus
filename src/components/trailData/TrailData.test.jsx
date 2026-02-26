@@ -49,6 +49,11 @@ vi.mock("./TrailProgression/TrailProgression.jsx", () => ({
   default: () => <div data-testid="trail-progression">TrailProgression</div>,
 }));
 
+// Mock SectionETA component
+vi.mock("./SectionETA/SectionETA.jsx", () => ({
+  default: () => <div data-testid="section-eta">SectionETA</div>,
+}));
+
 describe("TrailData Component", () => {
   const mockStats = {
     distance: 10000,
