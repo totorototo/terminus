@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 
 import AutoSizer from "react-virtualized-auto-sizer";
+import { useParams } from "wouter";
 import { useShallow } from "zustand/react/shallow";
 
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
@@ -18,25 +19,22 @@ const Scene = lazy(() => import("../scene/Scene.jsx"));
 function Follower({ className }) {
   useGPXWorker();
 
-  const {
-    connectToFollowerSession,
-    disconnectFollowerSession,
-    followerRoomId,
-  } = useStore(
+  const { roomId } = useParams();
+
+  const { connectToFollowerSession, disconnectFollowerSession } = useStore(
     useShallow((state) => ({
       connectToFollowerSession: state.connectToFollowerSession,
       disconnectFollowerSession: state.disconnectFollowerSession,
-      followerRoomId: state.app.followerRoomId,
     })),
   );
 
   useEffect(() => {
-    if (!followerRoomId) return;
+    if (!roomId) return;
 
-    connectToFollowerSession(followerRoomId);
+    connectToFollowerSession(roomId);
 
     return () => disconnectFollowerSession();
-  }, [followerRoomId, connectToFollowerSession, disconnectFollowerSession]);
+  }, [roomId, connectToFollowerSession, disconnectFollowerSession]);
 
   return (
     <div className={className}>

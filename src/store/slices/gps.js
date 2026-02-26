@@ -224,9 +224,11 @@ export const createGPSSlice = (set, get) => {
         get().setLiveSessionId(sessionId);
       }
 
+      const url = `${window.location.origin}/follow/${sessionId}`;
+
       if (navigator.share) {
         try {
-          await navigator.share({ title: "Follow my run", text: sessionId });
+          await navigator.share({ title: "Follow my run", url });
         } catch (error) {
           if (error.name !== "AbortError") {
             console.error("Error sharing room code:", error);
@@ -234,7 +236,7 @@ export const createGPSSlice = (set, get) => {
         }
       } else {
         try {
-          await navigator.clipboard.writeText(sessionId);
+          await navigator.clipboard.writeText(url);
         } catch (error) {
           console.error("Error copying room code to clipboard:", error);
         }

@@ -1,19 +1,17 @@
 import { useState } from "react";
 
 import { Activity, ArrowRight, Eye } from "@styled-icons/feather";
-
-import useStore from "../../store/store.js";
+import { useLocation } from "wouter";
 
 import style from "./Wizard.style.js";
 
 function Wizard({ className }) {
   const [step, setStep] = useState(1);
   const [code, setCode] = useState("");
-  const setMode = useStore((state) => state.setMode);
-  const setFollowerRoomId = useStore((state) => state.setFollowerRoomId);
+  const [, navigate] = useLocation();
 
   const handleRunner = () => {
-    setMode("trailer");
+    navigate("/run");
   };
 
   const handleFollowerNext = () => {
@@ -23,8 +21,7 @@ function Wizard({ className }) {
   const handleConfirm = () => {
     const trimmed = code.trim().toUpperCase();
     if (trimmed.length < 6) return;
-    setFollowerRoomId(trimmed);
-    setMode("follower");
+    navigate(`/follow/${trimmed}`);
   };
 
   const handleKeyDown = (e) => {
