@@ -50,12 +50,16 @@ const LocationFreshness = memo(function LocationFreshness({ className }) {
     <div className={className}>
       <div className="freshness-col">
         <span className="freshness-dot" style={{ background: color }} />
-        <span className="freshness-value">{label}</span>
+        <span className="freshness-value" data-testid="freshness-label">
+          {label}
+        </span>
         <span className="freshness-sublabel">last position</span>
       </div>
       <div className="freshness-divider" />
       <div className="freshness-col freshness-col--right">
-        <span className="freshness-value">{elevation ?? "--"}</span>
+        <span className="freshness-value" data-testid="freshness-elevation">
+          {elevation ?? "--"}
+        </span>
         <span className="freshness-sublabel">elevation</span>
       </div>
     </div>

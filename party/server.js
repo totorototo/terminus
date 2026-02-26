@@ -3,6 +3,11 @@ export default class Server {
     this.room = room;
   }
 
+  // HTTP handler — used as a health-check endpoint by the Playwright test runner.
+  onRequest() {
+    return new Response("ok");
+  }
+
   onMessage(message, sender) {
     if (typeof message !== "string" || message.length > 512) return;
 
