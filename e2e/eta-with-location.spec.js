@@ -179,7 +179,7 @@ test.describe("ETA and Remaining Time - Integration & Calculation Verification",
     await expect(canvas).toBeVisible({ timeout: 15000 });
 
     await expect(page.getByText("km left")).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("eta")).toBeVisible();
+    await expect(page.getByText("eta", { exact: true })).toBeVisible();
     await expect(page.getByText("remaining")).toBeVisible();
   });
 
