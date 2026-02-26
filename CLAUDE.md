@@ -54,3 +54,7 @@ Single Zig test: `cd zig && zig test <file>.zig`
 - `zig/` — GPX parsing, route calculations, peak detection, simplification, Haversine
 
 See `src/CLAUDE.md` for frontend conventions and `zig/CLAUDE.md` for Zig/WASM conventions.
+
+## Git Workflow
+
+- Always run `npm run test:all` before committing or pushing; fix failures before proceeding

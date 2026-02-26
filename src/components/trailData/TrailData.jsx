@@ -5,6 +5,7 @@ import { format } from "date-fns";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import ElevationProfile from "./ElevationProfile/ElevationProfile.jsx";
+import SectionETA from "./SectionETA/SectionETA.jsx";
 import TrailActions from "./TrailActions/TrailActions.jsx";
 import TrailProgression from "./TrailProgression/TrailProgression.jsx";
 
@@ -151,6 +152,9 @@ const TrailData = memo(function TrailData({ className, showElevationProfile }) {
         )}
         <div className="component-children">
           <TrailProgression />
+        </div>
+        <div className="component-children">
+          <SectionETA />
         </div>
         <div className="component-children">
           <TrailActions />
