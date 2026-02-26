@@ -8,7 +8,14 @@ export default class Server {
     return new Response("ok");
   }
 
-  onMessage(message, sender) {
+  async onConnect(conn) {
+    const last = await this.room.storage.get("lastLocation");
+    if (last) {
+      conn.send(last);
+    }
+  }
+
+  async onMessage(message, sender) {
     if (typeof message !== "string" || message.length > 512) return;
 
     let parsed;
@@ -20,6 +27,7 @@ export default class Server {
 
     if (parsed.type !== "location") return;
 
+    await this.room.storage.put("lastLocation", message);
     this.room.broadcast(message, [sender.id]);
   }
 }
