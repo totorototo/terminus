@@ -52,14 +52,13 @@ test.describe("ETA and Remaining Time", () => {
     const canvas = page.locator("canvas").first();
     await expect(canvas).toBeVisible({ timeout: 15000 });
 
-    await page.waitForTimeout(2000);
+    const kmLeftLocator = page
+      .locator(".stat-item", { has: page.getByText("km left") })
+      .locator(".stat-value");
 
-    const kmLeftValue = page.locator(".stat-item", {
-      has: page.getByText("km left"),
-    });
-    const kmLeftText = await kmLeftValue.locator(".stat-value").textContent();
+    await expect(kmLeftLocator).toHaveText(/^\d+\.\d+$/, { timeout: 30_000 });
 
-    expect(kmLeftText).toMatch(/^\d+\.\d+$/);
+    const kmLeftText = await kmLeftLocator.textContent();
     expect(parseFloat(kmLeftText)).toBeGreaterThan(0);
   });
 

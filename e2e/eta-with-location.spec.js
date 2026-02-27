@@ -34,16 +34,13 @@ test.describe("ETA and Remaining Time - Integration & Calculation Verification",
     const canvas = page.locator("canvas").first();
     await expect(canvas).toBeVisible({ timeout: 15000 });
 
-    await page.waitForTimeout(2000);
+    const kmLeftLocator = page
+      .locator(".stat-item", { has: page.getByText("km left") })
+      .locator(".stat-value");
 
-    const kmLeftValue = page.locator(".stat-item", {
-      has: page.getByText("km left"),
-    });
-    const kmLeftText = await kmLeftValue.locator(".stat-value").textContent();
+    await expect(kmLeftLocator).toHaveText(/^\d+\.\d+$/, { timeout: 30_000 });
 
-    expect(kmLeftText).toMatch(/^\d+\.\d+$/);
-
-    const kmLeft = parseFloat(kmLeftText);
+    const kmLeft = parseFloat(await kmLeftLocator.textContent());
     expect(kmLeft).toBeGreaterThan(0);
     expect(kmLeft).toBeLessThan(300);
   });
@@ -126,7 +123,11 @@ test.describe("ETA and Remaining Time - Integration & Calculation Verification",
     const canvas = page.locator("canvas").first();
     await expect(canvas).toBeVisible({ timeout: 15000 });
 
-    await page.waitForTimeout(2000);
+    // Wait for GPX to finish processing before snapshotting
+    const kmLeftLocator = page
+      .locator(".stat-item", { has: page.getByText("km left") })
+      .locator(".stat-value");
+    await expect(kmLeftLocator).toHaveText(/^\d+\.\d+$/, { timeout: 30_000 });
 
     const eta = await page
       .locator(".stat-item", { has: page.getByText("eta") })
@@ -136,10 +137,7 @@ test.describe("ETA and Remaining Time - Integration & Calculation Verification",
       .locator(".stat-item", { has: page.getByText("remaining") })
       .locator(".stat-value")
       .textContent();
-    const kmLeft = await page
-      .locator(".stat-item", { has: page.getByText("km left") })
-      .locator(".stat-value")
-      .textContent();
+    const kmLeft = await kmLeftLocator.textContent();
 
     expect(eta).toMatch(/^\d{2}:\d{2}$|^--:--$/);
     expect(remaining).toMatch(/^--$|[dhms]/);
