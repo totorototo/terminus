@@ -58,8 +58,11 @@ export default defineConfig({
       }),
     process.env.ANALYZE && visualizer({ open: false }),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.js",
       registerType: "autoUpdate",
-      workbox: {
+      injectManifest: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
       },
       includeAssets: ["favicon.ico", "logo150.png", "logo512.png"],

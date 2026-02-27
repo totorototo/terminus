@@ -1,6 +1,11 @@
 import PartySocket from "partysocket";
 
 import createRingBuffer from "../../helpers/createRingBuffer";
+import {
+  notifyLocationUpdate,
+  requestNotificationPermission,
+  subscribeToPush,
+} from "../../helpers/notify";
 
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";
 
@@ -71,6 +76,7 @@ export const createGPSSlice = (set, get) => {
         index: null,
       },
       savedLocations: [],
+      notificationPermission: null,
     },
 
     // Initialize/sync buffer from persisted state (called after rehydration)
@@ -256,6 +262,20 @@ export const createGPSSlice = (set, get) => {
         room: roomId,
       });
 
+      followerSocket.addEventListener("open", async () => {
+        if (Notification.permission === "granted") {
+          const subscription = await subscribeToPush();
+          if (subscription && followerSocket?.readyState === WebSocket.OPEN) {
+            followerSocket.send(
+              JSON.stringify({
+                type: "push_subscribe",
+                subscription: subscription.toJSON(),
+              }),
+            );
+          }
+        }
+      });
+
       followerSocket.addEventListener("message", (event) => {
         let msg;
         try {
@@ -269,8 +289,35 @@ export const createGPSSlice = (set, get) => {
             coords: msg.coords,
             index: msg.index,
           });
+          notifyLocationUpdate(msg);
         }
       });
+    },
+
+    enableNotifications: async () => {
+      const permission = await requestNotificationPermission();
+      set(
+        (state) => ({
+          gps: {
+            ...state.gps,
+            notificationPermission: permission,
+          },
+        }),
+        undefined,
+        "gps/enableNotifications",
+      );
+      if (permission === "granted") {
+        const subscription = await subscribeToPush();
+        if (subscription && followerSocket?.readyState === WebSocket.OPEN) {
+          followerSocket.send(
+            JSON.stringify({
+              type: "push_subscribe",
+              subscription: subscription.toJSON(),
+            }),
+          );
+        }
+      }
+      return permission;
     },
 
     disconnectFollowerSession: () => {
