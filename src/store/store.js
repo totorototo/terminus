@@ -45,6 +45,17 @@ const useStore = create(
           if (state?.initLocationBuffer) {
             state.initLocationBuffer();
           }
+          // Re-sync notificationPermission lost by shallow merge during rehydration
+          if (
+            state?.gps &&
+            typeof window !== "undefined" &&
+            "Notification" in window
+          ) {
+            state.gps.notificationPermission =
+              Notification.permission === "default"
+                ? null
+                : Notification.permission;
+          }
         },
       },
     ),
