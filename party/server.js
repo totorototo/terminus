@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { sendNotification } from "./webpush.js";
 
 const PUSH_RATE_LIMIT_MS = 30_000;
 
@@ -63,8 +63,6 @@ export default class Server {
     if (Date.now() - lastPushAt < PUSH_RATE_LIMIT_MS) return;
     await this.room.storage.put("lastPushAt", Date.now());
 
-    webpush.setVapidDetails(subject, publicKey, privateKey);
-
     const subs = (await this.room.storage.get("pushSubs")) ?? {};
     const payload = JSON.stringify({
       title: "Runner update",
@@ -77,7 +75,11 @@ export default class Server {
     await Promise.allSettled(
       Object.entries(subs).map(async ([endpoint, sub]) => {
         try {
-          await webpush.sendNotification(sub, payload);
+          await sendNotification(sub, payload, {
+            publicKey,
+            privateKey,
+            subject,
+          });
         } catch (err) {
           // 410 Gone or 404 = subscription no longer valid, clean it up
           if (err.statusCode === 410 || err.statusCode === 404) {
