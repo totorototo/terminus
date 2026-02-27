@@ -32,6 +32,7 @@ const useStore = create(
             liveSessionId: state.app.liveSessionId,
             mode: state.app.mode,
             followerRoomId: state.app.followerRoomId,
+            currentRoute: state.app.currentRoute,
           },
           gps: {
             location: state.gps.location,

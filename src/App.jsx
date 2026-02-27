@@ -4,9 +4,12 @@ import Follower from "./components/follower/Follower.jsx";
 import Trailer from "./components/trailer/Trailer.jsx";
 import Wizard from "./components/wizard/Wizard.jsx";
 
+import { useRouteSync } from "./hooks/useRouteSync.js";
 import style from "./App.style.js";
 
 function App({ className }) {
+  useRouteSync();
+
   return (
     <div className={className}>
       <Switch>
