@@ -52,7 +52,7 @@ function Follower({ className }) {
         <TopSheetPanel>
           <LocationFreshness />
         </TopSheetPanel>
-        {notificationPermission === null && (
+        {notificationPermission == null && (
           <button className="notify-btn" onClick={enableNotifications}>
             Enable notifications
           </button>
