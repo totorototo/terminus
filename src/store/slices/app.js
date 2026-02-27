@@ -9,6 +9,7 @@ export const createAppSlice = (set, get) => {
       liveSessionId: null,
       mode: null,
       followerRoomId: null,
+      currentRoute: "/",
     },
 
     toggleTrackingMode: () =>
@@ -78,6 +79,13 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, followerRoomId: id } }),
         undefined,
         "app/setFollowerRoomId",
+      ),
+
+    setCurrentRoute: (route) =>
+      set(
+        (state) => ({ app: { ...state.app, currentRoute: route } }),
+        undefined,
+        "app/setCurrentRoute",
       ),
   };
 };
