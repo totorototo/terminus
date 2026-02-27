@@ -41,6 +41,7 @@
     "styled-icons": "10.47.1",
     "three": "0.181.2",
     "unenv": "^2.0.0-rc.0",
+    "web-push": "^3.6.7",
     "wouter": "^3.9.0",
     "zustand": "5.0.9"
   },
