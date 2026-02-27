@@ -76,7 +76,12 @@ export const createGPSSlice = (set, get) => {
         index: null,
       },
       savedLocations: [],
-      notificationPermission: null,
+      notificationPermission:
+        typeof window !== "undefined" && "Notification" in window
+          ? Notification.permission === "default"
+            ? null
+            : Notification.permission
+          : null,
     },
 
     // Initialize/sync buffer from persisted state (called after rehydration)

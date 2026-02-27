@@ -51,18 +51,12 @@ function Follower({ className }) {
         </AutoSizer>
         <TopSheetPanel>
           <LocationFreshness />
-          <button
-            onClick={enableNotifications}
-            disabled={
-              notificationPermission === "granted" ||
-              notificationPermission === "denied"
-            }
-          >
-            {notificationPermission === "granted"
-              ? "Notifications enabled"
-              : "Enable notifications"}
-          </button>
         </TopSheetPanel>
+        {notificationPermission === null && (
+          <button className="notify-btn" onClick={enableNotifications}>
+            Enable notifications
+          </button>
+        )}
         <BottomSheetPanel>
           <TrailData showElevationProfile />
         </BottomSheetPanel>
