@@ -91,6 +91,10 @@ async function processGPXFile(gpxFileBytes, requestId) {
           sectionData.startTime !== null ? Number(sectionData.startTime) : null,
         endTime:
           sectionData.endTime !== null ? Number(sectionData.endTime) : null,
+        maxCompletionTime:
+          sectionData.maxCompletionTime !== null
+            ? Number(sectionData.maxCompletionTime)
+            : null,
       });
     }
   }

@@ -16,6 +16,8 @@ import style from "./Follower.style";
 
 const Scene = lazy(() => import("../scene/Scene.jsx"));
 
+const PUSH_NOTIFICATIONS_ENABLED = false;
+
 function Follower({ className }) {
   useGPXWorker();
 
@@ -52,7 +54,7 @@ function Follower({ className }) {
         <TopSheetPanel>
           <LocationFreshness />
         </TopSheetPanel>
-        {notificationPermission == null && (
+        {PUSH_NOTIFICATIONS_ENABLED && notificationPermission == null && (
           <button className="notify-btn" onClick={enableNotifications}>
             Enable notifications
           </button>
