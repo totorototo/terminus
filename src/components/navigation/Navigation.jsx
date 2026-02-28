@@ -11,6 +11,7 @@ import { format, formatDuration, intervalToDuration } from "date-fns";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
+import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../constants.js";
 import useStore from "../../store/store.js";
 import { useProjectedLocation } from "../../store/store.js";
 
@@ -143,10 +144,11 @@ function Navigation({ className }) {
         const endDate = new Date(section.endTime * 1000);
         const cutOffDay = format(endDate, "EEE");
         const cutOffTime = format(endDate, "HH:mm");
-        const duration = section.endTime - section.startTime;
-
         const formattedDuration = formatDuration(
-          intervalToDuration({ start: 0, end: duration * 1000 }),
+          intervalToDuration({
+            start: 0,
+            end: section.maxCompletionTime * 1000,
+          }),
           {
             format: ["hours", "minutes"],
             locale: customLocale,
@@ -217,6 +219,18 @@ function Navigation({ className }) {
               <div className="duration-row">
                 <span className="duration-value">{formattedDuration}</span>
               </div>
+              {section.difficulty > 0 && (
+                <div className="difficulty-row">
+                  <span
+                    className="difficulty-value"
+                    style={{
+                      color: DIFFICULTY_COLORS[section.difficulty - 1],
+                    }}
+                  >
+                    {DIFFICULTY_LABELS[section.difficulty - 1]}
+                  </span>
+                </div>
+              )}
             </div>
           </animated.div>
         );

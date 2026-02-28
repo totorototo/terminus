@@ -146,6 +146,17 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  .difficulty-row {
+    .difficulty-value {
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+  }
+
   /* Elevation indicators */
   .elevation-section {
     display: flex;

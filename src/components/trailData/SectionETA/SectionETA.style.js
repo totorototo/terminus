@@ -107,11 +107,26 @@ const style = (Component) => styled(Component)`
     max-width: 150px;
   }
 
+  .section-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    justify-content: center;
+  }
+
   .section-km {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.38)};
+  }
+
+  .section-difficulty {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
   }
 
   .section-eta {

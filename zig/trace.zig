@@ -295,6 +295,16 @@ pub const Trace = struct {
 
             const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
 
+            // Naismith's rule: time_h = dist_km/5 + gain_m/600
+            // Uses total elevation gain (not net), so it correctly rates sections
+            // with high cumulative climbing even when gain and loss cancel out.
+            const dist_km = dist / 1000.0;
+            const flat_time = dist_km / 5.0;
+            const naismith_time = flat_time + elevation_gain / 600.0;
+            const estimated_duration = naismith_time * 3600.0;
+            const effort_ratio = if (flat_time > 0) naismith_time / flat_time else 1.0;
+            const difficulty: u8 = if (effort_ratio < 1.2) 1 else if (effort_ratio < 1.5) 2 else if (effort_ratio < 2.0) 3 else if (effort_ratio < 2.7) 4 else 5;
+
             // Get points slice for this section (inclusive of start and end)
             const point_count = end_index - start_index + 1;
             const section_points = try allocator.alloc([3]f64, point_count);
@@ -320,6 +330,12 @@ pub const Trace = struct {
                 .startTime = start_wpt.time,
                 .endTime = end_wpt.time,
                 .bearing = bearing,
+                .difficulty = difficulty,
+                .estimatedDuration = estimated_duration,
+                .maxCompletionTime = if (start_wpt.time != null and end_wpt.time != null)
+                    end_wpt.time.? - start_wpt.time.?
+                else
+                    null,
             };
         }
 
@@ -1281,4 +1297,71 @@ test "computeSectionsFromWaypoints: slope calculations" {
     try expect(section.avgSlope > 0.0);
     // Max slope should be reasonable
     try expect(section.maxSlope > 0.0);
+}
+
+test "difficulty: flat terrain is Easy (1)" {
+    const allocator = std.testing.allocator;
+
+    // Nearly flat section — minimal elevation change
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 100.1 },
+        [3]f64{ 0.002, 0.0, 100.2 },
+        [3]f64{ 0.003, 0.0, 100.3 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.0, .lon = 0.0, .name = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
+
+    try expectEqual(@as(usize, 1), sections.len);
+    const section = sections[0];
+    try expectEqual(@as(u8, 1), section.difficulty);
+    try expect(section.estimatedDuration > 0.0);
+}
+
+test "difficulty: steep terrain is Hard or above" {
+    const allocator = std.testing.allocator;
+
+    // Very steep uphill — ~25% average slope
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 0.0 },
+        [3]f64{ 0.001, 0.001, 50.0 },
+        [3]f64{ 0.002, 0.002, 100.0 },
+        [3]f64{ 0.003, 0.003, 150.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.0, .lon = 0.0, .name = "Bottom", .time = null },
+        .{ .lat = 0.003, .lon = 0.003, .name = "Top", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
+
+    try expectEqual(@as(usize, 1), sections.len);
+    const section = sections[0];
+    // Steep terrain should be at least Hard (3)
+    try expect(section.difficulty >= 3);
+    try expect(section.estimatedDuration > 0.0);
 }
