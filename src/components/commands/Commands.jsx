@@ -2,6 +2,7 @@ import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import { Map } from "@styled-icons/feather/Map";
 import { MapPin } from "@styled-icons/feather/MapPin";
 import { Share2 } from "@styled-icons/feather/Share2";
+import { Video } from "@styled-icons/feather/Video";
 import { useShallow } from "zustand/react/shallow";
 
 import useStore from "../../store/store";
@@ -13,17 +14,21 @@ function Commands({ className }) {
   const {
     profileMode,
     displaySlopes,
+    trackingMode,
     liveSessionId,
     toggleProfileMode,
     toggleSlopesMode,
+    toggleTrackingMode,
     shareLocation,
   } = useStore(
     useShallow((state) => ({
       profileMode: state.app.profileMode,
       displaySlopes: state.app.displaySlopes,
+      trackingMode: state.app.trackingMode,
       liveSessionId: state.app.liveSessionId,
       toggleProfileMode: state.toggleProfileMode,
       toggleSlopesMode: state.toggleSlopesMode,
+      toggleTrackingMode: state.toggleTrackingMode,
       shareLocation: state.shareLocation,
     })),
   );
@@ -75,6 +80,14 @@ function Commands({ className }) {
         aria-pressed={profileMode}
       >
         <Map size={24} />
+      </button>
+      <button
+        className={trackingMode ? "on" : "off"}
+        onClick={toggleTrackingMode}
+        aria-label="Toggle cinematic flythrough"
+        aria-pressed={trackingMode}
+      >
+        <Video size={24} />
       </button>
       <button
         className={"off"}

@@ -8,6 +8,7 @@ import useStore from "../../store/store.js";
 import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 import CameraController from "../cameraController/CameraController.jsx";
 import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
+import FlythroughControls from "../flythroughControls/FlythroughControls.jsx";
 import { Helicopter } from "../helicopter/Helicopter.jsx";
 import Marker from "../marker/Marker.jsx";
 import Peaks from "../peaks/Peaks.jsx";
@@ -101,6 +102,7 @@ function Scene({ width, height, className }) {
 
         <CameraController modelRef={modelRef} />
       </Canvas>
+      {trackingMode && <FlythroughControls />}
     </Suspense>
   );
 }

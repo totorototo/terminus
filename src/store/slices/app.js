@@ -10,6 +10,8 @@ export const createAppSlice = (set, get) => {
       mode: null,
       followerRoomId: null,
       currentRoute: "/",
+      flythroughIsPlaying: true,
+      flythroughSpeed: 1,
     },
 
     toggleTrackingMode: () =>
@@ -86,6 +88,20 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, currentRoute: route } }),
         undefined,
         "app/setCurrentRoute",
+      ),
+
+    setFlythroughIsPlaying: (v) =>
+      set(
+        (state) => ({ app: { ...state.app, flythroughIsPlaying: v } }),
+        undefined,
+        "app/setFlythroughIsPlaying",
+      ),
+
+    setFlythroughSpeed: (s) =>
+      set(
+        (state) => ({ app: { ...state.app, flythroughSpeed: s } }),
+        undefined,
+        "app/setFlythroughSpeed",
       ),
   };
 };

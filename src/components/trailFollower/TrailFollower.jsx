@@ -38,6 +38,10 @@ export default function TrailFollower({
   );
   const setStartingDate = useStore((state) => state.setStartingDate);
   const coordinates = useStore((state) => state.gpx.data);
+  const flythroughIsPlaying = useStore(
+    (state) => state.app.flythroughIsPlaying,
+  );
+  const flythroughSpeed = useStore((state) => state.app.flythroughSpeed);
 
   const { nodes, animations } = useGLTF("/cartoon_plane.glb");
   const { actions } = useAnimations(animations, modelRef);
@@ -68,8 +72,9 @@ export default function TrailFollower({
   useFrame((state, delta) => {
     if (!scaledPath || scaledPath.length === 0 || !modelRef.current) return;
 
-    // Increment progress to move along the trail
-    progress.current += speed * delta;
+    // Increment progress to move along the trail (gated by play/pause, scaled by speed)
+    if (!flythroughIsPlaying) return;
+    progress.current += speed * flythroughSpeed * delta;
 
     // Loop back to start when reaching the end
     if (progress.current >= 1) {
