@@ -11,8 +11,8 @@ const style = (Component) => styled(Component)`
   align-items: center;
   justify-content: flex-start;
 
-  padding-top: 16rem;
-  padding-bottom: 16rem;
+  padding-top: clamp(4rem, 22vh, 16rem);
+  padding-bottom: clamp(4rem, 22vh, 16rem);
   margin-right: 1rem;
   gap: 1rem;
 
