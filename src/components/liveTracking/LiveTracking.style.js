@@ -9,7 +9,7 @@ const style = (Component) => styled(Component)`
 
   pointer-events: none;
 
-  color: ${({ theme }) => theme.colors.dark["--color-text"]};
+  color: ${({ theme }) => theme.colors[theme.currentVariant]["--color-text"]};
   opacity: 0.8;
   line-height: 1.2;
   font-size: ${({ theme }) => theme.font.sizes["--font-size-small"]};
@@ -35,9 +35,11 @@ const style = (Component) => styled(Component)`
   }
 
   .distance svg {
-    color: ${({ theme }) => theme.colors.dark["--color-primary"]};
+    color: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-primary"]};
     stroke-width: 1.5px;
-    fill: ${({ theme }) => theme.colors.dark["--color-primary"]};
+    fill: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-primary"]};
   }
 
   // // todo: draw line  below the icon and text

@@ -85,7 +85,7 @@ function Scene({ width, height, className }) {
           <Marker
             position={[0, 1.5, 0]}
             fontSize={0.15}
-            color={theme.colors.dark["--color-text"]}
+            color={theme.colors[theme.currentVariant]["--color-text"]}
           >
             {name}
           </Marker>

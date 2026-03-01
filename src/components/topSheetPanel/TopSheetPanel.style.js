@@ -4,11 +4,12 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   opacity: 0.8;
   background: ${({ theme }) =>
-    lighten(0.1, theme.colors.dark["--color-background"])};
+    lighten(0.1, theme.colors[theme.currentVariant]["--color-background"])};
   overflow: hidden;
   border-radius: ${({ theme }) => theme.borderRadius["--border-radius-lg"]};
   border: 1px solid
-    ${({ theme }) => rgba(theme.colors.dark["--color-text"], 0.12)};
+    ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.12)};
   cursor: ns-resize;
   user-select: none;
   touch-action: none;
@@ -20,7 +21,8 @@ const style = (Component) => styled(Component)`
   transform: translateX(-50%);
   margin-left: calc(env(safe-area-inset-left) - env(safe-area-inset-right));
   box-shadow: 0 4px 8px
-    ${({ theme }) => rgba(theme.colors.dark["--color-background"], 0.1)};
+    ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-background"], 0.1)};
   z-index: ${({ theme }) => theme.zIndex["--z-index-modal"]};
   container-type: size;
 
@@ -33,7 +35,8 @@ const style = (Component) => styled(Component)`
     transform: translateX(-50%);
     width: 40px;
     height: 4px;
-    background-color: ${({ theme }) => theme.colors.dark["--color-text"]};
+    background-color: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-text"]};
     opacity: 0.3;
     border-radius: ${({ theme }) => theme.borderRadius["--border-radius-xs"]};
     z-index: 1;

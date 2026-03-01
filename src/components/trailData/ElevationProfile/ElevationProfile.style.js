@@ -28,7 +28,8 @@ const style = (Component) => styled(Component)`
     position: absolute;
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
-    color: ${({ theme }) => rgba(theme.colors.dark["--color-text"], 0.35)};
+    color: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.35)};
     text-transform: uppercase;
     letter-spacing: 0.04em;
     line-height: 1;
@@ -61,7 +62,8 @@ const style = (Component) => styled(Component)`
     position: absolute;
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
-    color: ${({ theme }) => rgba(theme.colors.dark["--color-text"], 0.3)};
+    color: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.3)};
     letter-spacing: 0.03em;
     line-height: 1;
     white-space: nowrap;
@@ -71,7 +73,8 @@ const style = (Component) => styled(Component)`
     position: absolute;
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
-    color: ${({ theme }) => theme.colors.dark["--color-primary"]};
+    color: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-primary"]};
     letter-spacing: 0.04em;
     line-height: 1;
     white-space: nowrap;

@@ -1,7 +1,9 @@
 import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import { Map } from "@styled-icons/feather/Map";
 import { MapPin } from "@styled-icons/feather/MapPin";
+import { Moon } from "@styled-icons/feather/Moon";
 import { Share2 } from "@styled-icons/feather/Share2";
+import { Sun } from "@styled-icons/feather/Sun";
 import { useShallow } from "zustand/react/shallow";
 
 import useStore from "../../store/store";
@@ -14,16 +16,20 @@ function Commands({ className }) {
     profileMode,
     displaySlopes,
     liveSessionId,
+    theme,
     toggleProfileMode,
     toggleSlopesMode,
+    toggleTheme,
     shareLocation,
   } = useStore(
     useShallow((state) => ({
       profileMode: state.app.profileMode,
       displaySlopes: state.app.displaySlopes,
       liveSessionId: state.app.liveSessionId,
+      theme: state.app.theme,
       toggleProfileMode: state.toggleProfileMode,
       toggleSlopesMode: state.toggleSlopesMode,
+      toggleTheme: state.toggleTheme,
       shareLocation: state.shareLocation,
     })),
   );
@@ -82,6 +88,13 @@ function Commands({ className }) {
         aria-label="Share my room code"
       >
         <Share2 size={24} />
+      </button>
+      <button
+        className={"off"}
+        onClick={toggleTheme}
+        aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      >
+        {theme === "dark" ? <Sun size={24} /> : <Moon size={24} />}
       </button>
     </div>
   );

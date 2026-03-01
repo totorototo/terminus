@@ -25,24 +25,43 @@ const style = (Component) => styled(Component)`
     align-items: center;
     justify-content: center;
     border: 1px solid
-      ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.25)};
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.25,
+        )};
     background: ${(props) =>
-      rgba(props.theme.colors.dark["--color-primary"], 0.12)};
-    color: ${(props) => props.theme.colors.dark["--color-primary"]};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.12,
+      )};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
 
     &:hover {
       border-color: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.35)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.35,
+        )};
       background: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.15)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.15,
+        )};
     }
 
     &:active,
     &.active {
       border-color: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.5)};
-      background: ${(props) => props.theme.colors.dark["--color-primary"]};
-      color: ${(props) => props.theme.colors.dark["--color-background"]};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.5,
+        )};
+      background: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-background"]};
     }
   }
 `;

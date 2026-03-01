@@ -19,20 +19,20 @@ export default function Sections({ sectionsPoints3D }) {
 
   const themeColors = useMemo(
     () => [
-      theme.colors.dark["--color-primary"],
-      theme.colors.dark["--color-secondary"],
-      theme.colors.dark["--color-accent"],
+      theme.colors[theme.currentVariant]["--color-primary"],
+      theme.colors[theme.currentVariant]["--color-secondary"],
+      theme.colors[theme.currentVariant]["--color-accent"],
     ],
     [
-      theme.colors.dark["--color-primary"],
-      theme.colors.dark["--color-secondary"],
-      theme.colors.dark["--color-accent"],
+      theme.colors[theme.currentVariant]["--color-primary"],
+      theme.colors[theme.currentVariant]["--color-secondary"],
+      theme.colors[theme.currentVariant]["--color-accent"],
     ],
   );
 
   const progressColor = useMemo(
-    () => theme.colors.dark["--color-progress"],
-    [theme.colors.dark["--color-progress"]],
+    () => theme.colors[theme.currentVariant]["--color-progress"],
+    [theme.colors[theme.currentVariant]["--color-progress"]],
   );
 
   const sectionElements = useMemo(() => {

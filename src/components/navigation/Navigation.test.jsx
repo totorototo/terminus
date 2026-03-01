@@ -82,7 +82,11 @@ vi.mock("./Navigation.style.js", () => ({
 
 // Helper to render with ThemeProvider
 const renderWithTheme = (component) => {
-  return render(<ThemeProvider theme={THEME}>{component}</ThemeProvider>);
+  return render(
+    <ThemeProvider theme={{ ...THEME, currentVariant: "dark" }}>
+      {component}
+    </ThemeProvider>,
+  );
 };
 
 describe("Navigation Component", () => {

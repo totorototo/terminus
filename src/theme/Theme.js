@@ -1,13 +1,13 @@
 const THEME = {
   colors: {
     light: {
-      "--color-background": "#f4f7f5",
-      "--color-text": "#262424",
-      "--color-primary": "#ABFC3A",
-      "--color-secondary": "#3e7cb1",
-      "--color-accent": "#ad343e",
-      "--color-progress": "#8b8e8c",
-      "--color-surface": "#e2e5e3",
+      "--color-background": "#c4c4c4",
+      "--color-text": "#363537",
+      "--color-secondary": "#DA7422",
+      "--color-primary": "#6A7FDB",
+      "--color-accent": "#D81E5B",
+      "--color-progress": "#8d8480",
+      "--color-surface": "#ebe7e2",
     },
     dark: {
       "--color-background": "#262424",

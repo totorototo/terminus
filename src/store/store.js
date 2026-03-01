@@ -23,6 +23,12 @@ const useStore = create(
       })),
       {
         name: "terminus-storage",
+        merge: (persistedState, currentState) => ({
+          ...currentState,
+          ...persistedState,
+          app: { ...currentState.app, ...(persistedState.app ?? {}) },
+          gps: { ...currentState.gps, ...(persistedState.gps ?? {}) },
+        }),
         partialize: (state) => ({
           app: {
             trackingMode: state.app.trackingMode,
@@ -33,6 +39,7 @@ const useStore = create(
             mode: state.app.mode,
             followerRoomId: state.app.followerRoomId,
             currentRoute: state.app.currentRoute,
+            theme: state.app.theme,
           },
           gps: {
             location: state.gps.location,

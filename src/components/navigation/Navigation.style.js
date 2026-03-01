@@ -32,11 +32,20 @@ const style = (Component) => styled(Component)`
     height: 2px;
     background: linear-gradient(
       90deg,
-      ${(props) => props.theme.colors.dark["--color-primary"]},
-      ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.4)}
+      ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]},
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.4,
+        )}
     );
     box-shadow: 0 0 0.5rem
-      ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.8)};
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.8,
+        )};
     width: var(--progress-width, 0%);
     transition: width ${(props) => props.theme.transitions["--transition-slow"]};
     z-index: 2;
@@ -59,9 +68,16 @@ const style = (Component) => styled(Component)`
       border-radius: ${(props) =>
         props.theme.borderRadius["--border-radius-full"]};
       background: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.1)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.1,
+        )};
       border: 1px solid
-        ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.28)};
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-primary"],
+            0.28,
+          )};
     }
   }
 
@@ -78,7 +94,8 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-xxlarge"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     letter-spacing: -0.225rem;
     line-height: 1;
     display: flex;
@@ -90,7 +107,8 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     letter-spacing: 0.125rem;
     text-transform: uppercase;
     align-self: flex-end;
@@ -113,7 +131,8 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
     font-weight: ${(props) =>
       props.theme.font.weights["--font-weight-semibold"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -132,7 +151,8 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     line-height: 1;
   }
 
@@ -143,7 +163,8 @@ const style = (Component) => styled(Component)`
       font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
       font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
       font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-      color: ${(props) => props.theme.colors.dark["--color-accent"]};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-accent"]};
       line-height: 1;
     }
   }
@@ -182,11 +203,13 @@ const style = (Component) => styled(Component)`
     }
 
     &.gain {
-      color: ${(props) => props.theme.colors.dark["--color-primary"]};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
     }
 
     &.loss {
-      color: ${(props) => props.theme.colors.dark["--color-secondary"]};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
     }
   }
 
@@ -202,7 +225,10 @@ const style = (Component) => styled(Component)`
   .section.current {
     /* Enhance current section */
     border-color: ${(props) =>
-      rgba(props.theme.colors.dark["--color-primary"], 0.3)};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.3,
+      )};
   }
 
   .section.current > * {

@@ -47,7 +47,8 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     letter-spacing: -1px;
     line-height: 1;
     word-wrap: break-word;
@@ -60,7 +61,11 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.5)};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.5,
+      )};
     letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-top: 8px;
@@ -71,7 +76,10 @@ const style = (Component) => styled(Component)`
     width: 1px;
     height: 48px;
     background: ${(props) =>
-      rgba(props.theme.colors.dark["--color-text"], 0.07)};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.07,
+      )};
     align-self: center;
   }
 
@@ -82,8 +90,18 @@ const style = (Component) => styled(Component)`
     background: linear-gradient(
       90deg,
       transparent,
-      ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.07)} 20%,
-      ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.07)} 80%,
+      ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-text"],
+            0.07,
+          )}
+        20%,
+      ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-text"],
+            0.07,
+          )}
+        80%,
       transparent
     );
     margin-bottom: 1rem;
