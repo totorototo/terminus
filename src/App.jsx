@@ -1,6 +1,7 @@
 import { Route, Switch } from "wouter";
 
 import Follower from "./components/follower/Follower.jsx";
+import LandscapeOverlay from "./components/landscapeOverlay/LandscapeOverlay.jsx";
 import Trailer from "./components/trailer/Trailer.jsx";
 import Wizard from "./components/wizard/Wizard.jsx";
 
@@ -12,6 +13,7 @@ function App({ className }) {
 
   return (
     <div className={className}>
+      <LandscapeOverlay />
       <Switch>
         <Route path="/follow/:roomId">
           <Follower />

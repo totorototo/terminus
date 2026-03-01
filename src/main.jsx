@@ -110,6 +110,9 @@ function ThemedApp() {
   );
 }
 
+// Best-effort portrait lock for installed PWA / fullscreen contexts
+screen.orientation?.lock?.("portrait").catch(() => {});
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ThemedApp />

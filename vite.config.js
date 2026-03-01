@@ -65,7 +65,12 @@ export default defineConfig({
       injectManifest: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
       },
-      includeAssets: ["favicon.ico", "logo150.png", "logo512.png"],
+      includeAssets: [
+        "favicon.ico",
+        "logo150.png",
+        "logo512.png",
+        "apple-touch-icon.png",
+      ],
       manifest: {
         name: "Terminus - GPS Route Analysis & 3D Trail Visualization",
         short_name: "Terminus",
@@ -76,7 +81,7 @@ export default defineConfig({
         display: "standalone",
         start_url: "/",
         scope: "/",
-        orientation: "any",
+        orientation: "portrait",
         categories: ["sports", "navigation", "utilities"],
         lang: "en",
         dir: "ltr",

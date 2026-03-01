@@ -4,7 +4,7 @@ import { useDrag } from "@use-gesture/react";
 import style from "./TopSheetPanel.style.js";
 
 const COLLAPSED_HEIGHT = 140;
-const EXPANDED_HEIGHT = 420;
+const EXPANDED_HEIGHT = Math.min(420, Math.round(window.innerHeight * 0.55));
 
 function ExpandablePanel({ children, className }) {
   const [{ height }, api] = useSpring(() => ({ height: COLLAPSED_HEIGHT }));
