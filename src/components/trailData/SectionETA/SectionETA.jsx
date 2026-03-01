@@ -94,6 +94,24 @@ const SectionETA = memo(function SectionETA({ className }) {
         etaMs = runningEtaMs;
       }
 
+      // Cap estimated ETAs at the section's cutoff time to avoid exceeding barriers.
+      // Actual recorded times (isPast + endTime) are exempt — they are real data.
+      const cutoffMs =
+        section.startTime != null && section.maxCompletionTime != null
+          ? (section.startTime + section.maxCompletionTime) * 1000
+          : null;
+
+      const isRecorded = isPast && section.endTime != null;
+      if (
+        !isRecorded &&
+        cutoffMs != null &&
+        etaMs != null &&
+        etaMs > cutoffMs
+      ) {
+        etaMs = cutoffMs;
+        runningEtaMs = cutoffMs;
+      }
+
       const etaStr = etaMs ? format(new Date(etaMs), "EEE HH:mm") : "--:--";
 
       return {

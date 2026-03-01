@@ -16,6 +16,7 @@ import useStore from "../../store/store.js";
 import { useProjectedLocation } from "../../store/store.js";
 
 import style from "./Navigation.style.js";
+import { int } from "three/src/nodes/tsl/TSLCore.js";
 
 // Custom locale for duration formatting
 const customLocale = {
@@ -155,6 +156,22 @@ function Navigation({ className }) {
           },
         ).replace(/\s+/g, "");
 
+        const cappedDuration =
+          section.maxCompletionTime != null
+            ? Math.min(section.estimatedDuration, section.maxCompletionTime)
+            : section.estimatedDuration;
+
+        const formatEstimatedDuration = formatDuration(
+          intervalToDuration({
+            start: 0,
+            end: cappedDuration.toFixed(0) * 1000,
+          }),
+          {
+            format: ["hours", "minutes"],
+            locale: customLocale,
+          },
+        ).replace(/\s+/g, "");
+
         return (
           <animated.div
             className={`section${isCurrent ? " current" : ""}`}
@@ -217,7 +234,9 @@ function Navigation({ className }) {
                 <span className="time-value">{cutOffTime}</span>
               </div>
               <div className="duration-row">
-                <span className="duration-value">{formattedDuration}</span>
+                <span className="duration-value">
+                  {formatEstimatedDuration}
+                </span>
               </div>
               {section.difficulty > 0 && (
                 <div className="difficulty-row">
