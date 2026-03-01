@@ -59,50 +59,27 @@ describe("Worker Slice", () => {
       },
 
       // Mock store methods that worker slice calls
-      setGpxData: (data) =>
+      setTraceData: ({
+        data,
+        slopes,
+        cumulativeDistances,
+        cumulativeElevations,
+        cumulativeElevationLoss,
+      }) =>
         set(
           (state) => ({
             ...state,
-            gpx: { ...state.gpx, data },
+            gpx: {
+              ...state.gpx,
+              data,
+              slopes,
+              cumulativeDistances,
+              cumulativeElevations,
+              cumulativeElevationLosses: cumulativeElevationLoss,
+            },
           }),
           undefined,
-          "gpx/setGpxData",
-        ),
-      setSlopes: (slopes) =>
-        set(
-          (state) => ({
-            ...state,
-            gpx: { ...state.gpx, slopes },
-          }),
-          undefined,
-          "gpx/setSlopes",
-        ),
-      setCumulativeDistances: (cumulativeDistances) =>
-        set(
-          (state) => ({
-            ...state,
-            gpx: { ...state.gpx, cumulativeDistances },
-          }),
-          undefined,
-          "gpx/setCumulativeDistances",
-        ),
-      setCumulativeElevations: (cumulativeElevations) =>
-        set(
-          (state) => ({
-            ...state,
-            gpx: { ...state.gpx, cumulativeElevations },
-          }),
-          undefined,
-          "gpx/setCumulativeElevations",
-        ),
-      setCumulativeElevationLosses: (cumulativeElevationLosses) =>
-        set(
-          (state) => ({
-            ...state,
-            gpx: { ...state.gpx, cumulativeElevationLosses },
-          }),
-          undefined,
-          "gpx/setCumulativeElevationLosses",
+          "gpx/setTraceData",
         ),
       setMetadata: (metadata) =>
         set(
@@ -229,50 +206,27 @@ describe("Worker Slice", () => {
           projectedLocation: { timestamp: 0, coords: [], index: null },
           savedLocations: [],
         },
-        setGpxData: (data) =>
+        setTraceData: ({
+          data,
+          slopes,
+          cumulativeDistances,
+          cumulativeElevations,
+          cumulativeElevationLoss,
+        }) =>
           set(
             (state) => ({
               ...state,
-              gpx: { ...state.gpx, data },
+              gpx: {
+                ...state.gpx,
+                data,
+                slopes,
+                cumulativeDistances,
+                cumulativeElevations,
+                cumulativeElevationLosses: cumulativeElevationLoss,
+              },
             }),
             undefined,
-            "gpx/setGpxData",
-          ),
-        setSlopes: (slopes) =>
-          set(
-            (state) => ({
-              ...state,
-              gpx: { ...state.gpx, slopes },
-            }),
-            undefined,
-            "gpx/setSlopes",
-          ),
-        setCumulativeDistances: (cumulativeDistances) =>
-          set(
-            (state) => ({
-              ...state,
-              gpx: { ...state.gpx, cumulativeDistances },
-            }),
-            undefined,
-            "gpx/setCumulativeDistances",
-          ),
-        setCumulativeElevations: (cumulativeElevations) =>
-          set(
-            (state) => ({
-              ...state,
-              gpx: { ...state.gpx, cumulativeElevations },
-            }),
-            undefined,
-            "gpx/setCumulativeElevations",
-          ),
-        setCumulativeElevationLosses: (cumulativeElevationLosses) =>
-          set(
-            (state) => ({
-              ...state,
-              gpx: { ...state.gpx, cumulativeElevationLosses },
-            }),
-            undefined,
-            "gpx/setCumulativeElevationLosses",
+            "gpx/setTraceData",
           ),
         setMetadata: (metadata) =>
           set(

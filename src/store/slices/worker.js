@@ -280,14 +280,13 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         // Validate worker results before setting state
         validateGPXResults(results);
 
-        // Update all slices using their individual setters
-        get().setGpxData(results.trace.points);
-        get().setSlopes(results.trace.slopes);
-        get().setCumulativeDistances(results.trace.cumulativeDistances);
-        get().setCumulativeElevations(results.trace.cumulativeElevations);
-        get().setCumulativeElevationLosses(
-          results.trace.cumulativeElevationLoss,
-        );
+        get().setTraceData({
+          data: results.trace.points,
+          slopes: results.trace.slopes,
+          cumulativeDistances: results.trace.cumulativeDistances,
+          cumulativeElevations: results.trace.cumulativeElevations,
+          cumulativeElevationLoss: results.trace.cumulativeElevationLoss,
+        });
         get().setMetadata(results.metadata);
         get().setPeaks(results.trace.peaks);
 
@@ -329,11 +328,13 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         // Validate worker results before setting state
         validateGPSDataResults(results);
 
-        get().setGpxData(results.points);
-        get().setSlopes(results.slopes);
-        get().setCumulativeDistances(results.cumulativeDistances);
-        get().setCumulativeElevations(results.cumulativeElevations);
-        get().setCumulativeElevationLosses(results.cumulativeElevationLoss);
+        get().setTraceData({
+          data: results.points,
+          slopes: results.slopes,
+          cumulativeDistances: results.cumulativeDistances,
+          cumulativeElevations: results.cumulativeElevations,
+          cumulativeElevationLoss: results.cumulativeElevationLoss,
+        });
 
         get().updateStats({
           distance: results.totalDistance ?? 0,

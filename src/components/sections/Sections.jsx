@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 
 import { useTheme } from "styled-components";
+import { useShallow } from "zustand/react/shallow";
 
 import { getInterpolatedColor } from "../../helpers/colorInterpolation.js";
 import useStore from "../../store/store.js";
@@ -9,11 +10,16 @@ import Profile from "../profile/Profile.jsx";
 const MemoizedProfile = memo(Profile);
 
 export default function Sections({ sectionsPoints3D }) {
-  const sections = useStore((state) => state.sections);
-  const slopes = useStore((state) => state.gpx.slopes);
-  const showSlopeColors = useStore((state) => state.app.displaySlopes);
-  const profileMode = useStore((state) => state.app.profileMode);
-  const progressIndex = useStore((state) => state.gps.projectedLocation.index);
+  const { sections, slopes, showSlopeColors, profileMode, progressIndex } =
+    useStore(
+      useShallow((state) => ({
+        sections: state.sections,
+        slopes: state.gpx.slopes,
+        showSlopeColors: state.app.displaySlopes,
+        profileMode: state.app.profileMode,
+        progressIndex: state.gps.projectedLocation.index,
+      })),
+    );
 
   const theme = useTheme();
 
