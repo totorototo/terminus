@@ -43,6 +43,19 @@ const SectionETA = memo(function SectionETA({ className }) {
     const currentIndex = projectedLocation?.index || 0;
     const now = projectedLocation?.timestamp || Date.now();
 
+    // Race hasn't started yet — no ETAs to show
+    if (raceStart && now < raceStart) {
+      return sections.map((section) => ({
+        id: section.segmentId,
+        endLocation: section.endLocation,
+        endKm: cumulativeDistances[section.endIndex] / 1000,
+        isPast: false,
+        isCurrent: false,
+        etaStr: "--:--",
+        difficulty: section.difficulty || 0,
+      }));
+    }
+
     // Walk sections forward, accumulating ETA as we go.
     // Each section contributes its Naismith estimatedDuration × runner's speedFactor.
     let runningEtaMs = raceStart || now;
