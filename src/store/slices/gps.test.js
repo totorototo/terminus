@@ -179,6 +179,167 @@ describe("GPS Slice", () => {
 
       expect(store.getState().gps.location.timestamp).toBe(0);
     });
+
+    describe("off-course detection", () => {
+      const makePosition = (lat = 1, lon = 2, ts = 999) => ({
+        coords: { latitude: lat, longitude: lon },
+        timestamp: ts,
+      });
+
+      it("should set isOffCourse=false and deviationDistance=0 when exactly on route", async () => {
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition()),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce({
+          closestLocation: [1, 2, 0],
+          closestIndex: 0,
+          deviationDistance: 0,
+        });
+
+        await store.getState().spotMe();
+
+        expect(store.getState().gps.isOffCourse).toBe(false);
+        expect(store.getState().gps.deviationDistance).toBe(0);
+      });
+
+      it("should set isOffCourse=false when deviation is below threshold (99m)", async () => {
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition()),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce({
+          closestLocation: [1, 2, 0],
+          closestIndex: 0,
+          deviationDistance: 99,
+        });
+
+        await store.getState().spotMe();
+
+        expect(store.getState().gps.isOffCourse).toBe(false);
+        expect(store.getState().gps.deviationDistance).toBe(99);
+      });
+
+      it("should set isOffCourse=false when deviation equals threshold exactly (100m)", async () => {
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition()),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce({
+          closestLocation: [1, 2, 0],
+          closestIndex: 0,
+          deviationDistance: 100,
+        });
+
+        await store.getState().spotMe();
+
+        expect(store.getState().gps.isOffCourse).toBe(false);
+        expect(store.getState().gps.deviationDistance).toBe(100);
+      });
+
+      it("should set isOffCourse=true when deviation exceeds threshold (100.01m)", async () => {
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition()),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce({
+          closestLocation: [1, 2, 0],
+          closestIndex: 0,
+          deviationDistance: 100.01,
+        });
+
+        await store.getState().spotMe();
+
+        expect(store.getState().gps.isOffCourse).toBe(true);
+        expect(store.getState().gps.deviationDistance).toBe(100.01);
+      });
+
+      it("should set isOffCourse=true when far off route (300m)", async () => {
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition()),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce({
+          closestLocation: [1, 2, 0],
+          closestIndex: 0,
+          deviationDistance: 300,
+        });
+
+        await store.getState().spotMe();
+
+        expect(store.getState().gps.isOffCourse).toBe(true);
+        expect(store.getState().gps.deviationDistance).toBe(300);
+      });
+
+      it("should default deviationDistance to 0 when null is returned", async () => {
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition()),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce({
+          closestLocation: [1, 2, 0],
+          closestIndex: 0,
+          deviationDistance: null,
+        });
+
+        await store.getState().spotMe();
+
+        expect(store.getState().gps.isOffCourse).toBe(false);
+        expect(store.getState().gps.deviationDistance).toBe(0);
+      });
+
+      it("should not update projectedLocation when GPX not loaded (null returned)", async () => {
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition()),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce(null);
+
+        await store.getState().spotMe();
+
+        expect(store.getState().gps.location).toEqual({
+          coords: [1, 2, 0],
+          date: 999,
+        });
+        expect(store.getState().gps.projectedLocation).toEqual({
+          timestamp: 0,
+          coords: [],
+          index: null,
+        });
+        expect(store.getState().gps.isOffCourse).toBeFalsy();
+      });
+
+      it("should transition isOffCourse across consecutive spotMe calls", async () => {
+        // On-course
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition(1, 2, 1000)),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce({
+          closestLocation: [1, 2, 0],
+          closestIndex: 0,
+          deviationDistance: 50,
+        });
+        await store.getState().spotMe();
+        expect(store.getState().gps.isOffCourse).toBe(false);
+
+        // Off-course
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition(1.1, 2.1, 2000)),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce({
+          closestLocation: [1, 2, 0],
+          closestIndex: 0,
+          deviationDistance: 150,
+        });
+        await store.getState().spotMe();
+        expect(store.getState().gps.isOffCourse).toBe(true);
+
+        // Back on-course
+        mockGetCurrentPosition.mockImplementationOnce((success) =>
+          success(makePosition(1, 2, 3000)),
+        );
+        mockFindClosestLocation.mockResolvedValueOnce({
+          closestLocation: [1, 2, 0],
+          closestIndex: 0,
+          deviationDistance: 30,
+        });
+        await store.getState().spotMe();
+        expect(store.getState().gps.isOffCourse).toBe(false);
+      });
+    });
   });
 
   describe("shareLocation", () => {
