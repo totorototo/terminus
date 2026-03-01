@@ -4,6 +4,8 @@ import { CameraControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Vector3 } from "three";
 
+import { useShallow } from "zustand/react/shallow";
+
 import useStore from "../../store/store.js";
 
 export default function CameraController({
@@ -14,8 +16,12 @@ export default function CameraController({
   enabled = true,
 }) {
   const cameraControlsRef = useRef();
-  const trackingMode = useStore((state) => state.app.trackingMode);
-  const profileMode = useStore((state) => state.app.profileMode);
+  const { trackingMode, profileMode } = useStore(
+    useShallow((state) => ({
+      trackingMode: state.app.trackingMode,
+      profileMode: state.app.profileMode,
+    })),
+  );
 
   // Temp vectors to avoid per-frame allocations
   const tmpModelPosition = useRef(new Vector3());

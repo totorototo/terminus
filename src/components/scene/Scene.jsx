@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useRef } from "react";
+import { Suspense, memo, useMemo, useRef } from "react";
 
 import { Canvas } from "@react-three/fiber";
 import { useTheme } from "styled-components";
@@ -15,6 +15,28 @@ import Peaks from "../peaks/Peaks.jsx";
 import TrailFollower from "../trailFollower/TrailFollower";
 
 import style from "./Scene.style";
+
+const SceneLights = memo(function SceneLights() {
+  return (
+    <>
+      <ambientLight intensity={0.9} />
+      <spotLight
+        position={[10, 10, 10]}
+        angle={0.5}
+        penumbra={1}
+        decay={0}
+        intensity={5}
+        castShadow
+      />
+      <pointLight
+        position={[-10, 10, -10]}
+        decay={0}
+        intensity={0.5}
+        castShadow
+      />
+    </>
+  );
+});
 
 function Scene({ width, height, className }) {
   const {
@@ -65,21 +87,7 @@ function Scene({ width, height, className }) {
           coordinateScales={coordinateScales}
         />
         {/* <Perf minimal position="bottom-right" /> */}
-        <ambientLight intensity={0.9} />
-        <spotLight
-          position={[10, 10, 10]}
-          angle={0.5}
-          penumbra={1}
-          decay={0}
-          intensity={5}
-          castShadow
-        />
-        <pointLight
-          position={[-10, 10, -10]}
-          decay={0}
-          intensity={0.5}
-          castShadow
-        />
+        <SceneLights />
 
         {name && (
           <Marker

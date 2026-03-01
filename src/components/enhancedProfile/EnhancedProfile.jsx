@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 
 import useStore from "../../store/store.js";
 import {
@@ -32,4 +32,4 @@ function EnhancedProfile({ coordinateScales }) {
   );
 }
 
-export default style(EnhancedProfile);
+export default memo(style(EnhancedProfile));

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import { Billboard, Text } from "@react-three/drei";
 import { useTheme } from "styled-components";
+import { useShallow } from "zustand/react/shallow";
 
 import useStore from "../../store/store.js";
 import { transformCoordinate } from "../../utils/coordinateTransforms";
@@ -10,8 +11,12 @@ import FadingText from "./FadingText.jsx";
 const ELEVATION_INDEX = 2; // [lat, lon, elevation]
 
 function Peaks({ coordinateScales, profileMode }) {
-  const data = useStore((state) => state.gpx.data);
-  const peaks = useStore((state) => state.gpx.peaks);
+  const { data, peaks } = useStore(
+    useShallow((state) => ({
+      data: state.gpx.data,
+      peaks: state.gpx.peaks,
+    })),
+  );
   const theme = useTheme();
 
   const { peakPoints3D } = useMemo(() => {

@@ -12,6 +12,28 @@ export const createGpxSlice = (set, get) => ({
     },
   },
 
+  setTraceData: ({
+    data,
+    slopes,
+    cumulativeDistances,
+    cumulativeElevations,
+    cumulativeElevationLoss,
+  }) =>
+    set(
+      (state) => ({
+        gpx: {
+          ...state.gpx,
+          data,
+          slopes,
+          cumulativeDistances,
+          cumulativeElevations,
+          cumulativeElevationLosses: cumulativeElevationLoss,
+        },
+      }),
+      undefined,
+      "gpx/setTraceData",
+    ),
+
   setPeaks: (peaks) =>
     set(
       (state) => ({
