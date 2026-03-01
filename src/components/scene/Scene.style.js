@@ -4,8 +4,8 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   .checkpoint-label {
     background: ${({ theme }) =>
-      rgba(theme.colors.dark["--color-background"], 0.4)};
-    color: ${({ theme }) => theme.colors.dark["--color-text"]};
+      rgba(theme.colors[theme.currentVariant]["--color-background"], 0.4)};
+    color: ${({ theme }) => theme.colors[theme.currentVariant]["--color-text"]};
     padding: 6px;
     border-radius: 4px;
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xsmall"]};

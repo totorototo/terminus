@@ -24,7 +24,11 @@ const style = (Component) => styled(Component)`
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-full"]};
     border: 1px solid
-      ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.2)};
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.2,
+        )};
     cursor: pointer;
     transition: all
       ${(props) => props.theme.transitions["--transition-standard"]};
@@ -36,11 +40,27 @@ const style = (Component) => styled(Component)`
     /* Shadow for depth */
     box-shadow:
       0 4px 16px
-        ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)},
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant][
+              "--color-background"
+            ],
+            0.1,
+          )},
       0 1px 4px
-        ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)},
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant][
+              "--color-background"
+            ],
+            0.1,
+          )},
       inset 0 1px 0
-        ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.1)};
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-text"],
+            0.1,
+          )};
 
     /* Remove default button styles */
     outline: none;
@@ -52,7 +72,8 @@ const style = (Component) => styled(Component)`
     /* Focus indicator for keyboard navigation */
     &:focus-visible {
       outline: 2px solid
-        ${(props) => props.theme.colors.dark["--color-primary"]};
+        ${(props) =>
+          props.theme.colors[props.theme.currentVariant]["--color-primary"]};
       outline-offset: 2px;
     }
 
@@ -71,11 +92,26 @@ const style = (Component) => styled(Component)`
       box-shadow:
         0 8px 24px
           ${(props) =>
-            rgba(props.theme.colors.dark["--color-background"], 0.15)},
+            rgba(
+              props.theme.colors[props.theme.currentVariant][
+                "--color-background"
+              ],
+              0.15,
+            )},
         0 2px 8px
-          ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)},
+          ${(props) =>
+            rgba(
+              props.theme.colors[props.theme.currentVariant][
+                "--color-background"
+              ],
+              0.1,
+            )},
         inset 0 1px 0
-          ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.2)};
+          ${(props) =>
+            rgba(
+              props.theme.colors[props.theme.currentVariant]["--color-text"],
+              0.2,
+            )};
     }
 
     &:active {
@@ -107,7 +143,11 @@ const style = (Component) => styled(Component)`
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-full"]};
     border: 1px solid
-      ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.2)};
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.2,
+        )};
     cursor: pointer;
     transition: all
       ${(props) => props.theme.transitions["--transition-standard"]};
@@ -119,11 +159,27 @@ const style = (Component) => styled(Component)`
     /* Shadow for depth */
     box-shadow:
       0 4px 16px
-        ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)},
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant][
+              "--color-background"
+            ],
+            0.1,
+          )},
       0 1px 4px
-        ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)},
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant][
+              "--color-background"
+            ],
+            0.1,
+          )},
       inset 0 1px 0
-        ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.1)};
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-text"],
+            0.1,
+          )};
 
     /* Remove default styles */
     outline: none;
@@ -147,11 +203,26 @@ const style = (Component) => styled(Component)`
       box-shadow:
         0 8px 24px
           ${(props) =>
-            rgba(props.theme.colors.dark["--color-background"], 0.15)},
+            rgba(
+              props.theme.colors[props.theme.currentVariant][
+                "--color-background"
+              ],
+              0.15,
+            )},
         0 2px 8px
-          ${(props) => rgba(props.theme.colors.dark["--color-background"], 0.1)},
+          ${(props) =>
+            rgba(
+              props.theme.colors[props.theme.currentVariant][
+                "--color-background"
+              ],
+              0.1,
+            )},
         inset 0 1px 0
-          ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.2)};
+          ${(props) =>
+            rgba(
+              props.theme.colors[props.theme.currentVariant]["--color-text"],
+              0.2,
+            )};
     }
 
     &:active {
@@ -177,16 +248,29 @@ const style = (Component) => styled(Component)`
 
     &.off {
       background: ${(props) =>
-        rgba(props.theme.colors.dark["--color-text"], 0.1)};
-      color: ${(props) => props.theme.colors.dark["--color-text"]};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.1,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
       border-color: ${(props) =>
-        rgba(props.theme.colors.dark["--color-text"], 0.2)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.2,
+        )};
 
       &:hover {
         background: ${(props) =>
-          rgba(props.theme.colors.dark["--color-text"], 0.2)};
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-text"],
+            0.2,
+          )};
         border-color: ${(props) =>
-          rgba(props.theme.colors.dark["--color-text"], 0.3)};
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-text"],
+            0.3,
+          )};
       }
 
       svg {
@@ -197,38 +281,68 @@ const style = (Component) => styled(Component)`
 
   button.on {
     background: ${(props) =>
-      rgba(props.theme.colors.dark["--color-primary"], 0.25)};
-    color: ${(props) => props.theme.colors.dark["--color-primary"]};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.25,
+      )};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
     border-color: ${(props) =>
-      rgba(props.theme.colors.dark["--color-primary"], 0.4)};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.4,
+      )};
 
     &:hover {
       background: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.35)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.35,
+        )};
       border-color: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.6)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.6,
+        )};
     }
 
     svg {
       filter: drop-shadow(
         0 1px 2px
-          ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.3)}
+          ${(props) =>
+            rgba(
+              props.theme.colors[props.theme.currentVariant]["--color-primary"],
+              0.3,
+            )}
       );
     }
   }
 
   button.off {
     background: ${(props) =>
-      rgba(props.theme.colors.dark["--color-text"], 0.1)};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.1,
+      )};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     border-color: ${(props) =>
-      rgba(props.theme.colors.dark["--color-text"], 0.2)};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.2,
+      )};
 
     &:hover {
       background: ${(props) =>
-        rgba(props.theme.colors.dark["--color-text"], 0.2)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.2,
+        )};
       border-color: ${(props) =>
-        rgba(props.theme.colors.dark["--color-text"], 0.3)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.3,
+        )};
     }
 
     svg {

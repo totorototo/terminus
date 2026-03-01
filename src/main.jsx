@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { createGlobalStyle, ThemeProvider } from "styled-components";
 
 import App from "./App.jsx";
+import useStore from "./store/store.js";
 import THEME from "./theme/Theme";
 
 const setDefaultColors = (variant = "dark") => {
@@ -27,17 +28,17 @@ const GlobalStyle = createGlobalStyle`
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
+  color-scheme: ${(props) => props.theme.currentVariant};
   color: rgba(255, 255, 255, 0.87);
 
-  ${setDefaultColors()};    
-  ${setFonts()}; 
+  ${(props) => setDefaultColors(props.theme.currentVariant)};
+  ${setFonts()};
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
+
 
 }
 
@@ -60,7 +61,7 @@ body {
   min-width: 320px;
 
   /* Ensure full coverage */
-  background-color: #262424ff;
+  background-color: var(--color-background);
 
   /* iOS PWA specific fixes */
   -webkit-user-select: none;
@@ -97,11 +98,20 @@ body *:after {
 }
 `;
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <ThemeProvider theme={THEME}>
+function ThemedApp() {
+  const themeVariant = useStore((state) => state.app.theme) ?? "dark";
+  const themedTheme = { ...THEME, currentVariant: themeVariant };
+
+  return (
+    <ThemeProvider theme={themedTheme}>
       <App />
       <GlobalStyle />
     </ThemeProvider>
+  );
+}
+
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <ThemedApp />
   </StrictMode>,
 );

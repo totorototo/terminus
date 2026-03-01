@@ -15,14 +15,19 @@ const style = (Component) => styled(Component)`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${(props) => props.theme.colors.dark["--color-background"]};
+  background: ${(props) =>
+    props.theme.colors[props.theme.currentVariant]["--color-background"]};
 
   .card {
     position: relative;
     width: min(380px, 90vw);
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
     border: 1px solid
-      ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.2)};
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.2,
+        )};
     overflow: hidden;
     ${glassMorphism}
 
@@ -37,7 +42,12 @@ const style = (Component) => styled(Component)`
       height: 80px;
       background: radial-gradient(
         ellipse at center top,
-        ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.07)} 0%,
+        ${(props) =>
+            rgba(
+              props.theme.colors[props.theme.currentVariant]["--color-primary"],
+              0.07,
+            )}
+          0%,
         transparent 100%
       );
       pointer-events: none;
@@ -58,7 +68,8 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 2rem;
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     margin: 0;
     letter-spacing: -0.04em;
     line-height: 1;
@@ -66,7 +77,11 @@ const style = (Component) => styled(Component)`
 
   .subtitle {
     font-size: 0.875rem;
-    color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.5)};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.5,
+      )};
     margin: 0;
     text-align: center;
   }
@@ -85,10 +100,21 @@ const style = (Component) => styled(Component)`
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
     border: 1px solid
-      ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.12)};
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.12,
+        )};
     background: ${(props) =>
-      rgba(props.theme.colors.dark["--color-text"], 0.05)};
-    color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.65)};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.05,
+      )};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.65,
+      )};
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -98,10 +124,17 @@ const style = (Component) => styled(Component)`
 
     &:hover {
       background: ${(props) =>
-        rgba(props.theme.colors.dark["--color-text"], 0.1)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.1,
+        )};
       border-color: ${(props) =>
-        rgba(props.theme.colors.dark["--color-text"], 0.2)};
-      color: ${(props) => props.theme.colors.dark["--color-text"]};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.2,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
     }
 
     &:active {
@@ -110,20 +143,41 @@ const style = (Component) => styled(Component)`
 
     &.primary {
       background: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.1)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.1,
+        )};
       border-color: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.3)};
-      color: ${(props) => props.theme.colors.dark["--color-primary"]};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.3,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
       box-shadow: 0 0 16px
-        ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.07)};
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-primary"],
+            0.07,
+          )};
 
       &:hover {
         background: ${(props) =>
-          rgba(props.theme.colors.dark["--color-primary"], 0.18)};
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-primary"],
+            0.18,
+          )};
         border-color: ${(props) =>
-          rgba(props.theme.colors.dark["--color-primary"], 0.45)};
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-primary"],
+            0.45,
+          )};
         box-shadow: 0 0 24px
-          ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.14)};
+          ${(props) =>
+            rgba(
+              props.theme.colors[props.theme.currentVariant]["--color-primary"],
+              0.14,
+            )};
       }
     }
   }
@@ -139,7 +193,11 @@ const style = (Component) => styled(Component)`
     align-self: flex-start;
     background: none;
     border: none;
-    color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.35)};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.35,
+      )};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 0.8125rem;
     cursor: pointer;
@@ -148,7 +206,8 @@ const style = (Component) => styled(Component)`
     -webkit-tap-highlight-color: transparent;
 
     &:hover {
-      color: ${(props) => props.theme.colors.dark["--color-text"]};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
     }
   }
 
@@ -157,10 +216,18 @@ const style = (Component) => styled(Component)`
     padding: 0.875rem 1.25rem;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     border: 1px solid
-      ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.15)};
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.15,
+        )};
     background: ${(props) =>
-      rgba(props.theme.colors.dark["--color-text"], 0.05)};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.05,
+      )};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 1.75rem;
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
@@ -173,14 +240,25 @@ const style = (Component) => styled(Component)`
       ${(props) => props.theme.transitions["--transition-fast"]};
 
     &::placeholder {
-      color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.18)};
+      color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.18,
+        )};
     }
 
     &:focus {
       border-color: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.5)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.5,
+        )};
       box-shadow: 0 0 0 1px
-        ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.15)};
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-primary"],
+            0.15,
+          )};
     }
   }
 
@@ -192,7 +270,11 @@ const style = (Component) => styled(Component)`
     text-align: center;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 0.6875rem;
-    color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.25)};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.25,
+      )};
     letter-spacing: 0.04em;
     pointer-events: none;
   }
@@ -202,10 +284,18 @@ const style = (Component) => styled(Component)`
     padding: 1rem;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     border: 1px solid
-      ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.3)};
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.3,
+        )};
     background: ${(props) =>
-      rgba(props.theme.colors.dark["--color-primary"], 0.1)};
-    color: ${(props) => props.theme.colors.dark["--color-primary"]};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.1,
+      )};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 0.9375rem;
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
@@ -220,11 +310,21 @@ const style = (Component) => styled(Component)`
 
     &:hover:not(:disabled) {
       background: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.18)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.18,
+        )};
       border-color: ${(props) =>
-        rgba(props.theme.colors.dark["--color-primary"], 0.45)};
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.45,
+        )};
       box-shadow: 0 0 20px
-        ${(props) => rgba(props.theme.colors.dark["--color-primary"], 0.14)};
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-primary"],
+            0.14,
+          )};
     }
 
     &:disabled {

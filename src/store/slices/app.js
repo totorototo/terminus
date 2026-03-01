@@ -10,6 +10,12 @@ export const createAppSlice = (set, get) => {
       mode: null,
       followerRoomId: null,
       currentRoute: "/",
+      theme:
+        typeof window !== "undefined" &&
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light",
     },
 
     toggleTrackingMode: () =>
@@ -86,6 +92,18 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, currentRoute: route } }),
         undefined,
         "app/setCurrentRoute",
+      ),
+
+    toggleTheme: () =>
+      set(
+        (state) => ({
+          app: {
+            ...state.app,
+            theme: state.app.theme === "dark" ? "light" : "dark",
+          },
+        }),
+        undefined,
+        "app/toggleTheme",
       ),
   };
 };

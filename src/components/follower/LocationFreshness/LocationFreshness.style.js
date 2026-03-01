@@ -50,7 +50,8 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) => props.theme.colors.dark["--color-text"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     letter-spacing: -0.5px;
     line-height: 1.1;
   }
@@ -58,7 +59,11 @@ const style = (Component) => styled(Component)`
   .freshness-sublabel {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-    color: ${(props) => rgba(props.theme.colors.dark["--color-text"], 0.4)};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.4,
+      )};
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }

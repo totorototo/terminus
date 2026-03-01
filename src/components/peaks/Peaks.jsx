@@ -35,11 +35,11 @@ function Peaks({ coordinateScales, profileMode }) {
       <FadingText
         position={[0, 0.03, 0]}
         fontSize={0.02}
-        color={theme.colors.dark["--color-text"]}
+        color={theme.colors[theme.currentVariant]["--color-text"]}
         anchorX="center"
         anchorY="middle"
         outlineWidth={0.001}
-        outlineColor={theme.colors.dark["--color-background"]}
+        outlineColor={theme.colors[theme.currentVariant]["--color-background"]}
         fadeDistance={5}
         fadeStrength={1}
         fadeFrom={1} // fade relative to camera

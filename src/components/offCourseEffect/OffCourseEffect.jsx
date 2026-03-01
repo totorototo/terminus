@@ -20,8 +20,8 @@ function OffCourseEffect({
   const { scene, clock } = useThree();
   const theme = useTheme();
 
-  const bgColor = theme.colors.dark["--color-background"];
-  const primaryColor = theme.colors.dark["--color-primary"];
+  const bgColor = theme.colors[theme.currentVariant]["--color-background"];
+  const primaryColor = theme.colors[theme.currentVariant]["--color-primary"];
   const bgOffCourse = mix(0.12, primaryColor, bgColor);
 
   const prevOffCourse = useRef(false);

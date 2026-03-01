@@ -18,9 +18,10 @@ const style = (Component) => styled(Component)`
 
   ${glassMorphism}
   border: 1px solid
-    ${({ theme }) => rgba(theme.colors.dark["--color-text"], 0.12)};
+    ${({ theme }) =>
+    rgba(theme.colors[theme.currentVariant]["--color-text"], 0.12)};
 
-  color: ${({ theme }) => theme.colors.dark["--color-text"]};
+  color: ${({ theme }) => theme.colors[theme.currentVariant]["--color-text"]};
   line-height: 1.2;
   user-select: none;
 
@@ -35,7 +36,9 @@ const style = (Component) => styled(Component)`
     height: 60px;
     background: radial-gradient(
       ellipse at center top,
-      ${({ theme }) => rgba(theme.colors.dark["--color-primary"], 0.05)} 0%,
+      ${({ theme }) =>
+          rgba(theme.colors[theme.currentVariant]["--color-primary"], 0.05)}
+        0%,
       transparent 100%
     );
     pointer-events: none;
@@ -52,7 +55,8 @@ const style = (Component) => styled(Component)`
     transform: translateX(-50%);
     width: 40px;
     height: 4px;
-    background-color: ${({ theme }) => theme.colors.dark["--color-text"]};
+    background-color: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-text"]};
     opacity: 0.3;
     border-radius: ${({ theme }) => theme.borderRadius["--border-radius-xs"]};
     z-index: 1;

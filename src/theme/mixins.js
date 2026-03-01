@@ -6,8 +6,10 @@ import { css } from "styled-components";
  * Individual consumers are responsible for their own border declaration.
  */
 export const glassMorphism = css`
-  background: ${({ theme }) => rgba(theme.colors.dark["--color-surface"], 0.8)};
+  background: ${({ theme }) =>
+    rgba(theme.colors[theme.currentVariant]["--color-surface"], 0.8)};
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px 0
-    ${({ theme }) => rgba(theme.colors.dark["--color-background"], 0.1)};
+    ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-background"], 0.1)};
 `;

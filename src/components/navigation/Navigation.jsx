@@ -185,7 +185,7 @@ function Navigation({ className }) {
               <ArrowIcon
                 size={32}
                 strokeWidth={2}
-                stroke={theme.colors.dark["--color-primary"]}
+                stroke={theme.colors[theme.currentVariant]["--color-primary"]}
               />
             </div>
 
