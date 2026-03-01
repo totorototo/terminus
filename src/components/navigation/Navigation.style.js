@@ -137,6 +137,8 @@ const style = (Component) => styled(Component)`
   }
 
   .duration-row {
+    margin-top: 0.15rem;
+
     .duration-value {
       font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
       font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
