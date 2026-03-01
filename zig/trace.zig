@@ -1365,3 +1365,245 @@ test "difficulty: steep terrain is Hard or above" {
     try expect(section.difficulty >= 3);
     try expect(section.estimatedDuration > 0.0);
 }
+
+// ─── Difficulty tier precision tests ────────────────────────────────────────
+//
+// Each test uses 4 points covering ~333m (3 × 111m per 0.001° lat at equator).
+// Haversine distance ≈ 333.6m → dist_km ≈ 0.3336
+// effort_ratio = 1 + elevation_gain / (120 × dist_km) ≈ 1 + elevation_gain / 40.03
+//
+// Tier boundaries (elevation_gain for dist ≈ 0.3336 km):
+//   1→2 at ~8.0m    (effort_ratio = 1.2)
+//   2→3 at ~20.0m   (effort_ratio = 1.5)
+//   3→4 at ~40.0m   (effort_ratio = 2.0)
+//   4→5 at ~68.0m   (effort_ratio = 2.7)
+
+test "difficulty: tier 2 Moderate (effort_ratio 1.2–1.5)" {
+    const allocator = std.testing.allocator;
+
+    // 14m gain → effort ≈ 1.35 → difficulty 2
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 0.0 },
+        [3]f64{ 0.001, 0.0, 4.67 },
+        [3]f64{ 0.002, 0.0, 9.33 },
+        [3]f64{ 0.003, 0.0, 14.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
+
+    try expectEqual(@as(usize, 1), sections.len);
+    try expectEqual(@as(u8, 2), sections[0].difficulty);
+}
+
+test "difficulty: tier 3 Hard (effort_ratio 1.5–2.0)" {
+    const allocator = std.testing.allocator;
+
+    // 30m gain → effort ≈ 1.75 → difficulty 3
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 0.0 },
+        [3]f64{ 0.001, 0.0, 10.0 },
+        [3]f64{ 0.002, 0.0, 20.0 },
+        [3]f64{ 0.003, 0.0, 30.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
+
+    try expectEqual(@as(usize, 1), sections.len);
+    try expectEqual(@as(u8, 3), sections[0].difficulty);
+}
+
+test "difficulty: tier 4 Very Hard (effort_ratio 2.0–2.7)" {
+    const allocator = std.testing.allocator;
+
+    // 55m gain → effort ≈ 2.37 → difficulty 4
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 0.0 },
+        [3]f64{ 0.001, 0.0, 18.0 },
+        [3]f64{ 0.002, 0.0, 37.0 },
+        [3]f64{ 0.003, 0.0, 55.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
+
+    try expectEqual(@as(usize, 1), sections.len);
+    try expectEqual(@as(u8, 4), sections[0].difficulty);
+}
+
+test "difficulty: tier 5 Extreme (effort_ratio >= 2.7)" {
+    const allocator = std.testing.allocator;
+
+    // 100m gain → effort ≈ 3.50 → difficulty 5
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 0.0 },
+        [3]f64{ 0.001, 0.0, 33.0 },
+        [3]f64{ 0.002, 0.0, 67.0 },
+        [3]f64{ 0.003, 0.0, 100.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
+
+    try expectEqual(@as(usize, 1), sections.len);
+    try expectEqual(@as(u8, 5), sections[0].difficulty);
+}
+
+test "maxCompletionTime is set from waypoint timestamps" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 105.0 },
+        [3]f64{ 0.002, 0.0, 110.0 },
+        [3]f64{ 0.003, 0.0, 115.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .time = 1_000_000 },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .time = 1_003_600 }, // 1 hour later
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
+
+    try expectEqual(@as(usize, 1), sections.len);
+    try expect(sections[0].maxCompletionTime != null);
+    try expectEqual(@as(i64, 3600), sections[0].maxCompletionTime.?);
+    try expectEqual(@as(i64, 1_000_000), sections[0].startTime.?);
+    try expectEqual(@as(i64, 1_003_600), sections[0].endTime.?);
+}
+
+test "maxCompletionTime is null when waypoints have no timestamps" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 105.0 },
+        [3]f64{ 0.002, 0.0, 110.0 },
+        [3]f64{ 0.003, 0.0, 115.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
+
+    try expectEqual(@as(usize, 1), sections.len);
+    try expectEqual(@as(?i64, null), sections[0].maxCompletionTime);
+}
+
+test "estimatedDuration follows Naismith formula" {
+    const allocator = std.testing.allocator;
+
+    // Flat 1km section: 0m elevation gain
+    // flat_time = 1.0/5 = 0.2h, naismith_time = 0.2h, estimated_duration = 720s
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 100.0 },
+        [3]f64{ 0.002, 0.0, 100.0 },
+        [3]f64{ 0.003, 0.0, 100.0 },
+        [3]f64{ 0.004, 0.0, 100.0 },
+        [3]f64{ 0.005, 0.0, 100.0 },
+        [3]f64{ 0.006, 0.0, 100.0 },
+        [3]f64{ 0.007, 0.0, 100.0 },
+        [3]f64{ 0.008, 0.0, 100.0 },
+        [3]f64{ 0.009, 0.0, 100.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .time = null },
+        .{ .lat = 0.009, .lon = 0.0, .name = "End", .time = null },
+    };
+
+    const sections = try trace.computeSectionsFromWaypoints(allocator, &waypoints);
+    defer {
+        for (sections) |section| {
+            allocator.free(section.points);
+        }
+        allocator.free(sections);
+    }
+
+    try expectEqual(@as(usize, 1), sections.len);
+    const section = sections[0];
+    // dist ≈ 1001m → flat_time = 1.001/5 = 0.2002h → duration ≈ 720.7s
+    // Allow ±30s tolerance for Haversine approximation
+    try expect(section.estimatedDuration > 690.0);
+    try expect(section.estimatedDuration < 750.0);
+    try expectEqual(@as(u8, 1), section.difficulty);
+}
