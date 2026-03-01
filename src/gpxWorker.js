@@ -378,6 +378,7 @@ async function findClosestLocation(data, requestId) {
       ? [closest.point[0], closest.point[1], closest.point[2]]
       : null,
     closestIndex: closest.index,
+    deviationDistance: closest.distance ?? 0,
   });
 }
 

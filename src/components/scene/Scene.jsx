@@ -10,22 +10,32 @@ import CameraController from "../cameraController/CameraController.jsx";
 import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
 import { Helicopter } from "../helicopter/Helicopter.jsx";
 import Marker from "../marker/Marker.jsx";
+import OffCourseEffect from "../offCourseEffect/OffCourseEffect.jsx";
 import Peaks from "../peaks/Peaks.jsx";
 import TrailFollower from "../trailFollower/TrailFollower";
 
 import style from "./Scene.style";
 
 function Scene({ width, height, className }) {
-  const { profileMode, trackingMode, coordinates, name, projectedLocation } =
-    useStore(
-      useShallow((state) => ({
-        profileMode: state.app.profileMode,
-        trackingMode: state.app.trackingMode,
-        coordinates: state.gpx.data,
-        name: state.gpx.metadata.name,
-        projectedLocation: state.gps.projectedLocation,
-      })),
-    );
+  const {
+    profileMode,
+    trackingMode,
+    coordinates,
+    name,
+    projectedLocation,
+    isOffCourse,
+    deviationDistance,
+  } = useStore(
+    useShallow((state) => ({
+      profileMode: state.app.profileMode,
+      trackingMode: state.app.trackingMode,
+      coordinates: state.gpx.data,
+      name: state.gpx.metadata.name,
+      projectedLocation: state.gps.projectedLocation,
+      isOffCourse: state.gps.isOffCourse,
+      deviationDistance: state.gps.deviationDistance,
+    })),
+  );
 
   const modelRef = useRef();
   const theme = useTheme();
@@ -48,6 +58,12 @@ function Scene({ width, height, className }) {
           position: [15, 0, 0],
         }}
       >
+        <OffCourseEffect
+          isOffCourse={isOffCourse}
+          deviationDistance={deviationDistance}
+          projectedLocation={projectedLocation}
+          coordinateScales={coordinateScales}
+        />
         {/* <Perf minimal position="bottom-right" /> */}
         <ambientLight intensity={0.9} />
         <spotLight

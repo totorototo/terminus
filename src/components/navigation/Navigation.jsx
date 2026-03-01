@@ -5,8 +5,12 @@ import {
   useSpring as useSpringWeb,
   useTransition,
 } from "@react-spring/web";
-import { ArrowUp, CornerUpLeft, CornerUpRight } from "@styled-icons/feather";
-import { ArrowDown } from "@styled-icons/feather";
+import {
+  ArrowDown,
+  ArrowUp,
+  CornerUpLeft,
+  CornerUpRight,
+} from "@styled-icons/feather";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
