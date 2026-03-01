@@ -75,6 +75,8 @@ export const createGPSSlice = (set, get) => {
         coords: [],
         index: null,
       },
+      deviationDistance: 0,
+      isOffCourse: false,
       savedLocations: [],
       notificationPermission:
         typeof window !== "undefined" && "Notification" in window
@@ -100,6 +102,8 @@ export const createGPSSlice = (set, get) => {
             savedLocations: [],
             location: { timestamp: 0, coords: [] },
             projectedLocation: { timestamp: 0, coords: [], index: null },
+            deviationDistance: 0,
+            isOffCourse: false,
           },
         }),
         undefined,
@@ -172,10 +176,18 @@ export const createGPSSlice = (set, get) => {
           index: projectedLocation.closestIndex,
         };
 
+        const OFF_COURSE_THRESHOLD = 100; // meters
+        const deviationDistance = projectedLocation.deviationDistance ?? 0;
+
         set(
           (state) => ({
             ...state,
-            gps: { ...state.gps, projectedLocation: projected },
+            gps: {
+              ...state.gps,
+              projectedLocation: projected,
+              deviationDistance,
+              isOffCourse: deviationDistance > OFF_COURSE_THRESHOLD,
+            },
           }),
           undefined,
           "gps/setProjectedLocation",
