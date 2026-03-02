@@ -220,14 +220,20 @@ pub const Trace = struct {
     }
 
     pub fn findClosestPoint(self: *const Trace, target: [3]f64) ?ClosestPointResult {
-        if (self.points.len == 0) return null;
+        return self.findClosestPointAfter(target, 0);
+    }
+
+    /// Find the closest point on the trace at or after `start_from` index.
+    /// Used for loop courses where searching the full trace would match the
+    /// wrong (earlier) occurrence of a geographically repeated location.
+    pub fn findClosestPointAfter(self: *const Trace, target: [3]f64, start_from: usize) ?ClosestPointResult {
+        if (self.points.len == 0 or start_from >= self.points.len) return null;
 
         var closest_distance: f64 = std.math.inf(f64);
-        var closest_index: usize = 0;
+        var closest_index: usize = start_from;
         var closest_point: [3]f64 = undefined;
 
-        // Iterate through all points to find the closest one
-        for (self.points, 0..) |point, i| {
+        for (self.points[start_from..], start_from..) |point, i| {
             const dist = distance(target, point);
             if (dist < closest_distance) {
                 closest_distance = dist;
@@ -250,13 +256,17 @@ pub const Trace = struct {
         }
 
         const num_sections = waypoints.len - 1;
-        var sections = try allocator.alloc(SectionStats, num_sections);
+        var sections = std.ArrayList(SectionStats){};
         errdefer {
-            for (sections) |section| {
+            for (sections.items) |section| {
                 allocator.free(section.points);
             }
-            allocator.free(sections);
+            sections.deinit(allocator);
         }
+
+        // Track the search floor so each waypoint is found after the previous one.
+        // This correctly handles loop courses where the same area is passed twice.
+        var search_start: usize = 0;
 
         for (0..num_sections) |i| {
             const start_wpt = waypoints[i];
@@ -266,8 +276,9 @@ pub const Trace = struct {
             const start_coord = [3]f64{ start_wpt.lat, start_wpt.lon, 0.0 };
             const end_coord = [3]f64{ end_wpt.lat, end_wpt.lon, 0.0 };
 
-            const start_result = self.findClosestPoint(start_coord) orelse continue;
-            const end_result = self.findClosestPoint(end_coord) orelse continue;
+            const start_result = self.findClosestPointAfter(start_coord, search_start) orelse continue;
+            const end_result = self.findClosestPointAfter(end_coord, start_result.index + 1) orelse continue;
+            search_start = start_result.index + 1;
 
             const bearing = bearingTo(start_coord, end_coord);
 
@@ -310,7 +321,7 @@ pub const Trace = struct {
             const section_points = try allocator.alloc([3]f64, point_count);
             @memcpy(section_points, self.points[start_index .. end_index + 1]);
 
-            sections[i] = SectionStats{
+            sections.append(allocator, SectionStats{
                 .segmentId = i,
                 .startIndex = start_index,
                 .endIndex = end_index,
@@ -336,10 +347,13 @@ pub const Trace = struct {
                     end_wpt.time.? - start_wpt.time.?
                 else
                     null,
+            }) catch |err| {
+                allocator.free(section_points);
+                return err;
             };
         }
 
-        return sections;
+        return try sections.toOwnedSlice(allocator);
     }
 };
 

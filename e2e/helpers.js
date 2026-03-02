@@ -1,16 +1,21 @@
 /**
- * Click "I'm running" on the wizard and wait for the app to load.
+ * Click "I'm running" on the wizard, pick the first available race, and wait
+ * for the app to load.
  * Call this after page.goto("/") in any test that needs the runner (trailer) UI.
  */
 export async function selectRunnerRole(page) {
   await page
     .getByRole("button", { name: "I'm running" })
     .click({ timeout: 10000 });
+
+  // Pick the first race from the list (waits for races to load from /races.json)
+  await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
+  await page.locator(".choice-btn").first().click();
 }
 
 /**
- * Go through the follower wizard steps: click "I'm following", enter the
- * provided room code, then click "Follow".
+ * Go through the follower wizard steps: click "I'm following", pick the first
+ * available race, enter the provided room code, then click "Follow".
  * Call this after page.goto("/").
  *
  * @param {import("@playwright/test").Page} page
@@ -20,6 +25,10 @@ export async function selectFollowerRole(page, roomCode) {
   await page
     .getByRole("button", { name: "I'm following" })
     .click({ timeout: 10000 });
+
+  // Pick the first race from the list (waits for races to load from /races.json)
+  await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
+  await page.locator(".choice-btn").first().click();
 
   await page.locator("input.code-input").fill(roomCode);
   await page.getByRole("button", { name: "Follow" }).click();

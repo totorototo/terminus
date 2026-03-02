@@ -30,6 +30,10 @@ test.describe("Wizard", () => {
       .getByRole("button", { name: "I'm running" })
       .click({ timeout: 10000 });
 
+    // Step 2: pick a race
+    await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
+    await page.locator(".choice-btn").first().click();
+
     // Wizard title disappears
     await expect(page.getByText("What are you doing today?")).not.toBeVisible();
 
@@ -45,10 +49,11 @@ test.describe("Wizard", () => {
       .getByRole("button", { name: "I'm following" })
       .click({ timeout: 10000 });
 
-    await expect(page.getByText("Enter Code")).toBeVisible();
+    // Now shows the race picker step
     await expect(
-      page.getByText("Ask the runner for their room code."),
-    ).toBeVisible();
+      page.getByRole("heading", { name: "Pick a race" }),
+    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Which race are you watching?")).toBeVisible();
   });
 
   test("step 2 — should show code input and Follow button", async ({
@@ -56,6 +61,10 @@ test.describe("Wizard", () => {
   }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "I'm following" }).click();
+
+    // Pick a race to advance to the code entry step
+    await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
+    await page.locator(".choice-btn").first().click();
 
     const input = page.locator("input.code-input");
     await expect(input).toBeVisible();
@@ -72,6 +81,10 @@ test.describe("Wizard", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "I'm following" }).click();
 
+    // Pick a race to advance to the code entry step
+    await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
+    await page.locator(".choice-btn").first().click();
+
     const input = page.locator("input.code-input");
     const confirmBtn = page.getByRole("button", { name: "Follow" });
 
@@ -86,6 +99,10 @@ test.describe("Wizard", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "I'm following" }).click();
 
+    // Pick a race to advance to the code entry step
+    await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
+    await page.locator(".choice-btn").first().click();
+
     const input = page.locator("input.code-input");
     await input.fill("a3k7x2");
 
@@ -95,17 +112,26 @@ test.describe("Wizard", () => {
   test("step 2 — back button returns to step 1", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "I'm following" }).click();
-    await expect(page.getByText("Enter Code")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Pick a race" }),
+    ).toBeVisible({ timeout: 10000 });
 
+    // Back from the race picker (step 3) returns to step 1
     await page.getByRole("button", { name: /Back/ }).click();
 
     await expect(page.getByText("What are you doing today?")).toBeVisible();
-    await expect(page.getByText("Enter Code")).not.toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Pick a race" }),
+    ).not.toBeVisible();
   });
 
   test("step 2 — pressing Enter submits a valid code", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "I'm following" }).click();
+
+    // Pick a race to advance to the code entry step
+    await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
+    await page.locator(".choice-btn").first().click();
 
     const input = page.locator("input.code-input");
     await input.fill("A3K7X2");

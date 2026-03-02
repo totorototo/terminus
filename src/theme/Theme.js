@@ -6,7 +6,7 @@ const THEME = {
       "--color-secondary": "#DA7422",
       "--color-primary": "#6A7FDB",
       "--color-accent": "#D81E5B",
-      "--color-progress": "#8d8480",
+      "--color-progress": "#ededed",
       "--color-surface": "#ebe7e2",
     },
     dark: {
