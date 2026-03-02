@@ -21,21 +21,27 @@ const PUSH_NOTIFICATIONS_ENABLED = false;
 function Follower({ className }) {
   useGPXWorker();
 
-  const { roomId } = useParams();
+  const { roomId, raceId } = useParams();
 
   const {
     connectToFollowerSession,
     disconnectFollowerSession,
     enableNotifications,
     notificationPermission,
+    setRaceId,
   } = useStore(
     useShallow((state) => ({
       connectToFollowerSession: state.connectToFollowerSession,
       disconnectFollowerSession: state.disconnectFollowerSession,
       enableNotifications: state.enableNotifications,
       notificationPermission: state.gps.notificationPermission,
+      setRaceId: state.setRaceId,
     })),
   );
+
+  useEffect(() => {
+    if (raceId) setRaceId(raceId);
+  }, [raceId, setRaceId]);
 
   useEffect(() => {
     if (!roomId) return;

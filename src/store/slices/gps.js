@@ -39,7 +39,7 @@ export const createGPSSlice = (set, get) => {
     }
   };
 
-  const broadcastLocation = (sessionId, location) => {
+  const broadcastLocation = (sessionId, location, raceId) => {
     ensureSocket(sessionId);
     const { timestamp, coords, index } = location;
     const message = JSON.stringify({
@@ -47,6 +47,7 @@ export const createGPSSlice = (set, get) => {
       timestamp,
       coords,
       index,
+      raceId,
     });
     if (partySocket.readyState === WebSocket.OPEN) {
       partySocket.send(message);
@@ -196,7 +197,7 @@ export const createGPSSlice = (set, get) => {
         // Broadcast to followers if in trailer mode
         const sessionId = get().app.liveSessionId;
         if (get().app.mode === "trailer" && sessionId) {
-          broadcastLocation(sessionId, projected);
+          broadcastLocation(sessionId, projected, get().app.raceId);
         }
       } catch (error) {
         let errorMessage = "Failed to get current location";
@@ -241,13 +242,16 @@ export const createGPSSlice = (set, get) => {
     },
 
     shareLocation: async () => {
+      const raceId = get().app.raceId;
+      if (!raceId) return;
+
       let sessionId = get().app.liveSessionId;
       if (!sessionId) {
         sessionId = generateSessionId();
         get().setLiveSessionId(sessionId);
       }
 
-      const url = `${window.location.origin}/follow/${sessionId}`;
+      const url = `${window.location.origin}/follow/${raceId}/${sessionId}`;
 
       if (navigator.share) {
         try {

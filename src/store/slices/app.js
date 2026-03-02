@@ -9,6 +9,7 @@ export const createAppSlice = (set, get) => {
       liveSessionId: null,
       mode: null,
       followerRoomId: null,
+      raceId: null,
       currentRoute: "/",
       theme:
         typeof window !== "undefined" &&
@@ -85,6 +86,13 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, followerRoomId: id } }),
         undefined,
         "app/setFollowerRoomId",
+      ),
+
+    setRaceId: (id) =>
+      set(
+        (state) => ({ app: { ...state.app, raceId: id } }),
+        undefined,
+        "app/setRaceId",
       ),
 
     setCurrentRoute: (route) =>

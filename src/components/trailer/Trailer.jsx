@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 
 import AutoSizer from "react-virtualized-auto-sizer";
+import { useParams } from "wouter";
 import { useShallow } from "zustand/react/shallow";
 
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
@@ -19,10 +20,12 @@ const Scene = lazy(() => import("../scene/Scene.jsx"));
 
 function Trailer({ className }) {
   const { isWorkerReady } = useGPXWorker();
-  const { disconnectTrailerSession, setMode } = useStore(
+  const { raceId } = useParams();
+  const { disconnectTrailerSession, setMode, setRaceId } = useStore(
     useShallow((state) => ({
       disconnectTrailerSession: state.disconnectTrailerSession,
       setMode: state.setMode,
+      setRaceId: state.setRaceId,
     })),
   );
 
@@ -34,6 +37,10 @@ function Trailer({ className }) {
       setMode(null);
     };
   }, [setMode, disconnectTrailerSession]);
+
+  useEffect(() => {
+    if (raceId) setRaceId(raceId);
+  }, [raceId, setRaceId]);
 
   return (
     isWorkerReady && (

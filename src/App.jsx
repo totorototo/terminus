@@ -15,10 +15,10 @@ function App({ className }) {
     <div className={className}>
       <LandscapeOverlay />
       <Switch>
-        <Route path="/follow/:roomId">
+        <Route path="/follow/:raceId/:roomId">
           <Follower />
         </Route>
-        <Route path="/run">
+        <Route path="/run/:raceId">
           <Trailer />
         </Route>
         <Route>

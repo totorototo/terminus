@@ -24,6 +24,20 @@ describe("appSlice", () => {
       expect(state.app.trackingMode).toBe(false);
       expect(state.app.displaySlopes).toBe(false);
       expect(state.app.profileMode).toBe(false);
+      expect(state.app.raceId).toBeNull();
+    });
+  });
+
+  describe("setRaceId", () => {
+    it("should set the raceId", () => {
+      store.getState().setRaceId("vvx-xgtv-2026");
+      expect(store.getState().app.raceId).toBe("vvx-xgtv-2026");
+    });
+
+    it("should clear the raceId when set to null", () => {
+      store.getState().setRaceId("vvx-xgtv-2026");
+      store.getState().setRaceId(null);
+      expect(store.getState().app.raceId).toBeNull();
     });
   });
 

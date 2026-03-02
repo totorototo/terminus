@@ -47,14 +47,14 @@ describe("GPS Slice", () => {
       findClosestLocation: mockFindClosestLocation,
       app: {
         liveSessionId: null,
+        raceId: null,
+        mode: null,
       },
       setLiveSessionId: vi.fn((id) => {
-        set({
-          app: {
-            ...get().app,
-            liveSessionId: id,
-          },
-        });
+        set({ app: { ...get().app, liveSessionId: id } });
+      }),
+      setRaceId: vi.fn((id) => {
+        set({ app: { ...get().app, raceId: id } });
       }),
     }));
   });
@@ -352,8 +352,9 @@ describe("GPS Slice", () => {
         writeText: vi.fn().mockResolvedValue(undefined),
       };
 
-      // Set up initial location
+      // Set up initial location and raceId
       store.setState({
+        app: { ...store.getState().app, raceId: "test-race-2026" },
         gps: {
           ...store.getState().gps,
           projectedLocation: {
@@ -363,6 +364,21 @@ describe("GPS Slice", () => {
           },
         },
       });
+    });
+
+    it("should do nothing when raceId is not set", async () => {
+      Object.defineProperty(navigator, "share", {
+        value: mockShare.mockResolvedValue(undefined),
+        writable: true,
+        configurable: true,
+      });
+
+      store.setState({ app: { ...store.getState().app, raceId: null } });
+
+      await store.getState().shareLocation();
+
+      expect(mockShare).not.toHaveBeenCalled();
+      expect(store.getState().setLiveSessionId).not.toHaveBeenCalled();
     });
 
     it("should use navigator.share when available", async () => {
@@ -376,7 +392,7 @@ describe("GPS Slice", () => {
 
       expect(mockShare).toHaveBeenCalledWith({
         title: "Follow my run",
-        url: expect.stringMatching(/\/follow\/[A-Z0-9]{6}$/),
+        url: expect.stringMatching(/\/follow\/test-race-2026\/[A-Z0-9]{6}$/),
       });
       expect(store.getState().setLiveSessionId).toHaveBeenCalled();
     });
@@ -432,7 +448,7 @@ describe("GPS Slice", () => {
 
       expect(mockShare).toHaveBeenCalledWith({
         title: "Follow my run",
-        url: expect.stringMatching(/\/follow\/[A-Z0-9]{6}$/),
+        url: expect.stringMatching(/\/follow\/test-race-2026\/[A-Z0-9]{6}$/),
       });
     });
 
