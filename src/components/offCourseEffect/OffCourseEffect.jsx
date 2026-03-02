@@ -8,8 +8,8 @@ import { Color } from "three";
 
 import { transformCoordinates } from "../../utils/coordinateTransforms.js";
 
-const BLINK_DURATION = 4; // seconds
-const BLINK_FREQ = 1; // oscillations per second
+const BLINK_DURATION = 5; // seconds per cycle
+const BLINK_FREQ = 3; // oscillations per second
 
 function OffCourseEffect({
   isOffCourse,
@@ -21,8 +21,8 @@ function OffCourseEffect({
   const theme = useTheme();
 
   const bgColor = theme.colors[theme.currentVariant]["--color-background"];
-  const primaryColor = theme.colors[theme.currentVariant]["--color-primary"];
-  const bgOffCourse = mix(0.12, primaryColor, bgColor);
+  const primaryColor = theme.colors[theme.currentVariant]["--color-secondary"];
+  const bgOffCourse = mix(0.25, primaryColor, bgColor);
 
   const prevOffCourse = useRef(false);
   const blinkStart = useRef(null);
