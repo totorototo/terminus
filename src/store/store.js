@@ -38,6 +38,7 @@ const useStore = create(
             liveSessionId: state.app.liveSessionId,
             mode: state.app.mode,
             followerRoomId: state.app.followerRoomId,
+            raceId: state.app.raceId,
             currentRoute: state.app.currentRoute,
             theme: state.app.theme,
           },

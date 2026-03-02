@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { Activity, ArrowRight, Eye } from "@styled-icons/feather";
+import { Activity, ArrowRight, Eye, Map } from "@styled-icons/feather";
 import { useLocation } from "wouter";
 
 import style from "./Wizard.style.js";
@@ -8,25 +8,62 @@ import style from "./Wizard.style.js";
 function Wizard({ className }) {
   const [step, setStep] = useState(1);
   const [code, setCode] = useState("");
+  const [races, setRaces] = useState([]);
+  const [racesError, setRacesError] = useState(false);
+  const [followerRaceId, setFollowerRaceId] = useState(null);
   const [, navigate] = useLocation();
 
-  const handleRunner = () => {
-    navigate("/run");
-  };
+  useEffect(() => {
+    fetch("/races.json")
+      .then((r) => r.json())
+      .then(setRaces)
+      .catch(() => setRacesError(true));
+  }, []);
 
-  const handleFollowerNext = () => {
-    setStep(2);
+  // Runner flow
+  const handleRunnerNext = () => setStep(2);
+  const handleRunnerRacePick = (raceId) => navigate(`/run/${raceId}`);
+
+  // Follower flow
+  const handleFollowerNext = () => setStep(3);
+  const handleFollowerRacePick = (raceId) => {
+    setFollowerRaceId(raceId);
+    setStep(4);
   };
 
   const handleConfirm = () => {
     const trimmed = code.trim().toUpperCase();
-    if (trimmed.length < 6) return;
-    navigate(`/follow/${trimmed}`);
+    if (!followerRaceId || trimmed.length < 6) return;
+    navigate(`/follow/${followerRaceId}/${trimmed}`);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleConfirm();
   };
+
+  const raceList = (onPick, subtitle) => (
+    <>
+      <p className="subtitle">{subtitle}</p>
+      <div className="choices">
+        {races.map((race) => (
+          <button
+            key={race.id}
+            className="choice-btn primary"
+            onClick={() => onPick(race.id)}
+          >
+            <Map size={18} strokeWidth={2} />
+            <span className="choice-label">{race.name}</span>
+          </button>
+        ))}
+        {!racesError && races.length === 0 && (
+          <p className="subtitle">Loading races…</p>
+        )}
+        {racesError && (
+          <p className="subtitle">Could not load races. Please try again.</p>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <div className={className}>
@@ -36,7 +73,7 @@ function Wizard({ className }) {
             <h1 className="title">Terminus</h1>
             <p className="subtitle">What are you doing today?</p>
             <div className="choices">
-              <button className="choice-btn primary" onClick={handleRunner}>
+              <button className="choice-btn primary" onClick={handleRunnerNext}>
                 <Activity size={18} strokeWidth={2} />
                 <span className="choice-label">I&apos;m running</span>
               </button>
@@ -51,6 +88,29 @@ function Wizard({ className }) {
         {step === 2 && (
           <div className="step">
             <button className="back-btn" onClick={() => setStep(1)}>
+              ← Back
+            </button>
+            <h1 className="title">Pick a race</h1>
+            {raceList(
+              handleRunnerRacePick,
+              "Which race are you running today?",
+            )}
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="step">
+            <button className="back-btn" onClick={() => setStep(1)}>
+              ← Back
+            </button>
+            <h1 className="title">Pick a race</h1>
+            {raceList(handleFollowerRacePick, "Which race are you watching?")}
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="step">
+            <button className="back-btn" onClick={() => setStep(3)}>
               ← Back
             </button>
             <h1 className="title">Enter Code</h1>
