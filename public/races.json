@@ -1,1 +1,5 @@
-[{ "id": "vvx-xgtv-2026", "name": "VVX XGTV 2026" }]
+[
+  { "id": "vvx-xgtv-2026", "name": "VVX XGTV 2026" },
+  { "id": "vvx-110-2026", "name": "VVX 110km 2026" },
+  { "id": "vvx-80-2026", "name": "VVX 84km 2026" }
+]
