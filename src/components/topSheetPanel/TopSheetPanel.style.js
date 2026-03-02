@@ -15,6 +15,10 @@ const style = (Component) => styled(Component)`
   touch-action: none;
   position: absolute;
   top: calc(0.1rem + env(safe-area-inset-top));
+
+  @media (hover: hover) and (pointer: fine) {
+    top: 1.5rem;
+  }
   left: 50%;
   width: 96vw;
   max-width: 600px;
