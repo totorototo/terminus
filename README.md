@@ -25,13 +25,12 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 - **Section Analytics**: Distance, elevation gain/loss, slope percentages, difficulty rating
 - **ETA Estimation**: Arrival time prediction per section based on difficulty
 - **Peak Detection**: Automatic identification and visualization of peaks
-- **Checkpoint Markers**: Location labels with occlusion detection and distance-based visibility
+- **Checkpoint Markers**: Location labels along the route with distance-based visibility
 - **Off-Course Detection**: Automatic detection with visual scene alert and 3D label
-- **Dark/Light Theme**: Toggle between dark and light modes
-- **Live GPS Tracking**: Real-time position updates with closest point finding
-- **Live Location Sharing**: WebSocket relay via PartyKit for real-time position broadcasting to followers
 - **Runner / Follower Modes**: First-run wizard for role selection — runners broadcast their position, followers track it on the 3D trail
-- **Performance Optimized**: Web Workers + WASM for smooth 60fps rendering
+- **Live GPS Tracking**: Real-time position updates on the 3D trail
+- **Live Location Sharing**: Broadcast your position to followers in real time
+- **Dark/Light Theme**: Toggle between dark and light modes
 
 ## Tech Stack
 
