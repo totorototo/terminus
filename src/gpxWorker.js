@@ -66,12 +66,7 @@ self.onmessage = async function (e) {
 };
 
 async function processGPXFile(gpxFileBytes, requestId) {
-  console.log("🔄 GPS Worker: Processing GPX file...");
   const gpxData = await readGPXComplete(gpxFileBytes.gpxBytes);
-
-  console.log(
-    `📊 Loaded ${gpxData.trace.points.length} track points, ${gpxData.waypoints.length} waypoints`,
-  );
 
   // Convert Zigar proxy objects to plain JS before sending
   // Note: Zig string fields ([]const u8) need .string property to convert to JS strings
@@ -137,21 +132,7 @@ async function processGPXFile(gpxFileBytes, requestId) {
 }
 
 async function processGPSData(gpsData, requestId) {
-  console.log("🔄 GPS Worker: Processing GPS data...");
-  console.log(`📊 Input: ${gpsData.coordinates.length} GPS points`);
-
   const trace = Trace.init(gpsData.coordinates);
-
-  console.log(`📊 After processing: ${trace.points.length} points in trace`);
-  if (gpsData.coordinates.length > trace.points.length) {
-    const reduction_pct = (
-      (1.0 - trace.points.length / gpsData.coordinates.length) *
-      100
-    ).toFixed(1);
-    console.log(
-      `✂️ Simplified: ${gpsData.coordinates.length} → ${trace.points.length} points (${reduction_pct}% reduction)`,
-    );
-  }
 
   self.postMessage({
     type: "PROGRESS",
@@ -180,8 +161,6 @@ async function processGPSData(gpsData, requestId) {
 }
 
 async function processSections(data, requestId) {
-  console.log("🔄 GPS Worker: Processing sections...");
-
   const { coordinates, sections } = data;
 
   // Validate coordinates before creating trace
@@ -191,12 +170,6 @@ async function processSections(data, requestId) {
 
   const trace = Trace.init(coordinates);
 
-  console.log(
-    `📏 Trace total distance: ${trace.totalDistance}m (${(trace.totalDistance / 1000).toFixed(2)}km)`,
-  );
-  console.log(`📏 Trace points: ${trace.points.length}`);
-  console.log(`📍 Processing ${sections.length} sections`);
-
   // Send progress updates during processing
   self.postMessage({
     type: "PROGRESS",
@@ -205,7 +178,7 @@ async function processSections(data, requestId) {
     message: "Trace initialized...",
   });
 
-  const results = sections.map((section, idx) => {
+  const results = sections.map((section) => {
     const {
       startKm,
       endKm,
@@ -381,5 +354,3 @@ async function findClosestLocation(data, requestId) {
     deviationDistance: closest.distance ?? 0,
   });
 }
-
-console.log("🚀 GPS Worker: Ready for GPS processing tasks");

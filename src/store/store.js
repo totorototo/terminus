@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist, subscribeWithSelector } from "zustand/middleware";
+import { useShallow } from "zustand/react/shallow";
 
 import { createAppSlice } from "./slices/app";
 import { createGPSSlice } from "./slices/gps";
@@ -91,11 +92,13 @@ export const useProjectedLocation = () =>
   useStore((state) => state.gps.projectedLocation);
 export const useGpxCoordinates = () => useStore((state) => state.gpx.data);
 export const useProcessingState = () =>
-  useStore((state) => ({
-    isProcessing: state.worker.processing,
-    progress: state.worker.progress,
-    message: state.worker.progressMessage,
-    error: state.worker.errorMessage,
-  }));
+  useStore(
+    useShallow((state) => ({
+      isProcessing: state.worker.processing,
+      progress: state.worker.progress,
+      message: state.worker.progressMessage,
+      error: state.worker.errorMessage,
+    })),
+  );
 
 export default useStore;

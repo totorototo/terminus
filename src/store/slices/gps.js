@@ -212,8 +212,6 @@ export const createGPSSlice = (set, get) => {
           errorMessage = error.message;
         }
 
-        console.error("Geolocation error:", errorMessage, error);
-
         set(
           (state) => ({
             ...state,
@@ -257,15 +255,13 @@ export const createGPSSlice = (set, get) => {
         try {
           await navigator.share({ title: "Follow my run", url });
         } catch (error) {
-          if (error.name !== "AbortError") {
-            console.error("Error sharing room code:", error);
-          }
+          if (error.name !== "AbortError") throw error;
         }
       } else {
         try {
           await navigator.clipboard.writeText(url);
-        } catch (error) {
-          console.error("Error copying room code to clipboard:", error);
+        } catch {
+          // Clipboard unavailable — silently fail
         }
       }
     },
