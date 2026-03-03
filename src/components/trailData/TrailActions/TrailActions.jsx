@@ -1,5 +1,6 @@
 import { memo } from "react";
 
+import { Tv, Trash2, LogOut } from "@styled-icons/feather";
 import { useLocation } from "wouter";
 
 import useStore from "../../../store/store.js";
@@ -18,13 +19,16 @@ const TrailActions = memo(function TrailActions({ className }) {
         className={`action-button ${trackingMode ? "active" : ""}`}
         onClick={toggleTrackingMode}
       >
-        Fly-by
+        <Tv size={20} />
+        <span>Fly-by Mode</span>
       </button>
       <button className="action-button" onClick={flush}>
-        Flush Data
+        <Trash2 size={20} />
+        <span>Flush Saved Locations</span>
       </button>
       <button className="action-button" onClick={() => navigate("/")}>
-        Switch Role
+        <LogOut size={20} />
+        <span>Leave Trail</span>
       </button>
     </div>
   );
