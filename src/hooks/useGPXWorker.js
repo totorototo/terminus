@@ -11,6 +11,7 @@ export function useGPXWorker(raceId) {
     isWorkerReady,
     processGPXFile,
     setSections,
+    flush,
   } = useStore(
     useShallow((state) => ({
       initGPXWorker: state.initGPXWorker,
@@ -18,6 +19,7 @@ export function useGPXWorker(raceId) {
       isWorkerReady: state.worker.isReady,
       processGPXFile: state.processGPXFile,
       setSections: state.setSections,
+      flush: state.flush,
     })),
   );
 
@@ -33,6 +35,7 @@ export function useGPXWorker(raceId) {
     // race data arrives — ensures all sections remount simultaneously as fresh
     // components, avoiding shader/material initialization issues.
     setSections([]);
+    flush();
 
     const controller = new AbortController();
 
@@ -51,7 +54,7 @@ export function useGPXWorker(raceId) {
     });
 
     return () => controller.abort();
-  }, [isWorkerReady, raceId, processGPXFile, setSections]);
+  }, [isWorkerReady, raceId, processGPXFile, setSections, flush]);
 
   return { isWorkerReady };
 }
