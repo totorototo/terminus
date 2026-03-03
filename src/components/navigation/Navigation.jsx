@@ -14,14 +14,14 @@ import {
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
-import useStore from "../../store/store.js";
-import { useProjectedLocation } from "../../store/store.js";
+import useStore, { useProjectedLocation } from "../../store/store.js";
 
 import style from "./Navigation.style.js";
 
 // Animation configuration
 const SECTION_ITEM_HEIGHT = 140;
 const SECTION_ITEM_TRANSLATE = 6;
+const SPRING_CONFIG = { tension: 170, friction: 26 };
 
 // Get arrow icon based on bearing direction
 function getArrowIcon(bearing) {
@@ -81,8 +81,6 @@ function Navigation({ className }) {
   const currentPositionIndex = projectedLocation.index || 0;
   const theme = useTheme();
 
-  const springConfig = { tension: 170, friction: 26 };
-
   const remainingSections = useMemo(
     () =>
       sections?.filter((section) => section.endIndex >= currentPositionIndex) ??
@@ -109,10 +107,10 @@ function Navigation({ className }) {
         ? cumulativeElevationLosses[currentSection.endIndex] -
           cumulativeElevationLosses[currentPositionIndex]
         : 0,
-    config: springConfig,
+    config: SPRING_CONFIG,
   });
 
-  const transitions = useTransition(remainingSections || [], {
+  const transitions = useTransition(remainingSections, {
     from: {
       height: 0,
       transform: `translateY(-${SECTION_ITEM_TRANSLATE}px)`,

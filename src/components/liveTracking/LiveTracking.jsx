@@ -6,6 +6,8 @@ import useStore from "../../store/store.js";
 
 import style from "./LiveTracking.style";
 
+const SPRING_CONFIG = { tension: 170, friction: 26 };
+
 function LiveTracking({ className }) {
   const {
     cumulativeDistances,
@@ -25,8 +27,6 @@ function LiveTracking({ className }) {
     })),
   );
 
-  const springConfig = { tension: 170, friction: 26 };
-
   // Batch all spring animations into a single hook for better performance
   const springs = useSpringWeb({
     distance:
@@ -43,7 +43,7 @@ function LiveTracking({ className }) {
       gpsData && currentPositionIndex
         ? 100 - (currentPositionIndex * 100) / gpsData.length
         : 0,
-    config: springConfig,
+    config: SPRING_CONFIG,
   });
   const { distance, elevation, elevationLoss, altitude, progress } = springs;
 

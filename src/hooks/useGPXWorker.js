@@ -47,7 +47,7 @@ export function useGPXWorker(raceId) {
     }
 
     loadAndProcessGPX().catch((err) => {
-      if (err.name !== "AbortError") console.error(err);
+      if (err.name !== "AbortError") throw err;
     });
 
     return () => controller.abort();
