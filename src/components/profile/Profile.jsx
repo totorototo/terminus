@@ -281,6 +281,14 @@ function Profile({
 
   useFrame(() => {
     if (!geometryRef.current || !startTimeRef.current) return;
+    const positionAttribute = geometryRef.current.attributes.position;
+    // Guard against size mismatch during race switch (buffer resize is not supported)
+    if (
+      !positionAttribute ||
+      interpolatedPositions.current.length !== positionAttribute.array.length
+    )
+      return;
+
     const elapsed = performance.now() - startTimeRef.current;
     const t = Math.min(elapsed / duration, 1);
 
@@ -290,7 +298,6 @@ function Profile({
       interpolatedPositions.current[i] = start + (end - start) * t;
     }
 
-    const positionAttribute = geometryRef.current.attributes.position;
     positionAttribute.array.set(interpolatedPositions.current);
     positionAttribute.needsUpdate = true;
 
@@ -341,6 +348,7 @@ function Profile({
     >
       <bufferGeometry ref={geometryRef}>
         <bufferAttribute
+          key={`pos-${initialPositions.length}`}
           attach="attributes-position"
           array={initialPositions}
           count={initialPositions.length / 3}
@@ -349,6 +357,7 @@ function Profile({
         />
         {showSlopeColors && (
           <bufferAttribute
+            key={`slope-${slopeAttribute.length}`}
             attach="attributes-slope"
             array={slopeAttribute}
             count={slopeAttribute.length}
@@ -356,6 +365,7 @@ function Profile({
           />
         )}
         <bufferAttribute
+          key={`vi-${vertexIndexAttribute.length}`}
           attach="attributes-vertexIndex"
           array={vertexIndexAttribute}
           count={vertexIndexAttribute.length}

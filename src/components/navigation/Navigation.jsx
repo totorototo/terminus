@@ -20,7 +20,6 @@ import useStore from "../../store/store.js";
 import { useProjectedLocation } from "../../store/store.js";
 
 import style from "./Navigation.style.js";
-import { int } from "three/src/nodes/tsl/TSLCore.js";
 
 // Custom locale for duration formatting
 const customLocale = {
@@ -149,17 +148,6 @@ function Navigation({ className }) {
         const endDate = new Date(section.endTime * 1000);
         const cutOffDay = format(endDate, "EEE");
         const cutOffTime = format(endDate, "HH:mm");
-        const formattedDuration = formatDuration(
-          intervalToDuration({
-            start: 0,
-            end: section.maxCompletionTime * 1000,
-          }),
-          {
-            format: ["hours", "minutes"],
-            locale: customLocale,
-          },
-        ).replace(/\s+/g, "");
-
         const cappedDuration =
           section.maxCompletionTime != null
             ? Math.min(section.estimatedDuration, section.maxCompletionTime)
