@@ -19,9 +19,8 @@ const Scene = lazy(() => import("../scene/Scene.jsx"));
 const PUSH_NOTIFICATIONS_ENABLED = false;
 
 function Follower({ className }) {
-  useGPXWorker();
-
   const { roomId, raceId } = useParams();
+  useGPXWorker(raceId);
 
   const {
     connectToFollowerSession,

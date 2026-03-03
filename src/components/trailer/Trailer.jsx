@@ -19,8 +19,8 @@ import style from "./Trailer.style";
 const Scene = lazy(() => import("../scene/Scene.jsx"));
 
 function Trailer({ className }) {
-  const { isWorkerReady } = useGPXWorker();
   const { raceId } = useParams();
+  const { isWorkerReady } = useGPXWorker(raceId);
   const { disconnectTrailerSession, setMode, setRaceId } = useStore(
     useShallow((state) => ({
       disconnectTrailerSession: state.disconnectTrailerSession,
