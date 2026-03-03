@@ -11,28 +11,13 @@ import {
   CornerUpLeft,
   CornerUpRight,
 } from "@styled-icons/feather";
-import { format, formatDuration, intervalToDuration } from "date-fns";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
-import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../constants.js";
 import useStore from "../../store/store.js";
 import { useProjectedLocation } from "../../store/store.js";
 
 import style from "./Navigation.style.js";
-
-// Custom locale for duration formatting
-const customLocale = {
-  formatDistance: (token, count) => {
-    const units = {
-      xSeconds: `${count}sec`,
-      xMinutes: `${count}m`,
-      xHours: `${count}h`,
-      xDays: `${count}d`,
-    };
-    return units[token] || "";
-  },
-};
 
 // Animation configuration
 const SECTION_ITEM_HEIGHT = 140;
@@ -145,24 +130,6 @@ function Navigation({ className }) {
       {transitions((animStyle, section, _, index) => {
         const isCurrent = index === 0;
         const ArrowIcon = getArrowIcon(section.bearing);
-        const endDate = new Date(section.endTime * 1000);
-        const cutOffDay = format(endDate, "EEE");
-        const cutOffTime = format(endDate, "HH:mm");
-        const cappedDuration =
-          section.maxCompletionTime != null
-            ? Math.min(section.estimatedDuration, section.maxCompletionTime)
-            : section.estimatedDuration;
-
-        const formatEstimatedDuration = formatDuration(
-          intervalToDuration({
-            start: 0,
-            end: cappedDuration.toFixed(0) * 1000,
-          }),
-          {
-            format: ["hours", "minutes"],
-            locale: customLocale,
-          },
-        ).replace(/\s+/g, "");
 
         return (
           <animated.div
@@ -191,8 +158,10 @@ function Navigation({ className }) {
               </div>
 
               <div className="waypoint">{section.endLocation}</div>
+            </div>
 
-              {/* Elevation indicators */}
+            {/* Elevation info */}
+            <div className="info-section">
               <div className="elevation-section">
                 <div className="elevation-item gain">
                   <UpArrow />
@@ -217,31 +186,6 @@ function Navigation({ className }) {
                   <span className="unit">m</span>
                 </div>
               </div>
-            </div>
-
-            {/* Waypoint and time info */}
-            <div className="info-section">
-              <div className="time-row">
-                <span className="time-value">{cutOffDay}</span>
-                <span className="time-value">{cutOffTime}</span>
-              </div>
-              <div className="duration-row">
-                <span className="duration-value">
-                  {formatEstimatedDuration}
-                </span>
-              </div>
-              {section.difficulty > 0 && (
-                <div className="difficulty-row">
-                  <span
-                    className="difficulty-value"
-                    style={{
-                      color: DIFFICULTY_COLORS[section.difficulty - 1],
-                    }}
-                  >
-                    {DIFFICULTY_LABELS[section.difficulty - 1]}
-                  </span>
-                </div>
-              )}
             </div>
           </animated.div>
         );

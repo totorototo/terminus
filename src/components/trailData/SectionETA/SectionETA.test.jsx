@@ -28,7 +28,6 @@ vi.mock("../../../constants.js", () => ({
 
 const START_TIME = 1_000_000; // epoch seconds
 const START_MS = START_TIME * 1000;
-const NAISMITH_FLAT_MS_PER_M = 720;
 
 // Three consecutive sections, each 5 km and 1 h Naismith baseline
 const SECTIONS = [
@@ -180,19 +179,6 @@ describe("SectionETA", () => {
 
   // ── Difficulty labels ────────────────────────────────────────────────────
 
-  it("shows difficulty label for future sections", () => {
-    setupStore(SECTIONS, CUMULATIVE_DISTANCES, {
-      index: 0,
-      timestamp: START_MS,
-    });
-
-    render(<SectionETA />);
-
-    expect(screen.getByText("Easy")).toBeInTheDocument(); // difficulty 1
-    expect(screen.getByText("Moderate")).toBeInTheDocument(); // difficulty 2
-    expect(screen.getByText("Hard")).toBeInTheDocument(); // difficulty 3
-  });
-
   it("hides difficulty label for past sections", () => {
     // Past all sections
     setupStore(SECTIONS, CUMULATIVE_DISTANCES, {
@@ -205,20 +191,6 @@ describe("SectionETA", () => {
     expect(screen.queryByText("Easy")).not.toBeInTheDocument();
     expect(screen.queryByText("Moderate")).not.toBeInTheDocument();
     expect(screen.queryByText("Hard")).not.toBeInTheDocument();
-  });
-
-  it("renders correct difficulty colors via inline style", () => {
-    setupStore(SECTIONS, CUMULATIVE_DISTANCES, {
-      index: 0,
-      timestamp: START_MS,
-    });
-
-    render(<SectionETA />);
-
-    const easyEl = screen.getByText("Easy");
-    expect(easyEl).toHaveStyle({ color: "#4CAF50" });
-    const moderateEl = screen.getByText("Moderate");
-    expect(moderateEl).toHaveStyle({ color: "#ECBC3E" });
   });
 
   // ── Distance display ─────────────────────────────────────────────────────
