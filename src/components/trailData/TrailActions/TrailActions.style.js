@@ -22,8 +22,11 @@ const style = (Component) => styled(Component)`
     cursor: pointer;
     transition: all ${(props) => props.theme.transitions["--transition-fast"]};
     display: flex;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
+    gap: 1rem;
+
     border: 1px solid
       ${(props) =>
         rgba(
