@@ -10,16 +10,23 @@ import Profile from "../profile/Profile.jsx";
 const MemoizedProfile = memo(Profile);
 
 export default function Sections({ sectionsPoints3D }) {
-  const { sections, slopes, showSlopeColors, profileMode, progressIndex } =
-    useStore(
-      useShallow((state) => ({
-        sections: state.sections,
-        slopes: state.gpx.slopes,
-        showSlopeColors: state.app.displaySlopes,
-        profileMode: state.app.profileMode,
-        progressIndex: state.gps.projectedLocation.index,
-      })),
-    );
+  const {
+    sections,
+    slopes,
+    showSlopeColors,
+    profileMode,
+    progressIndex,
+    raceId,
+  } = useStore(
+    useShallow((state) => ({
+      sections: state.sections,
+      slopes: state.gpx.slopes,
+      showSlopeColors: state.app.displaySlopes,
+      profileMode: state.app.profileMode,
+      progressIndex: state.gps.projectedLocation.index,
+      raceId: state.app.raceId,
+    })),
+  );
 
   const theme = useTheme();
 
@@ -51,7 +58,7 @@ export default function Sections({ sectionsPoints3D }) {
       }
       return (
         <MemoizedProfile
-          key={id}
+          key={`${raceId}/${id}`}
           points={points}
           color={getInterpolatedColor(
             idx,
@@ -77,6 +84,7 @@ export default function Sections({ sectionsPoints3D }) {
     progressIndex,
     progressColor,
     sections,
+    raceId,
   ]);
 
   return sectionElements;

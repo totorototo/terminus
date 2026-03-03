@@ -5,15 +5,21 @@ import { useShallow } from "zustand/react/shallow";
 import useStore from "../store/store.js";
 
 export function useGPXWorker(raceId) {
-  const { initGPXWorker, terminateGPXWorker, isWorkerReady, processGPXFile } =
-    useStore(
-      useShallow((state) => ({
-        initGPXWorker: state.initGPXWorker,
-        terminateGPXWorker: state.terminateGPXWorker,
-        isWorkerReady: state.worker.isReady,
-        processGPXFile: state.processGPXFile,
-      })),
-    );
+  const {
+    initGPXWorker,
+    terminateGPXWorker,
+    isWorkerReady,
+    processGPXFile,
+    setSections,
+  } = useStore(
+    useShallow((state) => ({
+      initGPXWorker: state.initGPXWorker,
+      terminateGPXWorker: state.terminateGPXWorker,
+      isWorkerReady: state.worker.isReady,
+      processGPXFile: state.processGPXFile,
+      setSections: state.setSections,
+    })),
+  );
 
   useEffect(() => {
     initGPXWorker();
@@ -22,6 +28,11 @@ export function useGPXWorker(raceId) {
 
   useEffect(() => {
     if (!isWorkerReady || !raceId) return;
+
+    // Clear sections immediately so all Profile components unmount before new
+    // race data arrives — ensures all sections remount simultaneously as fresh
+    // components, avoiding shader/material initialization issues.
+    setSections([]);
 
     const controller = new AbortController();
 
@@ -40,7 +51,7 @@ export function useGPXWorker(raceId) {
     });
 
     return () => controller.abort();
-  }, [isWorkerReady, raceId, processGPXFile]);
+  }, [isWorkerReady, raceId, processGPXFile, setSections]);
 
   return { isWorkerReady };
 }
