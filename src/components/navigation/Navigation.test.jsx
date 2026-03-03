@@ -65,16 +65,6 @@ vi.mock("@styled-icons/feather", () => ({
   Clock: ({ size, ...props }) => <div data-icon="clock" {...props} />,
 }));
 
-// Mock date-fns
-vi.mock("date-fns", () => ({
-  format: () => "Monday 14:30",
-  formatDuration: () => "1h 30m",
-  intervalToDuration: (interval) => ({
-    hours: 1,
-    minutes: 30,
-  }),
-}));
-
 // Mock Navigation.style
 vi.mock("./Navigation.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
@@ -382,28 +372,6 @@ describe("Navigation Component", () => {
       expect(screen.getByText("Location 1")).toBeInTheDocument();
       expect(screen.getByText("Location 2")).toBeInTheDocument();
       expect(screen.getByText("Location 3")).toBeInTheDocument();
-    });
-
-    it("should display cutoff time for sections", () => {
-      useStore.mockImplementation((selector) => {
-        const state = {
-          sections: mockSections,
-          gpx: {
-            cumulativeDistances: [0, 5000, 15000, 30000],
-            cumulativeElevations: [0, 500, 1500, 3000],
-            cumulativeElevationLosses: [0, 200, 600, 1200],
-          },
-        };
-        return selector(state);
-      });
-
-      hooks.useProjectedLocation.mockReturnValue({ index: 0 });
-
-      renderWithTheme(<Navigation />);
-
-      // The mocked format returns "Monday 14:30"
-      // Day and time are rendered separately, so 2 spans per section × 3 sections = 6 matches
-      expect(screen.getAllByText(/Monday 14:30/)).toHaveLength(6);
     });
   });
 

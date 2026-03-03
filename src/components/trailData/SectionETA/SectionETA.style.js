@@ -113,6 +113,7 @@ const style = (Component) => styled(Component)`
     flex-direction: column;
     min-width: 0;
     gap: 1px;
+    align-items: flex-start;
   }
 
   .section-name {

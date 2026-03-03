@@ -115,7 +115,6 @@ const style = (Component) => styled(Component)`
     opacity: 0.8;
   }
 
-  /* Waypoint and time info */
   .info-section {
     display: flex;
     flex-direction: column;
@@ -136,55 +135,15 @@ const style = (Component) => styled(Component)`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 0.8;
-  }
-
-  .time-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    align-items: flex-start;
-    justify-content: center;
-  }
-
-  .time-value {
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    line-height: 1;
-  }
-
-  .duration-row {
-    margin-top: 0.15rem;
-
-    .duration-value {
-      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-      font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
-      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-      color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-accent"]};
-      line-height: 1;
-    }
-  }
-
-  .difficulty-row {
-    .difficulty-value {
-      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      line-height: 1;
-    }
+    // line-height: 0.8;
   }
 
   /* Elevation indicators */
   .elevation-section {
     display: flex;
-    align-items: center;
-    gap: 0.425rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
   }
 
   .elevation-item {
@@ -220,15 +179,6 @@ const style = (Component) => styled(Component)`
   /* Non-current sections styling */
   .section:not(.current) > * {
     opacity: 0.4;
-  }
-
-  .section.current {
-    /* Enhance current section */
-    border-color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-primary"],
-        0.3,
-      )};
   }
 
   .section.current > * {

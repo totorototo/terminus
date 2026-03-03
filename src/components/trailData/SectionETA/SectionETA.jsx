@@ -165,16 +165,6 @@ const SectionETA = memo(function SectionETA({ className }) {
                       ? `${section.endKm.toFixed(1)} km`
                       : ""}
                   </span>
-                  {section.difficulty > 0 && !section.isPast && (
-                    <span
-                      className="section-difficulty"
-                      style={{
-                        color: DIFFICULTY_COLORS[section.difficulty - 1],
-                      }}
-                    >
-                      {DIFFICULTY_LABELS[section.difficulty - 1]}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
