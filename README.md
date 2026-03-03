@@ -57,6 +57,22 @@ npm run dev
 
 The app will be available at `http://localhost:5173` (or next available port)
 
+### Simulating GPS on iOS Simulator
+
+To test live GPS tracking features without a physical device, use the included script to simulate movement along the VVX XGTV 2026 route in the iOS Simulator:
+
+```bash
+node scripts/simulate-location.js                  # default: 2m/s, 70 points, update every 100m
+node scripts/simulate-location.js 5               # 5m/s walking/running pace
+node scripts/simulate-location.js 5 100 50        # 5m/s, 100 waypoints, update every 50m
+```
+
+The script samples evenly-spaced points from the GPX track and feeds them to the iOS Simulator via `xcrun simctl`. Make sure a Simulator is booted before running. Press `Ctrl+C` to stop the simulation, or clear it with:
+
+```bash
+xcrun simctl location booted clear
+```
+
 ## Claude Code Setup
 
 This project uses structured CLAUDE.md instruction files for Claude Code:
