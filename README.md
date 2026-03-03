@@ -73,6 +73,27 @@ The script samples evenly-spaced points from the GPX track and feeds them to the
 xcrun simctl location booted clear
 ```
 
+### Simulating live location via PartyKit
+
+To replay a GPX route as live position updates broadcast to a PartyKit room (useful for testing the follower view without a physical runner):
+
+```bash
+# Usage
+node scripts/simulate-partykit.js <gpx-file> <room-id> <race-id> [speed_m_per_s] [update_every_m]
+
+# Examples
+node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 vvx-xgtv-2026        # 2 m/s, update every 100 m
+node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 vvx-xgtv-2026 500 500 # 500 m/s, 1 update/sec (fast replay)
+```
+
+By default the script targets `localhost:1999`. Set `PARTYKIT_HOST` to target a deployed instance:
+
+```bash
+PARTYKIT_HOST=<your-partykit-host> node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 vvx-xgtv-2026
+```
+
+Open the app as a follower and join room `ABC123` to watch the position move in real time.
+
 ## Claude Code Setup
 
 This project uses structured CLAUDE.md instruction files for Claude Code:
