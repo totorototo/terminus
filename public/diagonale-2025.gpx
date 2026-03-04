@@ -8,6 +8,74 @@
     </link>
     <time>2026-03-03T20:54:44+00:00</time>
   </metadata>
+  <wpt lat="-21.33975" lon="55.45966">
+    <time>2025-10-24T22:00:00Z</time>
+    <name>Saint-Pierre - Ravine Blanche</name>
+  </wpt>
+  <wpt lat="-21.31265" lon="55.54592">
+    <time>2025-10-25T01:30:00Z</time>
+    <name>Domaine Vidot</name>
+  </wpt>
+  <wpt lat="-21.24573" lon="55.59401">
+    <time>2025-10-25T07:00:00Z</time>
+    <name>Notre Dame de la Paix</name>
+  </wpt>
+  <wpt lat="-21.20111" lon="55.62095">
+    <time>2025-10-25T10:15:00Z</time>
+    <name>Nez de Boeuf</name>
+  </wpt>
+  <wpt lat="-21.16196" lon="55.57101">
+    <time>2025-10-25T12:30:00Z</time>
+    <name>Mare à Boue</name>
+  </wpt>
+  <wpt lat="-21.13567" lon="55.47547">
+    <time>2025-10-25T20:00:00Z</time>
+    <name>Cilaos - Stade</name>
+  </wpt>
+  <wpt lat="-21.11781" lon="55.45007">
+    <time>2025-10-25T22:45:00Z</time>
+    <name>Début sentier du Taïbit</name>
+  </wpt>
+  <wpt lat="-21.06613" lon="55.45102">
+    <time>2025-10-26T05:30:00Z</time>
+    <name>Plaine des Merles</name>
+  </wpt>
+  <wpt lat="-21.05495" lon="55.45452">
+    <time>2025-10-26T06:30:00Z</time>
+    <name>Départ sentier Scout</name>
+  </wpt>
+  <wpt lat="-21.01968" lon="55.42483">
+    <time>2025-10-26T10:15:00Z</time>
+    <name>Aurere - Ecole</name>
+  </wpt>
+  <wpt lat="-21.05095" lon="55.38093">
+    <time>2025-10-26T20:15:00Z</time>
+    <name>Maïdo - Tête Dure</name>
+  </wpt>
+  <wpt lat="-20.97255" lon="55.32452">
+    <time>2025-10-26T23:45:00Z</time>
+    <name>Ilet Savannah</name>
+  </wpt>
+  <wpt lat="-20.96243" lon="55.35695">
+    <time>2025-10-27T02:30:00Z</time>
+    <name>Chemin Ratinaud</name>
+  </wpt>
+  <wpt lat="-20.92695" lon="55.33769">
+    <time>2025-10-27T06:00:00Z</time>
+    <name>La Possession</name>
+  </wpt>
+  <wpt lat="-20.89630" lon="55.37696">
+    <time>2025-10-27T08:30:00Z</time>
+    <name>Grande Chaloupe</name>
+  </wpt>
+  <wpt lat="-20.90825" lon="55.42363">
+    <time>2025-10-27T13:30:00Z</time>
+    <name>Colorado</name>
+  </wpt>
+  <wpt lat="-20.88499" lon="55.44212">
+    <time>2025-10-27T16:00:00Z</time>
+    <name>Arrivée Saint-Denis</name>
+  </wpt>
   <trk>
     <name>GRAND RAID REUNION 2025 - DIAGONALE DES FOUS 2025 sur TraceDeTrail.fr</name>
     <src>Trace de Trail</src>
@@ -44934,189 +45002,4 @@
       </trkpt>
     </trkseg>
   </trk>
-  <wpt lat="-21.33975" lon="55.45966">
-    <ele>2</ele>
-    <name>Saint-Pierre - Ravine Blanche</name>
-    <desc>Départ - 0 km</desc>
-    <sym>Flag, Green</sym>
-    <type>depart</type>
-  </wpt>
-  <wpt lat="-21.33984" lon="55.50538">
-    <ele>134</ele>
-    <name>Bassin Plat</name>
-    <desc>6.6 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-21.31265" lon="55.54592">
-    <ele>651</ele>
-    <name>Domaine Vidot</name>
-    <desc>14 km - Barrière horaire 01h30</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-21.24573" lon="55.59401">
-    <ele>1683</ele>
-    <name>Notre Dame de la Paix</name>
-    <desc>33.4 km - Barrière horaire 07h00</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-21.20111" lon="55.62095">
-    <ele>2018</ele>
-    <name>Nez de Boeuf</name>
-    <desc>45.4 km - Barrière horaire 10h15</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-21.18651" lon="55.59149">
-    <ele>1683</ele>
-    <name>Chalet des Pâtres</name>
-    <desc>51 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-21.16196" lon="55.57101">
-    <ele>1602</ele>
-    <name>Mare à Boue</name>
-    <desc>55.6 km - Barrière horaire 12h30</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-21.12771" lon="55.50667">
-    <ele>2184</ele>
-    <name>Coteau Kerveguen</name>
-    <desc>65.2 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-21.11114" lon="55.49532">
-    <ele>2488</ele>
-    <name>Croisée Coteau Kerveguen</name>
-    <desc>67.8 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-21.12324" lon="55.48311">
-    <ele>1384</ele>
-    <name>Le Bloc</name>
-    <desc>71.8 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-21.12556" lon="55.47239">
-    <ele>1391</ele>
-    <name>Plateau des Chênes</name>
-    <desc>73.8 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-21.13567" lon="55.47547">
-    <ele>1208</ele>
-    <name>Cilaos - Stade</name>
-    <desc>76 km - Barrière horaire 20h00</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-21.11781" lon="55.45007">
-    <ele>1258</ele>
-    <name>Début sentier du Taïbit</name>
-    <desc>82.7 km - Barrière horaire 22h45</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-21.10369" lon="55.43391">
-    <ele>1614</ele>
-    <name>Marla</name>
-    <desc>88.6 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-21.06613" lon="55.45102">
-    <ele>1808</ele>
-    <name>Plaine des Merles</name>
-    <desc>95.1 km - Barrière horaire 05h30</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-21.05495" lon="55.45452">
-    <ele>1635</ele>
-    <name>Départ sentier Scout</name>
-    <desc>97.2 km - Barrière horaire 06h30</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-21.01968" lon="55.42483">
-    <ele>913</ele>
-    <name>Aurere - Ecole</name>
-    <desc>105.8 km - Barrière horaire 10h15</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-21.04245" lon="55.39307">
-    <ele>979</ele>
-    <name>Ilet des Orangers - Ecole</name>
-    <desc>115.4 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-21.06321" lon="55.38279">
-    <ele>2026</ele>
-    <name>Ti Col Maïdo</name>
-    <desc>121.6 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-21.05095" lon="55.38093">
-    <ele>1945</ele>
-    <name>Maïdo - Tête Dure</name>
-    <desc>123.1 km - Barrière horaire 20h15</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-20.97255" lon="55.32452">
-    <ele>126</ele>
-    <name>Ilet Savannah</name>
-    <desc>139.9 km - Barrière horaire 23h45</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-20.96243" lon="55.35695">
-    <ele>445</ele>
-    <name>Chemin Ratinaud</name>
-    <desc>147.2 km - Barrière horaire 02h30</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-20.92695" lon="55.33769">
-    <ele>3</ele>
-    <name>La Possession</name>
-    <desc>155.3 km - Barrière horaire 06h00</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-20.89630" lon="55.37696">
-    <ele>10</ele>
-    <name>Grande Chaloupe</name>
-    <desc>162.5 km - Barrière horaire 08h30</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-20.90205" lon="55.40428">
-    <ele>454</ele>
-    <name>Saint Bernard - Les Bambous</name>
-    <desc>167 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-20.90825" lon="55.42363">
-    <ele>682</ele>
-    <name>Colorado</name>
-    <desc>171.7 km - Barrière horaire 13h30</desc>
-    <sym>Waypoint</sym>
-    <type>bh</type>
-  </wpt>
-  <wpt lat="-20.88489" lon="55.43388">
-    <ele>347</ele>
-    <name>Belvédère de La Vigie</name>
-    <desc>175.7 km</desc>
-    <sym>Waypoint</sym>
-  </wpt>
-  <wpt lat="-20.88499" lon="55.44212">
-    <ele>49</ele>
-    <name>Arrivée Saint-Denis</name>
-    <desc>Arrivée - 178.7 km</desc>
-    <sym>Flag, Blue</sym>
-    <type>arrivee</type>
-  </wpt>
 </gpx>
