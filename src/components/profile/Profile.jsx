@@ -331,6 +331,7 @@ function Profile({
 
   return (
     <mesh
+      frustumCulled={false}
       castShadow
       receiveShadow
       onClick={(e) => {
