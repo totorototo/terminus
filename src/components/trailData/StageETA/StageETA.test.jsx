@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as storeModule from "../../../store/store.js";
-import SectionETA from "./SectionETA.jsx";
+import StageETA from "./StageETA.jsx";
 
 import "@testing-library/jest-dom/vitest";
 
@@ -15,7 +15,7 @@ vi.mock("date-fns", () => ({
   format: (_date, _fmt) => "Sat 10:00",
 }));
 
-vi.mock("./SectionETA.style.js", () => ({
+vi.mock("./StageETA.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
 
@@ -32,7 +32,7 @@ const START_MS = START_TIME * 1000;
 // Three consecutive sections, each 5 km and 1 h Naismith baseline
 const SECTIONS = [
   {
-    segmentId: "s1",
+    sectionId: "s1",
     startIndex: 0,
     endIndex: 100,
     totalDistance: 5000,
@@ -44,7 +44,7 @@ const SECTIONS = [
     endLocation: "Checkpoint A",
   },
   {
-    segmentId: "s2",
+    sectionId: "s2",
     startIndex: 100,
     endIndex: 200,
     totalDistance: 5000,
@@ -56,7 +56,7 @@ const SECTIONS = [
     endLocation: "Checkpoint B",
   },
   {
-    segmentId: "s3",
+    sectionId: "s3",
     startIndex: 200,
     endIndex: 300,
     totalDistance: 5000,
@@ -84,7 +84,7 @@ function setupStore(sections, cumulativeDistances, projectedLocation) {
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
-describe("SectionETA", () => {
+describe("StageETA", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -93,13 +93,13 @@ describe("SectionETA", () => {
 
   it("renders empty state when there are no sections", () => {
     setupStore([], [], null);
-    render(<SectionETA />);
+    render(<StageETA />);
     expect(screen.getByText("No sections")).toBeInTheDocument();
   });
 
   it("renders empty state when cumulativeDistances is missing", () => {
     setupStore(SECTIONS, [], { index: 0, timestamp: START_MS });
-    render(<SectionETA />);
+    render(<StageETA />);
     expect(screen.getByText("No sections")).toBeInTheDocument();
   });
 
@@ -111,7 +111,7 @@ describe("SectionETA", () => {
       timestamp: START_MS - 1000, // one second before start
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     const etaCells = screen.getAllByText("--:--");
     expect(etaCells).toHaveLength(SECTIONS.length);
@@ -126,7 +126,7 @@ describe("SectionETA", () => {
       timestamp: START_MS + 5400 * 1000,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     // Section 1 is past+recorded → "Sat 10:00" from our date-fns mock
     const etaCells = screen.getAllByText("Sat 10:00");
@@ -142,7 +142,7 @@ describe("SectionETA", () => {
       timestamp: START_MS + 1800 * 1000, // 30 min in
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     // Should render one row marked as current
     const currentRow = document.querySelector(".section-row.current");
@@ -157,7 +157,7 @@ describe("SectionETA", () => {
       timestamp: START_MS,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     expect(screen.getByText("Checkpoint A")).toBeInTheDocument();
     expect(screen.getByText("Checkpoint B")).toBeInTheDocument();
@@ -171,7 +171,7 @@ describe("SectionETA", () => {
       timestamp: START_MS + 10800 * 1000,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     const pastRows = document.querySelectorAll(".section-row.past");
     expect(pastRows.length).toBe(SECTIONS.length);
@@ -186,7 +186,7 @@ describe("SectionETA", () => {
       timestamp: START_MS + 10800 * 1000,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     expect(screen.queryByText("Easy")).not.toBeInTheDocument();
     expect(screen.queryByText("Moderate")).not.toBeInTheDocument();
@@ -201,7 +201,7 @@ describe("SectionETA", () => {
       timestamp: START_MS,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     // endIndex 100 → cumulativeDistances[100] = 5000m → 5.0 km
     expect(screen.getByText("5.0 km")).toBeInTheDocument();
@@ -227,7 +227,7 @@ describe("SectionETA", () => {
       timestamp: START_MS + 100000 * 1000,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     // Recorded time should still render (not "--:--")
     expect(screen.getByText("Sat 10:00")).toBeInTheDocument();
@@ -237,7 +237,7 @@ describe("SectionETA", () => {
     // Section with tight cutoff: starts at START_TIME, max 1 second completion
     const tightCutoffSections = [
       {
-        segmentId: "s1",
+        sectionId: "s1",
         startIndex: 0,
         endIndex: 100,
         totalDistance: 5000,
@@ -255,7 +255,7 @@ describe("SectionETA", () => {
       timestamp: START_MS,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     // ETA should be capped at cutoff and rendered via date-fns (mocked as "Sat 10:00")
     expect(screen.getByText("Sat 10:00")).toBeInTheDocument();
@@ -272,7 +272,7 @@ describe("SectionETA", () => {
       timestamp: START_MS + 1800 * 1000,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     // Section with no raceStart → isCurrent path with raceStart=null → etaMs = null → "--:--"
     expect(screen.getByText("--:--")).toBeInTheDocument();
@@ -284,7 +284,7 @@ describe("SectionETA", () => {
       timestamp: START_MS,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     // Should render without crashing; all future sections show formatted ETA
     expect(screen.getAllByText("Sat 10:00").length).toBeGreaterThanOrEqual(1);
@@ -298,7 +298,7 @@ describe("SectionETA", () => {
       timestamp: START_MS,
     });
 
-    render(<SectionETA />);
+    render(<StageETA />);
 
     expect(screen.getByText("Checkpoint")).toBeInTheDocument();
     expect(screen.getByText("ETA")).toBeInTheDocument();

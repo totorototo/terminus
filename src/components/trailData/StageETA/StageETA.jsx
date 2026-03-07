@@ -5,9 +5,9 @@ import { format } from "date-fns";
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 
-import style from "./SectionETA.style.js";
+import style from "./StageETA.style.js";
 
-const SectionETA = memo(function SectionETA({ className }) {
+const StageETA = memo(function StageETA({ className }) {
   const projectedLocation = useProjectedLocation();
   const sections = useStore((state) => state.sections);
   const cumulativeDistances = useStore(
@@ -46,7 +46,7 @@ const SectionETA = memo(function SectionETA({ className }) {
     // Race hasn't started yet — no ETAs to show
     if (raceStart && now < raceStart) {
       return sections.map((section) => ({
-        id: section.segmentId,
+        id: section.sectionId,
         endLocation: section.endLocation,
         endKm: cumulativeDistances[section.endIndex] / 1000,
         isPast: false,
@@ -115,7 +115,7 @@ const SectionETA = memo(function SectionETA({ className }) {
       const etaStr = etaMs ? format(new Date(etaMs), "EEE HH:mm") : "--:--";
 
       return {
-        id: section.segmentId,
+        id: section.sectionId,
         endLocation: section.endLocation,
         endKm: cumulativeDistances[section.endIndex] / 1000,
         isPast,
@@ -176,4 +176,4 @@ const SectionETA = memo(function SectionETA({ className }) {
   );
 });
 
-export default style(SectionETA);
+export default style(StageETA);

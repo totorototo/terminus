@@ -5,7 +5,8 @@ import { useShallow } from "zustand/react/shallow";
 import { createAppSlice } from "./slices/app";
 import { createGPSSlice } from "./slices/gps";
 import { createGpxSlice } from "./slices/gpx";
-import { createSectionsSlice } from "./slices/sections";
+import { createLegsSlice } from "./slices/sections";
+import { createSectionsSlice, createStagesSlice } from "./slices/stages";
 import { createStatsSlice } from "./slices/stats";
 import { createWayPointsSlice } from "./slices/wayPoints";
 import { createWorkerSlice } from "./slices/worker";
@@ -19,7 +20,9 @@ const useStore = create(
         ...createStatsSlice(...a),
         ...createWorkerSlice(...a),
         ...createWayPointsSlice(...a),
+        ...createLegsSlice(...a),
         ...createSectionsSlice(...a),
+        ...createStagesSlice(...a),
         ...createGPSSlice(...a),
       })),
       {

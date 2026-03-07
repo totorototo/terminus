@@ -24,7 +24,7 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
   );
-  const sections = useStore((state) => state.sections || []);
+  const legs = useStore((state) => state.legs || []);
   const projectedLocation = useProjectedLocation();
   const projectedIndex = projectedLocation?.index ?? null;
 
@@ -82,7 +82,7 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
     // Also drop any label that would collide with the runner km label.
     const MIN_GAP_PCT = 15;
     let lastLabelPct = -MIN_GAP_PCT;
-    const sectionMarkers = sections
+    const sectionMarkers = legs
       .filter((s) => s.startIndex > 0)
       .map((s) => {
         const x = scaleX(Math.floor(s.startIndex / step));
@@ -113,7 +113,7 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
       runnerDistanceKm,
       sectionMarkers,
     };
-  }, [gpxData, cumulativeDistances, sections, projectedIndex]);
+  }, [gpxData, cumulativeDistances, legs, projectedIndex]);
 
   if (!chart) return null;
 

@@ -1,75 +1,551 @@
 <?xml version="1.0"?>
-<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:wptx1="http://www.garmin.com/xmlschemas/WaypointExtension/v1" xmlns:gpxtrx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xmlns:trp="http://www.garmin.com/xmlschemas/TripExtensions/v1" xmlns:adv="http://www.garmin.com/xmlschemas/AdventuresExtensions/v1" xmlns:prs="http://www.garmin.com/xmlschemas/PressureExtension/v1" xmlns:tmd="http://www.garmin.com/xmlschemas/TripMetaDataExtensions/v1" xmlns:vptm="http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensions/v1" xmlns:ctx="http://www.garmin.com/xmlschemas/CreationTimeExtension/v1" xmlns:gpxacc="http://www.garmin.com/xmlschemas/AccelerationExtension/v1" xmlns:gpxpx="http://www.garmin.com/xmlschemas/PowerExtension/v1" xmlns:vidx1="http://www.garmin.com/xmlschemas/VideoExtension/v1" creator="Garmin Desktop App" version="1.1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/WaypointExtension/v1 http://www8.garmin.com/xmlschemas/WaypointExtensionv1.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/ActivityExtension/v1 http://www8.garmin.com/xmlschemas/ActivityExtensionv1.xsd http://www.garmin.com/xmlschemas/AdventuresExtensions/v1 http://www8.garmin.com/xmlschemas/AdventuresExtensionv1.xsd http://www.garmin.com/xmlschemas/PressureExtension/v1 http://www.garmin.com/xmlschemas/PressureExtensionv1.xsd http://www.garmin.com/xmlschemas/TripExtensions/v1 http://www.garmin.com/xmlschemas/TripExtensionsv1.xsd http://www.garmin.com/xmlschemas/TripMetaDataExtensions/v1 http://www.garmin.com/xmlschemas/TripMetaDataExtensionsv1.xsd http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensions/v1 http://www.garmin.com/xmlschemas/ViaPointTransportationModeExtensionsv1.xsd http://www.garmin.com/xmlschemas/CreationTimeExtension/v1 http://www.garmin.com/xmlschemas/CreationTimeExtensionsv1.xsd http://www.garmin.com/xmlschemas/AccelerationExtension/v1 http://www.garmin.com/xmlschemas/AccelerationExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.garmin.com/xmlschemas/VideoExtension/v1 http://www.garmin.com/xmlschemas/VideoExtensionv1.xsd">
+<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" creator="terminus" version="1.1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
   <metadata>
-    <link href="http://www.garmin.com">
-      <text>Garmin International</text>
-    </link>
-    <time>2025-08-20T14:27:29Z</time>
-    <bounds maxlat="45.880257999524474" maxlon="7.92977225035429" minlat="45.547682689502835" minlon="6.920883804559708"/>
+    <name>TOR330 2025</name>
+    <desc>TOR330 - 330km ultra trail around the Aosta Valley (2025 edition)</desc>
+    <time>2025-09-07T08:00:00Z</time>
   </metadata>
-  <wpt lat="45.792790" lon="6.971815">
-    <time>2025-09-07T10:00:00Z</time>
-    <name>Courmayeur</name>
+  <wpt lat="45.792789570987225" lon="6.971815265715122">
+    <ele>1215</ele>
+    <time>2025-09-07T08:00:00Z</time>
+    <name>Start TOR330 - Tor des Géants</name>
+    <cmt>Départ TOR330 2025</cmt>
+    <desc>Départ TOR330 2025</desc>
+    <sym>Flag, Green</sym>
+    <type>Start</type>
   </wpt>
-  <wpt lat="45.715357" lon="6.950102">
-    <time>2025-09-07T15:30:00Z</time>
+  <wpt lat="45.768752368167043" lon="6.920971143990755">
+    <ele>2569</ele>
+    <name>Col d'Arp</name>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.743773458525538" lon="6.93939071148634">
+    <name>Baite Youlaz</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.715356543660164" lon="6.950102280825377">
+    <ele>1460</ele>
+    <time>2025-09-08T13:00:00Z</time>
     <name>La Thuile</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>Life</type>
   </wpt>
-  <wpt lat="45.629993" lon="7.062553">
-    <time>2025-09-08T07:00:00Z</time>
-    <name>Valgrisenche</name>
+  <wpt lat="45.675380229949951" lon="6.985909938812256">
+    <name>Rifugio Deffeyes</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
   </wpt>
-  <wpt lat="45.567569" lon="7.207720">
-    <time>2025-09-08T19:30:00Z</time>
+  <wpt lat="45.683160899206996" lon="7.013234188780189">
+    <ele>2855</ele>
+    <name>Col Passo Alto</name>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.693961316719651" lon="7.029565237462521">
+    <ele>2203.33984375</ele>
+    <name>Bivacco Zappelli</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.687442710623145" lon="7.052156897261739">
+    <ele>2804.76171875</ele>
+    <name>Col de la Crosatie</name>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.678702984005213" lon="7.052645981311798">
+    <ele>2434</ele>
+    <name>Lac Du Fond</name>
+    <cmt>Waypoint</cmt>
+    <desc>Waypoint</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+  <wpt lat="45.673522297292948" lon="7.080166032537818">
+    <name>Planaval</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.629992978647351" lon="7.062552971765399">
+    <ele>1686.015625</ele>
+    <time>2025-09-09T01:00:00Z</time>
+    <name>BaseVita-Valgrisenche</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>LifeBase</type>
+  </wpt>
+  <wpt lat="45.588799025863409" lon="7.060343250632286">
+    <name>Rifugio Chalet de L'epée</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.582640506327152" lon="7.089775465428829">
+    <ele>2845</ele>
+    <name>Col Fenêtre</name>
+    <cmt>Col Fenêtre</cmt>
+    <desc>Col Fenêtre</desc>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.56822924874723" lon="7.117113880813122">
+    <ele>1728.75</ele>
+    <name>Rhemes-Notre-Dame</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.547682689502835" lon="7.157182144001126">
+    <ele>3002.54296875</ele>
+    <name>Col Entrelor</name>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.567569006234407" lon="7.207719990983605">
+    <time>2025-09-09T16:00:00Z</time>
     <name>Eaux Rousses</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.610961" lon="7.354361">
-    <time>2025-09-09T06:00:00Z</time>
-    <name>Cogne</name>
+  <wpt lat="45.577705493196845" lon="7.269076192751527">
+    <ele>3294.74609375</ele>
+    <name>Col Loson</name>
+    <sym>Triangle, Green</sym>
   </wpt>
-  <wpt lat="45.604144" lon="7.774984">
-    <time>2025-09-10T02:00:00Z</time>
-    <name>Donnas</name>
+  <wpt lat="45.580197097733617" lon="7.303266311064363">
+    <ele>2580.5703125</ele>
+    <name>Rifugio Vittorio Sella</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
   </wpt>
-  <wpt lat="45.644308" lon="7.929772">
-    <time>2025-09-10T13:00:00Z</time>
-    <name>Rifugio Della Barma</name>
+  <wpt lat="45.587588008493185" lon="7.341386871412396">
+    <ele>1663</ele>
+    <name>Valnontey</name>
+    <cmt>Waypoint</cmt>
+    <desc>Waypoint</desc>
+    <sym>Flag, Blue</sym>
   </wpt>
-  <wpt lat="45.718533" lon="7.903359">
-    <time>2025-09-10T19:30:00Z</time>
+  <wpt lat="45.610961029306054" lon="7.354360967874527">
+    <time>2025-09-10T11:00:00Z</time>
+    <name>BaseVita-Cogne</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>LifeBase</type>
+  </wpt>
+  <wpt lat="45.595455011352897" lon="7.390812020748854">
+    <ele>1614</ele>
+    <name>Lillaz</name>
+    <cmt>Waypoint</cmt>
+    <desc>Waypoint</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+  <wpt lat="45.597592312842607" lon="7.410323666408658">
+    <name>Goilles Dessous</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.599384950473905" lon="7.498176321387291">
+    <ele>2834</ele>
+    <name>Finestra Di Champorcher</name>
+    <cmt>Finestra Di Champorcher (2826m)</cmt>
+    <desc>Finestra Di Champorcher (2826m)</desc>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.602745842188597" lon="7.521496620029211">
+    <ele>2572.51171875</ele>
+    <name>Rifugio Del Misérin</name>
+    <cmt>Rifugio Del Misérin</cmt>
+    <desc>Rifugio Del Misérin</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.612080516293645" lon="7.55141967907548">
+    <name>Rifugio Dondena</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.621164068579674" lon="7.607577508315444">
+    <ele>1435.48828125</ele>
+    <name>Chardonney - Champorcher</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.607864754274487" lon="7.685635322704911">
+    <ele>776.2109375</ele>
+    <name>Pont Boset</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.609774487093091" lon="7.745329476892948">
+    <ele>362</ele>
+    <name>Bard</name>
+    <cmt>Waypoint</cmt>
+    <desc>Waypoint</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+  <wpt lat="45.604144027456641" lon="7.7749839797616">
+    <ele>319.421875</ele>
+    <time>2025-09-11T07:00:00Z</time>
+    <name>BaseVita-Donnas</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>LifeBase</type>
+  </wpt>
+  <wpt lat="45.614518560469151" lon="7.808717535808682">
+    <ele>649.43359375</ele>
+    <name>Perloz</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.616661980748177" lon="7.814231989905238">
+    <ele>553</ele>
+    <name>Tour d'Hereraz</name>
+    <cmt>Waypoint</cmt>
+    <desc>Waypoint</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+  <wpt lat="45.622224714607" lon="7.864486025646329">
+    <ele>1436.40234375</ele>
+    <name>La Sassa</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.616016322746873" lon="7.900317320600152">
+    <ele>2114</ele>
+    <name>Col Carisey</name>
+    <cmt>Col Carisey (2124m)</cmt>
+    <desc>Col Carisey (2124m)</desc>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.622425209730864" lon="7.906617745757103">
+    <ele>2254.9453125</ele>
+    <name>Rifugio Delfo E Agostino Coda</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.643570488318801" lon="7.903047138825059">
+    <ele>1911</ele>
+    <name>Crest</name>
+    <cmt>It’s only a waypoint</cmt>
+    <desc>It’s only a waypoint</desc>
+    <sym>Navaid, Black</sym>
+  </wpt>
+  <wpt lat="45.644308431074023" lon="7.92977225035429">
+    <name>Rifugio Del Lago Della Barma</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.667908266186714" lon="7.905910816043615">
+    <ele>2335</ele>
+    <name>Col di Marmontana</name>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.674071898683906" lon="7.902941945940256">
+    <ele>2096.52734375</ele>
+    <name>Lago Chiaro</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.681718206033111" lon="7.896029474213719">
+    <ele>2298</ele>
+    <name>Crenna dou Leuy</name>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.693431328982115" lon="7.907076654955745">
+    <ele>2204.609375</ele>
+    <name>Colle Della Vecchia</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.718532614409924" lon="7.90335944853723">
+    <ele>1557.375</ele>
+    <time>2025-09-12T02:00:00Z</time>
     <name>Niel - Dortoir La Gruba</name>
+    <cmt>Dortoir - Dormitory</cmt>
+    <desc>Dortoir - Dormitory</desc>
+    <sym>Navaid, Red</sym>
+    <type>TimeBarrier</type>
   </wpt>
-  <wpt lat="45.766416" lon="7.835559">
-    <time>2025-09-11T01:00:00Z</time>
-    <name>Gressoney</name>
+  <wpt lat="45.735987843945622" lon="7.917639864608645">
+    <ele>2383</ele>
+    <name>Colle Lazoney</name>
+    <cmt>Colle Lazoney (2387m)</cmt>
+    <desc>Colle Lazoney (2387m)</desc>
+    <sym>Triangle, Green</sym>
   </wpt>
-  <wpt lat="45.839775" lon="7.731703">
-    <time>2025-09-11T13:00:00Z</time>
-    <name>Champoluc</name>
+  <wpt lat="45.746304290369153" lon="7.8919792547822">
+    <name>Bleckene - Lòò Superiore</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
   </wpt>
-  <wpt lat="45.875322" lon="7.623554">
-    <time>2025-09-11T21:00:00Z</time>
-    <name>Valtournenche</name>
-  </wpt>
-  <wpt lat="45.850552" lon="7.381284">
+  <wpt lat="45.766415996477008" lon="7.835558988153934">
+    <ele>1377.949219000000085</ele>
     <time>2025-09-12T12:00:00Z</time>
-    <name>Oyace</name>
+    <name>BaseVita-Gressoney</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.853502" lon="7.304641">
-    <time>2025-09-12T19:00:00Z</time>
-    <name>Ollomont</name>
+  <wpt lat="45.799025539308786" lon="7.816464677453041">
+    <name>Rifugio Alpenzu</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
   </wpt>
-  <wpt lat="45.821638" lon="7.179052">
-    <time>2025-09-13T06:00:00Z</time>
-    <name>Bosses</name>
+  <wpt lat="45.819397754967213" lon="7.787445690482855">
+    <ele>2771.1796875</ele>
+    <name>Col Pinter</name>
+    <cmt>Col Pinter (2777m)</cmt>
+    <desc>Col Pinter (2777m)</desc>
+    <sym>Triangle, Green</sym>
   </wpt>
-  <wpt lat="45.840195" lon="7.109283">
+  <wpt lat="45.8279032073915" lon="7.752000465989113">
+    <ele>2040</ele>
+    <name>Cuneaz</name>
+    <cmt>Waypoint</cmt>
+    <desc>Waypoint</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+  <wpt lat="45.839775083586574" lon="7.731702765449882">
+    <ele>1571.39453125</ele>
+    <time>2025-09-12T21:00:00Z</time>
+    <name>Champoluc</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>LifeBase</type>
+  </wpt>
+  <wpt lat="45.862901927903295" lon="7.730237022042274">
+    <ele>1694</ele>
+    <name>Saint-Jaques</name>
+    <sym>Flag, Blue</sym>
+  </wpt>
+  <wpt lat="45.85849623195827" lon="7.693690247833729">
+    <name>Rifugio Grand Tournalin</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.854596216231585" lon="7.680240646004677">
+    <ele>2776</ele>
+    <name>Col de Nannaz</name>
+    <cmt>Col de Nannaz (2773m)</cmt>
+    <desc>Col de Nannaz (2773m)</desc>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.853362986817956" lon="7.665048949420452">
+    <ele>2676</ele>
+    <name>Col Des Fontaines</name>
+    <cmt>Col Des Fontaines (2696m)</cmt>
+    <desc>Col Des Fontaines (2696m)</desc>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.864114537835121" lon="7.642555106431246">
+    <ele>2106.5703125</ele>
+    <name>Cheneil</name>
+    <cmt>Waypoint</cmt>
+    <desc>Waypoint</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+  <wpt lat="45.875321980565786" lon="7.62355400249362">
+    <ele>1500</ele>
     <time>2025-09-13T08:00:00Z</time>
-    <name>Merdeux</name>
+    <name>BaseVita-Valtournenche</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.790065" lon="6.973367">
-    <time>2025-09-13T16:00:00Z</time>
-    <name>Courmayeur</name>
+  <wpt lat="45.87663609534502" lon="7.593525750562549">
+    <ele>2169.15625</ele>
+    <name>Rifugio Jean Barmasse</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.852609286084771" lon="7.582183443009853">
+    <ele>2285.46484375</ele>
+    <name>Fenetre D'ersaz</name>
+    <cmt>Fenetre D'ersaz (2290m)</cmt>
+    <desc>Fenetre D'ersaz (2290m)</desc>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.857334919273853" lon="7.574091469869018">
+    <ele>2294.92578125</ele>
+    <name>Bivacco Vareton</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.861911354586482" lon="7.527302093803883">
+    <ele>2734</ele>
+    <name>Fenetre Du Tsan</name>
+    <cmt>Fenetre Du Tsan (2736m)</cmt>
+    <desc>Fenetre Du Tsan (2736m)</desc>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.840416047722101" lon="7.50788725912571">
+    <ele>1995.47265625</ele>
+    <name>Rifugio Lo Magià</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.841537630185485" lon="7.484218273311853">
+    <name>Rifugio Oratorio Di Cuney</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.828228173777461" lon="7.480720588937402">
+    <ele>2675</ele>
+    <name>Col de Chaleby</name>
+    <cmt>Col de Chaleby (2683m)</cmt>
+    <desc>Col de Chaleby (2683m)</desc>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.826322799548507" lon="7.458017533645034">
+    <ele>2683.48828125</ele>
+    <name>Bivacco Rosaire Clermont</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.826303521171212" lon="7.453972678631544">
+    <ele>2794</ele>
+    <name>Col de Vessonaz</name>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.850552031770349" lon="7.381283976137638">
+    <ele>1347</ele>
+    <time>2025-09-13T21:00:00Z</time>
+    <name>Oyace</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>LifeBase</type>
+  </wpt>
+  <wpt lat="45.851668836548924" lon="7.348541161045432">
+    <ele>2184.1640625</ele>
+    <name>Bruson Arp</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.853959275409579" lon="7.334086401388049">
+    <ele>2519</ele>
+    <name>Col Brison</name>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.863088676705956" lon="7.319320505484939">
+    <ele>1936.41796875</ele>
+    <name>Berrio Damon</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.85350195877254" lon="7.304641027003527">
+    <time>2025-09-14T09:00:00Z</time>
+    <name>BaseVita-Ollomont</name>
+    <cmt>Base de vie - Life base</cmt>
+    <desc>Base de vie - Life base</desc>
+    <sym>Navaid, Red</sym>
+    <type>LifeBase</type>
+  </wpt>
+  <wpt lat="45.84993889555335" lon="7.269183648750186">
+    <ele>2416.06640625</ele>
+    <name>Rifugio Letey Champillon</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.85014752112329" lon="7.259454438462853">
+    <ele>2707</ele>
+    <name>Col de Champillon</name>
+    <cmt>Col de Champillon (2709m)</cmt>
+    <desc>Col de Champillon (2709m)</desc>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.845653396099806" lon="7.230930654332042">
+    <ele>1875.6875</ele>
+    <name>Ponteille</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Restaurant</sym>
+  </wpt>
+  <wpt lat="45.834873430430889" lon="7.18435007147491">
+    <ele>1618</ele>
+    <name>Saint Rhemy</name>
+    <cmt>Information</cmt>
+    <desc>Information</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+  <wpt lat="45.821638153865933" lon="7.179051535204053">
+    <ele>1521.34765625</ele>
+    <time>2025-09-14T18:00:00Z</time>
+    <name>Bosses</name>
+    <cmt>Ravitaillement - Refreshment point</cmt>
+    <desc>Ravitaillement - Refreshment point</desc>
+    <sym>Navaid, Red</sym>
+    <type>TimeBarrier</type>
+  </wpt>
+  <wpt lat="45.840195268392563" lon="7.109282501041889">
+    <ele>2268</ele>
+    <name>Merdeux - waypoint</name>
+    <cmt>This is only a waypoint</cmt>
+    <desc>This is only a waypoint</desc>
+    <sym>Flag, Blue</sym>
+  </wpt>
+  <wpt lat="45.841147368773818" lon="7.096791034564376">
+    <name>Rifugio Pier Giorgio Frassati</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.836899420246482" lon="7.078311536461115">
+    <ele>2922.34765625</ele>
+    <name>Col Malatrà</name>
+    <sym>Triangle, Green</sym>
+  </wpt>
+  <wpt lat="45.846861144527793" lon="7.033425942063332">
+    <ele>2025</ele>
+    <name>Rifugio Bonatti</name>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.809288173913956" lon="6.978731341660023">
+    <ele>1983.40234375</ele>
+    <name>Rifugio Giorgio Bertone</name>
+    <cmt>Ristoro - Ravitaillement - Refreshment point</cmt>
+    <desc>Ristoro - Ravitaillement - Refreshment point</desc>
+    <sym>Residence</sym>
+  </wpt>
+  <wpt lat="45.790064865723252" lon="6.973367175087333">
+    <ele>1215</ele>
+    <time>2025-09-15T12:00:00Z</time>
+    <name>TORX Finish Line</name>
+    <cmt>Arrivée TOR330 2025</cmt>
+    <desc>Arrivée TOR330 2025</desc>
+    <sym>Flag, Blue</sym>
+    <type>Arrival</type>
   </wpt>
   <trk>
     <name>TOR330-FULL-DEM-2025</name>

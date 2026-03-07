@@ -297,15 +297,10 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           pointCount: results.trace.points.length ?? 0,
         });
 
-        set(
-          (state) => ({
-            ...state,
-            sections: results.sections,
-            waypoints: results.waypoints,
-          }),
-          undefined,
-          "worker/setSectionsAndWaypoints",
-        );
+        get().setLegs(results.legs);
+        get().setSections(results.sections);
+        get().setStages(results.stages);
+        get().setWayPoints(results.waypoints);
 
         return results;
       } catch (error) {
