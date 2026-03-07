@@ -1,5 +1,5 @@
-export const createSectionsSlice = (set, get) => ({
-  sections: [],
-  setSections: (sections) =>
-    set({ sections }, undefined, "sections/setSections"),
+export const createLegsSlice = (set) => ({
+  legs: [],
+
+  setLegs: (legs) => set({ legs }, undefined, "legs/setLegs"),
 });

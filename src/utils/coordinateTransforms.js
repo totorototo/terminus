@@ -154,25 +154,28 @@ export function createCheckpoints(sections, scales) {
   }));
 }
 
-export function transformSections(sections, scales) {
+export function transformSections(sections, scales, tracePoints) {
   if (!sections || sections.length === 0) return [];
 
   return sections.map(
     ({
-      points,
       totalDistance,
       totalElevation,
       totalElevationLoss,
       startPoint,
       segmentId,
       startIndex = 0,
-    }) => ({
-      points: transformCoordinates(points, scales, startIndex),
-      totalDistance,
-      totalElevation,
-      totalElevationLoss,
-      startPoint,
-      id: segmentId,
-    }),
+      endIndex,
+    }) => {
+      const points = tracePoints.slice(startIndex, endIndex + 1);
+      return {
+        points: transformCoordinates(points, scales, startIndex),
+        totalDistance,
+        totalElevation,
+        totalElevationLoss,
+        startPoint,
+        id: segmentId,
+      };
+    },
   );
 }

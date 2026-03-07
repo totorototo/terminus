@@ -4,7 +4,12 @@ const Trace = @import("trace.zig").Trace;
 const Waypoint = @import("gpxdata.zig").Waypoint;
 const GPXData = @import("gpxdata.zig").GPXData;
 const Metadata = @import("gpxdata.zig").Metadata;
-const SectionStats = @import("section.zig").SectionStats;
+const leg_mod = @import("leg.zig");
+const LegStats = leg_mod.LegStats;
+const section_mod = @import("section.zig");
+const SectionStats = section_mod.SectionStats;
+const stage_mod = @import("stage.zig");
+const StageStats = stage_mod.StageStats;
 const parseIso8601ToEpoch = @import("time.zig").parseIso8601ToEpoch;
 
 fn floatToString(allocator: std.mem.Allocator, value: f64) ![]u8 {
@@ -377,6 +382,15 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
         const content_start = wpt_start + tag_end + 1;
         const content = bytes[content_start..wpt_end];
 
+        // Parse ele (optional)
+        const ele: ?f64 = blk: {
+            const ele_pos = std.mem.indexOf(u8, content, "<ele>") orelse break :blk null;
+            const value_start = content_start + ele_pos + 5;
+            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</ele>") orelse break :blk null;
+            if (value_end > wpt_end) break :blk null;
+            break :blk std.fmt.parseFloat(f64, bytes[value_start..value_end]) catch null;
+        };
+
         // Parse name (required) - search within waypoint content only
         const name = blk: {
             const name_pos = std.mem.indexOf(u8, content, "<name>") orelse break :blk "";
@@ -387,7 +401,47 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
             break :blk allocator.dupe(u8, name_str) catch break :blk "";
         };
 
-        // Parse time (optional) - search within waypoint content only
+        // Parse desc (optional)
+        const desc: ?[]const u8 = blk: {
+            const desc_pos = std.mem.indexOf(u8, content, "<desc>") orelse break :blk null;
+            const value_start = content_start + desc_pos + 6;
+            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</desc>") orelse break :blk null;
+            if (value_end > wpt_end) break :blk null;
+            break :blk allocator.dupe(u8, bytes[value_start..value_end]) catch null;
+        };
+        errdefer if (desc) |d| allocator.free(d);
+
+        // Parse cmt (optional)
+        const cmt: ?[]const u8 = blk: {
+            const cmt_pos = std.mem.indexOf(u8, content, "<cmt>") orelse break :blk null;
+            const value_start = content_start + cmt_pos + 5;
+            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</cmt>") orelse break :blk null;
+            if (value_end > wpt_end) break :blk null;
+            break :blk allocator.dupe(u8, bytes[value_start..value_end]) catch null;
+        };
+        errdefer if (cmt) |c| allocator.free(c);
+
+        // Parse sym (optional)
+        const sym: ?[]const u8 = blk: {
+            const sym_pos = std.mem.indexOf(u8, content, "<sym>") orelse break :blk null;
+            const value_start = content_start + sym_pos + 5;
+            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</sym>") orelse break :blk null;
+            if (value_end > wpt_end) break :blk null;
+            break :blk allocator.dupe(u8, bytes[value_start..value_end]) catch null;
+        };
+        errdefer if (sym) |s| allocator.free(s);
+
+        // Parse type (optional) — maps to wptType; "Start", "TimeBarrier", "LifeBase", "Arrival" mark boundaries
+        const wpt_type: ?[]const u8 = blk: {
+            const type_pos = std.mem.indexOf(u8, content, "<type>") orelse break :blk null;
+            const value_start = content_start + type_pos + 6;
+            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</type>") orelse break :blk null;
+            if (value_end > wpt_end) break :blk null;
+            break :blk allocator.dupe(u8, bytes[value_start..value_end]) catch null;
+        };
+        errdefer if (wpt_type) |t| allocator.free(t);
+
+        // Parse time (optional) - only present for typed waypoints
         const time = blk: {
             const time_pos = std.mem.indexOf(u8, content, "<time>") orelse break :blk null;
             const value_start = content_start + time_pos + 6;
@@ -403,7 +457,12 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
         try waypoints.append(allocator, Waypoint{
             .lat = lat,
             .lon = lon,
+            .ele = ele,
             .name = name,
+            .desc = desc,
+            .cmt = cmt,
+            .sym = sym,
+            .wptType = wpt_type,
             .time = time_epoch,
         });
 
@@ -487,24 +546,27 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData
     defer allocator.free(trace_points); // Trace owns its own copy
     errdefer trace.deinit(allocator);
 
-    // Compute sections if waypoints are available
-    var sections: ?[]const SectionStats = null;
+    // Legs: computed between every consecutive pair of waypoints
+    var legs: ?[]const LegStats = null;
     if (waypoints.len > 1) {
-        sections = try trace.computeSectionsFromWaypoints(allocator, waypoints);
+        legs = try leg_mod.computeFromWaypoints(&trace, allocator, waypoints);
     }
-    errdefer {
-        if (sections) |s| {
-            for (s) |section| {
-                allocator.free(section.points);
-            }
-            allocator.free(s);
-        }
-    }
+    errdefer if (legs) |l| allocator.free(l);
+
+    // Sections: computed between consecutive section-boundary waypoints (Start/TimeBarrier/LifeBase/Arrival)
+    const sections: ?[]const SectionStats = try section_mod.computeFromWaypoints(&trace, allocator, waypoints);
+    errdefer if (sections) |s| allocator.free(s);
+
+    // Stages: computed between consecutive stage-boundary waypoints (Start/LifeBase/Arrival)
+    const stages: ?[]const StageStats = try stage_mod.computeFromWaypoints(&trace, allocator, waypoints);
+    errdefer if (stages) |st| allocator.free(st);
 
     return GPXData{
         .trace = trace,
         .waypoints = waypoints,
+        .legs = legs,
         .sections = sections,
+        .stages = stages,
         .metadata = metadata,
     };
 }
@@ -1082,24 +1144,23 @@ test "generateAndSaveGPX creates waypoints at 20km intervals" {
         try testing.expect(wpt.lon >= -123.0 and wpt.lon <= -121.0);
     }
 
-    // Verify sections were computed from waypoints
-    try testing.expect(gpx_data.sections != null);
-    const sections = gpx_data.sections.?;
+    // Verify legs were computed from waypoints
+    try testing.expect(gpx_data.legs != null);
+    const legs = gpx_data.legs.?;
 
-    // Should have one less section than waypoints (sections between waypoints)
-    try testing.expectEqual(gpx_data.waypoints.len - 1, sections.len);
+    // Should have one less leg than waypoints
+    try testing.expectEqual(gpx_data.waypoints.len - 1, legs.len);
 
-    // Verify each section has valid stats
-    for (sections) |section| {
-        try testing.expect(section.totalDistance > 0.0);
-        try testing.expect(section.startIndex < section.endIndex);
-        try testing.expect(section.endIndex <= gpx_data.trace.points.len);
-        try testing.expect(section.pointCount == section.endIndex - section.startIndex + 1);
-        try testing.expect(section.points.len == section.pointCount);
+    // Verify each leg has valid stats
+    for (legs) |leg| {
+        try testing.expect(leg.totalDistance > 0.0);
+        try testing.expect(leg.startIndex < leg.endIndex);
+        try testing.expect(leg.endIndex <= gpx_data.trace.points.len);
+        try testing.expect(leg.pointCount == leg.endIndex - leg.startIndex + 1);
     }
 }
 
-test "readGPXComplete: sections null when no waypoints" {
+test "readGPXComplete: legs null when no waypoints" {
     const allocator = testing.allocator;
     const sample_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -1118,10 +1179,10 @@ test "readGPXComplete: sections null when no waypoints" {
 
     try testing.expectEqual(@as(usize, 2), gpx_data.trace.points.len);
     try testing.expectEqual(@as(usize, 0), gpx_data.waypoints.len);
-    try testing.expect(gpx_data.sections == null);
+    try testing.expect(gpx_data.legs == null);
 }
 
-test "readGPXComplete: sections null when single waypoint" {
+test "readGPXComplete: legs null when single waypoint" {
     const allocator = testing.allocator;
     const sample_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -1140,10 +1201,10 @@ test "readGPXComplete: sections null when single waypoint" {
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 1), gpx_data.waypoints.len);
-    try testing.expect(gpx_data.sections == null);
+    try testing.expect(gpx_data.legs == null);
 }
 
-test "readGPXComplete: sections computed with multiple waypoints" {
+test "readGPXComplete: legs computed with multiple waypoints" {
     const allocator = testing.allocator;
     const sample_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -1175,18 +1236,17 @@ test "readGPXComplete: sections computed with multiple waypoints" {
     try testing.expectEqual(@as(usize, 11), gpx_data.trace.points.len);
     try testing.expectEqual(@as(usize, 3), gpx_data.waypoints.len);
 
-    // Verify sections were computed
-    try testing.expect(gpx_data.sections != null);
-    const sections = gpx_data.sections.?;
-    try testing.expectEqual(@as(usize, 2), sections.len);
+    // Verify legs were computed
+    try testing.expect(gpx_data.legs != null);
+    const legs = gpx_data.legs.?;
+    try testing.expectEqual(@as(usize, 2), legs.len);
 
-    // Verify section properties
-    for (sections) |section| {
-        try testing.expect(section.totalDistance > 0.0);
-        try testing.expect(section.totalElevation > 0.0);
-        try testing.expect(section.startIndex < section.endIndex);
-        try testing.expect(section.pointCount > 0);
-        try testing.expect(section.points.len == section.pointCount);
+    // Verify leg properties
+    for (legs) |leg| {
+        try testing.expect(leg.totalDistance > 0.0);
+        try testing.expect(leg.totalElevation > 0.0);
+        try testing.expect(leg.startIndex < leg.endIndex);
+        try testing.expect(leg.pointCount > 0);
     }
 }
 

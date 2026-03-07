@@ -1,32 +1,32 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { create } from "zustand";
 
-import { createSectionsSlice } from "./sections";
+import { createLegsSlice } from "./sections";
 
-describe("sectionsSlice", () => {
+describe("legsSlice", () => {
   let store;
   beforeEach(() => {
     store = create((set, get) => ({
-      ...createSectionsSlice(set, get),
+      ...createLegsSlice(set, get),
     }));
   });
 
   describe("initial state", () => {
     it("should have correct initial state", () => {
       const state = store.getState();
-      expect(state.sections).toEqual([]);
+      expect(state.legs).toEqual([]);
     });
   });
 
-  describe("setSections", () => {
-    it("should set sections correctly", () => {
-      const { setSections } = store.getState();
-      const newSections = [
-        { id: 1, name: "Section A" },
-        { id: 2, name: "Section B" },
+  describe("setLegs", () => {
+    it("should set legs correctly", () => {
+      const { setLegs } = store.getState();
+      const newLegs = [
+        { id: 1, name: "Leg A" },
+        { id: 2, name: "Leg B" },
       ];
-      setSections(newSections);
-      expect(store.getState().sections).toEqual(newSections);
+      setLegs(newLegs);
+      expect(store.getState().legs).toEqual(newLegs);
     });
   });
 });

@@ -136,7 +136,7 @@ describe("Navigation Component", () => {
     it("should render all remaining sections", () => {
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: mockSections,
+          legs: mockSections,
           gpx: {
             cumulativeDistances: [0, 5000, 15000, 30000],
             cumulativeElevations: [0, 500, 1500, 3000],
@@ -158,7 +158,7 @@ describe("Navigation Component", () => {
     it("should filter sections based on current position", () => {
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: mockSections,
+          legs: mockSections,
           gpx: {
             cumulativeDistances: [0, 5000, 15000, 30000],
             cumulativeElevations: [0, 500, 1500, 3000],
@@ -181,7 +181,7 @@ describe("Navigation Component", () => {
     it("should render nothing when no sections remain", () => {
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: mockSections,
+          legs: mockSections,
           gpx: {
             cumulativeDistances: [0, 5000, 15000, 30000],
             cumulativeElevations: [0, 500, 1500, 3000],
@@ -203,7 +203,7 @@ describe("Navigation Component", () => {
     it("should handle empty sections array", () => {
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: [],
+          legs: [],
           gpx: {
             cumulativeDistances: [],
             cumulativeElevations: [],
@@ -230,7 +230,7 @@ describe("Navigation Component", () => {
 
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: northSections,
+          legs: northSections,
           gpx: {
             cumulativeDistances: [0, 5000],
             cumulativeElevations: [0, 500],
@@ -256,7 +256,7 @@ describe("Navigation Component", () => {
 
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: southSections,
+          legs: southSections,
           gpx: {
             cumulativeDistances: [0, 5000],
             cumulativeElevations: [0, 500],
@@ -282,7 +282,7 @@ describe("Navigation Component", () => {
 
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: eastSections,
+          legs: eastSections,
           gpx: {
             cumulativeDistances: [0, 5000],
             cumulativeElevations: [0, 500],
@@ -308,7 +308,7 @@ describe("Navigation Component", () => {
 
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: westSections,
+          legs: westSections,
           gpx: {
             cumulativeDistances: [0, 5000],
             cumulativeElevations: [0, 500],
@@ -332,7 +332,7 @@ describe("Navigation Component", () => {
     it("should mark first section as current", () => {
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: mockSections,
+          legs: mockSections,
           gpx: {
             cumulativeDistances: [0, 5000, 15000, 30000],
             cumulativeElevations: [0, 500, 1500, 3000],
@@ -355,7 +355,7 @@ describe("Navigation Component", () => {
     it("should display location name for each section", () => {
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: mockSections,
+          legs: mockSections,
           gpx: {
             cumulativeDistances: [0, 5000, 15000, 30000],
             cumulativeElevations: [0, 500, 1500, 3000],
@@ -379,7 +379,7 @@ describe("Navigation Component", () => {
     it("should handle missing projected location gracefully", () => {
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: mockSections,
+          legs: mockSections,
           gpx: {
             cumulativeDistances: [0, 5000, 15000, 30000],
             cumulativeElevations: [0, 500, 1500, 3000],
@@ -400,7 +400,7 @@ describe("Navigation Component", () => {
     it("should handle missing cumulative data", () => {
       useStore.mockImplementation((selector) => {
         const state = {
-          sections: mockSections,
+          legs: mockSections,
           gpx: {
             cumulativeDistances: undefined,
             cumulativeElevations: undefined,

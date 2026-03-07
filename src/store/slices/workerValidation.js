@@ -37,7 +37,9 @@ export function validateGPXResults(results) {
   validateNumber(trace.totalElevation, "trace.totalElevation");
   validateNumber(trace.totalElevationLoss, "trace.totalElevationLoss");
 
+  validateArray(results.legs, "results.legs");
   validateArray(results.sections, "results.sections");
+  validateArray(results.stages, "results.stages");
   validateArray(results.waypoints, "results.waypoints");
   validateObject(results.metadata, "results.metadata");
 

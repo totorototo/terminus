@@ -10,23 +10,17 @@ import Profile from "../profile/Profile.jsx";
 const MemoizedProfile = memo(Profile);
 
 export default function Sections({ sectionsPoints3D }) {
-  const {
-    sections,
-    slopes,
-    showSlopeColors,
-    profileMode,
-    progressIndex,
-    raceId,
-  } = useStore(
-    useShallow((state) => ({
-      sections: state.sections,
-      slopes: state.gpx.slopes,
-      showSlopeColors: state.app.displaySlopes,
-      profileMode: state.app.profileMode,
-      progressIndex: state.gps.projectedLocation.index,
-      raceId: state.app.raceId,
-    })),
-  );
+  const { legs, slopes, showSlopeColors, profileMode, progressIndex, raceId } =
+    useStore(
+      useShallow((state) => ({
+        legs: state.legs,
+        slopes: state.gpx.slopes,
+        showSlopeColors: state.app.displaySlopes,
+        profileMode: state.app.profileMode,
+        progressIndex: state.gps.projectedLocation.index,
+        raceId: state.app.raceId,
+      })),
+    );
 
   const theme = useTheme();
 
@@ -52,7 +46,7 @@ export default function Sections({ sectionsPoints3D }) {
     if (!sectionsPoints3D || sectionsPoints3D.length === 0) return null;
 
     return sectionsPoints3D.map(({ points, id }, idx) => {
-      const section = sections[idx];
+      const section = legs[idx];
       if (!section) {
         return null;
       }
@@ -83,7 +77,7 @@ export default function Sections({ sectionsPoints3D }) {
     themeColors,
     progressIndex,
     progressColor,
-    sections,
+    legs,
     raceId,
   ]);
 

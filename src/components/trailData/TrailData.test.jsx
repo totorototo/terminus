@@ -49,14 +49,21 @@ vi.mock("./TrailProgression/TrailProgression.jsx", () => ({
   default: () => <div data-testid="trail-progression">TrailProgression</div>,
 }));
 
-// Mock SectionETA component
-vi.mock("./SectionETA/SectionETA.jsx", () => ({
-  default: () => <div data-testid="section-eta">SectionETA</div>,
+// Mock StageETA component
+vi.mock("./StageETA/StageETA.jsx", () => ({
+  default: () => <div data-testid="stage-eta">StageETA</div>,
+}));
+
+// Mock StageAnalytics component
+vi.mock("./StageAnalytics/StageAnalytics.jsx", () => ({
+  default: () => <div data-testid="section-analytics">StageAnalytics</div>,
 }));
 
 // Mock SectionAnalytics component
 vi.mock("./SectionAnalytics/SectionAnalytics.jsx", () => ({
-  default: () => <div data-testid="section-analytics">SectionAnalytics</div>,
+  default: () => (
+    <div data-testid="section-analytics-legacy">SectionAnalytics</div>
+  ),
 }));
 
 describe("TrailData Component", () => {

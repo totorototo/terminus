@@ -1,5 +1,7 @@
 import { memo, useMemo } from "react";
 
+import { useShallow } from "zustand/react/shallow";
+
 import useStore from "../../store/store.js";
 import {
   createCheckpoints,
@@ -11,18 +13,22 @@ import Sections from "../sections/Sections.jsx";
 import style from "./EnhancedProfile.style.js";
 
 function EnhancedProfile({ coordinateScales }) {
-  const sections = useStore((state) => state.sections);
+  const { legs, tracePoints } = useStore(
+    useShallow((state) => ({
+      legs: state.legs,
+      tracePoints: state.gpx.data,
+    })),
+  );
 
   // Memoize transformed data for performance
   const sectionsPoints3D = useMemo(() => {
-    // Transform sections to 3D using provided scales
-    return transformSections(sections, coordinateScales);
-  }, [sections, coordinateScales]);
+    return transformSections(legs, coordinateScales, tracePoints);
+  }, [legs, coordinateScales, tracePoints]);
 
-  // Create checkpoints from sections using provided scales
+  // Create checkpoints from legs using provided scales
   const checkpointsPoints3D = useMemo(() => {
-    return createCheckpoints(sections, coordinateScales);
-  }, [sections, coordinateScales]);
+    return createCheckpoints(legs, coordinateScales);
+  }, [legs, coordinateScales]);
 
   return (
     <>

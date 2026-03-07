@@ -65,13 +65,13 @@ const DownArrow = () => (
 
 function Navigation({ className }) {
   const {
-    sections,
+    legs,
     cumulativeDistances,
     cumulativeElevations,
     cumulativeElevationLosses,
   } = useStore(
     useShallow((state) => ({
-      sections: state.sections,
+      legs: state.legs,
       cumulativeDistances: state.gpx.cumulativeDistances,
       cumulativeElevations: state.gpx.cumulativeElevations,
       cumulativeElevationLosses: state.gpx.cumulativeElevationLosses,
@@ -83,9 +83,8 @@ function Navigation({ className }) {
 
   const remainingSections = useMemo(
     () =>
-      sections?.filter((section) => section.endIndex >= currentPositionIndex) ??
-      [],
-    [sections, currentPositionIndex],
+      legs?.filter((section) => section.endIndex >= currentPositionIndex) ?? [],
+    [legs, currentPositionIndex],
   );
 
   const currentSection =

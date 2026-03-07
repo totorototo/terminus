@@ -50,7 +50,9 @@ describe("Worker Slice", () => {
         cumulativeElevations: [],
         cumulativeElevationLosses: [],
       },
+      legs: [],
       sections: [],
+      stages: [],
       waypoints: [],
       gps: {
         location: { timestamp: 0, coords: [] },
@@ -111,6 +113,15 @@ describe("Worker Slice", () => {
           undefined,
           "stats/updateStats",
         ),
+      setLegs: (legs) =>
+        set(
+          (state) => ({
+            ...state,
+            legs,
+          }),
+          undefined,
+          "legs/setLegs",
+        ),
       setSections: (sections) =>
         set(
           (state) => ({
@@ -119,6 +130,24 @@ describe("Worker Slice", () => {
           }),
           undefined,
           "sections/setSections",
+        ),
+      setStages: (stages) =>
+        set(
+          (state) => ({
+            ...state,
+            stages,
+          }),
+          undefined,
+          "stages/setStages",
+        ),
+      setWayPoints: (waypoints) =>
+        set(
+          (state) => ({
+            ...state,
+            waypoints,
+          }),
+          undefined,
+          "waypoints/setWayPoints",
         ),
 
       // The actual slice under test, with injected worker factory (closure-local state)
@@ -199,7 +228,9 @@ describe("Worker Slice", () => {
           cumulativeElevations: [],
           cumulativeElevationLosses: [],
         },
+        legs: [],
         sections: [],
+        stages: [],
         waypoints: [],
         gps: {
           location: { timestamp: 0, coords: [] },
@@ -255,6 +286,15 @@ describe("Worker Slice", () => {
             undefined,
             "stats/updateStats",
           ),
+        setLegs: (legs) =>
+          set(
+            (state) => ({
+              ...state,
+              legs,
+            }),
+            undefined,
+            "legs/setLegs",
+          ),
         setSections: (sections) =>
           set(
             (state) => ({
@@ -263,6 +303,24 @@ describe("Worker Slice", () => {
             }),
             undefined,
             "sections/setSections",
+          ),
+        setStages: (stages) =>
+          set(
+            (state) => ({
+              ...state,
+              stages,
+            }),
+            undefined,
+            "stages/setStages",
+          ),
+        setWayPoints: (waypoints) =>
+          set(
+            (state) => ({
+              ...state,
+              waypoints,
+            }),
+            undefined,
+            "waypoints/setWayPoints",
           ),
         // Pass a factory that throws
         ...createWorkerSlice(set, get, () => {
@@ -384,7 +442,9 @@ describe("Worker Slice", () => {
           totalElevation: 50,
           totalElevationLoss: 20,
         },
+        legs: [],
         sections: [],
+        stages: [],
         waypoints: [],
         metadata: { name: "test.gpx" },
       };
@@ -425,7 +485,9 @@ describe("Worker Slice", () => {
           totalElevation: 125.3,
           totalElevationLoss: 87.2,
         },
+        legs: [],
         sections: [],
+        stages: [],
         waypoints: [],
         metadata: {},
       };
@@ -469,7 +531,9 @@ describe("Worker Slice", () => {
           totalElevation: 50,
           totalElevationLoss: 20,
         },
+        legs: [],
         sections: [{ id: 1 }],
+        stages: [],
         waypoints: [{ id: 1 }],
         metadata: { name: "test" },
       };
@@ -492,6 +556,7 @@ describe("Worker Slice", () => {
 
       expect(store.getState().gpx.data).toEqual(pointData);
       expect(store.getState().gpx.peaks).toEqual(validResults.trace.peaks);
+      expect(store.getState().legs).toEqual(validResults.legs);
       expect(store.getState().sections).toEqual(validResults.sections);
       expect(store.getState().waypoints).toEqual(validResults.waypoints);
     });
@@ -535,7 +600,9 @@ describe("Worker Slice", () => {
               totalElevation: 50,
               totalElevationLoss: 20,
             },
+            legs: [],
             sections: [],
+            stages: [],
             waypoints: [],
             metadata: {},
           },
@@ -559,7 +626,9 @@ describe("Worker Slice", () => {
           totalElevation: 50,
           totalElevationLoss: 20,
         },
+        legs: [],
         sections: [],
+        stages: [],
         waypoints: [],
         metadata: {},
       };
@@ -1344,7 +1413,9 @@ describe("Worker Slice", () => {
               totalElevation: 100,
               totalElevationLoss: 50,
             },
+            legs: [],
             sections: [],
+            stages: [],
             waypoints: [],
             metadata: {},
           },
@@ -1368,7 +1439,9 @@ describe("Worker Slice", () => {
               totalElevation: 50,
               totalElevationLoss: 20,
             },
+            legs: [],
             sections: [],
+            stages: [],
             waypoints: [],
             metadata: {},
           },
@@ -1426,7 +1499,9 @@ describe("Worker Slice", () => {
               totalElevation: 0,
               totalElevationLoss: 0,
             },
+            legs: [],
             sections: [],
+            stages: [],
             waypoints: [],
             metadata: {},
           },

@@ -71,17 +71,37 @@ async function processGPXFile(gpxFileBytes, requestId) {
   // Convert Zigar proxy objects to plain JS before sending
   // Note: Zig string fields ([]const u8) need .string property to convert to JS strings
   // Note: Zig i64 fields need explicit Number() conversion (they become BigInt in JS)
+
+  // Legs: wpt-to-wpt, no timing info
+  let sanitizedLegs = [];
+  if (gpxData.legs) {
+    for (let i = 0; i < gpxData.legs.length; i++) {
+      const leg = gpxData.legs[i];
+      const legData = leg.valueOf();
+      const startLocation = leg.startLocation.string;
+      const endLocation = leg.endLocation.string;
+      sanitizedLegs.push({
+        ...legData,
+        segmentId: `leg-${legData.sectionIdx}-${startLocation}-${endLocation}`,
+        startLocation,
+        endLocation,
+      });
+    }
+  }
+
+  // Sections: section-boundary-to-section-boundary, includes timing info
   let sanitizedSections = [];
   if (gpxData.sections) {
-    sanitizedSections = [];
     for (let i = 0; i < gpxData.sections.length; i++) {
       const section = gpxData.sections[i];
       const sectionData = section.valueOf();
+      const startLocation = section.startLocation.string;
+      const endLocation = section.endLocation.string;
       sanitizedSections.push({
         ...sectionData,
-        startLocation: section.startLocation.string,
-        endLocation: section.endLocation.string,
-        bearing: sectionData.bearing,
+        sectionId: `section-${sectionData.stageIdx}-${startLocation}-${endLocation}`,
+        startLocation,
+        endLocation,
         startTime:
           sectionData.startTime !== null ? Number(sectionData.startTime) : null,
         endTime:
@@ -94,15 +114,44 @@ async function processGPXFile(gpxFileBytes, requestId) {
     }
   }
 
-  // Sanitize waypoints - convert BigInt time to Number
+  // Stages: stage-boundary-to-stage-boundary (Start/LifeBase/Arrival), includes timing info
+  let sanitizedStages = [];
+  if (gpxData.stages) {
+    for (let i = 0; i < gpxData.stages.length; i++) {
+      const stage = gpxData.stages[i];
+      const stageData = stage.valueOf();
+      const startLocation = stage.startLocation.string;
+      const endLocation = stage.endLocation.string;
+      sanitizedStages.push({
+        ...stageData,
+        stageId: `stage-${startLocation}-${endLocation}`,
+        startLocation,
+        endLocation,
+        startTime:
+          stageData.startTime !== null ? Number(stageData.startTime) : null,
+        endTime: stageData.endTime !== null ? Number(stageData.endTime) : null,
+        maxCompletionTime:
+          stageData.maxCompletionTime !== null
+            ? Number(stageData.maxCompletionTime)
+            : null,
+      });
+    }
+  }
+
+  // Sanitize waypoints - include new fields, convert BigInt time to Number
   const sanitizedWaypoints = [];
   for (let i = 0; i < gpxData.waypoints.length; i++) {
     const wpt = gpxData.waypoints[i];
     sanitizedWaypoints.push({
       lat: wpt.lat,
       lon: wpt.lon,
+      ele: wpt.ele !== null ? wpt.ele : null,
       name: wpt.name.string,
-      time: wpt.time ? Number(wpt.time) : null, // Convert BigInt to Number
+      desc: wpt.desc ? wpt.desc.string : null,
+      cmt: wpt.cmt ? wpt.cmt.string : null,
+      sym: wpt.sym ? wpt.sym.string : null,
+      wptType: wpt.wptType ? wpt.wptType.string : null,
+      time: wpt.time ? Number(wpt.time) : null,
     });
   }
 
@@ -117,7 +166,9 @@ async function processGPXFile(gpxFileBytes, requestId) {
     metadata,
     trace: gpxData.trace.valueOf(),
     waypoints: sanitizedWaypoints,
+    legs: sanitizedLegs,
     sections: sanitizedSections,
+    stages: sanitizedStages,
     peaks: gpxData.peaks ? gpxData.peaks.map((p) => Number(p)) : [],
   };
 

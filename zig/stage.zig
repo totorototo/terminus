@@ -3,17 +3,19 @@ const Trace = @import("trace.zig").Trace;
 const Waypoint = @import("gpxdata.zig").Waypoint;
 const bearingTo = @import("gpspoint.zig").bearingTo;
 
-/// Interval between two consecutive section-boundary waypoints (Start/TimeBarrier/LifeBase/Arrival).
-/// Has timing info (cutoffs). Belongs to a stage (stageIdx).
-pub const SectionStats = struct {
-    sectionId: usize,
-    stageIdx: usize, // index of the stage this section belongs to
+const expect = std.testing.expect;
+const expectEqual = std.testing.expectEqual;
+
+/// Interval between two consecutive stage-boundary waypoints (Start/LifeBase/Arrival).
+/// Top-level grouping — contains multiple sections.
+pub const StageStats = struct {
+    stageId: usize,
     startIndex: usize,
     endIndex: usize,
     pointCount: usize,
     startPoint: [3]f64, // [lat, lon, elevation]
     endPoint: [3]f64, // [lat, lon, elevation]
-    startLocation: []const u8, // Name of start waypoint (Start/TimeBarrier/LifeBase/Arrival)
+    startLocation: []const u8, // Name of start waypoint (Start/LifeBase/Arrival)
     endLocation: []const u8, // Name of end waypoint
     totalDistance: f64, // meters
     totalElevation: f64, // meters elevation gain
@@ -30,45 +32,32 @@ pub const SectionStats = struct {
     maxCompletionTime: ?i64, // seconds allowed (endTime - startTime), null if absent
 };
 
-/// Compute section statistics between consecutive section-boundary waypoints
-/// (Start/TimeBarrier/LifeBase/Arrival). Returns null when fewer than 2 section boundaries.
-pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint) !?[]SectionStats {
-    // Collect section-boundary waypoints (those with a non-null wptType)
-    var section_wpts = std.ArrayList(Waypoint){};
-    defer section_wpts.deinit(allocator);
+/// Compute stage statistics between consecutive stage-boundary waypoints (Start/LifeBase/Arrival).
+/// TimeBarrier waypoints are skipped — they only appear in sections, not stages.
+pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint) !?[]StageStats {
+    // Collect stage-boundary waypoints (Start/LifeBase/Arrival)
+    var stage_wpts = std.ArrayList(Waypoint){};
+    defer stage_wpts.deinit(allocator);
 
     for (waypoints) |wpt| {
-        if (wpt.isSectionBoundary()) {
-            try section_wpts.append(allocator, wpt);
+        if (wpt.isStageBoundary()) {
+            try stage_wpts.append(allocator, wpt);
         }
     }
 
-    if (section_wpts.items.len < 2) {
+    if (stage_wpts.items.len < 2) {
         return null;
     }
 
-    const num_sections = section_wpts.items.len - 1;
-    var sections = std.ArrayList(SectionStats){};
-    errdefer sections.deinit(allocator);
+    const num_stages = stage_wpts.items.len - 1;
+    var stages = std.ArrayList(StageStats){};
+    errdefer stages.deinit(allocator);
 
     var search_start: usize = 0;
 
-    // Track which stage each section belongs to.
-    // Increments each time a stage-boundary waypoint (isStageBoundary) is encountered
-    // after the first one.
-    var current_stage_idx: usize = 0;
-    var stage_active: bool = false;
-
-    for (0..num_sections) |i| {
-        if (section_wpts.items[i].isStageBoundary()) {
-            if (stage_active) {
-                current_stage_idx += 1;
-            } else {
-                stage_active = true;
-            }
-        }
-        const start_wpt = section_wpts.items[i];
-        const end_wpt = section_wpts.items[i + 1];
+    for (0..num_stages) |i| {
+        const start_wpt = stage_wpts.items[i];
+        const end_wpt = stage_wpts.items[i + 1];
 
         const start_coord = [3]f64{ start_wpt.lat, start_wpt.lon, 0.0 };
         const end_coord = [3]f64{ end_wpt.lat, end_wpt.lon, 0.0 };
@@ -110,9 +99,8 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
 
         const point_count = end_index - start_index + 1;
 
-        sections.append(allocator, SectionStats{
-            .sectionId = i,
-            .stageIdx = current_stage_idx,
+        stages.append(allocator, StageStats{
+            .stageId = i,
             .startIndex = start_index,
             .endIndex = end_index,
             .pointCount = point_count,
@@ -139,5 +127,60 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
         }) catch |err| return err;
     }
 
-    return try sections.toOwnedSlice(allocator);
+    return try stages.toOwnedSlice(allocator);
+}
+
+test "stage maxCompletionTime is set from waypoint timestamps" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 105.0 },
+        [3]f64{ 0.002, 0.0, 110.0 },
+        [3]f64{ 0.003, 0.0, 115.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",   .time = 1_000_000 },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = 1_003_600 },
+    };
+
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints);
+    defer if (stages) |st| allocator.free(st);
+
+    try expect(stages != null);
+    try expectEqual(@as(usize, 1), stages.?.len);
+    try expect(stages.?[0].maxCompletionTime != null);
+    try expectEqual(@as(i64, 3600), stages.?[0].maxCompletionTime.?);
+    try expectEqual(@as(i64, 1_000_000), stages.?[0].startTime.?);
+    try expectEqual(@as(i64, 1_003_600), stages.?[0].endTime.?);
+}
+
+test "stage maxCompletionTime is null when stage waypoints have no timestamps" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 105.0 },
+        [3]f64{ 0.002, 0.0, 110.0 },
+        [3]f64{ 0.003, 0.0, 115.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",   .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = null },
+    };
+
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints);
+    defer if (stages) |st| allocator.free(st);
+
+    try expect(stages != null);
+    try expectEqual(@as(usize, 1), stages.?.len);
+    try expectEqual(@as(?i64, null), stages.?[0].maxCompletionTime);
 }

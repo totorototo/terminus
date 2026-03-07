@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   createCheckpoints,
@@ -143,15 +143,16 @@ describe("coordinateTransforms test suite", () => {
 
   describe("transformSections", () => {
     it("should transform sections correctly", () => {
-      const coordinates = [
+      const tracePoints = [
         [0, 0, 100],
         [5, 5, 150],
         [10, 10, 200],
       ];
-      const scales = createCoordinateScales(coordinates);
+      const scales = createCoordinateScales(tracePoints);
       const sections = [
         {
-          points: coordinates,
+          startIndex: 0,
+          endIndex: 2,
           totalDistance: 1000,
           totalElevation: 100,
           totalElevationLoss: 50,
@@ -160,7 +161,7 @@ describe("coordinateTransforms test suite", () => {
         },
       ];
 
-      const result = transformSections(sections, scales);
+      const result = transformSections(sections, scales, tracePoints);
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -173,10 +174,10 @@ describe("coordinateTransforms test suite", () => {
     });
 
     it("should handle empty sections", () => {
-      const coordinates = [[0, 0, 100]];
-      const scales = createCoordinateScales(coordinates);
+      const tracePoints = [[0, 0, 100]];
+      const scales = createCoordinateScales(tracePoints);
 
-      const result = transformSections([], scales);
+      const result = transformSections([], scales, tracePoints);
 
       expect(result).toEqual([]);
     });
