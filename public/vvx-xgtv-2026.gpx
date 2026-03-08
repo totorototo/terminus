@@ -19,7 +19,7 @@
   </wpt>
   <wpt lat="45.338430" lon="2.755600">
     <time>2026-05-14T04:20:00Z</time>
-    <name>Candat</name>
+    <name>Condat</name>
     <type>LifeBase</type>
   </wpt>
   <wpt lat="45.502160" lon="2.910070">
@@ -32,9 +32,9 @@
     <name>Mont-Dore</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.687170" lon="2.951540">
+  <wpt lat="45.660911" lon="2.947825">
     <time>2026-05-15T10:20:00Z</time>
-    <name>La Grandie</name>
+    <name>La Garandie</name>
     <type>LifeBase</type>
   </wpt>
   <wpt lat="45.871670" lon="3.027770">
