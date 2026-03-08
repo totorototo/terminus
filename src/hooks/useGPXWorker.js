@@ -40,6 +40,8 @@ export function useGPXWorker(raceId) {
     const controller = new AbortController();
 
     async function loadAndProcessGPX() {
+      if (!/^[a-zA-Z0-9_-]+$/.test(raceId))
+        throw new Error(`Invalid race ID: ${raceId}`);
       const response = await fetch(`/${raceId}.gpx`, {
         signal: controller.signal,
       });
