@@ -12,447 +12,125 @@ const stage_mod = @import("stage.zig");
 const StageStats = stage_mod.StageStats;
 const parseIso8601ToEpoch = @import("time.zig").parseIso8601ToEpoch;
 
-fn floatToString(allocator: std.mem.Allocator, value: f64) ![]u8 {
-    return std.fmt.allocPrint(allocator, "{d:.6}", .{value});
-}
-
-fn floatToStringElev(allocator: std.mem.Allocator, value: f64) ![]u8 {
-    return std.fmt.allocPrint(allocator, "{d:.1}", .{value});
-}
-
-pub fn generateAndSaveGPX(allocator: std.mem.Allocator, path: []const u8) !void {
-    const total_points: usize = 10000;
-    const base_lat: f64 = @as(f64, 37.0);
-    const base_lon: f64 = @as(f64, -122.0);
-
-    var lat: f64 = base_lat;
-    var lon: f64 = base_lon;
-    var elevation: f64 = @as(f64, 50.0);
-
-    var prng = std.Random.DefaultPrng.init(12345);
-    const random = prng.random();
-
-    // Pre-generate all track points
-    const TrackPoint = struct { lat: f64, lon: f64, ele: f64 };
-    var track_points = std.ArrayList(TrackPoint){};
-    defer track_points.deinit(allocator);
-
-    // Perlin-like noise parameters for more natural meandering
-    var direction: f64 = std.math.pi / 4.0; // Start northeast
-    var elevation_trend: f64 = 0.0; // Smooth elevation changes
-    var noise_phase: f64 = 0.0;
-    var curve_phase: f64 = 0.0; // For creating smooth S-curves
-
-    // For creating hills and valleys
-    const hill_frequency: f64 = 0.001; // How often terrain changes
-    var hill_phase: f64 = 0.0;
-
-    for (0..total_points) |_| {
-        // Create smooth S-curves using multiple sine waves
-        const large_curve = @sin(curve_phase * 0.3) * 0.4; // Large sweeping curves
-        const medium_curve = @sin(curve_phase * 0.8) * 0.2; // Medium bends
-        const small_wiggle = @sin(noise_phase * 2.0) * 0.1; // Small variations
-
-        // Random component for natural irregularity
-        const direction_noise = (random.float(f64) - 0.5) * 0.15;
-
-        // Combine all curve components
-        const total_curve = large_curve + medium_curve + small_wiggle + direction_noise;
-        direction += total_curve;
-
-        // Soft directional bias to prevent extreme backtracking
-        const forward_bias = std.math.pi / 4.0; // Northeast
-        const distance_from_forward = direction - forward_bias;
-
-        // Gentle pull back if straying too far (allows curves but prevents loops)
-        if (@abs(distance_from_forward) > std.math.pi / 3.0) {
-            direction -= distance_from_forward * 0.08;
-        }
-
-        // Occasional switchbacks for realism
-        if (random.float(f64) < 0.015) {
-            const switchback = (random.float(f64) - 0.5) * 1.2;
-            direction += switchback;
-        }
-
-        // Main forward progress with dynamic meandering
-        const base_progress: f64 = 0.00016; // ~16m per point = 160km / 10000 points
-        const meander_amount: f64 = @sin(noise_phase) * 0.25 + @cos(curve_phase * 0.5) * 0.15;
-
-        const lat_delta = @cos(direction) * base_progress * (1.0 + meander_amount);
-        const lon_delta = @sin(direction) * base_progress * (1.0 + meander_amount);
-
-        lat += lat_delta;
-        lon += lon_delta;
-
-        noise_phase += 0.05 + random.float(f64) * 0.02;
-        curve_phase += 0.01 + random.float(f64) * 0.005;
-
-        // Realistic elevation changes with hills and valleys
-        hill_phase += hill_frequency;
-
-        // Create terrain features: hills, valleys, plateaus
-        const terrain_base = @sin(hill_phase * 3.0) * 300.0 + // Large hills
-            @sin(hill_phase * 7.0) * 150.0 + // Medium features
-            @sin(hill_phase * 15.0) * 50.0; // Small variations
-
-        // Add random noise for natural roughness
-        const roughness = (random.float(f64) - 0.5) * 25.0;
-
-        // Smooth transition using exponential moving average
-        const smoothing: f64 = 0.92;
-        elevation_trend = elevation_trend * smoothing + (terrain_base + roughness) * (1.0 - smoothing);
-        elevation += elevation_trend * 0.03;
-
-        // Occasional steep sections (climbs/descents)
-        if (random.float(f64) < 0.005) {
-            const steep_change = (random.float(f64) - 0.3) * 40.0;
-            elevation += steep_change;
-        }
-
-        // Keep within reasonable bounds (0-3000 meters)
-        if (elevation < 0.0) elevation = 0.0;
-        if (elevation > 3000.0) elevation = 3000.0;
-
-        try track_points.append(allocator, TrackPoint{ .lat = lat, .lon = lon, .ele = elevation });
-    }
-
-    const track_points_buf = track_points.items;
-    const track_points_len = track_points.items.len;
-
-    // Calculate waypoint positions at 20km intervals
-    const waypoint_interval_km: f64 = 20.0;
-    const waypoint_interval_meters: f64 = waypoint_interval_km * 1000.0;
-    var waypoint_positions = std.ArrayList(usize){};
-    defer waypoint_positions.deinit(allocator);
-
-    var cumulative_distance: f64 = 0.0;
-    var next_waypoint_distance: f64 = waypoint_interval_meters;
-
-    // Start waypoint
-    try waypoint_positions.append(allocator, 0);
-
-    for (1..track_points_len) |i| {
-        const p1 = track_points_buf[i - 1];
-        const p2 = track_points_buf[i];
-
-        // Haversine distance
-        const R: f64 = 6371000.0; // Earth radius in meters
-        const lat1_rad = p1.lat * std.math.pi / 180.0;
-        const lat2_rad = p2.lat * std.math.pi / 180.0;
-        const dlat = lat2_rad - lat1_rad;
-        const dlon = (p2.lon - p1.lon) * std.math.pi / 180.0;
-
-        const a = @sin(dlat / 2.0) * @sin(dlat / 2.0) +
-            @cos(lat1_rad) * @cos(lat2_rad) *
-                @sin(dlon / 2.0) * @sin(dlon / 2.0);
-        const c = 2.0 * std.math.atan2(@sqrt(a), @sqrt(1.0 - a));
-        const segment_distance = R * c;
-
-        cumulative_distance += segment_distance;
-
-        if (cumulative_distance >= next_waypoint_distance) {
-            try waypoint_positions.append(allocator, i);
-            next_waypoint_distance += waypoint_interval_meters;
-        }
-    }
-
-    const waypoint_positions_buf = waypoint_positions.items;
-    const waypoint_positions_len = waypoint_positions.items.len;
-
-    // Build GPX file using a growable u8 buffer
-    var gb_capacity: usize = 4096;
-    var gpx_buffer = try allocator.alloc(u8, gb_capacity);
-    var gpx_buffer_len: usize = 0;
-    defer allocator.free(gpx_buffer);
-
-    // Helper macro for appending slices to gpx_buffer
-    const header1 = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n";
-    var needed = gpx_buffer_len + header1.len;
-    if (needed > gb_capacity) {
-        var new_cap = gb_capacity * 2;
-        while (new_cap < needed) new_cap *= 2;
-        var new_buf = try allocator.alloc(u8, new_cap);
-        if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
-        allocator.free(gpx_buffer);
-        gpx_buffer = new_buf;
-        gb_capacity = new_cap;
-    }
-    @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + header1.len], header1);
-    gpx_buffer_len += header1.len;
-
-    const header2 = "<gpx version=\"1.1\" creator=\"ZigGPXGenerator\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n";
-    needed = gpx_buffer_len + header2.len;
-    if (needed > gb_capacity) {
-        var new_cap = gb_capacity * 2;
-        while (new_cap < needed) new_cap *= 2;
-        var new_buf = try allocator.alloc(u8, new_cap);
-        if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
-        allocator.free(gpx_buffer);
-        gpx_buffer = new_buf;
-        gb_capacity = new_cap;
-    }
-    @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + header2.len], header2);
-    gpx_buffer_len += header2.len;
-
-    // Write waypoints
-    for (waypoint_positions_buf[0..waypoint_positions_len], 0..) |pos, idx| {
-        const pt = track_points_buf[pos];
-
-        const latStr = try floatToString(allocator, pt.lat);
-        defer allocator.free(latStr);
-        const lonStr = try floatToString(allocator, pt.lon);
-        defer allocator.free(lonStr);
-
-        var name_buf: [32]u8 = undefined;
-        const name = try std.fmt.bufPrint(&name_buf, "Checkpoint {d}", .{idx + 1});
-
-        // Calculate time based on waypoint index (assume 8 hours between waypoints for 20km sections)
-        const hours_offset: usize = idx * 8;
-        const base_hour: usize = 12; // Start at 12:00:00
-        const total_hours = base_hour + hours_offset;
-        const days: usize = @divFloor(total_hours, 24);
-        const hours: usize = @mod(total_hours, 24);
-        const day: usize = 20 + days;
-
-        var time_buf: [32]u8 = undefined;
-        const time = try std.fmt.bufPrint(&time_buf, "2025-11-{d:0>2}T{d:0>2}:00:00Z", .{ day, hours });
-
-        // Inline buffer append for waypoint entry
-        const wpt_str = try std.fmt.allocPrint(allocator, " <wpt lat=\"{s}\" lon=\"{s}\"><name>{s}</name><time>{s}</time></wpt>\n", .{ latStr, lonStr, name, time });
-        defer allocator.free(wpt_str);
-
-        needed = gpx_buffer_len + wpt_str.len;
-        if (needed > gb_capacity) {
-            var new_cap = gb_capacity * 2;
-            while (new_cap < needed) new_cap *= 2;
-            var new_buf = try allocator.alloc(u8, new_cap);
-            if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
-            allocator.free(gpx_buffer);
-            gpx_buffer = new_buf;
-            gb_capacity = new_cap;
-        }
-        @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + wpt_str.len], wpt_str);
-        gpx_buffer_len += wpt_str.len;
-    }
-
-    // Write track
-    const track_header = " <trk>\n <name>Random 160-km Trail Run</name>\n <trkseg>\n";
-    needed = gpx_buffer_len + track_header.len;
-    if (needed > gb_capacity) {
-        var new_cap = gb_capacity * 2;
-        while (new_cap < needed) new_cap *= 2;
-        var new_buf = try allocator.alloc(u8, new_cap);
-        if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
-        allocator.free(gpx_buffer);
-        gpx_buffer = new_buf;
-        gb_capacity = new_cap;
-    }
-    @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + track_header.len], track_header);
-    gpx_buffer_len += track_header.len;
-
-    for (track_points_buf[0..track_points_len]) |pt| {
-        const latStr = try floatToString(allocator, pt.lat);
-        defer allocator.free(latStr);
-        const lonStr = try floatToString(allocator, pt.lon);
-        defer allocator.free(lonStr);
-        const eleStr = try floatToStringElev(allocator, pt.ele);
-        defer allocator.free(eleStr);
-
-        const trkpt_str = try std.fmt.allocPrint(allocator, " <trkpt lat=\"{s}\" lon=\"{s}\"><ele>{s}</ele></trkpt>\n", .{ latStr, lonStr, eleStr });
-        defer allocator.free(trkpt_str);
-
-        needed = gpx_buffer_len + trkpt_str.len;
-        if (needed > gb_capacity) {
-            var new_cap = gb_capacity * 2;
-            while (new_cap < needed) new_cap *= 2;
-            var new_buf = try allocator.alloc(u8, new_cap);
-            if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
-            allocator.free(gpx_buffer);
-            gpx_buffer = new_buf;
-            gb_capacity = new_cap;
-        }
-        @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + trkpt_str.len], trkpt_str);
-        gpx_buffer_len += trkpt_str.len;
-    }
-
-    const track_footer = " </trkseg>\n </trk>\n</gpx>\n";
-    needed = gpx_buffer_len + track_footer.len;
-    if (needed > gb_capacity) {
-        var new_cap = gb_capacity * 2;
-        while (new_cap < needed) new_cap *= 2;
-        var new_buf = try allocator.alloc(u8, new_cap);
-        if (gpx_buffer_len > 0) @memcpy(new_buf[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
-        allocator.free(gpx_buffer);
-        gpx_buffer = new_buf;
-        gb_capacity = new_cap;
-    }
-    @memcpy(gpx_buffer[gpx_buffer_len .. gpx_buffer_len + track_footer.len], track_footer);
-    gpx_buffer_len += track_footer.len;
-
-    const gpx_data = try allocator.alloc(u8, gpx_buffer_len);
-    if (gpx_buffer_len > 0) @memcpy(gpx_data[0..gpx_buffer_len], gpx_buffer[0..gpx_buffer_len]);
-    defer allocator.free(gpx_data);
-
-    const file = try std.fs.cwd().createFile(path, .{});
-    defer file.close();
-
-    var write_buf: [4096]u8 = undefined;
-    var file_writer = file.writer(&write_buf);
-    const writer = &file_writer.interface;
-    try writer.writeAll(gpx_data[0..gpx_buffer_len]);
-    try writer.flush();
-}
-
 pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
     var points = std.ArrayList([3]f64){};
     defer points.deinit(allocator);
 
     var pos: usize = 0;
-    while (std.mem.indexOfPos(u8, bytes, pos, "<trkpt")) |trkpt_start| {
-        // Find end of opening tag to bound our search
-        const tag_end = std.mem.indexOfPos(u8, bytes, trkpt_start, ">") orelse break;
+    trkpt_loop: while (std.mem.indexOfPos(u8, bytes, pos, "<trkpt")) |trkpt_start| {
+        const trkpt_end = std.mem.indexOfPos(u8, bytes, trkpt_start, "</trkpt>") orelse break;
+        pos = trkpt_end + 8;
 
-        // Parse lat and lon from attributes (both in opening tag)
-        const lat = blk: {
-            const lat_pos = std.mem.indexOfPos(u8, bytes[trkpt_start..tag_end], 0, "lat=\"") orelse break;
-            const start = trkpt_start + lat_pos + 5;
-            const end = std.mem.indexOfScalarPos(u8, bytes, start, '"') orelse break;
-            break :blk std.fmt.parseFloat(f64, bytes[start..end]) catch break;
-        };
+        const tag_end = std.mem.indexOfPos(u8, bytes, trkpt_start, ">") orelse continue :trkpt_loop;
+        const tag_section = bytes[trkpt_start..tag_end];
+        const content_start = tag_end + 1;
+        const content = bytes[content_start..trkpt_end];
 
-        const lon = blk: {
-            const lon_pos = std.mem.indexOfPos(u8, bytes[trkpt_start..tag_end], 0, "lon=\"") orelse break;
-            const start = trkpt_start + lon_pos + 5;
-            const end = std.mem.indexOfScalarPos(u8, bytes, start, '"') orelse break;
-            break :blk std.fmt.parseFloat(f64, bytes[start..end]) catch break;
-        };
+        const lat_pos = std.mem.indexOf(u8, tag_section, "lat=\"") orelse continue :trkpt_loop;
+        const lat_start = trkpt_start + lat_pos + 5;
+        const lat_end = std.mem.indexOfScalarPos(u8, bytes, lat_start, '"') orelse continue :trkpt_loop;
+        const lat = std.fmt.parseFloat(f64, bytes[lat_start..lat_end]) catch continue :trkpt_loop;
 
-        // Parse elevation (after opening tag)
-        const ele = blk: {
-            const ele_start = std.mem.indexOfPos(u8, bytes, tag_end, "<ele>") orelse break;
-            const value_start = ele_start + 5;
-            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</ele>") orelse break;
-            break :blk std.fmt.parseFloat(f64, bytes[value_start..value_end]) catch break;
-        };
+        const lon_pos = std.mem.indexOf(u8, tag_section, "lon=\"") orelse continue :trkpt_loop;
+        const lon_start = trkpt_start + lon_pos + 5;
+        const lon_end = std.mem.indexOfScalarPos(u8, bytes, lon_start, '"') orelse continue :trkpt_loop;
+        const lon = std.fmt.parseFloat(f64, bytes[lon_start..lon_end]) catch continue :trkpt_loop;
+
+        const ele_str = parseTagContent(bytes, content, content_start, trkpt_end, "<ele>", "</ele>") orelse continue :trkpt_loop;
+        const ele = std.fmt.parseFloat(f64, ele_str) catch continue :trkpt_loop;
 
         try points.append(allocator, .{ lat, lon, ele });
-
-        // Move past this trackpoint
-        pos = tag_end + 1;
     }
 
     return try points.toOwnedSlice(allocator);
 }
 
+/// Returns a slice into bytes for the content between open_tag and close_tag,
+/// bounded to the waypoint element ending at wpt_end. No allocation.
+fn parseTagContent(
+    bytes: []const u8,
+    content: []const u8,
+    content_start: usize,
+    wpt_end: usize,
+    comptime open_tag: []const u8,
+    comptime close_tag: []const u8,
+) ?[]const u8 {
+    const rel_pos = std.mem.indexOf(u8, content, open_tag) orelse return null;
+    const value_start = content_start + rel_pos + open_tag.len;
+    const value_end = std.mem.indexOfPos(u8, bytes, value_start, close_tag) orelse return null;
+    if (value_end > wpt_end) return null;
+    return bytes[value_start..value_end];
+}
+
 pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoint {
     var waypoints = std.ArrayList(Waypoint){};
     errdefer {
-        for (waypoints.items) |*wpt| {
-            wpt.deinit(allocator);
-        }
+        for (waypoints.items) |*wpt| wpt.deinit(allocator);
         waypoints.deinit(allocator);
     }
 
     var pos: usize = 0;
-    while (std.mem.indexOfPos(u8, bytes, pos, "<wpt")) |wpt_start| {
-        // Find end of waypoint element first to bound our searches
+    wpt_loop: while (std.mem.indexOfPos(u8, bytes, pos, "<wpt")) |wpt_start| {
+        // Find end of waypoint element first to bound all searches
         const wpt_end = std.mem.indexOfPos(u8, bytes, wpt_start, "</wpt>") orelse break;
+        // Advance pos now so any `continue :wpt_loop` always moves forward
+        pos = wpt_end + 6;
 
-        // Find end of opening tag
-        const tag_end = std.mem.indexOfPos(u8, bytes[wpt_start..wpt_end], 0, ">") orelse break;
+        // Find end of opening tag; skip malformed waypoint if missing
+        const tag_end = std.mem.indexOfPos(u8, bytes[wpt_start..wpt_end], 0, ">") orelse continue :wpt_loop;
         const tag_section = bytes[wpt_start .. wpt_start + tag_end];
-
-        // Parse lat and lon from opening tag (bound search to opening tag only)
-        const lat = blk: {
-            const lat_pos = std.mem.indexOf(u8, tag_section, "lat=\"") orelse break;
-            const start = wpt_start + lat_pos + 5;
-            const end = std.mem.indexOfScalarPos(u8, bytes, start, '"') orelse break;
-            break :blk std.fmt.parseFloat(f64, bytes[start..end]) catch break;
-        };
-
-        const lon = blk: {
-            const lon_pos = std.mem.indexOf(u8, tag_section, "lon=\"") orelse break;
-            const start = wpt_start + lon_pos + 5;
-            const end = std.mem.indexOfScalarPos(u8, bytes, start, '"') orelse break;
-            break :blk std.fmt.parseFloat(f64, bytes[start..end]) catch break;
-        };
-
-        // Bound content searches between tag end and waypoint end
         const content_start = wpt_start + tag_end + 1;
         const content = bytes[content_start..wpt_end];
 
-        // Parse ele (optional)
-        const ele: ?f64 = blk: {
-            const ele_pos = std.mem.indexOf(u8, content, "<ele>") orelse break :blk null;
-            const value_start = content_start + ele_pos + 5;
-            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</ele>") orelse break :blk null;
-            if (value_end > wpt_end) break :blk null;
-            break :blk std.fmt.parseFloat(f64, bytes[value_start..value_end]) catch null;
-        };
+        // lat and lon are required; skip the waypoint if missing or malformed
+        const lat_pos = std.mem.indexOf(u8, tag_section, "lat=\"") orelse continue :wpt_loop;
+        const lat_start = wpt_start + lat_pos + 5;
+        const lat_end = std.mem.indexOfScalarPos(u8, bytes, lat_start, '"') orelse continue :wpt_loop;
+        const lat = std.fmt.parseFloat(f64, bytes[lat_start..lat_end]) catch continue :wpt_loop;
 
-        // Parse name (required) - search within waypoint content only
-        const name = blk: {
-            const name_pos = std.mem.indexOf(u8, content, "<name>") orelse break :blk "";
-            const value_start = content_start + name_pos + 6;
-            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</name>") orelse break :blk "";
-            if (value_end > wpt_end) break :blk "";
-            const name_str = bytes[value_start..value_end];
-            break :blk allocator.dupe(u8, name_str) catch break :blk "";
-        };
+        const lon_pos = std.mem.indexOf(u8, tag_section, "lon=\"") orelse continue :wpt_loop;
+        const lon_start = wpt_start + lon_pos + 5;
+        const lon_end = std.mem.indexOfScalarPos(u8, bytes, lon_start, '"') orelse continue :wpt_loop;
+        const lon = std.fmt.parseFloat(f64, bytes[lon_start..lon_end]) catch continue :wpt_loop;
 
-        // Parse desc (optional)
-        const desc: ?[]const u8 = blk: {
-            const desc_pos = std.mem.indexOf(u8, content, "<desc>") orelse break :blk null;
-            const value_start = content_start + desc_pos + 6;
-            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</desc>") orelse break :blk null;
-            if (value_end > wpt_end) break :blk null;
-            break :blk allocator.dupe(u8, bytes[value_start..value_end]) catch null;
-        };
+        const ele: ?f64 = if (parseTagContent(bytes, content, content_start, wpt_end, "<ele>", "</ele>")) |s|
+            std.fmt.parseFloat(f64, s) catch null
+        else
+            null;
+
+        // name is always allocated so Waypoint.deinit can unconditionally free it
+        const name = try allocator.dupe(u8, parseTagContent(bytes, content, content_start, wpt_end, "<name>", "</name>") orelse "");
+        errdefer allocator.free(name);
+
+        const desc = if (parseTagContent(bytes, content, content_start, wpt_end, "<desc>", "</desc>")) |s|
+            allocator.dupe(u8, s) catch null
+        else
+            null;
         errdefer if (desc) |d| allocator.free(d);
 
-        // Parse cmt (optional)
-        const cmt: ?[]const u8 = blk: {
-            const cmt_pos = std.mem.indexOf(u8, content, "<cmt>") orelse break :blk null;
-            const value_start = content_start + cmt_pos + 5;
-            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</cmt>") orelse break :blk null;
-            if (value_end > wpt_end) break :blk null;
-            break :blk allocator.dupe(u8, bytes[value_start..value_end]) catch null;
-        };
+        const cmt = if (parseTagContent(bytes, content, content_start, wpt_end, "<cmt>", "</cmt>")) |s|
+            allocator.dupe(u8, s) catch null
+        else
+            null;
         errdefer if (cmt) |c| allocator.free(c);
 
-        // Parse sym (optional)
-        const sym: ?[]const u8 = blk: {
-            const sym_pos = std.mem.indexOf(u8, content, "<sym>") orelse break :blk null;
-            const value_start = content_start + sym_pos + 5;
-            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</sym>") orelse break :blk null;
-            if (value_end > wpt_end) break :blk null;
-            break :blk allocator.dupe(u8, bytes[value_start..value_end]) catch null;
-        };
-        errdefer if (sym) |s| allocator.free(s);
+        const sym = if (parseTagContent(bytes, content, content_start, wpt_end, "<sym>", "</sym>")) |s|
+            allocator.dupe(u8, s) catch null
+        else
+            null;
+        errdefer if (sym) |s2| allocator.free(s2);
 
-        // Parse type (optional) — maps to wptType; "Start", "TimeBarrier", "LifeBase", "Arrival" mark boundaries
-        const wpt_type: ?[]const u8 = blk: {
-            const type_pos = std.mem.indexOf(u8, content, "<type>") orelse break :blk null;
-            const value_start = content_start + type_pos + 6;
-            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</type>") orelse break :blk null;
-            if (value_end > wpt_end) break :blk null;
-            break :blk allocator.dupe(u8, bytes[value_start..value_end]) catch null;
-        };
+        // "Start", "TimeBarrier", "LifeBase", "Arrival" mark stage/section boundaries
+        const wpt_type = if (parseTagContent(bytes, content, content_start, wpt_end, "<type>", "</type>")) |s|
+            allocator.dupe(u8, s) catch null
+        else
+            null;
         errdefer if (wpt_type) |t| allocator.free(t);
 
-        // Parse time (optional) - only present for typed waypoints
-        const time = blk: {
-            const time_pos = std.mem.indexOf(u8, content, "<time>") orelse break :blk null;
-            const value_start = content_start + time_pos + 6;
-            const value_end = std.mem.indexOfPos(u8, bytes, value_start, "</time>") orelse break :blk null;
-            if (value_end > wpt_end) break :blk null;
-            const time_str = bytes[value_start..value_end];
-            break :blk allocator.dupe(u8, time_str) catch null;
-        };
-        defer if (time) |t| allocator.free(t);
-
-        const time_epoch = if (time) |t| parseIso8601ToEpoch(t) catch null else null;
+        const time_epoch: ?i64 = if (parseTagContent(bytes, content, content_start, wpt_end, "<time>", "</time>")) |s|
+            parseIso8601ToEpoch(s) catch null
+        else
+            null;
 
         try waypoints.append(allocator, Waypoint{
             .lat = lat,
@@ -465,8 +143,6 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
             .wptType = wpt_type,
             .time = time_epoch,
         });
-
-        pos = wpt_end + 6;
     }
 
     return try waypoints.toOwnedSlice(allocator);
@@ -694,115 +370,6 @@ test "readTracePoints extracts track points" {
     try testing.expectEqual(200.0, points[2][2]);
 }
 
-test "GPX file generation creates valid file" {
-    const allocator = testing.allocator;
-    const test_path = "test_output.gpx";
-
-    // Clean up any existing test file
-    std.fs.cwd().deleteFile(test_path) catch {};
-
-    try generateAndSaveGPX(allocator, test_path);
-
-    // Verify file exists
-    const file = try std.fs.cwd().openFile(test_path, .{});
-    defer file.close();
-
-    // Read file content
-    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
-    defer allocator.free(content);
-
-    // Verify GPX structure
-    try testing.expect(std.mem.indexOf(u8, content, "<?xml version=\"1.0\"") != null);
-    try testing.expect(std.mem.indexOf(u8, content, "<gpx") != null);
-    try testing.expect(std.mem.indexOf(u8, content, "<trk>") != null);
-    try testing.expect(std.mem.indexOf(u8, content, "<trkseg>") != null);
-    try testing.expect(std.mem.indexOf(u8, content, "<trkpt") != null);
-    try testing.expect(std.mem.indexOf(u8, content, "</gpx>") != null);
-
-    // Clean up
-    try std.fs.cwd().deleteFile(test_path);
-}
-
-test "GPX generates correct number of track points" {
-    const allocator = testing.allocator;
-    const test_path = "test_points.gpx";
-
-    std.fs.cwd().deleteFile(test_path) catch {};
-
-    try generateAndSaveGPX(allocator, test_path);
-
-    const file = try std.fs.cwd().openFile(test_path, .{});
-    defer file.close();
-
-    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
-    defer allocator.free(content);
-
-    // Count trkpt occurrences
-    var count: usize = 0;
-    var pos: usize = 0;
-    while (std.mem.indexOfPos(u8, content, pos, "<trkpt")) |found| {
-        count += 1;
-        pos = found + 6;
-    }
-
-    // Should have 10000 points
-    try testing.expectEqual(@as(usize, 10000), count);
-
-    try std.fs.cwd().deleteFile(test_path);
-}
-
-test "GPX track points contain valid coordinates" {
-    const allocator = testing.allocator;
-    const test_path = "test_coords.gpx";
-
-    std.fs.cwd().deleteFile(test_path) catch {};
-
-    try generateAndSaveGPX(allocator, test_path);
-
-    const file = try std.fs.cwd().openFile(test_path, .{});
-    defer file.close();
-
-    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
-    defer allocator.free(content);
-
-    // Verify coordinates are within expected ranges
-    try testing.expect(std.mem.indexOf(u8, content, "lat=") != null);
-    try testing.expect(std.mem.indexOf(u8, content, "lon=") != null);
-    try testing.expect(std.mem.indexOf(u8, content, "<ele>") != null);
-
-    try std.fs.cwd().deleteFile(test_path);
-}
-
-test "GPX elevation values are within bounds" {
-    const allocator = testing.allocator;
-    const test_path = "test_elevation.gpx";
-
-    std.fs.cwd().deleteFile(test_path) catch {};
-
-    try generateAndSaveGPX(allocator, test_path);
-
-    const file = try std.fs.cwd().openFile(test_path, .{});
-    defer file.close();
-
-    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
-    defer allocator.free(content);
-
-    // Parse elevations and verify bounds (0-3000)
-    var pos: usize = 0;
-    while (std.mem.indexOfPos(u8, content, pos, "<ele>")) |start| {
-        const ele_start = start + 5;
-        if (std.mem.indexOfPos(u8, content, ele_start, "</ele>")) |end| {
-            const ele_str = content[ele_start..end];
-            const elevation = try std.fmt.parseFloat(f64, ele_str);
-            try testing.expect(elevation >= 0.0);
-            try testing.expect(elevation <= 3000.0);
-            pos = end + 6;
-        } else break;
-    }
-
-    try std.fs.cwd().deleteFile(test_path);
-}
-
 test "readTracePoints with empty input" {
     const allocator = testing.allocator;
     const empty_gpx = "";
@@ -972,39 +539,6 @@ test "readTracePoints with scientific notation" {
     try testing.expectApproxEqAbs(100.0, points[0][2], 0.01);
 }
 
-test "readTracePoints parses generated GPX correctly" {
-    const allocator = testing.allocator;
-    const test_path = "test_roundtrip.gpx";
-
-    std.fs.cwd().deleteFile(test_path) catch {};
-    defer std.fs.cwd().deleteFile(test_path) catch {};
-
-    // Generate a GPX file
-    try generateAndSaveGPX(allocator, test_path);
-
-    // Read it back
-    const file = try std.fs.cwd().openFile(test_path, .{});
-    defer file.close();
-
-    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
-    defer allocator.free(content);
-
-    const points = try readTracePoints(allocator, content);
-    defer allocator.free(points);
-
-    // Should have 10000 points
-    try testing.expectEqual(@as(usize, 10000), points.len);
-
-    // Verify first point structure
-    try testing.expect(points[0].len == 3);
-    try testing.expect(points[0][0] != 0.0); // lat
-    try testing.expect(points[0][1] != 0.0); // lon
-    try testing.expect(points[0][2] >= 0.0); // elevation
-
-    // Verify last point
-    try testing.expect(points[9999][0] != points[0][0]); // Should have moved
-    try testing.expect(points[9999][1] != points[0][1]);
-}
 
 test "readWaypoints parses waypoints correctly" {
     const allocator = testing.allocator;
@@ -1103,62 +637,6 @@ test "readGPXComplete parses both tracks and waypoints" {
     try testing.expectEqualStrings("Checkpoint 20km", gpx_data.waypoints[1].name);
 }
 
-test "generateAndSaveGPX creates waypoints at 20km intervals" {
-    const allocator = testing.allocator;
-    const test_path = "test_waypoint_generation.gpx";
-
-    std.fs.cwd().deleteFile(test_path) catch {};
-    defer std.fs.cwd().deleteFile(test_path) catch {};
-
-    // Generate GPX file with waypoints
-    try generateAndSaveGPX(allocator, test_path);
-
-    // Read the file and parse it
-    const file = try std.fs.cwd().openFile(test_path, .{});
-    defer file.close();
-
-    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
-    defer allocator.free(content);
-
-    var gpx_data = try readGPXComplete(allocator, content);
-    defer gpx_data.deinit(allocator);
-
-    // Trace may be simplified by Douglas-Peucker, so check it's reasonable
-    // Original has 10000 points, simplified trace should have fewer
-    try testing.expect(gpx_data.trace.points.len > 1000);
-    try testing.expect(gpx_data.trace.points.len <= 10000);
-
-    // Should have waypoints (start + one every 20km in a 160km trail = 9 waypoints)
-    try testing.expect(gpx_data.waypoints.len >= 8);
-    try testing.expect(gpx_data.waypoints.len <= 10);
-
-    // Verify waypoint names
-    try testing.expectEqualStrings("Checkpoint 1", gpx_data.waypoints[0].name);
-    if (gpx_data.waypoints.len > 1) {
-        try testing.expectEqualStrings("Checkpoint 2", gpx_data.waypoints[1].name);
-    }
-
-    // Verify waypoints are positioned along the track
-    for (gpx_data.waypoints) |wpt| {
-        try testing.expect(wpt.lat >= 36.0 and wpt.lat <= 38.0);
-        try testing.expect(wpt.lon >= -123.0 and wpt.lon <= -121.0);
-    }
-
-    // Verify legs were computed from waypoints
-    try testing.expect(gpx_data.legs != null);
-    const legs = gpx_data.legs.?;
-
-    // Should have one less leg than waypoints
-    try testing.expectEqual(gpx_data.waypoints.len - 1, legs.len);
-
-    // Verify each leg has valid stats
-    for (legs) |leg| {
-        try testing.expect(leg.totalDistance > 0.0);
-        try testing.expect(leg.startIndex < leg.endIndex);
-        try testing.expect(leg.endIndex <= gpx_data.trace.points.len);
-        try testing.expect(leg.pointCount == leg.endIndex - leg.startIndex + 1);
-    }
-}
 
 test "readGPXComplete: legs null when no waypoints" {
     const allocator = testing.allocator;
@@ -1283,28 +761,172 @@ test "readWaypoints: handles time parsing correctly" {
     try testing.expect(waypoints[1].time == null);
 }
 
-test "generateAndSaveGPX: waypoint time increments correctly" {
+test "readWaypoints: missing name yields empty string" {
     const allocator = testing.allocator;
-    const test_path = "test_waypoint_times.gpx";
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0">
+        \\ </wpt>
+        \\</gpx>
+    ;
 
-    std.fs.cwd().deleteFile(test_path) catch {};
-    defer std.fs.cwd().deleteFile(test_path) catch {};
-
-    try generateAndSaveGPX(allocator, test_path);
-
-    const file = try std.fs.cwd().openFile(test_path, .{});
-    defer file.close();
-
-    const content = try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
-    defer allocator.free(content);
-
-    var gpx_data = try readGPXComplete(allocator, content);
-    defer gpx_data.deinit(allocator);
-
-    // Verify all waypoints have time values (epoch timestamps)
-    for (gpx_data.waypoints) |wpt| {
-        try testing.expect(wpt.time != null);
-        // Time should be a valid epoch timestamp (positive integer)
-        try testing.expect(wpt.time.? > 0);
+    const waypoints = try readWaypoints(allocator, sample_gpx);
+    defer {
+        for (waypoints) |*wpt| wpt.deinit(allocator);
+        allocator.free(waypoints);
     }
+
+    try testing.expectEqual(@as(usize, 1), waypoints.len);
+    try testing.expectEqualStrings("", waypoints[0].name);
+}
+
+test "readWaypoints: wptType field parsed correctly" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0">
+        \\  <name>Start Line</name>
+        \\  <type>Start</type>
+        \\ </wpt>
+        \\ <wpt lat="45.1" lon="7.1">
+        \\  <name>Life Base</name>
+        \\  <type>LifeBase</type>
+        \\ </wpt>
+        \\ <wpt lat="45.2" lon="7.2">
+        \\  <name>Barrier</name>
+        \\  <type>TimeBarrier</type>
+        \\ </wpt>
+        \\ <wpt lat="45.3" lon="7.3">
+        \\  <name>Finish</name>
+        \\  <type>Arrival</type>
+        \\ </wpt>
+        \\ <wpt lat="45.4" lon="7.4">
+        \\  <name>Aid</name>
+        \\ </wpt>
+        \\</gpx>
+    ;
+
+    const waypoints = try readWaypoints(allocator, sample_gpx);
+    defer {
+        for (waypoints) |*wpt| wpt.deinit(allocator);
+        allocator.free(waypoints);
+    }
+
+    try testing.expectEqual(@as(usize, 5), waypoints.len);
+    try testing.expectEqualStrings("Start", waypoints[0].wptType.?);
+    try testing.expectEqualStrings("LifeBase", waypoints[1].wptType.?);
+    try testing.expectEqualStrings("TimeBarrier", waypoints[2].wptType.?);
+    try testing.expectEqualStrings("Arrival", waypoints[3].wptType.?);
+    try testing.expect(waypoints[4].wptType == null);
+
+    try testing.expect(waypoints[0].isStageBoundary());
+    try testing.expect(waypoints[1].isStageBoundary());
+    try testing.expect(!waypoints[2].isStageBoundary());
+    try testing.expect(waypoints[3].isStageBoundary());
+    try testing.expect(!waypoints[4].isStageBoundary());
+
+    try testing.expect(waypoints[2].isSectionBoundary());
+    try testing.expect(!waypoints[4].isSectionBoundary());
+}
+
+test "readTracePoints: malformed points are skipped, valid ones retained" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk><trkseg>
+        \\  <trkpt lat="45.0" lon="7.0"><ele>100</ele></trkpt>
+        \\  <trkpt lon="7.1"><ele>110</ele></trkpt>
+        \\  <trkpt lat="45.2" lon="7.2"><ele>120</ele></trkpt>
+        \\  <trkpt lat="45.3" lon="7.3"></trkpt>
+        \\  <trkpt lat="45.4" lon="7.4"><ele>140</ele></trkpt>
+        \\ </trkseg></trk>
+        \\</gpx>
+    ;
+
+    const points = try readTracePoints(allocator, sample_gpx);
+    defer allocator.free(points);
+
+    // Missing lat and missing ele are skipped; the other 3 valid points are kept
+    try testing.expectEqual(@as(usize, 3), points.len);
+    try testing.expectApproxEqAbs(45.0, points[0][0], 0.001);
+    try testing.expectApproxEqAbs(45.2, points[1][0], 0.001);
+    try testing.expectApproxEqAbs(45.4, points[2][0], 0.001);
+}
+
+test "readWaypoints: malformed waypoints are skipped, valid ones retained" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0"><name>Good 1</name></wpt>
+        \\ <wpt lon="7.1"><name>No lat</name></wpt>
+        \\ <wpt lat="45.2" lon="7.2"><name>Good 2</name></wpt>
+        \\ <wpt lat="bad" lon="7.3"><name>Bad lat</name></wpt>
+        \\ <wpt lat="45.4" lon="7.4"><name>Good 3</name></wpt>
+        \\</gpx>
+    ;
+
+    const waypoints = try readWaypoints(allocator, sample_gpx);
+    defer {
+        for (waypoints) |*wpt| wpt.deinit(allocator);
+        allocator.free(waypoints);
+    }
+
+    try testing.expectEqual(@as(usize, 3), waypoints.len);
+    try testing.expectEqualStrings("Good 1", waypoints[0].name);
+    try testing.expectEqualStrings("Good 2", waypoints[1].name);
+    try testing.expectEqualStrings("Good 3", waypoints[2].name);
+}
+
+test "parseTagContent: content bounded to element (does not bleed into next element)" {
+    const allocator = testing.allocator;
+    // Two waypoints: first has no <desc>, second does. Parser must not steal second's desc.
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0">
+        \\  <name>First</name>
+        \\ </wpt>
+        \\ <wpt lat="45.1" lon="7.1">
+        \\  <name>Second</name>
+        \\  <desc>Only second has this</desc>
+        \\ </wpt>
+        \\</gpx>
+    ;
+
+    const waypoints = try readWaypoints(allocator, sample_gpx);
+    defer {
+        for (waypoints) |*wpt| wpt.deinit(allocator);
+        allocator.free(waypoints);
+    }
+
+    try testing.expectEqual(@as(usize, 2), waypoints.len);
+    try testing.expect(waypoints[0].desc == null);
+    try testing.expectEqualStrings("Only second has this", waypoints[1].desc.?);
+}
+
+test "parseTagContent: empty tag content returns empty slice" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0">
+        \\  <name></name>
+        \\  <desc></desc>
+        \\ </wpt>
+        \\</gpx>
+    ;
+
+    const waypoints = try readWaypoints(allocator, sample_gpx);
+    defer {
+        for (waypoints) |*wpt| wpt.deinit(allocator);
+        allocator.free(waypoints);
+    }
+
+    try testing.expectEqual(@as(usize, 1), waypoints.len);
+    try testing.expectEqualStrings("", waypoints[0].name);
+    try testing.expectEqualStrings("", waypoints[0].desc.?);
 }
