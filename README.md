@@ -23,6 +23,8 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
   - Section-based coloring for route segments
   - Slope gradient coloring (5 difficulty levels)
 - **Section Analytics**: Distance, elevation gain/loss, slope percentages, difficulty rating
+- **Stage Analytics**: Per-stage details including distance, elevation, estimated/max time, cutoff time, difficulty, and slowest required pace
+- **Live Trail Progression**: Real-time progress bar with cumulative distance percentage, elevation gain and loss based on runner position
 - **ETA Estimation**: Arrival time prediction per section based on difficulty
 - **Peak Detection**: Automatic identification and visualization of peaks
 - **Checkpoint Markers**: Location labels along the route with distance-based visibility
@@ -151,6 +153,8 @@ zig/
   time.zig              # Time/duration calculations
   waypoint.zig          # Waypoint data structure
   section.zig           # Section statistics structure
+  leg.zig               # Leg data structure (stage sub-segments)
+  stage.zig             # Stage data structure and analytics
   main.zig              # WASM entry point and bindings
 ```
 
