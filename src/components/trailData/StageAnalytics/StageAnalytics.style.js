@@ -53,7 +53,7 @@ const style = (Component) => styled(Component)`
 
   .header-route {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
@@ -76,7 +76,7 @@ const style = (Component) => styled(Component)`
     gap: 0.95rem 0.25rem;
     flex: 1;
     align-content: start;
-    padding-top: 1rem;
+    padding-top: 0.6rem;
   }
 
   .grid-tile {
@@ -115,7 +115,7 @@ const style = (Component) => styled(Component)`
 
   .tile-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     color: ${(props) =>
       rgba(
