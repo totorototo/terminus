@@ -13,10 +13,11 @@ import Sections from "../sections/Sections.jsx";
 import style from "./EnhancedProfile.style.js";
 
 function EnhancedProfile({ coordinateScales }) {
-  const { legs, tracePoints } = useStore(
+  const { legs, tracePoints, waypoints } = useStore(
     useShallow((state) => ({
       legs: state.legs,
       tracePoints: state.gpx.data,
+      waypoints: state.waypoints,
     })),
   );
 
@@ -27,8 +28,8 @@ function EnhancedProfile({ coordinateScales }) {
 
   // Create checkpoints from legs using provided scales
   const checkpointsPoints3D = useMemo(() => {
-    return createCheckpoints(legs, coordinateScales);
-  }, [legs, coordinateScales]);
+    return createCheckpoints(legs, coordinateScales, waypoints);
+  }, [legs, coordinateScales, waypoints]);
 
   return (
     <>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Glass: wider at top, narrower at bottom -->
+  <path d="M5 3 L19 3 L17 21 L7 21 Z"/>
+  <!-- Water surface wave -->
+  <path d="M8 13 Q10 11 12 13 Q14 15 16 13"/>
+</svg>
