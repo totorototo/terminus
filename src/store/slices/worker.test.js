@@ -104,6 +104,15 @@ describe("Worker Slice", () => {
           undefined,
           "gpx/setPeaks",
         ),
+      setClimbs: (climbs) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: { ...state.gpx, climbs },
+          }),
+          undefined,
+          "gpx/setClimbs",
+        ),
       updateStats: (updates) =>
         set(
           (state) => ({
@@ -279,6 +288,15 @@ describe("Worker Slice", () => {
             }),
             undefined,
             "gpx/setPeaks",
+          ),
+        setClimbs: (climbs) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: { ...state.gpx, climbs },
+            }),
+            undefined,
+            "gpx/setClimbs",
           ),
         updateStats: (updates) =>
           set(

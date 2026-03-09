@@ -162,6 +162,24 @@ async function processGPXFile(gpxFileBytes, requestId) {
       : null,
   };
 
+  // Sanitize climb segments — all fields are numeric (usize/f64), no strings or i64
+  const sanitizedClimbs = [];
+  const traceClimbs = gpxData.trace.climbs;
+  if (traceClimbs) {
+    for (let i = 0; i < traceClimbs.length; i++) {
+      const c = traceClimbs[i].valueOf();
+      sanitizedClimbs.push({
+        startIndex: Number(c.startIndex),
+        endIndex: Number(c.endIndex),
+        startDistM: c.startDistM,
+        climbDistM: c.climbDistM,
+        elevationGain: c.elevationGain,
+        summitElev: c.summitElev,
+        avgGradient: c.avgGradient,
+      });
+    }
+  }
+
   const results = {
     metadata,
     trace: gpxData.trace.valueOf(),
@@ -170,6 +188,7 @@ async function processGPXFile(gpxFileBytes, requestId) {
     sections: sanitizedSections,
     stages: sanitizedStages,
     peaks: gpxData.peaks ? gpxData.peaks.map((p) => Number(p)) : [],
+    climbs: sanitizedClimbs,
   };
 
   self.postMessage({

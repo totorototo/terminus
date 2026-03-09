@@ -8,6 +8,8 @@ const distance = @import("gpspoint.zig").distance;
 const distance3D = @import("gpspoint.zig").distance3D;
 const elevationDeltaSigned = @import("gpspoint.zig").elevationDeltaSigned;
 const findPeaks = @import("peaks.zig").findPeaks;
+const detectClimbs = @import("climbs.zig").detectClimbs;
+pub const ClimbStats = @import("climbs.zig").ClimbStats;
 const douglasPeuckerSimplify = @import("simplify.zig").douglasPeuckerSimplify;
 
 // Structure to return both the closest point and its index
@@ -24,6 +26,7 @@ pub const Trace = struct {
     slopes: []f64, // Slope percentages between consecutive points
     points: [][3]f64,
     peaks: []usize, // Indices of detected peaks in smoothed elevation
+    climbs: []ClimbStats, // Climb segments derived from peaks
     totalDistance: f64, // Total distance in meters
     totalElevation: f64, // Total elevation gain in meters
     totalElevationLoss: f64, // Total elevation loss in meters
@@ -37,6 +40,7 @@ pub const Trace = struct {
                 .cumulativeElevationLoss = @as([]f64, &.{}),
                 .slopes = @as([]f64, &.{}),
                 .peaks = @as([]usize, &.{}),
+                .climbs = @as([]ClimbStats, &.{}),
                 .totalDistance = 0.0,
                 .totalElevation = 0.0,
                 .totalElevationLoss = 0.0,
@@ -148,6 +152,10 @@ pub const Trace = struct {
             try allocator.alloc(usize, 0);
         errdefer allocator.free(peaks);
 
+        // Compute climb segments from peaks
+        const climbs = try detectClimbs(allocator, peaks, final_points, cumulativeDistances);
+        errdefer allocator.free(climbs);
+
         return Trace{
             .points = final_points,
             .cumulativeDistances = cumulativeDistances,
@@ -155,6 +163,7 @@ pub const Trace = struct {
             .cumulativeElevationLoss = cumulativeElevationLoss,
             .slopes = slopes,
             .peaks = peaks,
+            .climbs = climbs,
             .totalDistance = cum_dist,
             .totalElevation = cum_elev,
             .totalElevationLoss = cum_elev_loss,
@@ -168,6 +177,7 @@ pub const Trace = struct {
         if (self.cumulativeElevationLoss.len != 0) allocator.free(self.cumulativeElevationLoss);
         if (self.slopes.len != 0) allocator.free(self.slopes);
         if (self.peaks.len != 0) allocator.free(self.peaks);
+        if (self.climbs.len != 0) allocator.free(self.climbs);
     }
 
     pub fn pointAtDistance(self: *const Trace, targetDistance: f64) ?[3]f64 {

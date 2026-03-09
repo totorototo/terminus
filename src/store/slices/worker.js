@@ -289,6 +289,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         });
         get().setMetadata(results.metadata);
         get().setPeaks(results.trace.peaks);
+        get().setClimbs(results.climbs ?? []);
 
         get().updateStats({
           distance: results.trace.totalDistance ?? 0,
