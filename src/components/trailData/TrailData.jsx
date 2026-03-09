@@ -9,6 +9,7 @@ import SectionAnalytics from "./SectionAnalytics/SectionAnalytics.jsx";
 import StageAnalytics from "./StageAnalytics/StageAnalytics.jsx";
 import StageETA from "./StageETA/StageETA.jsx";
 import TrailActions from "./TrailActions/TrailActions.jsx";
+import TrailOverview from "./TrailOverview/TrailOverview.jsx";
 import TrailProgression from "./TrailProgression/TrailProgression.jsx";
 
 import style from "./TrailData.style.js";
@@ -147,6 +148,9 @@ const TrailData = memo(function TrailData({ className, showElevationProfile }) {
 
       {/* Components container */}
       <div className="component-container">
+        <div className="component-children">
+          <TrailOverview />
+        </div>
         {showElevationProfile && (
           <div className="component-children">
             <ElevationProfile />
