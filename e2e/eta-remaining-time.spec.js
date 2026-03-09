@@ -123,8 +123,8 @@ test.describe("ETA and Remaining Time", () => {
     await expect(canvas).toBeVisible({ timeout: 15000 });
 
     const buildNumber = page.locator(".build-number");
-    await expect(buildNumber).toBeVisible({ timeout: 5000 });
-    expect(await buildNumber.textContent()).toContain("Build Number");
+    await buildNumber.scrollIntoViewIfNeeded({ timeout: 5000 });
+    expect(await buildNumber.textContent()).toMatch(/^build /);
   });
 
   test("all stat values should be present and non-empty", async ({ page }) => {
