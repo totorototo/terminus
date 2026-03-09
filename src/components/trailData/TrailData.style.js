@@ -11,7 +11,7 @@ const style = (Component) => styled(Component)`
   padding: 2rem 1.25rem 1.25rem;
   border-radius: ${(props) => props.theme.borderRadius["--border-radius-xl"]};
   pointer-events: auto;
-  height: 22rem;
+  height: 24rem;
   // background-color:pink;
 
   /* Stats container */
@@ -36,11 +36,6 @@ const style = (Component) => styled(Component)`
     &:last-child {
       align-items: flex-end;
     }
-  }
-
-  .build-number {
-    margin-top: auto;
-    align-self: flex-end;
   }
 
   .stat-value {

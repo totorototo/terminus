@@ -122,66 +122,63 @@ const SectionAnalytics = memo(function SectionAnalytics({ className }) {
       </div>
 
       <div className="analytics-grid">
-        {/* Row 1: geography */}
-        <div className="grid-item">
-          <span className="item-label">Distance</span>
-          <span className="item-value">
+        <div className="grid-tile">
+          <span className="tile-label">Distance</span>
+          <span className="tile-value">
             {analytics.distanceKm.toFixed(1)} km
           </span>
         </div>
 
-        <div className="grid-item">
-          <span className="item-label">Elev Gain</span>
-          <span className="item-value gain">
+        <div className="grid-tile">
+          <span className="tile-label">Gain</span>
+          <span className="tile-value gain">
             +{analytics.elevationGain.toFixed(0)} m
           </span>
         </div>
 
-        <div className="grid-item">
-          <span className="item-label">Elev Loss</span>
-          <span className="item-value loss">
+        <div className="grid-tile">
+          <span className="tile-label">Loss</span>
+          <span className="tile-value loss">
             -{analytics.elevationLoss.toFixed(0)} m
           </span>
         </div>
 
-        {/* Row 2: timing */}
-        <div className="grid-item">
-          <span className="item-label">Est Time</span>
-          <span className="item-value">
+        <div className="grid-tile">
+          <span className="tile-label">Est Time</span>
+          <span className="tile-value">
             {formatSectionDuration(analytics.estimatedDurationSec)}
           </span>
         </div>
 
-        <div className="grid-item">
-          <span className="item-label">Max Time</span>
-          <span className="item-value">
+        <div className="grid-tile">
+          <span className="tile-label">Max Time</span>
+          <span className="tile-value">
             {formatSectionDuration(analytics.maxTimeSec)}
           </span>
         </div>
 
-        <div className="grid-item">
-          <span className="item-label">Cutoff</span>
-          <span className="item-value">{formatCutoff(analytics.cutoffMs)}</span>
+        <div className="grid-tile">
+          <span className="tile-label">Cutoff</span>
+          <span className="tile-value">{formatCutoff(analytics.cutoffMs)}</span>
         </div>
 
-        {/* Row 3: effort */}
-        <div className="grid-item">
-          <span className="item-label">Difficulty</span>
+        <div className="grid-tile">
+          <span className="tile-label">Difficulty</span>
           {difficultyLabel ? (
             <span
-              className="item-value difficulty"
+              className="tile-value difficulty"
               style={{ color: difficultyColor }}
             >
               {difficultyLabel}
             </span>
           ) : (
-            <span className="item-value">--</span>
+            <span className="tile-value">--</span>
           )}
         </div>
 
-        <div className="grid-item">
-          <span className="item-label">Slowest Pace</span>
-          <span className="item-value">
+        <div className="grid-tile">
+          <span className="tile-label">Slowest Pace</span>
+          <span className="tile-value">
             {formatSpeed(analytics.slowestPaceSecPerKm)}
           </span>
         </div>

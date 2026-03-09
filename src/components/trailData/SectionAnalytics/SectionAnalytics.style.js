@@ -72,38 +72,27 @@ const style = (Component) => styled(Component)`
 
   .analytics-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.5rem 0.75rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.95rem 0.25rem;
     flex: 1;
-    overflow: hidden;
+    align-content: start;
+    padding-top: 1rem;
   }
 
-  .grid-item {
+  .grid-tile {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
   }
 
-  .item-label {
+  .tile-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.38,
-      )};
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-
-  .item-value {
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    letter-spacing: 0.25px;
+    letter-spacing: -0.5px;
+    line-height: 1;
 
     &.gain {
       color: ${(props) =>
@@ -119,10 +108,23 @@ const style = (Component) => styled(Component)`
     }
 
     &.difficulty {
-      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+  }
+
+  .tile-label {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.35,
+      )};
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    line-height: 1;
   }
 `;
 

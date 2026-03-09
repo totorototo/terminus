@@ -168,9 +168,6 @@ const TrailData = memo(function TrailData({ className, showElevationProfile }) {
           <TrailActions />
         </div>
       </div>
-      <div className="build-number">
-        <span>Build Number: {import.meta.env.VITE_NUMBER || "dev"}</span>
-      </div>
     </div>
   );
 });

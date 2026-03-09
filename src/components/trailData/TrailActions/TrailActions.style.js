@@ -11,7 +11,7 @@ const style = (Component) => styled(Component)`
 
   .action-button {
     width: 100%;
-    height: 52px;
+    height: 44px;
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
     font-family: ${(props) =>
@@ -66,6 +66,20 @@ const style = (Component) => styled(Component)`
       color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-background"]};
     }
+  }
+
+  .build-number {
+    margin-top: auto;
+    margin-left: auto;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.2,
+      )};
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
   }
 `;
 
