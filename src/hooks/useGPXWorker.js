@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { useShallow } from "zustand/react/shallow";
 
 import useStore from "../store/store.js";
 
 export function useGPXWorker(raceId) {
+  const prevRaceIdRef = useRef(null);
   const {
     initGPXWorker,
     terminateGPXWorker,
@@ -35,7 +36,12 @@ export function useGPXWorker(raceId) {
     // race data arrives — ensures all sections remount simultaneously as fresh
     // components, avoiding shader/material initialization issues.
     setSections([]);
-    flush();
+    // Only flush GPS state on trail switch, not on initial load, so that
+    // rehydrated GPS positions are preserved across page reloads.
+    if (prevRaceIdRef.current !== null && prevRaceIdRef.current !== raceId) {
+      flush();
+    }
+    prevRaceIdRef.current = raceId;
 
     const controller = new AbortController();
 
