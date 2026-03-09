@@ -13,6 +13,8 @@ const TrailActions = memo(function TrailActions({ className }) {
   const trackingMode = useStore((state) => state.app.trackingMode);
   const [, navigate] = useLocation();
 
+  const buildNumber = import.meta.env.VITE_NUMBER || "dev";
+
   return (
     <div className={className}>
       <button
@@ -30,6 +32,7 @@ const TrailActions = memo(function TrailActions({ className }) {
         <LogOut size={20} />
         <span>Leave Trail</span>
       </button>
+      <div className="build-number">build {buildNumber}</div>
     </div>
   );
 });
