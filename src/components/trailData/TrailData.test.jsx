@@ -71,6 +71,11 @@ vi.mock("./TrailOverview/TrailOverview.jsx", () => ({
   default: () => <div data-testid="trail-overview">TrailOverview</div>,
 }));
 
+// Mock PeakSummary component
+vi.mock("./PeakSummary/PeakSummary.jsx", () => ({
+  default: () => <div data-testid="peak-summary">PeakSummary</div>,
+}));
+
 describe("TrailData Component", () => {
   const mockStats = {
     distance: 10000,

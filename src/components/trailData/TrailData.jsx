@@ -7,6 +7,7 @@ import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import ElevationProfile from "./ElevationProfile/ElevationProfile.jsx";
 import SectionAnalytics from "./SectionAnalytics/SectionAnalytics.jsx";
 import StageAnalytics from "./StageAnalytics/StageAnalytics.jsx";
+import PeakSummary from "./PeakSummary/PeakSummary.jsx";
 import StageETA from "./StageETA/StageETA.jsx";
 import TrailActions from "./TrailActions/TrailActions.jsx";
 import TrailOverview from "./TrailOverview/TrailOverview.jsx";
@@ -167,6 +168,9 @@ const TrailData = memo(function TrailData({ className, showElevationProfile }) {
         </div>
         <div className="component-children">
           <StageETA />
+        </div>
+        <div className="component-children">
+          <PeakSummary />
         </div>
         <div className="component-children">
           <TrailActions />
