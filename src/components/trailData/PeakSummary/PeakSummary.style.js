@@ -20,7 +20,7 @@ const style = (Component) => styled(Component)`
           props.theme.colors[props.theme.currentVariant]["--color-text"],
           0.07,
         )};
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
     flex-shrink: 0;
   }
 
@@ -65,14 +65,14 @@ const style = (Component) => styled(Component)`
   .climb-row {
     display: flex;
     align-items: flex-start;
-    padding: 0.35rem 0;
+    padding: 0.5rem 0;
     gap: 0.55rem;
-    opacity: 0.55;
+    opacity: 0.65;
     transition: opacity
       ${(props) => props.theme.transitions["--transition-fast"]};
 
     &.past {
-      opacity: 0.3;
+      opacity: 0.22;
     }
 
     &.current {
@@ -93,7 +93,7 @@ const style = (Component) => styled(Component)`
     height: 7px;
     border-radius: 50%;
     flex-shrink: 0;
-    margin-top: 3px;
+    margin-top: 4px;
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
@@ -123,7 +123,7 @@ const style = (Component) => styled(Component)`
   .climb-info {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
     min-width: 0;
     flex: 1;
   }
@@ -137,10 +137,12 @@ const style = (Component) => styled(Component)`
 
   .climb-at {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
+    letter-spacing: -0.5px;
+    line-height: 1;
 
     .current & {
       color: ${(props) =>
@@ -150,12 +152,12 @@ const style = (Component) => styled(Component)`
 
   .climb-summit {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
+        0.6,
       )};
     flex-shrink: 0;
   }
@@ -168,20 +170,18 @@ const style = (Component) => styled(Component)`
 
   .climb-stat {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) =>
+      props.theme.font.weights["--font-weight-regular"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
+        0.65,
       )};
 
     &.gain {
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.7,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
     }
 
     &.gradient {
@@ -195,11 +195,11 @@ const style = (Component) => styled(Component)`
 
   .climb-sep {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.2,
+        0.3,
       )};
   }
 
