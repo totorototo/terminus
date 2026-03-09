@@ -21,6 +21,7 @@ export default function Checkpoints({ checkpointsPoints3D }) {
           checkpoint.point3D[1] + 0.2,
           checkpoint.point3D[2],
         ]}
+        wptType={checkpoint.wptType}
       >
         {`${checkpoint.name}`}
       </Marker>

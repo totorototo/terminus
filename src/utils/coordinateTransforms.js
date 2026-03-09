@@ -125,8 +125,12 @@ export function transformCoordinates(coordinates, scales, index = 0) {
   );
 }
 
-export function createCheckpoints(sections, scales) {
+export function createCheckpoints(sections, scales, waypoints = []) {
   if (!sections || sections.length === 0) return [];
+
+  const wptTypeByName = Object.fromEntries(
+    waypoints.map((w) => [w.name, w.wptType ?? null]),
+  );
 
   const checkpointsMap = sections.reduce(
     (
@@ -151,6 +155,7 @@ export function createCheckpoints(sections, scales) {
     name: key,
     point3D: transformCoordinate(value.point, scales, value.index),
     index: value.index,
+    wptType: wptTypeByName[key] ?? null,
   }));
 }
 
