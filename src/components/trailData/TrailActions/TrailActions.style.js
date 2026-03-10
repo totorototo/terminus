@@ -3,69 +3,118 @@ import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
   display: flex;
-  flex: 1;
   flex-direction: column;
-  gap: 10px;
   width: 100%;
   height: 100%;
+  padding: 0 0.75rem;
+  overflow: hidden;
 
-  .action-button {
-    width: 100%;
-    height: 44px;
-    border-radius: ${(props) =>
-      props.theme.borderRadius["--border-radius-base"]};
-    font-family: ${(props) =>
-      props.theme.font.family["--font-family-sansSerif"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+  .actions-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.07,
+        )};
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .header-label {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    letter-spacing: 0.2px;
-    cursor: pointer;
-    transition: all ${(props) => props.theme.transitions["--transition-fast"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.35,
+      )};
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .action-row {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 1rem;
-
-    border: 1px solid
-      ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.25,
-        )};
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-primary"],
-        0.12,
-      )};
+    gap: 0.6rem;
+    width: 100%;
+    height: 32px;
+    padding: 0 0.5rem;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-base"]};
+    cursor: pointer;
+    transition: all ${(props) => props.theme.transitions["--transition-fast"]};
+    border: none;
+    background: transparent;
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.6,
+      )};
 
     &:hover {
-      border-color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.35,
-        )};
       background: ${(props) =>
         rgba(
           props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.15,
+          0.08,
         )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
     }
 
-    &:active,
     &.active {
-      border-color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.5,
-        )};
-      background: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-background"]};
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
     }
+
+    &.danger {
+      color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-secondary"],
+          0.6,
+        )};
+
+      &:hover {
+        background: ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-secondary"],
+            0.08,
+          )};
+        color: ${(props) =>
+          props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+      }
+    }
+  }
+
+  .row-label {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .row-badge {
+    margin-left: auto;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
   }
 
   .build-number {
