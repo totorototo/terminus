@@ -14,6 +14,13 @@ const PeakSummary = memo(function PeakSummary({ className }) {
   const currentIdx = projectedLocation?.index ?? 0;
   const currentDistM = cumulativeDistances?.[currentIdx] ?? 0;
 
+  // At most one climb can be "in progress" at a time — the first one whose
+  // range contains currentIdx and whose summit hasn't been reached yet.
+  const currentClimbIndex =
+    climbs?.findIndex(
+      (climb) => currentIdx >= climb.startIndex && currentIdx < climb.endIndex,
+    ) ?? -1;
+
   if (!climbs?.length) {
     return (
       <div className={className}>
@@ -34,10 +41,7 @@ const PeakSummary = memo(function PeakSummary({ className }) {
       <div className="climb-list">
         {climbs.map((climb, i) => {
           const isPast = currentIdx >= climb.endIndex;
-          const isCurrent =
-            !isPast &&
-            currentIdx >= climb.startIndex &&
-            currentIdx < climb.endIndex;
+          const isCurrent = !isPast && i === currentClimbIndex;
           const distToStartKm = (climb.startDistM - currentDistM) / 1000;
 
           return (
