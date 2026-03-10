@@ -783,6 +783,7 @@
       <a href="#bottom">Bottom Panel</a>
       <a href="#commands">Commands</a>
       <a href="#follower">Follower</a>
+      <a href="#pwa">Install</a>
       <div class="nav-sep"></div>
       <button id="themeBtn" title="Toggle theme">
         <svg
@@ -1583,6 +1584,175 @@
           </div>
         </div>
       </div>
+
+      <hr class="div" />
+
+      <!-- 8. PWA -->
+      <div class="section" id="pwa">
+        <div class="sec-label">Progressive Web App</div>
+        <h2 class="sec-title">Install &amp; Notifications</h2>
+        <div class="sec-body">
+          <p>
+            Terminus is a fully installable Progressive Web App. Once installed
+            it runs as a standalone app — no browser chrome — and works offline
+            after the first load.
+          </p>
+        </div>
+
+        <div class="role-grid" style="margin-top: 28px">
+          <div class="role-card rn">
+            <div class="role-icon">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                <line x1="12" y1="18" x2="12.01" y2="18" />
+              </svg>
+            </div>
+            <h3>iOS &amp; Android</h3>
+            <p>
+              Open Terminus in Safari (iOS) or Chrome (Android), tap the
+              <strong>Share</strong> button, then choose
+              <strong>Add to Home Screen</strong>. The app icon appears like any
+              native app and launches full-screen.
+            </p>
+          </div>
+          <div class="role-card fo">
+            <div class="role-icon">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+            </div>
+            <h3>Desktop</h3>
+            <p>
+              In Chrome or Edge, look for the
+              <strong>Install</strong> icon in the address bar (or open the
+              browser menu and choose <strong>Install Terminus</strong>). The
+              app opens in its own window, separate from your browser.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel-list" style="margin-top: 14px">
+          <div class="pi">
+            <div class="pi-icon g">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <div>
+              <h4>Works Offline</h4>
+              <p>
+                All app assets are precached on first load. The 3D trail view,
+                analytics, and route data are available without an internet
+                connection. Only live GPS sharing requires connectivity.
+              </p>
+            </div>
+          </div>
+          <div class="pi">
+            <div class="pi-icon t">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-.07-6.69" />
+              </svg>
+            </div>
+            <div>
+              <h4>Auto-Updates</h4>
+              <p>
+                When a new version is available, it downloads silently in the
+                background. The update is applied the next time you open the app
+                — no manual action needed.
+              </p>
+            </div>
+          </div>
+          <div class="pi">
+            <div class="pi-icon p">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            </div>
+            <div>
+              <h4>Push Notifications (Follower)</h4>
+              <p>
+                As a follower, grant notification permission when prompted. You
+                will receive a notification each time the runner's position
+                updates — even when the app is backgrounded or fully closed. Tap
+                the notification to instantly open or focus the app.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout t" style="margin-top: 16px">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--secondary)"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p>
+            Notifications require the app to be installed as a PWA on iOS
+            (Safari) and are supported natively on Android and desktop. If you
+            accidentally deny permission, re-enable it in your device or browser
+            settings under <strong>Terminus → Notifications</strong>.
+          </p>
+        </div>
+      </div>
     </main>
 
     <footer>
@@ -1658,6 +1828,7 @@
         "bottom",
         "commands",
         "follower",
+        "pwa",
       ];
       const navLinks = document.querySelectorAll("nav a");
       const ioNav = new IntersectionObserver(
