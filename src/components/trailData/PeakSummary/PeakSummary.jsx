@@ -1,13 +1,16 @@
 import { memo } from "react";
+import { useShallow } from "zustand/react/shallow";
 
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./PeakSummary.style.js";
 
 const PeakSummary = memo(function PeakSummary({ className }) {
-  const climbs = useStore((state) => state.gpx.climbs);
-  const cumulativeDistances = useStore(
-    (state) => state.gpx.cumulativeDistances,
+  const { climbs, cumulativeDistances } = useStore(
+    useShallow((state) => ({
+      climbs: state.gpx.climbs,
+      cumulativeDistances: state.gpx.cumulativeDistances,
+    })),
   );
   const projectedLocation = useProjectedLocation();
 
@@ -46,7 +49,7 @@ const PeakSummary = memo(function PeakSummary({ className }) {
 
           return (
             <div
-              key={i}
+              key={`${climb.startIndex}-${climb.endIndex}`}
               className={`climb-row${isPast ? " past" : ""}${isCurrent ? " current" : ""}`}
             >
               <div className="climb-left">

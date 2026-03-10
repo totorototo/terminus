@@ -3,15 +3,18 @@ const std = @import("std");
 /// Minimal configuration for AMPD peak detection
 pub const AMPDConfig = struct {
     scale_max: usize = 21,
-    threshold_peaks: usize = 15,
+    threshold: usize = 15, // min scale-count to qualify as a peak or valley
 
     pub fn validate(self: AMPDConfig, signal_len: usize) !void {
         if (self.scale_max == 0) return error.InvalidScaleMax;
-        if (self.threshold_peaks == 0) return error.InvalidThreshold;
-        if (self.threshold_peaks > self.scale_max) return error.ThresholdExceedsScaleMax;
+        if (self.threshold == 0) return error.InvalidThreshold;
+        if (self.threshold > self.scale_max) return error.ThresholdExceedsScaleMax;
         if (signal_len < 3) return error.SignalTooShort;
     }
 };
+
+// Merge adjacent extrema within this many samples — eliminates AMPD shoulder artefacts.
+const CLUSTER_WINDOW: usize = 3;
 
 // Generic cluster: for peaks picks highest, for valleys picks lowest in each run
 fn clusterExtrema(allocator: std.mem.Allocator, extrema_raw: []const usize, signal: []const f32, comptime find_peaks: bool) ![]usize {
@@ -27,7 +30,7 @@ fn clusterExtrema(allocator: std.mem.Allocator, extrema_raw: []const usize, sign
         const current_idx = extrema_raw[i];
         const prev_idx = extrema_raw[i - 1];
 
-        if (current_idx - prev_idx <= 3) {
+        if (current_idx - prev_idx <= CLUSTER_WINDOW) {
             const current_val = signal[current_idx];
             const is_better = if (find_peaks) current_val > best_val else current_val < best_val;
             if (is_better) {
@@ -103,14 +106,14 @@ pub fn ampdValleys(allocator: std.mem.Allocator, signal: []const f32, scale_max:
 pub fn findPeaks(allocator: std.mem.Allocator, signal: []const f32) ![]usize {
     const config = AMPDConfig{};
     try config.validate(signal.len);
-    return ampd(allocator, signal, config.scale_max, config.threshold_peaks);
+    return ampd(allocator, signal, config.scale_max, config.threshold);
 }
 
 /// Detect valleys (local minima) using the same AMPD algorithm with inverted comparisons
 pub fn findValleys(allocator: std.mem.Allocator, signal: []const f32) ![]usize {
     const config = AMPDConfig{};
     try config.validate(signal.len);
-    return ampdValleys(allocator, signal, config.scale_max, config.threshold_peaks);
+    return ampdValleys(allocator, signal, config.scale_max, config.threshold);
 }
 
 test "ampd: flat signal" {
@@ -192,7 +195,7 @@ test "findValleys: basic valley detection" {
     // Every reported valley must be a local minimum at scale 1
     for (valleys) |v| {
         if (v > 0 and v < signal.len - 1) {
-            try std.testing.expect(signal[v] < signal[v - 1] or signal[v] < signal[v + 1]);
+            try std.testing.expect(signal[v] < signal[v - 1] and signal[v] < signal[v + 1]);
         }
     }
 }
@@ -222,10 +225,10 @@ test "configuration validation" {
     var config = AMPDConfig{ .scale_max = 0 };
     try std.testing.expectError(error.InvalidScaleMax, config.validate(10));
 
-    config = AMPDConfig{ .threshold_peaks = 0 };
+    config = AMPDConfig{ .threshold = 0 };
     try std.testing.expectError(error.InvalidThreshold, config.validate(10));
 
-    config = AMPDConfig{ .threshold_peaks = 5, .scale_max = 3 };
+    config = AMPDConfig{ .threshold = 5, .scale_max = 3 };
     try std.testing.expectError(error.ThresholdExceedsScaleMax, config.validate(10));
 
     config = AMPDConfig{};

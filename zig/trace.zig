@@ -53,12 +53,6 @@ pub const Trace = struct {
         // Apply Douglas-Peucker simplification for large datasets (> 1000 points)
         const final_points = if (coordinates.len > 1000) blk: {
             const simplified = try douglasPeuckerSimplify(allocator, coordinates, 5.0);
-            const reduction_pct = (1.0 - @as(f64, @floatFromInt(simplified.len)) / @as(f64, @floatFromInt(coordinates.len))) * 100.0;
-            std.debug.print("🔧 Douglas-Peucker: Reduced from {} to {} points ({d:.1}% reduction)\n", .{
-                coordinates.len,
-                simplified.len,
-                reduction_pct,
-            });
             break :blk simplified; // Transfer ownership, no copy needed
         } else blk: {
             // Small dataset: copy to ensure we own the data
