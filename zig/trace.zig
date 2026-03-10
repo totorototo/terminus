@@ -108,38 +108,40 @@ pub const Trace = struct {
             }
         }
 
-        // Second pass: calculate smoothed slopes using look-ahead window
-        // Use 10m window for slope averaging to reduce noise
-        const slope_window_distance: f64 = 10.0;
+        // Second pass: calculate smoothed slopes using centered window
+        // Use 10m window (5m behind + 5m ahead) for second-order accurate slope estimation
+        const half_window: f64 = 5.0;
         for (0..final_points.len) |i| {
-            if (i == 0) {
-                slopes[0] = 0.0;
-                continue;
-            }
-
-            // Find point ~50m ahead (or use last point if near end)
-            var target_idx = i;
             const current_dist = cumulativeDistances[i];
 
-            for (i + 1..final_points.len) |j| {
-                if (cumulativeDistances[j] - current_dist >= slope_window_distance) {
-                    target_idx = j;
-                    break;
+            // Find point ~5m behind (or use first point if near start)
+            var behind_idx = i;
+            if (i > 0) {
+                var j = i;
+                while (j > 0) {
+                    j -= 1;
+                    if (current_dist - cumulativeDistances[j] >= half_window) {
+                        behind_idx = j;
+                        break;
+                    }
+                    behind_idx = j;
                 }
-                target_idx = j;
             }
 
-            // Calculate slope over this segment (current to target)
-            if (target_idx > i) {
-                const segment_dist = cumulativeDistances[target_idx] - cumulativeDistances[i];
-                const segment_elev = final_points[target_idx][2] - final_points[i][2];
-                slopes[i] = if (segment_dist > 0.0) (segment_elev / segment_dist) * 100.0 else 0.0;
-            } else {
-                // Near end, use point-to-point slope
-                const d = distance3D(final_points[i - 1], final_points[i]);
-                const elev_delta = final_points[i][2] - final_points[i - 1][2];
-                slopes[i] = if (d > 0.0) (elev_delta / d) * 100.0 else 0.0;
+            // Find point ~5m ahead (or use last point if near end)
+            var ahead_idx = i;
+            for (i + 1..final_points.len) |j| {
+                if (cumulativeDistances[j] - current_dist >= half_window) {
+                    ahead_idx = j;
+                    break;
+                }
+                ahead_idx = j;
             }
+
+            // Calculate slope between behind and ahead points
+            const segment_dist = cumulativeDistances[ahead_idx] - cumulativeDistances[behind_idx];
+            const segment_elev = final_points[ahead_idx][2] - final_points[behind_idx][2];
+            slopes[i] = if (segment_dist > 0.0) (segment_elev / segment_dist) * 100.0 else 0.0;
         }
 
         // Find peaks
@@ -439,9 +441,6 @@ test "slope calculations between consecutive points" {
 
     // Test that slopes array has correct length
     try expect(trace.slopes.len == 8);
-
-    // First point should have 0% slope (no previous point)
-    try expectApproxEqAbs(trace.slopes[0], 0.0, 0.001);
 
     // Test that slope magnitudes are reasonable (within -10% to 10% range for this points)
     for (trace.slopes) |slope| {
