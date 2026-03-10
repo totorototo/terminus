@@ -1,0 +1,1699 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terminus — User Guide</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Terminus app palette — mirrors src/theme/Theme.js */
+      :root {
+        --bg: #262424;
+        --surface: #3d3b3b;
+        --surface-hover: #484646;
+        --border: rgba(244, 247, 245, 0.08);
+        --border-hover: rgba(244, 247, 245, 0.16);
+        --text: #f4f7f5;
+        --text-muted: #9da8a2;
+        --text-subtle: #4a4848;
+        --primary: #f2af29;
+        --secondary: #3e7cb1;
+        --accent: #f4442e;
+        --progress: #ced5e0;
+        --green: #22c55e;
+      }
+      [data-theme="light"] {
+        --bg: #c4c4c4;
+        --surface: #ebe7e2;
+        --surface-hover: #dedad4;
+        --border: rgba(54, 53, 55, 0.1);
+        --border-hover: rgba(54, 53, 55, 0.2);
+        --text: #363537;
+        --text-muted: #6b6869;
+        --text-subtle: #a09ea0;
+        --primary: #6a7fdb;
+        --secondary: #da7422;
+        --accent: #d81e5b;
+        --progress: #ededed;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: "Inter", "Roboto", "Helvetica", "Arial", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.65;
+        overflow-x: hidden;
+      }
+
+      /* SCROLL PROGRESS */
+      #prog {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        width: 0%;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        z-index: 200;
+        transition: width 80ms linear;
+      }
+
+      /* NAV */
+      nav {
+        position: fixed;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        background: rgba(38, 36, 36, 0.88);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 5px 6px;
+        white-space: nowrap;
+      }
+      [data-theme="light"] nav {
+        background: rgba(196, 196, 196, 0.88);
+      }
+      nav a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        padding: 5px 13px;
+        border-radius: 100px;
+        transition: all 0.2s;
+      }
+      nav a:hover {
+        color: var(--text);
+        background: var(--surface-hover);
+      }
+      nav a.active {
+        color: var(--primary);
+        background: rgba(242, 175, 41, 0.12);
+      }
+      .nav-sep {
+        width: 1px;
+        height: 16px;
+        background: var(--border);
+        margin: 0 4px;
+      }
+      #themeBtn {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        margin-left: 2px;
+      }
+      #themeBtn:hover {
+        color: var(--text);
+        border-color: var(--border-hover);
+      }
+
+      /* HERO */
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        padding: 120px 24px 220px;
+      }
+      .hero-bg {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse 90% 70% at 50% -5%,
+            rgba(242, 175, 41, 0.12) 0%,
+            transparent 65%
+          ),
+          radial-gradient(
+            ellipse 50% 40% at 85% 85%,
+            rgba(62, 124, 177, 0.1) 0%,
+            transparent 55%
+          );
+      }
+      #starCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      [data-theme="light"] #starCanvas {
+        opacity: 0.12;
+      }
+
+      .hero-eyebrow {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--secondary);
+        margin-bottom: 18px;
+        position: relative;
+      }
+      .hero-title {
+        font-size: clamp(80px, 15vw, 172px);
+        font-weight: 900;
+        letter-spacing: -0.05em;
+        line-height: 1;
+        text-align: center;
+        position: relative;
+        background: linear-gradient(
+          140deg,
+          #f4f7f5 10%,
+          #f2af29 55%,
+          #3e7cb1 90%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 22px;
+        padding: 0.08em 0.04em;
+      }
+      [data-theme="light"] .hero-title {
+        background: linear-gradient(
+          140deg,
+          #363537 10%,
+          #6a7fdb 55%,
+          #da7422 90%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+      .hero-sub {
+        font-size: clamp(15px, 2.2vw, 19px);
+        color: var(--text-muted);
+        text-align: center;
+        max-width: 440px;
+        position: relative;
+        margin-bottom: 40px;
+      }
+      .hero-tags {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        position: relative;
+        margin-bottom: 0;
+      }
+      .tag {
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        padding: 5px 13px;
+        border-radius: 100px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-muted);
+      }
+      .tag.p {
+        border-color: rgba(242, 175, 41, 0.35);
+        color: var(--primary);
+        background: rgba(242, 175, 41, 0.08);
+      }
+      .tag.t {
+        border-color: rgba(62, 124, 177, 0.35);
+        color: var(--secondary);
+        background: rgba(62, 124, 177, 0.08);
+      }
+
+      /* ELEVATION HERO */
+      .elev-wrap {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 220px;
+      }
+      .elev-wrap svg {
+        width: 100%;
+        height: 100%;
+      }
+      .elev-line {
+        stroke-dasharray: 3200;
+        stroke-dashoffset: 3200;
+        animation: drawLine 3.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+      }
+      .elev-fill {
+        opacity: 0;
+        animation: fadeIn 1.2s ease 3.2s forwards;
+      }
+      .elev-dots circle {
+        opacity: 0;
+        animation: fadeIn 0.4s ease forwards;
+      }
+      .elev-dots circle:nth-child(1) {
+        animation-delay: 1.2s;
+      }
+      .elev-dots circle:nth-child(2) {
+        animation-delay: 1.8s;
+      }
+      .elev-dots circle:nth-child(3) {
+        animation-delay: 2.4s;
+      }
+      .elev-dots circle:nth-child(4) {
+        animation-delay: 2.9s;
+      }
+      @keyframes drawLine {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      @keyframes fadeIn {
+        to {
+          opacity: 1;
+        }
+      }
+
+      .scroll-cue {
+        position: absolute;
+        bottom: 230px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-subtle);
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        animation: cueFloat 2.4s ease-in-out infinite;
+      }
+      @keyframes cueFloat {
+        0%,
+        100% {
+          transform: translateX(-50%) translateY(0);
+        }
+        50% {
+          transform: translateX(-50%) translateY(8px);
+        }
+      }
+
+      /* MAIN */
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 72px 24px 100px;
+      }
+
+      .section {
+        margin-bottom: 88px;
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+          opacity 0.55s ease,
+          transform 0.55s ease;
+      }
+      .section.vis {
+        opacity: 1;
+        transform: none;
+      }
+
+      .sec-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--primary);
+        margin-bottom: 6px;
+      }
+      .sec-label.t {
+        color: var(--secondary);
+      }
+      .sec-title {
+        font-size: clamp(26px, 4vw, 38px);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin-bottom: 16px;
+      }
+      .sec-body {
+        font-size: 15px;
+        color: var(--text-muted);
+        line-height: 1.72;
+        max-width: 660px;
+      }
+      .sec-body p + p {
+        margin-top: 10px;
+      }
+
+      hr.div {
+        border: none;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--border),
+          transparent
+        );
+        margin: 64px 0;
+      }
+
+      /* GLASS CARD */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 26px;
+        transition: all 0.28s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.025) 0%,
+          transparent 50%
+        );
+        pointer-events: none;
+      }
+      .card:hover {
+        background: var(--surface-hover);
+        border-color: var(--border-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+      }
+      .card.gp:hover {
+        box-shadow:
+          0 16px 48px rgba(242, 175, 41, 0.14),
+          0 0 0 1px rgba(242, 175, 41, 0.2);
+      }
+      .card.gt:hover {
+        box-shadow:
+          0 16px 48px rgba(62, 124, 177, 0.18),
+          0 0 0 1px rgba(62, 124, 177, 0.25);
+      }
+
+      /* ROLE GRID */
+      .role-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 28px;
+      }
+      .role-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px 26px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .role-card::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .role-card.rn::after {
+        background: linear-gradient(90deg, var(--primary), #f7c95a);
+      }
+      .role-card.fo::after {
+        background: linear-gradient(90deg, var(--secondary), #5fa8d8);
+      }
+      .role-card:hover::after {
+        opacity: 1;
+      }
+      .role-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--border-hover);
+      }
+      .role-card.rn:hover {
+        box-shadow: 0 20px 56px rgba(242, 175, 41, 0.2);
+      }
+      .role-card.fo:hover {
+        box-shadow: 0 20px 56px rgba(62, 124, 177, 0.22);
+      }
+      .role-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 18px;
+      }
+      .role-card.rn .role-icon {
+        background: rgba(242, 175, 41, 0.14);
+        color: var(--primary);
+      }
+      .role-card.fo .role-icon {
+        background: rgba(62, 124, 177, 0.14);
+        color: var(--secondary);
+      }
+      .role-card h3 {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 8px;
+      }
+      .role-card p {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.6;
+      }
+
+      /* TABLE */
+      .gtable {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-size: 14px;
+      }
+      .gtable thead th {
+        text-align: left;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-subtle);
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .gtable td {
+        padding: 11px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+        color: var(--text-muted);
+        vertical-align: top;
+      }
+      [data-theme="light"] .gtable td {
+        border-bottom-color: rgba(0, 0, 0, 0.04);
+      }
+      .gtable td:first-child {
+        color: var(--text);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .gtable tr:last-child td {
+        border-bottom: none;
+      }
+      .gtable tr:hover td {
+        background: var(--surface);
+      }
+
+      /* FEATURE CHIPS */
+      .feat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 10px;
+        margin-top: 22px;
+      }
+      .feat {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 18px;
+        transition: all 0.22s;
+      }
+      .feat:hover {
+        border-color: var(--border-hover);
+        transform: translateY(-1px);
+      }
+      .feat h4 {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--primary);
+        flex-shrink: 0;
+      }
+      .dot.t {
+        background: var(--secondary);
+      }
+      .dot.g {
+        background: var(--green);
+      }
+      .feat p {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.55;
+      }
+
+      /* PANEL ITEMS */
+      .panel-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 22px;
+      }
+      .pi {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 18px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        transition: all 0.2s;
+      }
+      .pi:hover {
+        border-color: var(--border-hover);
+        background: var(--surface-hover);
+      }
+      .pi-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .pi-icon.p {
+        background: rgba(242, 175, 41, 0.12);
+        color: var(--primary);
+      }
+      .pi-icon.t {
+        background: rgba(62, 124, 177, 0.12);
+        color: var(--secondary);
+      }
+      .pi-icon.g {
+        background: rgba(34, 197, 94, 0.12);
+        color: var(--green);
+      }
+      .pi-icon.a {
+        background: rgba(244, 68, 46, 0.12);
+        color: var(--accent);
+      }
+      .pi h4 {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 3px;
+      }
+      .pi p {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      /* COMMANDS */
+      .cmd-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        margin-top: 22px;
+      }
+      .cmd {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        transition: all 0.25s;
+        text-align: center;
+      }
+      .cmd:hover {
+        border-color: rgba(242, 175, 41, 0.4);
+        background: rgba(242, 175, 41, 0.06);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 28px rgba(242, 175, 41, 0.14);
+      }
+      .cmd-ico {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: rgba(242, 175, 41, 0.12);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .cmd strong {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .cmd span {
+        font-size: 11px;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+
+      /* FOLLOWER DIFF */
+      .diff-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 22px;
+      }
+      .diff {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 14px 18px;
+        background: rgba(62, 124, 177, 0.05);
+        border: 1px solid rgba(62, 124, 177, 0.14);
+        border-radius: 12px;
+      }
+      .diff svg {
+        flex-shrink: 0;
+        margin-top: 2px;
+        color: var(--secondary);
+      }
+      .diff h4 {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--secondary);
+        margin-bottom: 3px;
+      }
+      .diff p {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      /* CALLOUT */
+      .callout {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+        background: rgba(242, 175, 41, 0.06);
+        border: 1px solid rgba(242, 175, 41, 0.18);
+      }
+      .callout.t {
+        background: rgba(62, 124, 177, 0.07);
+        border-color: rgba(62, 124, 177, 0.18);
+      }
+      .callout svg {
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .callout p {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.55;
+      }
+      .callout strong {
+        color: var(--text);
+      }
+
+      /* FOOTER */
+      footer {
+        text-align: center;
+        padding: 36px 24px 52px;
+        color: var(--text-subtle);
+        font-size: 12px;
+        letter-spacing: 0.05em;
+        border-top: 1px solid var(--border);
+      }
+      footer b {
+        color: var(--text-muted);
+      }
+
+      /* RESPONSIVE */
+      @media (max-width: 640px) {
+        nav a:not(.active) {
+          display: none;
+        }
+        .role-grid {
+          grid-template-columns: 1fr;
+        }
+        .cmd-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 420px) {
+        .cmd-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .feat-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="prog"></div>
+
+    <nav id="nav">
+      <a href="#role" class="active">Start</a>
+      <a href="#race">Race</a>
+      <a href="#scene">Scene</a>
+      <a href="#top">Top Panel</a>
+      <a href="#bottom">Bottom Panel</a>
+      <a href="#commands">Commands</a>
+      <a href="#follower">Follower</a>
+      <div class="nav-sep"></div>
+      <button id="themeBtn" title="Toggle theme">
+        <svg
+          id="themeIco"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="5" />
+          <line x1="12" y1="1" x2="12" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="23" />
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+          <line x1="1" y1="12" x2="3" y2="12" />
+          <line x1="21" y1="12" x2="23" y2="12" />
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        </svg>
+      </button>
+    </nav>
+
+    <section class="hero">
+      <canvas id="starCanvas"></canvas>
+      <div class="hero-bg"></div>
+      <div class="hero-eyebrow">User Guide</div>
+      <h1 class="hero-title">TERMINUS</h1>
+      <p class="hero-sub">
+        3D GPS trail visualization and live tracking for trail runners and their
+        supporters.
+      </p>
+      <div class="hero-tags">
+        <span class="tag p">3D Trail View</span>
+        <span class="tag t">Live Tracking</span>
+        <span class="tag">Climb Pro</span>
+        <span class="tag">Slope Analysis</span>
+        <span class="tag t">Runner &amp; Follower</span>
+        <span class="tag p">Peak Detection</span>
+      </div>
+      <div class="scroll-cue">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+        scroll
+      </div>
+      <div class="elev-wrap">
+        <svg
+          viewBox="0 0 1200 220"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f2af29" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="#f2af29" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="lg" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#f2af29" />
+              <stop offset="55%" stop-color="#F4442E" />
+              <stop offset="100%" stop-color="#3e7cb1" />
+            </linearGradient>
+          </defs>
+          <path
+            class="elev-fill"
+            d="M0,220 L0,185 C40,180 60,158 85,130 C108,104 118,68 138,46 C152,30 164,28 178,42 C192,56 198,78 218,70 C232,64 238,44 256,22 C270,6 282,8 296,22 C310,36 316,58 334,66 C352,74 364,72 382,62 C400,52 410,34 428,20 C442,9 456,14 472,30 C486,44 494,64 514,74 C532,83 544,80 564,70 C580,62 592,56 610,64 C628,72 638,90 656,98 C672,105 682,100 698,92 C712,85 722,86 736,96 C750,106 758,118 774,124 C790,130 802,126 818,120 C834,114 844,116 860,124 C876,132 884,142 900,150 C916,158 928,162 948,168 C966,173 980,174 1000,178 C1020,182 1040,184 1060,186 C1080,188 1100,190 1120,192 C1140,194 1165,196 1200,198 L1200,220 Z"
+            fill="url(#eg)"
+          />
+          <path
+            class="elev-line"
+            d="M0,185 C40,180 60,158 85,130 C108,104 118,68 138,46 C152,30 164,28 178,42 C192,56 198,78 218,70 C232,64 238,44 256,22 C270,6 282,8 296,22 C310,36 316,58 334,66 C352,74 364,72 382,62 C400,52 410,34 428,20 C442,9 456,14 472,30 C486,44 494,64 514,74 C532,83 544,80 564,70 C580,62 592,56 610,64 C628,72 638,90 656,98 C672,105 682,100 698,92 C712,85 722,86 736,96 C750,106 758,118 774,124 C790,130 802,126 818,120 C834,114 844,116 860,124 C876,132 884,142 900,150 C916,158 928,162 948,168 C966,173 980,174 1000,178 C1020,182 1040,184 1060,186 C1080,188 1100,190 1120,192 C1140,194 1165,196 1200,198"
+            fill="none"
+            stroke="url(#lg)"
+            stroke-width="2.5"
+          />
+          <g class="elev-dots">
+            <circle cx="256" cy="22" r="4" fill="#f2af29" />
+            <circle cx="428" cy="20" r="4" fill="#f2af29" />
+            <circle cx="256" cy="22" r="8" fill="rgba(242,175,41,0.2)" />
+            <circle cx="428" cy="20" r="8" fill="rgba(242,175,41,0.2)" />
+            <circle cx="656" cy="98" r="3.5" fill="#F4442E" />
+            <circle cx="900" cy="150" r="3" fill="#3e7cb1" />
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <main>
+      <!-- 1. ROLE -->
+      <div class="section" id="role">
+        <div class="sec-label">Getting Started</div>
+        <h2 class="sec-title">Choose Your Role</h2>
+        <div class="sec-body">
+          <p>
+            On first launch, Terminus asks how you want to use it. Your choice
+            shapes the entire experience — both modes share the same 3D trail
+            view, but display different information and serve different
+            purposes.
+          </p>
+        </div>
+        <div class="role-grid">
+          <div class="role-card rn">
+            <div class="role-icon">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="5" r="2" />
+                <path
+                  d="M10 22v-5l-1-1v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4l-1 1v5"
+                />
+                <path d="M9 12l-2 5" />
+                <path d="M15 12l2 5" />
+              </svg>
+            </div>
+            <h3>I'm Running</h3>
+            <p>
+              You are on the trail. The app tracks your GPS position, shows live
+              navigation and route analytics, and broadcasts your location to
+              anyone following you.
+            </p>
+          </div>
+          <div class="role-card fo">
+            <div class="role-icon">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <h3>I'm Following</h3>
+            <p>
+              You are watching a runner from anywhere. Enter their room code to
+              see their live position moving along the 3D trail in real time.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <hr class="div" />
+
+      <!-- 2. RACE -->
+      <div class="section" id="race">
+        <div class="sec-label">Runner Setup</div>
+        <h2 class="sec-title">Pick a Race</h2>
+        <div class="sec-body">
+          <p>
+            After choosing the runner role, select the race or trail you are
+            participating in. Terminus loads and processes the full GPX route —
+            parsing elevation, detecting climbs, identifying peaks, and
+            computing section analytics.
+          </p>
+          <p>
+            Once loaded, you land directly in the 3D trail view with your
+            position tracked live.
+          </p>
+        </div>
+        <div class="callout" style="margin-top: 24px">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--primary)"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p>
+            Your <strong>room code</strong> is generated automatically. Share it
+            with supporters before the race so they can follow your progress as
+            soon as you start moving.
+          </p>
+        </div>
+      </div>
+
+      <hr class="div" />
+
+      <!-- 3. SCENE -->
+      <div class="section" id="scene">
+        <div class="sec-label">Visualization</div>
+        <h2 class="sec-title">The Trail View</h2>
+        <div class="sec-body">
+          <p>
+            The main screen renders your trail in full 3D with real elevation.
+            Pan, rotate, and zoom freely to explore the route ahead.
+          </p>
+        </div>
+
+        <div class="card gp" style="margin-top: 24px">
+          <table class="gtable">
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>How to do it</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Rotate</td>
+                <td>Drag (one finger / left-click drag)</td>
+              </tr>
+              <tr>
+                <td>Pan</td>
+                <td>Two-finger drag / right-click drag</td>
+              </tr>
+              <tr>
+                <td>Zoom</td>
+                <td>Pinch / scroll wheel</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="feat-grid" style="margin-top: 14px">
+          <div class="feat">
+            <h4><span class="dot"></span>2D Profile Mode</h4>
+            <p>
+              Flatten the view into an elevation profile to read the shape of
+              climbs and descents at a glance. Toggle back to 3D anytime.
+            </p>
+          </div>
+          <div class="feat">
+            <h4><span class="dot t"></span>Slope Colors</h4>
+            <p>
+              Color the trail by gradient — light for flat, dark for steep — so
+              you can anticipate hard sections before you reach them.
+            </p>
+          </div>
+          <div class="feat">
+            <h4><span class="dot g"></span>Peak Labels</h4>
+            <p>
+              Named summits appear as labels directly on the trail. They fade
+              based on camera distance to stay readable without clutter.
+            </p>
+          </div>
+          <div class="feat">
+            <h4>
+              <span class="dot" style="background: var(--amber)"></span
+              >Off-Course Alert
+            </h4>
+            <p>
+              Stray from the route and the scene flashes with how far off you
+              are. Clears automatically once you're back on track.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <hr class="div" />
+
+      <!-- 4. TOP PANEL -->
+      <div class="section" id="top">
+        <div class="sec-label">Navigation</div>
+        <h2 class="sec-title">Top Panel</h2>
+        <div class="sec-body">
+          <p>
+            The top panel is your real-time navigation feed. It shows what's
+            immediately ahead on the route, updating automatically as you
+            progress.
+          </p>
+        </div>
+        <div class="card gp" style="margin-top: 24px">
+          <p
+            style="font-size: 14px; color: var(--text-muted); line-height: 1.7"
+          >
+            Each card represents the
+            <strong style="color: var(--text)">next waypoint</strong> on your
+            route and shows the direction to take (arrow icon), the distance
+            remaining to reach it, and the elevation gain and loss for that leg.
+            Cards animate out as waypoints are completed and new ones slide in —
+            always keeping the next section front and center.
+          </p>
+        </div>
+        <div class="callout t" style="margin-top: 12px">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--secondary)"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p>
+            In <strong>Follower mode</strong>, the top panel switches to a
+            <strong>location freshness indicator</strong> — showing how long ago
+            the runner's last position update was received, color-coded from
+            green (fresh) to red (stale, 15min+).
+          </p>
+        </div>
+      </div>
+
+      <hr class="div" />
+
+      <!-- 5. BOTTOM PANEL -->
+      <div class="section" id="bottom">
+        <div class="sec-label">Analytics</div>
+        <h2 class="sec-title">Bottom Panel</h2>
+        <div class="sec-body">
+          <p>
+            Swipe up from the bottom to expand the panel. Even when closed, the
+            bar always shows three key numbers:
+            <strong style="color: var(--text)">distance remaining</strong>,
+            <strong style="color: var(--text)">ETA</strong>, and
+            <strong style="color: var(--text)">time remaining</strong>.
+          </p>
+          <p>
+            Scroll through the expanded panel to access all trail analytics.
+          </p>
+        </div>
+        <div class="panel-list">
+          <div class="pi">
+            <div class="pi-icon p">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </div>
+            <div>
+              <h4>Trail Overview</h4>
+              <p>
+                Trail name, total distance, total elevation gain/loss, max
+                completion time, slowest required pace, and a start/elapsed time
+                counter.
+              </p>
+            </div>
+          </div>
+          <div class="pi">
+            <div class="pi-icon t">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+            </div>
+            <div>
+              <h4>Elevation Profile</h4>
+              <p>
+                A visual chart of the full route's elevation — useful for
+                planning pacing strategy and spotting major climbs at a glance.
+              </p>
+            </div>
+          </div>
+          <div class="pi">
+            <div class="pi-icon g">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </div>
+            <div>
+              <h4>Trail Progression</h4>
+              <p>
+                A progress bar showing how far along the trail you are, plus
+                cumulative elevation gain and loss accumulated so far.
+              </p>
+            </div>
+          </div>
+          <div class="pi">
+            <div class="pi-icon t">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="3" y1="15" x2="21" y2="15" />
+                <line x1="9" y1="3" x2="9" y2="21" />
+                <line x1="15" y1="3" x2="15" y2="21" />
+              </svg>
+            </div>
+            <div>
+              <h4>Stage &amp; Section Analytics</h4>
+              <p>
+                Per-stage and per-leg breakdowns with distance, elevation
+                gain/loss, difficulty rating, cut-off times, and required pace
+                targets.
+              </p>
+            </div>
+          </div>
+          <div class="pi">
+            <div class="pi-icon a">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                />
+              </svg>
+            </div>
+            <div>
+              <h4>Stage ETA</h4>
+              <p>
+                Estimated arrival times for upcoming stages based on your
+                current pace and the difficulty of the terrain ahead.
+              </p>
+            </div>
+          </div>
+          <div class="pi">
+            <div class="pi-icon p">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+                />
+                <polyline points="7 12 10 15 17 8" />
+              </svg>
+            </div>
+            <div>
+              <h4>Climb Pro</h4>
+              <p>
+                Every significant ascent automatically detected from the
+                elevation data. For each climb: distance to start (or
+                "Completed"), summit elevation, climb length, total gain, and
+                average gradient. The current climb is highlighted.
+              </p>
+            </div>
+          </div>
+          <div class="pi">
+            <div class="pi-icon g">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 17l6-8 4 4 4-6 4 10" />
+              </svg>
+            </div>
+            <div>
+              <h4>Peak Summary</h4>
+              <p>
+                A list of all named peaks and high points detected along the
+                route.
+              </p>
+            </div>
+          </div>
+          <div class="pi">
+            <div class="pi-icon a">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"
+                />
+              </svg>
+            </div>
+            <div>
+              <h4>Actions</h4>
+              <p>
+                Trail management controls: Fly-by mode toggle, flush saved
+                locations, and leave trail. See the Commands section below.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="div" />
+
+      <!-- 6. COMMANDS -->
+      <div class="section" id="commands">
+        <div class="sec-label">Controls</div>
+        <h2 class="sec-title">Commands &amp; Actions</h2>
+        <div class="sec-body">
+          <p>
+            Five buttons are always visible as a fixed overlay on the trail
+            view. Additional actions live at the bottom of the bottom panel.
+          </p>
+        </div>
+        <div class="cmd-grid">
+          <div class="cmd">
+            <div class="cmd-ico">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+            <strong>Spot Me</strong>
+            <span>Center the camera on your GPS position</span>
+          </div>
+          <div class="cmd">
+            <div class="cmd-ico">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </div>
+            <strong>Slope</strong>
+            <span>Toggle gradient color coding</span>
+          </div>
+          <div class="cmd">
+            <div class="cmd-ico">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polygon points="3 11 22 2 13 21 11 13 3 11" />
+              </svg>
+            </div>
+            <strong>Profile</strong>
+            <span>Switch between 3D and flat 2D view</span>
+          </div>
+          <div class="cmd">
+            <div class="cmd-ico">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            </div>
+            <strong>Share</strong>
+            <span>Share your room code with followers</span>
+          </div>
+          <div class="cmd">
+            <div class="cmd-ico">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            </div>
+            <strong>Theme</strong>
+            <span>Toggle dark / light mode</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 16px">
+          <table class="gtable">
+            <thead>
+              <tr>
+                <th>Action (bottom panel)</th>
+                <th>What it does</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Fly-by Mode</td>
+                <td>
+                  Hands-free camera that automatically follows the trail. Toggle
+                  off to resume manual control.
+                </td>
+              </tr>
+              <tr>
+                <td>Flush Saved Locations</td>
+                <td>Clear locally stored GPS history from this device.</td>
+              </tr>
+              <tr>
+                <td>Leave Trail</td>
+                <td>
+                  Exit the current race and return to the selection screen.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <hr class="div" />
+
+      <!-- 7. FOLLOWER -->
+      <div class="section" id="follower">
+        <div class="sec-label t">Follower Mode</div>
+        <h2 class="sec-title">Watching a Runner</h2>
+        <div class="sec-body">
+          <p>
+            As a follower, enter the runner's room code on the start screen. You
+            land in the same 3D trail view — but instead of your own position,
+            you see the
+            <strong style="color: var(--secondary)"
+              >runner's live location</strong
+            >
+            moving along the trail.
+          </p>
+          <p>
+            All stats — distance, ETA, climbs, progression — reflect the
+            runner's position, not yours. Multiple followers can watch the same
+            runner simultaneously.
+          </p>
+        </div>
+        <div class="diff-list">
+          <div class="diff">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <div>
+              <h4>Location Freshness (Top Panel)</h4>
+              <p>
+                Instead of navigation cards, the top panel shows how long ago
+                the last position update was received — color-coded from green
+                (fresh, seconds ago) through yellow (a few minutes) to red
+                (stale, 15min+).
+              </p>
+            </div>
+          </div>
+          <div class="diff">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <div>
+              <h4>Multi-Follower Sessions</h4>
+              <p>
+                The same room code works for any number of followers. Everyone
+                sees the same live position simultaneously.
+              </p>
+            </div>
+          </div>
+          <div class="diff">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            <div>
+              <h4>No Broadcasting</h4>
+              <p>
+                Followers don't broadcast a position — the Share button is not
+                available in follower mode. All other scene controls (fly-by,
+                slope, profile, theme) work identically.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <b>Terminus</b> — GPS Trail Visualization &amp; Live Tracking
+    </footer>
+
+    <script>
+      // STARS
+      (function () {
+        const c = document.getElementById("starCanvas");
+        const ctx = c.getContext("2d");
+        let stars = [];
+        function resize() {
+          c.width = c.offsetWidth;
+          c.height = c.offsetHeight;
+        }
+        function init() {
+          resize();
+          stars = [];
+          for (let i = 0; i < 180; i++) {
+            stars.push({
+              x: Math.random() * c.width,
+              y: Math.random() * c.height * 0.75,
+              r: Math.random() * 1.2 + 0.2,
+              a: Math.random(),
+              s: (Math.random() - 0.5) * 0.004,
+            });
+          }
+        }
+        function draw() {
+          ctx.clearRect(0, 0, c.width, c.height);
+          stars.forEach((s) => {
+            s.a += s.s;
+            if (s.a > 1) ((s.a = 1), (s.s *= -1));
+            if (s.a < 0.1) ((s.a = 0.1), (s.s *= -1));
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${s.a})`;
+            ctx.fill();
+          });
+          requestAnimationFrame(draw);
+        }
+        window.addEventListener("resize", init);
+        init();
+        draw();
+      })();
+
+      // SCROLL PROGRESS
+      window.addEventListener("scroll", () => {
+        const p = document.getElementById("prog");
+        const h = document.documentElement;
+        const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+        p.style.width = pct + "%";
+      });
+
+      // SECTION REVEAL
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) e.target.classList.add("vis");
+          });
+        },
+        { threshold: 0.08 },
+      );
+      document.querySelectorAll(".section").forEach((s) => observer.observe(s));
+
+      // ACTIVE NAV
+      const sections = [
+        "role",
+        "race",
+        "scene",
+        "top",
+        "bottom",
+        "commands",
+        "follower",
+      ];
+      const navLinks = document.querySelectorAll("nav a");
+      const ioNav = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              const id = e.target.id;
+              navLinks.forEach((a) => {
+                a.classList.toggle(
+                  "active",
+                  a.getAttribute("href") === "#" + id,
+                );
+              });
+            }
+          });
+        },
+        { threshold: 0.4 },
+      );
+      sections.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) ioNav.observe(el);
+      });
+
+      // THEME TOGGLE
+      const html = document.documentElement;
+      const btn = document.getElementById("themeBtn");
+      const ico = document.getElementById("themeIco");
+      const moonPath =
+        '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+      const sunPath =
+        '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+      btn.addEventListener("click", () => {
+        const isDark = html.getAttribute("data-theme") === "dark";
+        html.setAttribute("data-theme", isDark ? "light" : "dark");
+        ico.innerHTML = isDark ? moonPath : sunPath;
+      });
+    </script>
+  </body>
+</html>
