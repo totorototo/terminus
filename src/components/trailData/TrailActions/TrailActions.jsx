@@ -17,21 +17,31 @@ const TrailActions = memo(function TrailActions({ className }) {
 
   return (
     <div className={className}>
-      <button
-        className={`action-button ${trackingMode ? "active" : ""}`}
-        onClick={toggleTrackingMode}
-      >
-        <Tv size={20} />
-        <span>Fly-by Mode</span>
-      </button>
-      <button className="action-button" onClick={flush}>
-        <Trash2 size={20} />
-        <span>Flush Saved Locations</span>
-      </button>
-      <button className="action-button" onClick={() => navigate("/")}>
-        <LogOut size={20} />
-        <span>Leave Trail</span>
-      </button>
+      <div className="actions-header">
+        <span className="header-label">Actions</span>
+      </div>
+
+      <div className="actions-list">
+        <button
+          className={`action-row ${trackingMode ? "active" : ""}`}
+          onClick={toggleTrackingMode}
+        >
+          <Tv size={14} />
+          <span className="row-label">Fly-by Mode</span>
+          {trackingMode && <span className="row-badge">on</span>}
+        </button>
+
+        <button className="action-row" onClick={flush}>
+          <Trash2 size={14} />
+          <span className="row-label">Flush Saved Locations</span>
+        </button>
+
+        <button className="action-row danger" onClick={() => navigate("/")}>
+          <LogOut size={14} />
+          <span className="row-label">Leave Trail</span>
+        </button>
+      </div>
+
       <div className="build-number">build {buildNumber}</div>
     </div>
   );
