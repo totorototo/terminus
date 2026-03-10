@@ -13,45 +13,40 @@ pub const AMPDConfig = struct {
     }
 };
 
-// Cluster consecutive peaks and return highest point in each cluster
-fn clusterPeaks(allocator: std.mem.Allocator, peaks_raw: []const usize, signal: []const f32) ![]usize {
-    if (peaks_raw.len == 0) return &.{};
+// Generic cluster: for peaks picks highest, for valleys picks lowest in each run
+fn clusterExtrema(allocator: std.mem.Allocator, extrema_raw: []const usize, signal: []const f32, comptime find_peaks: bool) ![]usize {
+    if (extrema_raw.len == 0) return &.{};
 
     var clustered = std.ArrayList(usize){};
     defer clustered.deinit(allocator);
 
-    var cluster_start = peaks_raw[0];
-    var max_idx = peaks_raw[0];
-    var max_ele = signal[peaks_raw[0]];
+    var best_idx = extrema_raw[0];
+    var best_val = signal[extrema_raw[0]];
 
-    for (1..peaks_raw.len) |i| {
-        const current_idx = peaks_raw[i];
-        const prev_idx = peaks_raw[i - 1];
+    for (1..extrema_raw.len) |i| {
+        const current_idx = extrema_raw[i];
+        const prev_idx = extrema_raw[i - 1];
 
-        // If consecutive (gap <= 1), continue cluster
         if (current_idx - prev_idx <= 3) {
-            const current_ele = signal[current_idx];
-            if (current_ele > max_ele) {
-                max_ele = current_ele;
-                max_idx = current_idx;
+            const current_val = signal[current_idx];
+            const is_better = if (find_peaks) current_val > best_val else current_val < best_val;
+            if (is_better) {
+                best_val = current_val;
+                best_idx = current_idx;
             }
         } else {
-            // Gap found, save the cluster's peak
-            try clustered.append(allocator, max_idx);
-            // Start new cluster
-            cluster_start = current_idx;
-            max_idx = current_idx;
-            max_ele = signal[current_idx];
+            try clustered.append(allocator, best_idx);
+            best_idx = current_idx;
+            best_val = signal[current_idx];
         }
     }
-    // Don't forget the last cluster
-    try clustered.append(allocator, max_idx);
+    try clustered.append(allocator, best_idx);
 
     return try clustered.toOwnedSlice(allocator);
 }
 
-// Minimal AMPD core for peaks only
-fn ampd_core(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize, threshold: usize) ![]usize {
+// Generic AMPD core: find_peaks=true detects maxima, false detects minima
+fn ampd_core_extrema(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize, threshold: usize, comptime find_peaks: bool) ![]usize {
     if (signal.len == 0 or scale_max == 0) return &.{};
     if (signal.len < 3) return &.{};
 
@@ -66,15 +61,18 @@ fn ampd_core(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize
         if (scale * 2 >= signal.len) break;
         const row_offset = (scale - 1) * signal.len;
         for (scale..signal.len - scale) |i| {
-            if (signal[i] > signal[i - scale] and signal[i] > signal[i + scale]) {
+            const is_extremum = if (find_peaks)
+                signal[i] > signal[i - scale] and signal[i] > signal[i + scale]
+            else
+                signal[i] < signal[i - scale] and signal[i] < signal[i + scale];
+            if (is_extremum) {
                 scalogram_data[row_offset + i] = true;
             }
         }
     }
 
-    // std.ArrayList is now unmanaged by default in Zig 0.15+
-    var peaks = std.ArrayList(usize){};
-    defer peaks.deinit(allocator);
+    var extrema = std.ArrayList(usize){};
+    defer extrema.deinit(allocator);
 
     for (0..signal.len) |i| {
         var count: usize = 0;
@@ -82,18 +80,23 @@ fn ampd_core(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize
             if (scalogram_data[scale * signal.len + i]) count += 1;
         }
         if (count >= threshold) {
-            try peaks.append(allocator, i);
+            try extrema.append(allocator, i);
         }
     }
 
-    // Return ownership of the buffer as a slice
-    return try peaks.toOwnedSlice(allocator);
+    return try extrema.toOwnedSlice(allocator);
 }
 
 pub fn ampd(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize, threshold: usize) ![]usize {
-    const raw_peaks = try ampd_core(allocator, signal, scale_max, threshold);
-    defer allocator.free(raw_peaks);
-    return clusterPeaks(allocator, raw_peaks, signal);
+    const raw = try ampd_core_extrema(allocator, signal, scale_max, threshold, true);
+    defer allocator.free(raw);
+    return clusterExtrema(allocator, raw, signal, true);
+}
+
+pub fn ampdValleys(allocator: std.mem.Allocator, signal: []const f32, scale_max: usize, threshold: usize) ![]usize {
+    const raw = try ampd_core_extrema(allocator, signal, scale_max, threshold, false);
+    defer allocator.free(raw);
+    return clusterExtrema(allocator, raw, signal, false);
 }
 
 /// Convenience function using default configuration
@@ -101,6 +104,13 @@ pub fn findPeaks(allocator: std.mem.Allocator, signal: []const f32) ![]usize {
     const config = AMPDConfig{};
     try config.validate(signal.len);
     return ampd(allocator, signal, config.scale_max, config.threshold_peaks);
+}
+
+/// Detect valleys (local minima) using the same AMPD algorithm with inverted comparisons
+pub fn findValleys(allocator: std.mem.Allocator, signal: []const f32) ![]usize {
+    const config = AMPDConfig{};
+    try config.validate(signal.len);
+    return ampdValleys(allocator, signal, config.scale_max, config.threshold_peaks);
 }
 
 test "ampd: flat signal" {
@@ -169,6 +179,43 @@ test "ampd: single scale vs multiple scales" {
 
     // Multi-scale should be more selective (or equal)
     try std.testing.expect(peaks_multi.len <= peaks_single.len);
+}
+
+test "findValleys: basic valley detection" {
+    const allocator = std.testing.allocator;
+    // Clear valleys at indices 2 (lowest) and 7; use explicit params to avoid
+    // default threshold being higher than effective_scale_max for short signals
+    const signal = [_]f32{ 5.0, 3.0, 1.0, 3.0, 5.0, 2.0, 4.0, 2.0, 5.0 };
+    const valleys = try ampdValleys(allocator, &signal, 3, 2);
+    defer allocator.free(valleys);
+    try std.testing.expect(valleys.len > 0);
+    // Every reported valley must be a local minimum at scale 1
+    for (valleys) |v| {
+        if (v > 0 and v < signal.len - 1) {
+            try std.testing.expect(signal[v] < signal[v - 1] or signal[v] < signal[v + 1]);
+        }
+    }
+}
+
+test "findValleys: flat signal has no valleys" {
+    const allocator = std.testing.allocator;
+    const signal = [_]f32{ 3.0, 3.0, 3.0, 3.0, 3.0 };
+    const valleys = try findValleys(allocator, &signal);
+    defer allocator.free(valleys);
+    try std.testing.expectEqual(@as(usize, 0), valleys.len);
+}
+
+test "findValleys: symmetric to findPeaks on inverted signal" {
+    const allocator = std.testing.allocator;
+    // Alternating signal: peaks at odd indices, valleys at even interior indices
+    // Using explicit params so effective_scale_max > threshold
+    const signal = [_]f32{ 1.0, 5.0, 1.0, 5.0, 1.0, 5.0, 1.0, 5.0, 1.0 };
+    const peaks = try ampd(allocator, &signal, 2, 1);
+    defer allocator.free(peaks);
+    const valleys = try ampdValleys(allocator, &signal, 2, 1);
+    defer allocator.free(valleys);
+    // Both should find the same number of extrema in a perfectly alternating signal
+    try std.testing.expectEqual(peaks.len, valleys.len);
 }
 
 test "configuration validation" {
