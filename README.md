@@ -27,6 +27,7 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 - **Live Trail Progression**: Real-time progress bar with cumulative distance percentage, elevation gain and loss based on runner position
 - **ETA Estimation**: Arrival time prediction per section based on difficulty
 - **Peak Detection**: Automatic identification and visualization of peaks
+- **Climb Pro**: Automatic climb segment detection (AMPD valley detection + Garmin climb qualification) with a carousel card showing distance, elevation gain, and gradient per climb
 - **Checkpoint Markers**: Location labels along the route with distance-based visibility
 - **Off-Course Detection**: Automatic detection with visual scene alert and 3D label
 - **Runner / Follower Modes**: First-run wizard for role selection — runners broadcast their position, followers track it on the 3D trail
@@ -149,6 +150,7 @@ zig/
   trace.zig             # Core GPS algorithms (distance, elevation)
   simplify.zig          # Douglas-Peucker simplification
   peaks.zig             # Peak detection algorithms
+  climbs.zig            # Climb segment detection (AMPD + Garmin qualification)
   gpspoint.zig          # Haversine distance calculations
   time.zig              # Time/duration calculations
   waypoint.zig          # Waypoint data structure
