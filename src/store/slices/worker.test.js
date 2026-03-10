@@ -464,6 +464,7 @@ describe("Worker Slice", () => {
         sections: [],
         stages: [],
         waypoints: [],
+        climbs: [],
         metadata: { name: "test.gpx" },
       };
 
@@ -507,6 +508,7 @@ describe("Worker Slice", () => {
         sections: [],
         stages: [],
         waypoints: [],
+        climbs: [],
         metadata: {},
       };
 
@@ -553,6 +555,7 @@ describe("Worker Slice", () => {
         sections: [{ id: 1 }],
         stages: [],
         waypoints: [{ id: 1 }],
+        climbs: [],
         metadata: { name: "test" },
       };
 
@@ -622,6 +625,7 @@ describe("Worker Slice", () => {
             sections: [],
             stages: [],
             waypoints: [],
+            climbs: [],
             metadata: {},
           },
         },
@@ -1435,6 +1439,7 @@ describe("Worker Slice", () => {
             sections: [],
             stages: [],
             waypoints: [],
+            climbs: [],
             metadata: {},
           },
         },
@@ -1461,6 +1466,7 @@ describe("Worker Slice", () => {
             sections: [],
             stages: [],
             waypoints: [],
+            climbs: [],
             metadata: {},
           },
         },
@@ -1521,6 +1527,7 @@ describe("Worker Slice", () => {
             sections: [],
             stages: [],
             waypoints: [],
+            climbs: [],
             metadata: {},
           },
         },
