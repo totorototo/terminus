@@ -28,6 +28,7 @@ export function validateGPXResults(results) {
   const trace = validateObject(results.trace, "results.trace");
   validateArray(trace.points, "trace.points");
   validateArray(trace.peaks, "trace.peaks");
+  validateArray(trace.valleys, "trace.valleys");
   validateArray(trace.slopes, "trace.slopes");
   validateArray(trace.cumulativeDistances, "trace.cumulativeDistances");
   validateArray(trace.cumulativeElevations, "trace.cumulativeElevations");
