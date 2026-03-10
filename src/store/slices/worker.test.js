@@ -45,6 +45,7 @@ describe("Worker Slice", () => {
         data: [],
         slopes: [],
         peaks: [],
+        valleys: [],
         metadata: {},
         cumulativeDistances: [],
         cumulativeElevations: [],
@@ -103,6 +104,15 @@ describe("Worker Slice", () => {
           }),
           undefined,
           "gpx/setPeaks",
+        ),
+      setValleys: (valleys) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: { ...state.gpx, valleys },
+          }),
+          undefined,
+          "gpx/setValleys",
         ),
       setClimbs: (climbs) =>
         set(
@@ -232,6 +242,7 @@ describe("Worker Slice", () => {
           data: [],
           slopes: [],
           peaks: [],
+          valleys: [],
           metadata: {},
           cumulativeDistances: [],
           cumulativeElevations: [],
@@ -288,6 +299,15 @@ describe("Worker Slice", () => {
             }),
             undefined,
             "gpx/setPeaks",
+          ),
+        setValleys: (valleys) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: { ...state.gpx, valleys },
+            }),
+            undefined,
+            "gpx/setValleys",
           ),
         setClimbs: (climbs) =>
           set(
@@ -452,6 +472,7 @@ describe("Worker Slice", () => {
         trace: {
           points: [[1, 2, 3]],
           peaks: [],
+          valleys: [],
           slopes: [],
           cumulativeDistances: [],
           cumulativeElevations: [],
@@ -496,6 +517,7 @@ describe("Worker Slice", () => {
         trace: {
           points: [[1, 2, 3]],
           peaks: [],
+          valleys: [],
           slopes: [],
           cumulativeDistances: [],
           cumulativeElevations: [],
@@ -543,6 +565,7 @@ describe("Worker Slice", () => {
         trace: {
           points: pointData,
           peaks: [[2, 3, 4]],
+          valleys: [],
           slopes: [1.5, 2.5],
           cumulativeDistances: [0, 100],
           cumulativeElevations: [0, 50],
@@ -613,6 +636,7 @@ describe("Worker Slice", () => {
             trace: {
               points: [],
               peaks: [],
+              valleys: [],
               slopes: [],
               cumulativeDistances: [],
               cumulativeElevations: [],
@@ -640,6 +664,7 @@ describe("Worker Slice", () => {
         trace: {
           points: "not an array", // Invalid
           peaks: [],
+          valleys: [],
           slopes: [],
           cumulativeDistances: [],
           cumulativeElevations: [],
@@ -1427,6 +1452,7 @@ describe("Worker Slice", () => {
             trace: {
               points: [],
               peaks: [],
+              valleys: [],
               slopes: [],
               cumulativeDistances: [],
               cumulativeElevations: [],
@@ -1454,6 +1480,7 @@ describe("Worker Slice", () => {
             trace: {
               points: [],
               peaks: [],
+              valleys: [],
               slopes: [],
               cumulativeDistances: [],
               cumulativeElevations: [],
@@ -1515,6 +1542,7 @@ describe("Worker Slice", () => {
             trace: {
               points: [],
               peaks: [],
+              valleys: [],
               slopes: [],
               cumulativeDistances: [],
               cumulativeElevations: [],

@@ -3,6 +3,7 @@ export const createGpxSlice = (set, get) => ({
     data: [],
     slopes: [],
     peaks: [],
+    valleys: [],
     climbs: [],
     cumulativeDistances: [],
     cumulativeElevations: [],
@@ -45,6 +46,18 @@ export const createGpxSlice = (set, get) => ({
       }),
       undefined,
       "gpx/setPeaks",
+    ),
+
+  setValleys: (valleys) =>
+    set(
+      (state) => ({
+        gpx: {
+          ...state.gpx,
+          valleys,
+        },
+      }),
+      undefined,
+      "gpx/setValleys",
     ),
 
   setClimbs: (climbs) =>
