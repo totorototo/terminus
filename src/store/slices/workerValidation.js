@@ -42,6 +42,7 @@ export function validateGPXResults(results) {
   validateArray(results.stages, "results.stages");
   validateArray(results.waypoints, "results.waypoints");
   validateObject(results.metadata, "results.metadata");
+  validateArray(results.climbs, "results.climbs");
 
   return true;
 }

@@ -35,7 +35,7 @@ pub fn detectClimbs(
     points: []const [3]f64,
     cumulative_distances: []const f64,
 ) ![]ClimbStats {
-    if (peaks.len == 0 or points.len == 0 or cumulative_distances.len == 0) return &.{};
+    if (peaks.len == 0 or points.len == 0 or cumulative_distances.len == 0) return try allocator.alloc(ClimbStats, 0);
 
     var climbs = std.ArrayList(ClimbStats){};
     defer climbs.deinit(allocator);
@@ -55,7 +55,9 @@ pub fn detectClimbs(
             valley_cursor += 1;
         }
 
-        // Use the detected valley if it precedes this peak, otherwise fall back to index 0
+        // Use the detected valley if it precedes this peak, otherwise fall back to index 0.
+        // Fallback mirrors Garmin Climb Pro: the trail start is treated as the implicit
+        // climb origin, valid for races where the start is typically the lowest point.
         const valley_idx = if (valleys.len > 0 and valleys[valley_cursor] < peak_idx)
             valleys[valley_cursor]
         else
@@ -97,6 +99,7 @@ test "detectClimbs: empty inputs" {
     const allocator = std.testing.allocator;
 
     const climbs1 = try detectClimbs(allocator, &.{}, &.{}, &.{}, &.{});
+    defer allocator.free(climbs1);
     try std.testing.expectEqual(@as(usize, 0), climbs1.len);
 
     const points = [_][3]f64{
@@ -105,6 +108,7 @@ test "detectClimbs: empty inputs" {
     };
     const dists = [_]f64{ 0.0, 111.0 };
     const climbs2 = try detectClimbs(allocator, &.{}, &.{}, points[0..], dists[0..]);
+    defer allocator.free(climbs2);
     try std.testing.expectEqual(@as(usize, 0), climbs2.len);
 }
 
@@ -179,6 +183,7 @@ test "detectClimbs: out of bounds peak index is skipped" {
     const peaks = [_]usize{99}; // out of bounds
 
     const climbs = try detectClimbs(allocator, peaks[0..], &.{}, points[0..], dists[0..]);
+    defer allocator.free(climbs);
     try std.testing.expectEqual(@as(usize, 0), climbs.len);
 }
 
@@ -214,7 +219,7 @@ test "detectClimbs: Garmin qualification filter" {
 
     // Six valley→peak segments, only the last qualifies.
     // Rejection reasons:
-    //   A: dist=400m  < 500m  (too short)
+    //   A: dist=400m  < 500m  (too short; score=8000 would pass on its own)
     //   B: grad=1.67% < 3%    (too shallow)
     //   C: score=1500 ≤ 3500  (500m × 3%)
     //   D: score=3000 ≤ 3500  (600m × 5%)

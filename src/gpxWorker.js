@@ -187,7 +187,6 @@ async function processGPXFile(gpxFileBytes, requestId) {
     legs: sanitizedLegs,
     sections: sanitizedSections,
     stages: sanitizedStages,
-    peaks: gpxData.peaks ? gpxData.peaks.map((p) => Number(p)) : [],
     climbs: sanitizedClimbs,
   };
 
