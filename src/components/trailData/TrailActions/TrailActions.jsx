@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-import { Tv, Trash2, LogOut } from "@styled-icons/feather";
+import { Tv, Trash2, HelpCircle, LogOut } from "@styled-icons/feather";
 import { useLocation } from "wouter";
 
 import useStore from "../../../store/store.js";
@@ -34,6 +34,11 @@ const TrailActions = memo(function TrailActions({ className }) {
         <button className="action-row" onClick={flush}>
           <Trash2 size={14} />
           <span className="row-label">Flush Saved Locations</span>
+        </button>
+
+        <button className="action-row" onClick={() => navigate("/help")}>
+          <HelpCircle size={14} />
+          <span className="row-label">User Guide</span>
         </button>
 
         <button className="action-row danger" onClick={() => navigate("/")}>
