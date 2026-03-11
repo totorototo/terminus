@@ -24,7 +24,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 0.75rem 1.5rem;
+    padding: calc(env(safe-area-inset-top) + 0.75rem) 1.5rem 0.75rem;
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-background"],
