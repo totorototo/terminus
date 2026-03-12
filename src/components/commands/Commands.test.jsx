@@ -37,6 +37,10 @@ vi.mock("./Commands.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
 
+vi.mock("../../hooks/useIsDesktop.js", () => ({
+  useIsDesktop: () => false,
+}));
+
 describe("Commands Component", () => {
   let mockToggleProfileMode;
   let mockToggleSlopesMode;

@@ -63,7 +63,7 @@ const DownArrow = () => (
   </svg>
 );
 
-function Navigation({ className }) {
+function Navigation({ className, singleSection }) {
   const {
     legs,
     cumulativeDistances,
@@ -109,7 +109,12 @@ function Navigation({ className }) {
     config: SPRING_CONFIG,
   });
 
-  const transitions = useTransition(remainingSections, {
+  const displaySections = useMemo(
+    () => (singleSection ? remainingSections.slice(0, 1) : remainingSections),
+    [singleSection, remainingSections],
+  );
+
+  const transitions = useTransition(displaySections, {
     from: {
       height: 0,
       transform: `translateY(-${SECTION_ITEM_TRANSLATE}px)`,
