@@ -1,21 +1,35 @@
+import { useRef } from "react";
+
 import { a, config, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 
 import style from "./TopSheetPanel.style.js";
 
 const COLLAPSED_HEIGHT = 140;
-const EXPANDED_HEIGHT = Math.min(420, Math.round(window.innerHeight * 0.55));
+const BOTTOM_MARGIN = 20;
 
-function ExpandablePanel({ children, className }) {
+function ExpandablePanel({
+  children,
+  className,
+  containerHeight,
+  onHeightChange,
+  bottomPanelOpenRef,
+}) {
   const [{ height }, api] = useSpring(() => ({ height: COLLAPSED_HEIGHT }));
 
+  // Keep a ref so the drag handler always reads the latest containerHeight
+  // without needing to be recreated on every resize.
+  const containerHeightRef = useRef(containerHeight);
+  containerHeightRef.current = containerHeight;
+
+  const getExpandedHeight = () => containerHeightRef.current - BOTTOM_MARGIN;
+
   const handleExpand = ({ canceled }) => {
-    // when cancel is true, it means that the user passed the downwards threshold
-    // so we change the spring config to create a nice wobbly effect
     api.start({
-      height: EXPANDED_HEIGHT,
+      height: getExpandedHeight(),
       immediate: false,
       config: canceled ? config.wobbly : config.stiff,
+      onChange: ({ value }) => onHeightChange?.(value.height),
     });
   };
 
@@ -24,11 +38,13 @@ function ExpandablePanel({ children, className }) {
       height: COLLAPSED_HEIGHT,
       immediate: false,
       config: { ...config.stiff, velocity },
+      onChange: ({ value }) => onHeightChange?.(value.height),
     });
   };
 
   const bind = useDrag(
     ({
+      first,
       last,
       velocity: [, vy],
       direction: [, dy],
@@ -36,29 +52,31 @@ function ExpandablePanel({ children, className }) {
       cancel,
       canceled,
     }) => {
-      // if the user drags down passed a threshold, then we cancel
-      // the drag so that the sheet resets to its expanded position
-      if (oy > EXPANDED_HEIGHT - COLLAPSED_HEIGHT + 20) cancel();
+      // Block expansion entirely when bottom panel is open.
+      // The user must close the bottom panel first.
+      if (bottomPanelOpenRef?.current) {
+        if (first) cancel();
+        return;
+      }
 
-      // when the user releases the sheet, we check whether it passed
-      // the threshold for it to collapse, or if we reset it to its expanded position
+      const expandedHeight = getExpandedHeight();
+
+      if (oy > expandedHeight - COLLAPSED_HEIGHT + 20) cancel();
+
       if (last) {
-        oy < (EXPANDED_HEIGHT - COLLAPSED_HEIGHT) * 0.5 || (vy < -0.5 && dy < 0)
+        oy < (expandedHeight - COLLAPSED_HEIGHT) * 0.5 || (vy < -0.5 && dy < 0)
           ? handleCollapse(Math.abs(vy))
           : handleExpand({ canceled });
+      } else {
+        const newHeight = COLLAPSED_HEIGHT + Math.max(0, oy);
+        api.start({ height: newHeight, immediate: true });
+        onHeightChange?.(newHeight);
       }
-      // when the user keeps dragging, we just move the sheet according to
-      // the cursor position
-      else
-        api.start({
-          height: COLLAPSED_HEIGHT + Math.max(0, oy),
-          immediate: true,
-        });
     },
     {
       from: () => [0, height.get() - COLLAPSED_HEIGHT],
       filterTaps: true,
-      bounds: { bottom: EXPANDED_HEIGHT - COLLAPSED_HEIGHT },
+      bounds: () => ({ bottom: getExpandedHeight() - COLLAPSED_HEIGHT }),
       rubberband: true,
     },
   );
@@ -69,9 +87,7 @@ function ExpandablePanel({ children, className }) {
       role="region"
       aria-label="Navigation panel. Drag to expand or collapse."
       {...bind()}
-      style={{
-        height,
-      }}
+      style={{ height }}
     >
       {children}
     </a.div>

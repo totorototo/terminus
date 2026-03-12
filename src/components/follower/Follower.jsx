@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
 
 import AutoSizer from "react-virtualized-auto-sizer";
 import { useParams } from "wouter";
@@ -6,7 +6,9 @@ import { useShallow } from "zustand/react/shallow";
 
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
 import useStore from "../../store/store.js";
-import BottomSheetPanel from "../bottomSheetPanel/BottomSheetPanel.jsx";
+import BottomSheetPanel, {
+  PANEL_HEIGHT,
+} from "../bottomSheetPanel/BottomSheetPanel.jsx";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
 import TopSheetPanel from "../topSheetPanel/TopSheetPanel.jsx";
 import TrailData from "../trailData/TrailData.jsx";
@@ -44,30 +46,60 @@ function Follower({ className }) {
 
   useEffect(() => {
     if (!roomId) return;
-
     connectToFollowerSession(roomId);
-
     return () => disconnectFollowerSession();
   }, [roomId, connectToFollowerSession, disconnectFollowerSession]);
 
+  // containerHeight ref keeps handleTopHeightChange stable across resizes.
+  const containerHeight = useRef(0);
+  const bottomPanelRef = useRef();
+  const bottomIsOpen = useRef(false);
+
+  // Bottom panel visible top edge = containerHeight - PANEL_HEIGHT - 100.
+  // When top panel grows past that, push bottom panel down by the overlap.
+  const handleTopHeightChange = useCallback((topH) => {
+    const bottomVisibleTop = containerHeight.current - PANEL_HEIGHT - 180;
+    const push = topH - bottomVisibleTop;
+    if (push > 0) {
+      bottomPanelRef.current?.push(push);
+    } else {
+      bottomPanelRef.current?.release();
+    }
+  }, []);
+
   return (
     <div className={className}>
-      <Suspense fallback={<LoadingSpinner />}>
-        <AutoSizer>
-          {({ width, height }) => <Scene width={width} height={height} />}
-        </AutoSizer>
-        <TopSheetPanel>
-          <LocationFreshness />
-        </TopSheetPanel>
-        {PUSH_NOTIFICATIONS_ENABLED && notificationPermission == null && (
-          <button className="notify-btn" onClick={enableNotifications}>
-            Enable notifications
-          </button>
-        )}
-        <BottomSheetPanel>
-          <TrailData showElevationProfile />
-        </BottomSheetPanel>
-      </Suspense>
+      <AutoSizer>
+        {({ width, height }) => {
+          containerHeight.current = height;
+          return (
+            <Suspense fallback={<LoadingSpinner />}>
+              <Scene width={width} height={height} />
+              <TopSheetPanel
+                containerHeight={height}
+                onHeightChange={handleTopHeightChange}
+                bottomPanelOpenRef={bottomIsOpen}
+              >
+                <LocationFreshness />
+              </TopSheetPanel>
+              {PUSH_NOTIFICATIONS_ENABLED && notificationPermission == null && (
+                <button className="notify-btn" onClick={enableNotifications}>
+                  Enable notifications
+                </button>
+              )}
+              <BottomSheetPanel
+                ref={bottomPanelRef}
+                containerHeight={height}
+                onOpenChange={(open) => {
+                  bottomIsOpen.current = open;
+                }}
+              >
+                <TrailData showElevationProfile />
+              </BottomSheetPanel>
+            </Suspense>
+          );
+        }}
+      </AutoSizer>
     </div>
   );
 }
