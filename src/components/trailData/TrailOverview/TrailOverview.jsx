@@ -104,7 +104,7 @@ const TrailOverview = memo(function TrailOverview({ className }) {
           <span className="tile-value">{maxTimeStr}</span>
         </div>
 
-        <div className="grid-tile">
+        <div className="grid-tile pace-tile">
           <span className="tile-label">Slowest Pace</span>
           <span className="tile-value">{slowestPaceStr}</span>
         </div>
