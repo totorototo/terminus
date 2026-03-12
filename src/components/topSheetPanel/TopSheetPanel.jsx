@@ -14,6 +14,7 @@ function ExpandablePanel({
   containerHeight,
   onHeightChange,
   bottomPanelOpenRef,
+  locked,
 }) {
   const [{ height }, api] = useSpring(() => ({ height: COLLAPSED_HEIGHT }));
 
@@ -53,9 +54,8 @@ function ExpandablePanel({
       cancel,
       canceled,
     }) => {
-      // Block expansion entirely when bottom panel is open.
-      // The user must close the bottom panel first.
-      if (bottomPanelOpenRef?.current) {
+      // Block expansion entirely when locked or when bottom panel is open.
+      if (locked || bottomPanelOpenRef?.current) {
         if (first) cancel();
         return;
       }

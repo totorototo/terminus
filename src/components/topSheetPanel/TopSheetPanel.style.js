@@ -10,7 +10,7 @@ const style = (Component) => styled(Component)`
   border: 1px solid
     ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.12)};
-  cursor: ns-resize;
+  cursor: ${({ locked }) => (locked ? "default" : "ns-resize")};
   user-select: none;
   touch-action: none;
   position: absolute;
@@ -30,7 +30,7 @@ const style = (Component) => styled(Component)`
   z-index: ${({ theme }) => theme.zIndex["--z-index-modal"]};
   container-type: size;
 
-  /* Drag handle indicator at bottom (visible when collapsed) */
+  /* Drag handle indicator at bottom (hidden when locked) */
   &::after {
     content: "";
     position: absolute;
@@ -41,7 +41,7 @@ const style = (Component) => styled(Component)`
     height: 4px;
     background-color: ${({ theme }) =>
       theme.colors[theme.currentVariant]["--color-text"]};
-    opacity: 0.3;
+    opacity: ${({ locked }) => (locked ? 0 : 0.3)};
     border-radius: ${({ theme }) => theme.borderRadius["--border-radius-xs"]};
     z-index: 1;
   }

@@ -79,6 +79,7 @@ function Follower({ className }) {
                 containerHeight={height}
                 onHeightChange={handleTopHeightChange}
                 bottomPanelOpenRef={bottomIsOpen}
+                locked
               >
                 <LocationFreshness />
               </TopSheetPanel>
