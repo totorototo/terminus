@@ -51,7 +51,7 @@ function Trailer({ className }) {
   // Bottom panel visible top edge = containerHeight - PANEL_HEIGHT - 100.
   // When top panel grows past that, push bottom panel down by the overlap.
   const handleTopHeightChange = useCallback((topH) => {
-    const bottomVisibleTop = containerHeight.current - PANEL_HEIGHT - 180;
+    const bottomVisibleTop = containerHeight.current - PANEL_HEIGHT - 280;
     const push = topH - bottomVisibleTop;
     if (push > 0) {
       bottomPanelRef.current?.push(push);
