@@ -5,12 +5,17 @@ import { useParams } from "wouter";
 import { useShallow } from "zustand/react/shallow";
 
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
+import { useIsDesktop } from "../../hooks/useIsDesktop.js";
 import useStore from "../../store/store.js";
 import BottomSheetPanel, {
   PANEL_HEIGHT,
 } from "../bottomSheetPanel/BottomSheetPanel.jsx";
+import Commands from "../commands/Commands.jsx";
+import DesktopLayout from "../desktopLayout/DesktopLayout.jsx";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
-import TopSheetPanel from "../topSheetPanel/TopSheetPanel.jsx";
+import TopSheetPanel, {
+  COLLAPSED_HEIGHT,
+} from "../topSheetPanel/TopSheetPanel.jsx";
 import TrailData from "../trailData/TrailData.jsx";
 import LocationFreshness from "./LocationFreshness/LocationFreshness.jsx";
 
@@ -23,10 +28,13 @@ const PUSH_NOTIFICATIONS_ENABLED = false;
 function Follower({ className }) {
   const { roomId, raceId } = useParams();
   useGPXWorker(raceId);
+  const isDesktop = useIsDesktop();
 
   const {
     connectToFollowerSession,
     disconnectFollowerSession,
+    // enableNotifications and notificationPermission are kept here for when
+    // PUSH_NOTIFICATIONS_ENABLED is re-enabled; remove these comments then.
     enableNotifications,
     notificationPermission,
     setRaceId,
@@ -55,10 +63,16 @@ function Follower({ className }) {
   const bottomPanelRef = useRef();
   const bottomIsOpen = useRef(false);
 
-  // Bottom panel visible top edge = containerHeight - PANEL_HEIGHT - 100.
-  // When top panel grows past that, push bottom panel down by the overlap.
+  // The bottom panel's resting visible top edge sits PANEL_HEIGHT above the
+  // container bottom. We leave an extra gap equal to COLLAPSED_HEIGHT so the
+  // top sheet must expand past its collapsed state before pushing the bottom one.
+  const PUSH_THRESHOLD_GAP = 40; // px of breathing room between the two panels
   const handleTopHeightChange = useCallback((topH) => {
-    const bottomVisibleTop = containerHeight.current - PANEL_HEIGHT - 180;
+    const bottomVisibleTop =
+      containerHeight.current -
+      PANEL_HEIGHT -
+      COLLAPSED_HEIGHT -
+      PUSH_THRESHOLD_GAP;
     const push = topH - bottomVisibleTop;
     if (push > 0) {
       bottomPanelRef.current?.push(push);
@@ -75,28 +89,39 @@ function Follower({ className }) {
           return (
             <Suspense fallback={<LoadingSpinner />}>
               <Scene width={width} height={height} />
-              <TopSheetPanel
-                containerHeight={height}
-                onHeightChange={handleTopHeightChange}
-                bottomPanelOpenRef={bottomIsOpen}
-                locked
-              >
-                <LocationFreshness />
-              </TopSheetPanel>
-              {PUSH_NOTIFICATIONS_ENABLED && notificationPermission == null && (
-                <button className="notify-btn" onClick={enableNotifications}>
-                  Enable notifications
-                </button>
+              {isDesktop ? (
+                <DesktopLayout />
+              ) : (
+                <>
+                  <TopSheetPanel
+                    containerHeight={height}
+                    onHeightChange={handleTopHeightChange}
+                    bottomPanelOpenRef={bottomIsOpen}
+                    locked
+                  >
+                    <LocationFreshness />
+                  </TopSheetPanel>
+                  {PUSH_NOTIFICATIONS_ENABLED &&
+                    notificationPermission == null && (
+                      <button
+                        className="notify-btn"
+                        onClick={enableNotifications}
+                      >
+                        Enable notifications
+                      </button>
+                    )}
+                  <BottomSheetPanel
+                    ref={bottomPanelRef}
+                    containerHeight={height}
+                    onOpenChange={(open) => {
+                      bottomIsOpen.current = open;
+                    }}
+                  >
+                    <TrailData showElevationProfile />
+                  </BottomSheetPanel>
+                </>
               )}
-              <BottomSheetPanel
-                ref={bottomPanelRef}
-                containerHeight={height}
-                onOpenChange={(open) => {
-                  bottomIsOpen.current = open;
-                }}
-              >
-                <TrailData showElevationProfile />
-              </BottomSheetPanel>
+              <Commands follower />
             </Suspense>
           );
         }}
