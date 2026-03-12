@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 
-import { Activity, ArrowRight, Eye, Map } from "@styled-icons/feather";
+import {
+  Activity,
+  ArrowRight,
+  Eye,
+  HelpCircle,
+  Map,
+} from "@styled-icons/feather";
 import { useLocation } from "wouter";
 
 import style from "./Wizard.style.js";
@@ -82,6 +88,10 @@ function Wizard({ className }) {
                 <span className="choice-label">I&apos;m following</span>
               </button>
             </div>
+            <button className="help-link" onClick={() => navigate("/help")}>
+              <HelpCircle size={13} strokeWidth={2} />
+              Need some help?
+            </button>
           </div>
         )}
 

@@ -189,6 +189,34 @@ const style = (Component) => styled(Component)`
     letter-spacing: -0.02em;
   }
 
+  .help-link {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: 0.75rem;
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.3,
+      )};
+    transition: color ${(props) => props.theme.transitions["--transition-fast"]};
+    -webkit-tap-highlight-color: transparent;
+    margin-top: 0.25rem;
+
+    &:hover {
+      color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.6,
+        )};
+    }
+  }
+
   .back-btn {
     align-self: flex-start;
     background: none;
