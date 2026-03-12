@@ -1,5 +1,3 @@
-import { useLocation } from "wouter";
-
 import style from "./Help.style.js";
 
 const SECTIONS = [
@@ -13,8 +11,6 @@ const SECTIONS = [
 ];
 
 function Help({ className }) {
-  const [, navigate] = useLocation();
-
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
@@ -22,7 +18,7 @@ function Help({ className }) {
   return (
     <div className={className}>
       <header className="help-header">
-        <button className="back-btn" onClick={() => navigate("/")}>
+        <button className="back-btn" onClick={() => window.history.back()}>
           ← Back
         </button>
         <nav className="section-nav">
