@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
 
 import AutoSizer from "react-virtualized-auto-sizer";
 import { useParams } from "wouter";
@@ -6,7 +6,9 @@ import { useShallow } from "zustand/react/shallow";
 
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
 import useStore from "../../store/store.js";
-import BottomSheetPanel from "../bottomSheetPanel/BottomSheetPanel.jsx";
+import BottomSheetPanel, {
+  PANEL_HEIGHT,
+} from "../bottomSheetPanel/BottomSheetPanel.jsx";
 import Commands from "../commands/Commands.jsx";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
 import Navigation from "../navigation/Navigation.jsx";
@@ -29,7 +31,6 @@ function Trailer({ className }) {
     })),
   );
 
-  // Set trailer mode on mount so GPS slice knows to broadcast, clean up on unmount
   useEffect(() => {
     setMode("trailer");
     return () => {
@@ -42,21 +43,55 @@ function Trailer({ className }) {
     if (raceId) setRaceId(raceId);
   }, [raceId, setRaceId]);
 
+  // containerHeight ref keeps handleTopHeightChange stable across resizes.
+  const containerHeight = useRef(0);
+  const bottomPanelRef = useRef();
+  const bottomIsOpen = useRef(false);
+
+  // Bottom panel visible top edge = containerHeight - PANEL_HEIGHT - 100.
+  // When top panel grows past that, push bottom panel down by the overlap.
+  const handleTopHeightChange = useCallback((topH) => {
+    const bottomVisibleTop = containerHeight.current - PANEL_HEIGHT - 180;
+    const push = topH - bottomVisibleTop;
+    if (push > 0) {
+      bottomPanelRef.current?.push(push);
+    } else {
+      bottomPanelRef.current?.release();
+    }
+  }, []);
+
   return (
     isWorkerReady && (
       <div className={className}>
-        <Suspense fallback={<LoadingSpinner />}>
-          <AutoSizer>
-            {({ width, height }) => <Scene width={width} height={height} />}
-          </AutoSizer>
-        </Suspense>
-        <TopSheetPanel>
-          <Navigation />
-        </TopSheetPanel>
-        <BottomSheetPanel>
-          <TrailData />
-        </BottomSheetPanel>
-        <Commands />
+        <AutoSizer>
+          {({ width, height }) => {
+            containerHeight.current = height;
+            return (
+              <>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Scene width={width} height={height} />
+                </Suspense>
+                <TopSheetPanel
+                  containerHeight={height}
+                  onHeightChange={handleTopHeightChange}
+                  bottomPanelOpenRef={bottomIsOpen}
+                >
+                  <Navigation />
+                </TopSheetPanel>
+                <BottomSheetPanel
+                  ref={bottomPanelRef}
+                  containerHeight={height}
+                  onOpenChange={(open) => {
+                    bottomIsOpen.current = open;
+                  }}
+                >
+                  <TrailData />
+                </BottomSheetPanel>
+                <Commands />
+              </>
+            );
+          }}
+        </AutoSizer>
       </div>
     )
   );

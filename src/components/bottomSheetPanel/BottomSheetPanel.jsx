@@ -1,25 +1,57 @@
+import { forwardRef, useImperativeHandle, useRef } from "react";
+
 import { a, config, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 
 import style from "./BottomSheetPanel.style.js";
 
-const height = 254;
+// Height of the closed-state Y translation.
+// Visible height when open = PANEL_HEIGHT + 100.
+// Peek height when closed = 100px (always).
+export const PANEL_HEIGHT = 580;
 
-function BottomSheetPanel({ children, className }) {
-  const [{ y }, api] = useSpring(() => ({ y: height }));
+function BottomSheetPanel(
+  { children, className, containerHeight, onOpenChange },
+  ref,
+) {
+  // Tracks what position the user has set via dragging (0 = open, PANEL_HEIGHT = peek).
+  const intendedY = useRef(PANEL_HEIGHT);
+
+  const [{ y }, api] = useSpring(() => ({ y: PANEL_HEIGHT }));
+
+  // Exposed to parent so top panel expansion can push this panel down.
+  useImperativeHandle(ref, () => ({
+    push(externalY) {
+      // No cap: top panel can push bottom fully off screen.
+      api.start({
+        y: Math.max(intendedY.current, externalY),
+        immediate: true,
+      });
+    },
+    release() {
+      api.start({
+        y: intendedY.current,
+        immediate: false,
+        config: config.stiff,
+      });
+    },
+  }));
 
   const handleOpen = ({ canceled }) => {
-    // when cancel is true, it means that the user passed the upwards threshold
-    // so we change the spring config to create a nice wobbly effect
+    intendedY.current = 0;
+    onOpenChange?.(true);
     api.start({
       y: 0,
       immediate: false,
       config: canceled ? config.wobbly : config.stiff,
     });
   };
+
   const handleClose = (velocity = 0) => {
+    intendedY.current = PANEL_HEIGHT;
+    onOpenChange?.(false);
     api.start({
-      y: height,
+      y: PANEL_HEIGHT,
       immediate: false,
       config: { ...config.stiff, velocity },
     });
@@ -34,21 +66,13 @@ function BottomSheetPanel({ children, className }) {
       cancel,
       canceled,
     }) => {
-      // if the user drags up passed a threshold, then we cancel
-      // the drag so that the sheet resets to its open position
-
       if (oy < -20) cancel();
 
-      // when the user releases the sheet, we check whether it passed
-      // the threshold for it to close, or if we reset it to its open positino
       if (last) {
-        oy > height * 0.5 || (vy > 0.5 && dy > 0)
+        oy > PANEL_HEIGHT * 0.5 || (vy > 0.5 && dy > 0)
           ? handleClose(vy)
           : handleOpen({ canceled });
-      }
-      // when the user keeps dragging, we just move the sheet according to
-      // the cursor position
-      else api.start({ y: oy, immediate: true });
+      } else api.start({ y: oy, immediate: true });
     },
     {
       axis: "y",
@@ -66,9 +90,9 @@ function BottomSheetPanel({ children, className }) {
       aria-label="Trail data panel. Drag to open or close."
       {...bind()}
       style={{
-        bottom: `calc(-100vh + ${height}px)`,
+        bottom: PANEL_HEIGHT - containerHeight,
         width: "96vw",
-        height: "calc(100vh + 100px)",
+        height: containerHeight + 100,
         y,
         maxWidth: "600px",
         left: "50%",
@@ -80,4 +104,4 @@ function BottomSheetPanel({ children, className }) {
   );
 }
 
-export default style(BottomSheetPanel);
+export default style(forwardRef(BottomSheetPanel));
