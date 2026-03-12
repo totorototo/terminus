@@ -25,7 +25,6 @@ function Help({ className }) {
         <button className="back-btn" onClick={() => navigate("/")}>
           ← Back
         </button>
-        <span className="help-title">User Guide</span>
         <nav className="section-nav">
           {SECTIONS.map((s) => (
             <button
@@ -208,81 +207,12 @@ function Help({ className }) {
           <p className="sec-label">04 — Top Panel</p>
           <h2 className="sec-title">Race header</h2>
           <p className="sec-body">
-            The top panel is the race HUD. It provides at-a-glance stats and
-            quick navigation to major sections of the course.
+            The top panel displays the current section at a glance — how far you
+            have left to run and how much elevation remains in the section.
           </p>
           <div className="panel-list">
             <div className="pi">
               <div className="pi-icon primary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="12" y1="2" x2="12" y2="22" />
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Race name &amp; distance</p>
-                <p className="pi-desc">
-                  Event title and total course distance displayed prominently.
-                </p>
-              </div>
-            </div>
-            <div className="pi">
-              <div className="pi-icon primary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Elapsed time</p>
-                <p className="pi-desc">
-                  Running clock from the moment GPS tracking started.
-                </p>
-              </div>
-            </div>
-            <div className="pi">
-              <div className="pi-icon secondary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 3h7l1 7-4 2.5L10 18h4l3-5.5L21 21H3z" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Waypoint carousel</p>
-                <p className="pi-desc">
-                  Swipe through aid stations and checkpoints. Tap to jump to
-                  that location on the map.
-                </p>
-              </div>
-            </div>
-            <div className="pi">
-              <div className="pi-icon secondary">
                 <svg
                   width="15"
                   height="15"
@@ -297,10 +227,12 @@ function Help({ className }) {
                 </svg>
               </div>
               <div>
-                <p className="pi-name">Pace &amp; speed</p>
+                <p className="pi-name">
+                  Current section — km &amp; elevation left
+                </p>
                 <p className="pi-desc">
-                  Current pace (min/km) and speed (km/h) derived from GPS
-                  samples.
+                  Distance remaining and elevation gain left in the current
+                  section of the course.
                 </p>
               </div>
             </div>
@@ -312,12 +244,37 @@ function Help({ className }) {
         {/* BOTTOM PANEL */}
         <section id="bottom" className="section">
           <p className="sec-label">05 — Bottom Panel</p>
-          <h2 className="sec-title">Elevation &amp; stats</h2>
+          <h2 className="sec-title">Stats carousel</h2>
           <p className="sec-body">
-            The bottom panel hosts the elevation profile and the key metrics for
-            the current leg of the race.
+            The bottom panel is a swipeable carousel. Each card gives you a
+            different lens on your race — swipe left or right to browse.
           </p>
           <div className="panel-list">
+            <div className="pi">
+              <div className="pi-icon primary">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+              </div>
+              <div>
+                <p className="pi-name">Race overview</p>
+                <p className="pi-desc">
+                  Top-level race stats — total distance, total elevation gain,
+                  and overall progress.
+                </p>
+              </div>
+            </div>
             <div className="pi">
               <div className="pi-icon primary">
                 <svg
@@ -335,10 +292,10 @@ function Help({ className }) {
                 </svg>
               </div>
               <div>
-                <p className="pi-name">Elevation profile</p>
+                <p className="pi-name">Race progression</p>
                 <p className="pi-desc">
-                  Full-course cross-section. Your current position moves along
-                  the curve in real time.
+                  How far you have come and how far remains — distance and
+                  elevation progress through the full course.
                 </p>
               </div>
             </div>
@@ -360,9 +317,33 @@ function Help({ className }) {
                 </svg>
               </div>
               <div>
-                <p className="pi-name">D+ / D− cumulative</p>
+                <p className="pi-name">Current stage analytics</p>
                 <p className="pi-desc">
-                  Total ascent and descent accumulated from race start.
+                  Detailed stats for the current stage: distance, D+, D−, and
+                  your progress within it.
+                </p>
+              </div>
+            </div>
+            <div className="pi">
+              <div className="pi-icon primary">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+              </div>
+              <div>
+                <p className="pi-name">Current section analytics</p>
+                <p className="pi-desc">
+                  Focused view of the current section — km left, elevation
+                  remaining, and section-level D+/D−.
                 </p>
               </div>
             </div>
@@ -379,14 +360,14 @@ function Help({ className }) {
                   strokeLinejoin="round"
                 >
                   <circle cx="12" cy="12" r="10" />
-                  <line x1="2" y1="12" x2="22" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  <polyline points="12 6 12 12 16 14" />
                 </svg>
               </div>
               <div>
-                <p className="pi-name">Distance to next waypoint</p>
+                <p className="pi-name">ETAs — checkpoints</p>
                 <p className="pi-desc">
-                  Remaining distance to the next aid station or checkpoint.
+                  Estimated arrival times at upcoming checkpoints based on your
+                  current pace.
                 </p>
               </div>
             </div>
@@ -402,14 +383,38 @@ function Help({ className }) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                  <circle cx="12" cy="10" r="3" />
+                  <path d="M3 17l4-8 4 5 3-3 4 6H3z" />
                 </svg>
               </div>
               <div>
-                <p className="pi-name">Current altitude</p>
+                <p className="pi-name">Climbs — climb pro</p>
                 <p className="pi-desc">
-                  GPS-derived altitude in metres, updated on each position fix.
+                  Upcoming climbs with gradient, length, and elevation gain —
+                  detailed climb-by-climb breakdown.
+                </p>
+              </div>
+            </div>
+            <div className="pi">
+              <div className="pi-icon secondary">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
+                </svg>
+              </div>
+              <div>
+                <p className="pi-name">Extra commands</p>
+                <p className="pi-desc">
+                  Utility actions: fly-by animation, delete saved data, and
+                  other advanced options.
                 </p>
               </div>
             </div>
@@ -423,8 +428,8 @@ function Help({ className }) {
           <p className="sec-label">06 — Controls</p>
           <h2 className="sec-title">Commands</h2>
           <p className="sec-body">
-            Swipe up from the bottom of the screen (or tap the handle) to open
-            the command drawer. All major actions are available there.
+            The command panel sits at the bottom of the screen. Tap any button
+            to trigger the action.
           </p>
           <table className="gtable">
             <thead>
@@ -435,23 +440,25 @@ function Help({ className }) {
             </thead>
             <tbody>
               <tr>
-                <td>Toggle 2D / 3D</td>
+                <td>Locate me</td>
+                <td>
+                  Request your current GPS location. The browser asks for
+                  permission each time you tap — your position is shown once and
+                  not continuously tracked.
+                </td>
+              </tr>
+              <tr>
+                <td>Section / Slope</td>
+                <td>
+                  Toggle slope or section colouring on the route — highlights
+                  gradient intensity or named course sections.
+                </td>
+              </tr>
+              <tr>
+                <td>2D / 3D</td>
                 <td>
                   Switch between the overhead map view and the immersive 3D
                   terrain scene.
-                </td>
-              </tr>
-              <tr>
-                <td>Start GPS</td>
-                <td>
-                  Begin recording your position. The browser will request
-                  location permission.
-                </td>
-              </tr>
-              <tr>
-                <td>Stop GPS</td>
-                <td>
-                  Pause position recording. Your track history is preserved.
                 </td>
               </tr>
               <tr>
@@ -462,15 +469,8 @@ function Help({ className }) {
                 </td>
               </tr>
               <tr>
-                <td>Theme toggle</td>
-                <td>Switch between dark and light colour schemes.</td>
-              </tr>
-              <tr>
-                <td>Reset camera</td>
-                <td>
-                  Return the 3D camera to its default position centred on the
-                  route.
-                </td>
+                <td>Switch theme</td>
+                <td>Switch between light and dark colour schemes.</td>
               </tr>
             </tbody>
           </table>
