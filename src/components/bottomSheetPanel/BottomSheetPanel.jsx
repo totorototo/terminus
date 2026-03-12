@@ -8,7 +8,7 @@ import style from "./BottomSheetPanel.style.js";
 // Height of the closed-state Y translation.
 // Visible height when open = PANEL_HEIGHT + 100.
 // Peek height when closed = 100px (always).
-export const PANEL_HEIGHT = 580;
+export const PANEL_HEIGHT = 540;
 
 function BottomSheetPanel(
   { children, className, containerHeight, onOpenChange },
