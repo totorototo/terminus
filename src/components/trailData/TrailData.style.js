@@ -11,7 +11,7 @@ const style = (Component) => styled(Component)`
   padding: 2rem 1.25rem 1.25rem;
   border-radius: ${(props) => props.theme.borderRadius["--border-radius-xl"]};
   pointer-events: auto;
-  height: 24rem;
+  height: 40rem;
   // background-color:pink;
 
   /* Stats container */

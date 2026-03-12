@@ -4,15 +4,15 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   width: 100%;
   height: 100%;
-  padding: 0rem 1rem;
+  padding: 0 1rem;
 
   .progression-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
     width: 100%;
   }
 
@@ -23,7 +23,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
+        0.4,
       )};
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -31,15 +31,16 @@ const style = (Component) => styled(Component)`
 
   .progression-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xlarge"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    line-height: 1;
   }
 
   .progress-bar {
     width: 100%;
-    height: 8px;
+    height: 10px;
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
@@ -70,7 +71,7 @@ const style = (Component) => styled(Component)`
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding-top: 0.5rem;
+    padding-top: 0.75rem;
     border-top: 1px solid
       ${(props) =>
         rgba(
@@ -84,7 +85,7 @@ const style = (Component) => styled(Component)`
     flex-direction: column;
     align-items: center;
     flex: 1;
-    gap: 0.25rem;
+    gap: 0.4rem;
   }
 
   .elevation-label {
@@ -94,7 +95,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.3,
+        0.4,
       )};
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -106,11 +107,12 @@ const style = (Component) => styled(Component)`
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
+    line-height: 1;
   }
 
   .elevation-divider {
     width: 1px;
-    height: 40px;
+    height: 48px;
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
