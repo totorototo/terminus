@@ -1,5 +1,4 @@
 const std = @import("std");
-const Point = @import("waypoint.zig").Point;
 const Trace = @import("trace.zig").Trace;
 const gpx = @import("gpx.zig");
 const csv = @import("csv.zig");
