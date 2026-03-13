@@ -1,4 +1,3 @@
-const Point = @import("waypoint.zig").Point;
 const std = @import("std");
 
 const expect = std.testing.expect;
@@ -7,8 +6,8 @@ const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 const distance = @import("gpspoint.zig").distance;
 const distance3D = @import("gpspoint.zig").distance3D;
 const elevationDeltaSigned = @import("gpspoint.zig").elevationDeltaSigned;
-const findPeaks = @import("peaks.zig").findPeaks;
-const findValleys = @import("peaks.zig").findValleys;
+const findPeaks = @import("extrema.zig").findPeaks;
+const findValleys = @import("extrema.zig").findValleys;
 const detectClimbs = @import("climbs.zig").detectClimbs;
 pub const ClimbStats = @import("climbs.zig").ClimbStats;
 const douglasPeuckerSimplify = @import("simplify.zig").douglasPeuckerSimplify;
