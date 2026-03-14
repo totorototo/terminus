@@ -209,6 +209,7 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData
     errdefer metadata.deinit(allocator);
 
     const trace_points = try readTracePoints(allocator, bytes);
+    errdefer allocator.free(trace_points);
 
     const waypoints = try readWaypoints(allocator, bytes);
     errdefer {

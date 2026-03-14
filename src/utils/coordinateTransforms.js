@@ -29,8 +29,14 @@ export function createCoordinateScales(coordinates, options = {}) {
 
   // Profile mode: x=0, y=elevation, z=index
   if (profileMode) {
-    const elevations = coordinates.map((coord) => coord[2]);
-    const yExtent = [Math.min(...elevations), Math.max(...elevations)];
+    let minEle = Infinity,
+      maxEle = -Infinity;
+    for (let i = 0; i < coordinates.length; i++) {
+      const e = coordinates[i][2];
+      if (e < minEle) minEle = e;
+      if (e > maxEle) maxEle = e;
+    }
+    const yExtent = [minEle, maxEle];
 
     return {
       xScale: () => 0,
@@ -48,18 +54,24 @@ export function createCoordinateScales(coordinates, options = {}) {
 
   // 3D mode: x=longitude, y=elevation, z=latitude
   // Note: coordinates are [lat, lon, ele] from Zig
-  const xExtent = [
-    Math.min(...coordinates.map((coord) => coord[1])),
-    Math.max(...coordinates.map((coord) => coord[1])),
-  ]; // longitude (coord[1])
-  const yExtent = [
-    Math.min(...coordinates.map((coord) => coord[2])),
-    Math.max(...coordinates.map((coord) => coord[2])),
-  ]; // elevation (coord[2])
-  const zExtent = [
-    Math.min(...coordinates.map((coord) => coord[0])),
-    Math.max(...coordinates.map((coord) => coord[0])),
-  ]; // latitude (coord[0])
+  let minLon = Infinity,
+    maxLon = -Infinity;
+  let minEle = Infinity,
+    maxEle = -Infinity;
+  let minLat = Infinity,
+    maxLat = -Infinity;
+  for (let i = 0; i < coordinates.length; i++) {
+    const [lat, lon, ele] = coordinates[i];
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+    if (ele < minEle) minEle = ele;
+    if (ele > maxEle) maxEle = ele;
+  }
+  const xExtent = [minLon, maxLon]; // longitude (coord[1])
+  const yExtent = [minEle, maxEle]; // elevation (coord[2])
+  const zExtent = [minLat, maxLat]; // latitude (coord[0])
 
   // Apply padding based on aspect ratio
   const lonDelta = xExtent[1] - xExtent[0];

@@ -313,6 +313,21 @@ async function processSections(data, requestId) {
     return result;
   });
 
+  // Attach summary properties so validateSectionsResults passes
+  results.totalDistance = results.reduce(
+    (sum, s) => sum + (s.totalDistance || 0),
+    0,
+  );
+  results.totalElevationGain = results.reduce(
+    (sum, s) => sum + (s.totalElevation || 0),
+    0,
+  );
+  results.totalElevationLoss = results.reduce(
+    (sum, s) => sum + (s.totalElevationLoss || 0),
+    0,
+  );
+  results.pointCount = results.reduce((sum, s) => sum + (s.pointCount || 0), 0);
+
   self.postMessage({
     type: "SECTIONS_PROCESSED",
     id: requestId,
