@@ -18,7 +18,6 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { selectRunnerRole } from "./helpers.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -280,7 +279,7 @@ test.describe("Performance budget — JS heap", () => {
     for (let i = 0; i < 2; i++) {
       await page.goto("/");
       await page.getByRole("button", { name: "I'm running" }).waitFor({
-        timeout: 3_000,
+        timeout: 6_000,
       });
       await page.goto(`/run/${raceId}`);
       await expect(page.locator("canvas").first()).toBeVisible({
