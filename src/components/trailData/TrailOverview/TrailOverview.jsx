@@ -19,6 +19,9 @@ const TrailOverview = memo(function TrailOverview({ className }) {
   const stats = useStats();
   const metadata = useStore((state) => state.gpx.metadata);
   const sections = useStore((state) => state.sections);
+  const followerRoomId = useStore((state) => state.app.followerRoomId);
+  const liveSessionId = useStore((state) => state.app.liveSessionId);
+  const roomId = followerRoomId ?? liveSessionId;
 
   const totalDistanceKm = (stats.distance || 0) / 1000;
 
@@ -113,6 +116,13 @@ const TrailOverview = memo(function TrailOverview({ className }) {
           <div className="grid-tile time-tile">
             <span className="tile-label">{timeLabel}</span>
             <span className="tile-value">{timeValue}</span>
+          </div>
+        )}
+
+        {roomId && (
+          <div className="grid-tile room-tile">
+            <span className="tile-label">Room</span>
+            <span className="tile-value">{roomId}</span>
           </div>
         )}
       </div>

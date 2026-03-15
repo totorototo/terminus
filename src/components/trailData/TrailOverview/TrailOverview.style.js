@@ -62,7 +62,8 @@ const style = (Component) => styled(Component)`
     gap: 5px;
 
     &.pace-tile,
-    &.time-tile {
+    &.time-tile,
+    &.room-tile {
       grid-column: 1 / -1;
     }
   }
