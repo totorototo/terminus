@@ -269,6 +269,8 @@ export const createGPSSlice = (set, get) => {
     connectToFollowerSession: (roomId) => {
       if (!roomId) return;
 
+      get().setFollowerRoomId(roomId);
+
       // Close existing follower socket if any
       if (followerSocket) {
         followerSocket.close();
