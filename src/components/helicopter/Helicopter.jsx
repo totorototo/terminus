@@ -42,9 +42,14 @@ export function Helicopter({ coordinateScales, ...props }) {
     )[0];
   }, [projectedLocation, coordinateScales]);
   const [springs, api] = useSpring(() => ({
-    position: [0, 0, 0],
-
-    config: { tension: 170, friction: 26 }, // tweak as you like
+    position: transformedLocation
+      ? [
+          transformedLocation[0],
+          transformedLocation[1] + 0.2,
+          transformedLocation[2],
+        ]
+      : [0, 0, 0],
+    config: { tension: 170, friction: 26 },
   }));
 
   useEffect(() => {
