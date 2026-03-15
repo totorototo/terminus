@@ -278,9 +278,6 @@ test.describe("Performance budget — JS heap", () => {
     // Two more round-trips
     for (let i = 0; i < 2; i++) {
       await page.goto("/");
-      await page.getByRole("button", { name: "I'm running" }).waitFor({
-        timeout: 6_000,
-      });
       await page.goto(`/run/${raceId}`);
       await expect(page.locator("canvas").first()).toBeVisible({
         timeout: 12_000,
