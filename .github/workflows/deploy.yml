@@ -48,6 +48,11 @@ jobs:
       - name: Run E2E tests
         run: npm run e2e
 
+      - name: Run Lighthouse CI
+        run: npx lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4

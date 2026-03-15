@@ -16,6 +16,41 @@ async function initializeZig() {
   }
 }
 
+// ── Performance timing helpers ────────────────────────────────────────────────
+// Wrap each WASM call with performance.mark/measure so the timings are visible
+// in DevTools' Performance panel and can be read back in e2e tests.
+
+function markStart(label) {
+  try {
+    performance.mark(`worker:${label}:start`);
+  } catch {
+    // Non-fatal — some environments don't support performance.mark in workers
+  }
+}
+
+function markEnd(label) {
+  try {
+    performance.mark(`worker:${label}:end`);
+    performance.measure(
+      `worker:${label}`,
+      `worker:${label}:start`,
+      `worker:${label}:end`,
+    );
+  } catch {
+    // Non-fatal
+  }
+}
+
+/** Return duration in ms for the most-recent measure with the given name, or null. */
+function measureMs(label) {
+  try {
+    const entries = performance.getEntriesByName(`worker:${label}`);
+    return entries.length > 0 ? entries[entries.length - 1].duration : null;
+  } catch {
+    return null;
+  }
+}
+
 // Message handler for communication with main thread
 self.onmessage = async function (e) {
   const { type, data, id } = e.data;
@@ -66,6 +101,7 @@ self.onmessage = async function (e) {
 };
 
 async function processGPXFile(gpxFileBytes, requestId) {
+  markStart("processGPXFile");
   const gpxData = await readGPXComplete(gpxFileBytes.gpxBytes);
 
   // Convert Zigar proxy objects to plain JS before sending
@@ -190,10 +226,13 @@ async function processGPXFile(gpxFileBytes, requestId) {
     climbs: sanitizedClimbs,
   };
 
+  markEnd("processGPXFile");
+
   self.postMessage({
     type: "GPX_FILE_PROCESSED",
     id: requestId,
     results,
+    timingMs: { gpxProcess: measureMs("processGPXFile") },
   });
 
   // gpxData.deinit() will now clean up the trace as well
@@ -201,6 +240,7 @@ async function processGPXFile(gpxFileBytes, requestId) {
 }
 
 async function processGPSData(gpsData, requestId) {
+  markStart("processGPSData");
   const trace = Trace.init(gpsData.coordinates);
 
   self.postMessage({
@@ -220,16 +260,20 @@ async function processGPSData(gpsData, requestId) {
   // Convert to plain JS object before deinit
   const results = trace.valueOf();
 
+  markEnd("processGPSData");
+
   self.postMessage({
     type: "GPS_DATA_PROCESSED",
     id: requestId,
     results,
+    timingMs: { gpsProcess: measureMs("processGPSData") },
   });
 
   trace.deinit();
 }
 
 async function processSections(data, requestId) {
+  markStart("processSections");
   const { coordinates, sections } = data;
 
   // Validate coordinates before creating trace
@@ -328,10 +372,13 @@ async function processSections(data, requestId) {
   );
   results.pointCount = results.reduce((sum, s) => sum + (s.pointCount || 0), 0);
 
+  markEnd("processSections");
+
   self.postMessage({
     type: "SECTIONS_PROCESSED",
     id: requestId,
     results,
+    timingMs: { sectionsProcess: measureMs("processSections") },
   });
 
   trace.deinit();

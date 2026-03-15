@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terminus – E2E Coverage Map</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f1117;
+        color: #e2e8f0;
+        padding: 2rem;
+        line-height: 1.5;
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+      }
+      .subtitle {
+        color: #94a3b8;
+        font-size: 0.875rem;
+        margin-bottom: 2rem;
+      }
+      .legend {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 2rem;
+        padding: 0.75rem 1rem;
+        background: #1e2330;
+        border-radius: 8px;
+        font-size: 0.8rem;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .dot-green {
+        background: #22c55e;
+      }
+      .dot-yellow {
+        background: #eab308;
+      }
+      .dot-red {
+        background: #ef4444;
+      }
+      .dot-grey {
+        background: #475569;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1rem;
+      }
+      .card {
+        background: #1e2330;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #2d3348;
+      }
+      .card.new {
+        border-color: #22c55e44;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #2d3348;
+      }
+      .card.new .card-header {
+        border-bottom-color: #22c55e22;
+      }
+      .card-header h2 {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .card-header .spec-badge {
+        font-size: 0.7rem;
+        background: #2d3348;
+        border-radius: 4px;
+        padding: 0.15rem 0.45rem;
+        color: #94a3b8;
+        font-family: monospace;
+        white-space: nowrap;
+      }
+      .card-header .spec-badge.none {
+        color: #ef4444;
+        background: #3b1a1a;
+      }
+      .card-header .new-badge {
+        font-size: 0.65rem;
+        background: #14532d;
+        border-radius: 4px;
+        padding: 0.15rem 0.45rem;
+        color: #4ade80;
+        font-weight: 600;
+        margin-left: 0.4rem;
+        flex-shrink: 0;
+      }
+      .card-body {
+        padding: 0.75rem 1rem;
+      }
+      .test-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .test-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        font-size: 0.78rem;
+        color: #cbd5e1;
+      }
+      .test-list .dot {
+        margin-top: 4px;
+        flex-shrink: 0;
+      }
+      .gap-label {
+        background: #3b1a1a;
+        border-left: 3px solid #ef4444;
+        border-radius: 0 4px 4px 0;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.78rem;
+        color: #fca5a5;
+        margin-top: 0.5rem;
+      }
+      .gap-label strong {
+        color: #f87171;
+      }
+      .info-label {
+        background: #0f2617;
+        border-left: 3px solid #22c55e;
+        border-radius: 0 4px 4px 0;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.78rem;
+        color: #86efac;
+        margin-top: 0.5rem;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+      }
+      .stat-card {
+        background: #1e2330;
+        border-radius: 8px;
+        padding: 0.9rem 1rem;
+        text-align: center;
+      }
+      .stat-card .num {
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+      .stat-card .lbl {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        margin-top: 0.2rem;
+      }
+      .stat-card .delta {
+        font-size: 0.7rem;
+        color: #4ade80;
+        margin-top: 0.15rem;
+      }
+      .green {
+        color: #22c55e;
+      }
+      .yellow {
+        color: #eab308;
+      }
+      .red {
+        color: #ef4444;
+      }
+      .grey {
+        color: #64748b;
+      }
+
+      .section-title {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        margin-bottom: 0.75rem;
+        margin-top: 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Terminus — E2E Coverage Map</h1>
+    <p class="subtitle">162 tests across 18 spec files · Updated 2026-03-15</p>
+
+    <div class="summary">
+      <div class="stat-card">
+        <div class="num green">18</div>
+        <div class="lbl">spec files</div>
+        <div class="delta">+1 new</div>
+      </div>
+      <div class="stat-card">
+        <div class="num green">162</div>
+        <div class="lbl">total tests</div>
+        <div class="delta">+10 new</div>
+      </div>
+      <div class="stat-card">
+        <div class="num yellow">2</div>
+        <div class="lbl">partial areas</div>
+      </div>
+      <div class="stat-card">
+        <div class="num red">2</div>
+        <div class="lbl">uncovered areas</div>
+        <div class="delta">was 3</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="dot dot-green"></div>
+        Well covered
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-yellow"></div>
+        Partially covered
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-red"></div>
+        Not covered
+      </div>
+      <div class="legend-item">
+        <div class="dot dot-grey"></div>
+        N/A (3D / Canvas internals)
+      </div>
+    </div>
+
+    <!-- ───────────────────── WELL COVERED ───────────────────── -->
+    <div class="section-title">Well covered</div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-header">
+          <h2>Wizard / Onboarding</h2>
+          <span class="spec-badge">wizard.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Initial load shows wizard
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Both role buttons visible
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Runner role → hides wizard, shows app
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Follower role → advances to step 2
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Code input + Follow button validation
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              6-char enable, auto-uppercase, Enter submit
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Back button returns to step 1
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No JS errors on load
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>App Loading (smoke)</h2>
+          <span class="spec-badge">app-loads.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Canvas visible after runner role selected
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No JS errors on init
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              UI panels (nav + trail data) present
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>ETA &amp; Trail Stats</h2>
+          <span class="spec-badge"
+            >eta-remaining-time.spec.js · eta-with-location.spec.js</span
+          >
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              ETA, remaining time, km-left panels present
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Default values before GPS fix
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              HH:MM format validation
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No undefined / null / NaN in stat values
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Build number displayed
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Stats persist across app lifecycle
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              HTML structure &amp; dividers
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Animation support on stat values
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Location Sharing (happy path)</h2>
+          <span class="spec-badge">location-sharing.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Runner shares room code via clipboard
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Follower enters code → connects
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Follower receives real-time GPS updates
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              km-left on follower converges to runner value
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card new">
+        <div class="card-header">
+          <h2>Location Sharing — disconnect &amp; multi-follower</h2>
+          <span class="spec-badge">location-sharing-disconnect.spec.js</span>
+          <span class="new-badge">NEW</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Runner leaves → follower canvas stays intact
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No JS errors after runner disconnects
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Follower can leave and rejoin same room
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Two followers in same room both see canvas
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Two followers produce no JS errors
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Theme Toggle</h2>
+          <span class="spec-badge">theme-toggle.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Button label tracks current theme
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              CSS custom properties switch on toggle
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Double-toggle restores original theme
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No JS errors during switch
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Helicopter position preserved (regression 025c183)
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Both dark→light and light→dark paths covered
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Trail View Modes</h2>
+          <span class="spec-badge">trail-view-modes.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Slope colors toggle aria-pressed flips
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              2D/3D profile toggle aria-pressed flips
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Canvas survives both toggles
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Combined enable + disable both modes
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Theme + view mode combined no errors
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Commands Panel / FAB</h2>
+          <span class="spec-badge">commands-fab.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Mobile runner: 5 inline buttons visible
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No Leave Session on mobile runner
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Share room code writes URL to clipboard
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Slope &amp; profile toggles independent
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Follower mobile: no GPS / share buttons
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No JS errors during all commands
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Session Lifecycle</h2>
+          <span class="spec-badge">session-lifecycle.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Leave → wizard reappears
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Canvas torn down on leave
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              New runner session starts cleanly after leave
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              km-left valid after leave + rejoin
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No JS errors in leave → rejoin flow
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Follower FAB Leave Session returns to wizard
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>GPS Visualization</h2>
+          <span class="spec-badge">gps-visualization.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              km-left non-zero after location fix
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Second fix updates value
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Rapid GPS updates no JS errors
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Off-trail position no crash
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Panels remain visible after projection
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No undefined/null/NaN after fix
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Navigation Panel</h2>
+          <span class="spec-badge">navigation-panel.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Region visible after load
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              At least one section rendered
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Current section: distance, unit, waypoint name
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Elevation gain + loss elements present
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No undefined/null/NaN in panel text
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Distance valid + panel visible after GPS fix
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Error States &amp; Edge Cases</h2>
+          <span class="spec-badge">error-states.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              races.json 404/500/abort → wizard still renders
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Retry after restoring races.json
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Geolocation permission denied → no crash
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              "Find location" graceful when denied
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Room code boundary validation (5/6 chars)
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Non-existent room code no crash
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              GPX 404 no crash
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Responsive Layout &amp; Help Page</h2>
+          <span class="spec-badge">responsive.spec.js</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Mobile (390px): panels + commands visible
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Mobile: no horizontal overflow
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Desktop (1280px) follower: FAB or dock present
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              FAB aria-expanded toggles false↔true
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Resize mobile→desktop no crash
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Resize desktop→mobile no crash
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              /help renders, back button, section links
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              /help no JS errors
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card new">
+        <div class="card-header">
+          <h2>Trail Overview — room id display</h2>
+          <span class="spec-badge">trail-overview.spec.js</span>
+          <span class="new-badge">NEW</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Room tile absent before share (no liveSessionId)
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Tile appears after share, shows 6-char code
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Code in tile matches code in shared URL
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Tile survives slope colors toggle
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Follower tile shows the entered room code
+            </li>
+          </ul>
+          <div class="info-label">
+            Regression guard for commit <strong>ddddc53</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="card new">
+        <div class="card-header">
+          <h2>Deep-link / URL routing</h2>
+          <span class="spec-badge">routing.spec.js</span>
+          <span class="new-badge">NEW</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Direct <code>/run/:raceId</code> → runner view, no wizard
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Direct <code>/follow/:raceId/:roomId</code> → follower view
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Both deep-links produce no JS errors
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Unknown URL → catch-all → wizard
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Page reload on <code>/run/</code> → useRouteSync restores
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Clear localStorage + goto "/" → wizard shown
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card new">
+        <div class="card-header">
+          <h2>Accessibility</h2>
+          <span class="spec-badge">accessibility.spec.js</span>
+          <span class="new-badge">NEW</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Tab reaches "I'm running" and "I'm following"
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Enter on "I'm running" advances to race picker
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Code input receives autoFocus on follower step 2
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Follow button reachable via Tab; Enter submits
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Back button leaves code-input step
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              aria-pressed on slope + profile toggles
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              aria-expanded on FAB toggled via keyboard
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              All runner buttons keyboard-focusable (tabIndex ≥ 0)
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Space activates toggle (aria-pressed flips)
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No focus trap — Tab cycles ≥3 distinct elements
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card new">
+        <div class="card-header">
+          <h2>Performance budget</h2>
+          <span class="spec-badge">performance-budget.spec.js</span>
+          <span class="new-badge">NEW</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Wizard buttons visible &lt; 3 s (wall-clock)
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              FCP on wizard route &lt; 4 s (Paint API)
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Runner canvas visible &lt; 12 s on direct URL
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              FCP on runner route &lt; 6 s
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Runner panels visible &lt; 15 s
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              CLS &lt; 0.25 on wizard route (PerformanceObserver)
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              CLS &lt; 0.25 on runner route
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              JS heap &lt; 150 MB after runner load (page.metrics)
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              Heap growth &lt; 50 MB over 3 nav cycles
+            </li>
+            <li>
+              <div class="dot dot-green"></div>
+              No JS errors during runner load + worker timing report
+            </li>
+          </ul>
+          <div class="info-label">
+            + Build-time gates: <strong>Rollup plugin</strong> enforces
+            per-chunk KB budgets during <code>npm run build</code> ·
+            <strong>Worker</strong> <code>performance.mark/measure</code> around
+            all WASM calls · <strong>Lighthouse CI</strong> (.lighthouserc.json)
+            — FCP &lt; 8 s, CLS &lt; 0.25
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────── PARTIAL ───────────────────── -->
+    <div class="section-title">Partially covered — remaining gaps</div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-header">
+          <h2>Live Tracking indicator</h2>
+          <span class="spec-badge">— no dedicated spec —</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              Implicitly visible in location-sharing test
+            </li>
+            <li>
+              <div class="dot dot-red"></div>
+              Indicator appears only after GPS projected (not at full-trail
+              start)
+            </li>
+            <li>
+              <div class="dot dot-red"></div>
+              Animated spring values (speed, heading) update correctly
+            </li>
+            <li>
+              <div class="dot dot-red"></div>
+              Indicator hides when GPS cleared / not available
+            </li>
+          </ul>
+          <div class="gap-label">
+            <strong>Gap:</strong> <code>LiveTracking</code> component has no
+            dedicated assertions; animated spring counters untested.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Commands FAB — individual actions as follower</h2>
+          <span class="spec-badge"
+            >responsive.spec.js · commands-fab.spec.js</span
+          >
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-green"></div>
+              FAB aria-expanded false→true→false (mouse + keyboard)
+            </li>
+            <li>
+              <div class="dot dot-yellow"></div>
+              Secondary buttons visible after FAB open (React Spring animation)
+            </li>
+            <li>
+              <div class="dot dot-red"></div>
+              Each FAB action (slopes, profile, theme, leave, help) exercised
+              while open
+            </li>
+            <li>
+              <div class="dot dot-red"></div>
+              FAB closes after an action is triggered
+            </li>
+          </ul>
+          <div class="gap-label">
+            <strong>Gap:</strong> Individual FAB menu items are not exercised as
+            a desktop follower.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────── NOT COVERED ───────────────────── -->
+    <div class="section-title">Not covered</div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-header">
+          <h2>Peaks labels (3D scene)</h2>
+          <span class="spec-badge none">no spec</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-red"></div>
+              Peak name labels fade in/out near camera
+            </li>
+            <li>
+              <div class="dot dot-red"></div>
+              No overlapping text (FadingText shader)
+            </li>
+            <li>
+              <div class="dot dot-grey"></div>
+              Canvas pixel content (not DOM — hard to assert)
+            </li>
+          </ul>
+          <div class="gap-label">
+            <strong>Note:</strong> Shader-driven fading is canvas-only; consider
+            a DOM fallback assertion or a visual regression snapshot.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>PWA / offline behaviour</h2>
+          <span class="spec-badge none">no spec</span>
+        </div>
+        <div class="card-body">
+          <ul class="test-list">
+            <li>
+              <div class="dot dot-red"></div>
+              Service-worker registration
+            </li>
+            <li>
+              <div class="dot dot-red"></div>
+              App shell loads while offline
+            </li>
+            <li>
+              <div class="dot dot-red"></div>
+              Cached GPX available offline
+            </li>
+            <li>
+              <div class="dot dot-red"></div>
+              Install prompt / manifest
+            </li>
+          </ul>
+          <div class="gap-label">
+            <strong>Gap:</strong> No offline / PWA coverage. Can use
+            <code>page.context().setOffline(true)</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      style="
+        margin-top: 3rem;
+        color: #475569;
+        font-size: 0.75rem;
+        border-top: 1px solid #2d3348;
+        padding-top: 1rem;
+      "
+    >
+      Generated from 18 spec files · 162 Playwright tests · Terminus repo (main
+      @ aa25172)
+    </div>
+  </body>
+</html>
