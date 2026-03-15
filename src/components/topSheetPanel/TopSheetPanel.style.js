@@ -1,15 +1,15 @@
-import { lighten, rgba } from "polished";
+import { rgba } from "polished";
 import styled from "styled-components";
+import { glassMorphism } from "../../theme/mixins";
 
 const style = (Component) => styled(Component)`
-  opacity: 0.8;
-  background: ${({ theme }) =>
-    lighten(0.1, theme.colors[theme.currentVariant]["--color-background"])};
+  opacity: 0.9;
   overflow: hidden;
   border-radius: ${({ theme }) => theme.borderRadius["--border-radius-lg"]};
+  ${glassMorphism}
   border: 1px solid
     ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.12)};
+    rgba(theme.colors[theme.currentVariant]["--color-text"], 0.12)};
   cursor: ${({ locked }) => (locked ? "default" : "ns-resize")};
   user-select: none;
   touch-action: none;
@@ -24,9 +24,6 @@ const style = (Component) => styled(Component)`
   max-width: 600px;
   transform: translateX(-50%);
   margin-left: calc(env(safe-area-inset-left) - env(safe-area-inset-right));
-  box-shadow: 0 4px 8px
-    ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-background"], 0.1)};
   z-index: ${({ theme }) => theme.zIndex["--z-index-modal"]};
   container-type: size;
 
