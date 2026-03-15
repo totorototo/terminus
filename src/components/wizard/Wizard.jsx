@@ -16,6 +16,7 @@ function Wizard({ className }) {
   const [code, setCode] = useState("");
   const [races, setRaces] = useState([]);
   const [racesError, setRacesError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [followerRaceId, setFollowerRaceId] = useState(null);
   const [, navigate] = useLocation();
 
@@ -24,14 +25,28 @@ function Wizard({ className }) {
       .then((r) => r.json())
       .then(setRaces)
       .catch(() => setRacesError(true));
-  }, []);
+  }, [retryCount]);
+
+  const retryIfNeeded = () => {
+    if (racesError) {
+      setRacesError(false);
+      setRaces([]);
+      setRetryCount((c) => c + 1);
+    }
+  };
 
   // Runner flow
-  const handleRunnerNext = () => setStep(2);
+  const handleRunnerNext = () => {
+    retryIfNeeded();
+    setStep(2);
+  };
   const handleRunnerRacePick = (raceId) => navigate(`/run/${raceId}`);
 
   // Follower flow
-  const handleFollowerNext = () => setStep(3);
+  const handleFollowerNext = () => {
+    retryIfNeeded();
+    setStep(3);
+  };
   const handleFollowerRacePick = (raceId) => {
     setFollowerRaceId(raceId);
     setStep(4);
