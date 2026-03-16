@@ -1,0 +1,9 @@
+[build]
+  # Build is handled by GitHub Actions (requires Zig). Netlify auto-builds are skipped.
+  ignore = "exit 0"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
