@@ -21,9 +21,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Run Zig tests
@@ -62,12 +69,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: cache-playwright
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps
 
       - name: Download build artifact
@@ -99,9 +121,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Download all blob reports
@@ -138,9 +167,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Deploy to PartyKit
