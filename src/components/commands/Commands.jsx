@@ -27,8 +27,15 @@ import useStore from "../../store/store";
 
 import style from "./Commands.style";
 
-const RADIUS = 145; // px from FAB center to button center
+// Minimum arc spacing between button centres (~56 px keeps 48 px buttons clear).
+const MIN_ARC_SPACING = 56; // px
 const toRad = (deg) => (deg * Math.PI) / 180;
+// Quarter-circle arc: spacing = RADIUS * (π/2) / (n-1) ≥ MIN_ARC_SPACING
+// → RADIUS ≥ MIN_ARC_SPACING * (n-1) / (π/2)
+function getRadius(n) {
+  if (n <= 1) return 145;
+  return Math.max(145, Math.ceil((MIN_ARC_SPACING * (n - 1)) / (Math.PI / 2)));
+}
 
 // Perfect quarter-circle from 90° (straight down) to 180° (straight left).
 // Symmetric: equal angle from right edge to first button and top edge to last button.
@@ -42,6 +49,9 @@ function getDockButtons({
   profileMode,
   navigate,
   close,
+  follower,
+  spotMe,
+  shareLocation,
 }) {
   return [
     {
@@ -51,6 +61,30 @@ function getDockButtons({
       label: "Leave session",
       icon: <LogOut size={22} />,
     },
+    ...(!follower
+      ? [
+          {
+            key: "spot",
+            className: "off",
+            onClick: () => {
+              spotMe();
+              close();
+            },
+            label: "Find my current location",
+            icon: <MapPin size={22} />,
+          },
+          {
+            key: "share",
+            className: "off",
+            onClick: () => {
+              shareLocation();
+              close();
+            },
+            label: "Share my room code",
+            icon: <Share2 size={22} />,
+          },
+        ]
+      : []),
     {
       key: "help",
       className: "off",
@@ -136,6 +170,9 @@ function Commands({ className, follower }) {
         profileMode,
         navigate,
         close,
+        follower,
+        spotMe,
+        shareLocation,
       }),
     [
       toggleSlopesMode,
@@ -146,6 +183,9 @@ function Commands({ className, follower }) {
       profileMode,
       navigate,
       close,
+      follower,
+      spotMe,
+      shareLocation,
     ],
   );
   const buttonIndex = useMemo(
@@ -154,8 +194,7 @@ function Commands({ className, follower }) {
   );
 
   // Hooks below are always called (React rules) but only used in the
-  // desktop-follower FAB branch (follower && isDesktop). They are inert
-  // when that branch is not rendered.
+  // desktop FAB branch. They are inert when that branch is not rendered.
   const springRef = useSpringRef();
   const fabSpring = useSpring({
     ref: springRef,
@@ -167,6 +206,7 @@ function Commands({ className, follower }) {
   const transRef = useSpringRef();
   const startRad = toRad(90);
   const endRad = toRad(180);
+  const radius = getRadius(buttons.length);
   const step =
     buttons.length > 1 ? (endRad - startRad) / (buttons.length - 1) : 0;
 
@@ -177,8 +217,8 @@ function Commands({ className, follower }) {
     enter: (b) => {
       const angle = startRad + step * buttonIndex[b.key];
       return {
-        x: Math.cos(angle) * RADIUS,
-        y: Math.sin(angle) * RADIUS,
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
         opacity: 1,
         scale: 1,
       };
@@ -192,7 +232,7 @@ function Commands({ className, follower }) {
   // close: buttons collapse first (t=0), then FAB rotates back (t=0.1).
   useChain(open ? [springRef, transRef] : [transRef, springRef], [0, 0.1]);
 
-  if (follower && isDesktop) {
+  if (isDesktop) {
     return (
       <div className={`${className} desktop-dock`} ref={dockRef}>
         {transitions((spring, btn) => (
