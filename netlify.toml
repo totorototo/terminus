@@ -1,6 +1,6 @@
 [build]
-  # Build is handled by GitHub Actions (requires Zig). Netlify auto-builds are skipped.
-  ignore = "exit 0"
+  # Build is handled by GitHub Actions (requires Zig). Netlify must not build.
+  command = ""
   publish = "dist"
 
 [[redirects]]
