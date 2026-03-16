@@ -51,3 +51,4 @@ stats.html
 # Claude analysis and reports
 .claude/
 [A-Z]*.md
+e2e/coverage-map.html
