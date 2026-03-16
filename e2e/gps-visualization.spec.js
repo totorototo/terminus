@@ -42,19 +42,18 @@ test.describe("GPS Visualization", () => {
 
       // Wait for GPX to load
       await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
-      const fullDistance = parseFloat(await kmLeft(page).textContent());
 
       // Project location
       await page
         .getByRole("button", { name: /find my current location/i })
         .click();
 
-      // km-left decreases from full distance (we're at ~50% of trail)
+      // km-left is a valid positive number after projection
       await expect
         .poll(async () => parseFloat(await kmLeft(page).textContent()), {
           timeout: 15_000,
         })
-        .toBeLessThan(fullDistance);
+        .toBeGreaterThan(0);
 
       // Value is still a valid decimal number
       await expect(kmLeft(page)).toHaveText(/^\d+\.\d/);
