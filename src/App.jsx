@@ -1,9 +1,9 @@
 import { Route, Switch } from "wouter";
 
-import Follower from "./components/follower/Follower.jsx";
+import FollowerScreen from "./components/followerScreen/FollowerScreen.jsx";
 import Help from "./components/help/Help.jsx";
 import LandscapeOverlay from "./components/landscapeOverlay/LandscapeOverlay.jsx";
-import Trailer from "./components/trailer/Trailer.jsx";
+import TrailerScreen from "./components/trailerScreen/TrailerScreen.jsx";
 import Wizard from "./components/wizard/Wizard.jsx";
 
 import { useRouteSync } from "./hooks/useRouteSync.js";
@@ -17,10 +17,10 @@ function App({ className }) {
       <LandscapeOverlay />
       <Switch>
         <Route path="/follow/:raceId/:roomId">
-          <Follower />
+          <FollowerScreen />
         </Route>
         <Route path="/run/:raceId">
-          <Trailer />
+          <TrailerScreen />
         </Route>
         <Route path="/help">
           <Help />

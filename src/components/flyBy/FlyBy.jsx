@@ -7,7 +7,7 @@ import { Vector3 } from "three";
 import useStore from "../../store/store";
 import { transformCoordinates } from "../../utils/coordinateTransforms";
 
-export default function TrailFollower({
+export default function FlyBy({
   speed = 0.02,
   height = 0.01,
   scale = 0.01,
