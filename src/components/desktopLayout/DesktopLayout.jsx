@@ -1,5 +1,6 @@
 import { memo } from "react";
 
+import PeakSummary from "../trailData/PeakSummary/PeakSummary.jsx";
 import SectionAnalytics from "../trailData/SectionAnalytics/SectionAnalytics.jsx";
 import StageAnalytics from "../trailData/StageAnalytics/StageAnalytics.jsx";
 import StageETA from "../trailData/StageETA/StageETA.jsx";
@@ -26,7 +27,11 @@ const DesktopLayout = memo(function DesktopLayout({ className }) {
           <SectionAnalytics />
         </div>
       </div>
-      <div className="panel panel-bottom">
+
+      <div className="panel panel-right">
+        <div className="tile tile-scrollable">
+          <PeakSummary />
+        </div>
         <div className="tile tile-scrollable">
           <StageETA />
         </div>

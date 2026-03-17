@@ -37,8 +37,8 @@ function getRadius(n) {
   return Math.max(145, Math.ceil((MIN_ARC_SPACING * (n - 1)) / (Math.PI / 2)));
 }
 
-// Perfect quarter-circle from 90° (straight down) to 180° (straight left).
-// Symmetric: equal angle from right edge to first button and top edge to last button.
+// Perfect quarter-circle from 180° (straight left) to 270° (straight up).
+// Symmetric: equal angle from left edge to first button and top edge to last button.
 // Not a hook (no hooks inside) — named getDockButtons to avoid the use* lint rule.
 function getDockButtons({
   toggleSlopesMode,
@@ -202,10 +202,10 @@ function Commands({ className, follower }) {
     config: { tension: 280, friction: 18 },
   });
 
-  // Radial fan: quarter-circle from 90° (straight down) to 180° (straight left).
+  // Radial fan: quarter-circle from 180° (straight left) to 270° (straight up).
   const transRef = useSpringRef();
-  const startRad = toRad(90);
-  const endRad = toRad(180);
+  const startRad = toRad(180);
+  const endRad = toRad(270);
   const radius = getRadius(buttons.length);
   const step =
     buttons.length > 1 ? (endRad - startRad) / (buttons.length - 1) : 0;

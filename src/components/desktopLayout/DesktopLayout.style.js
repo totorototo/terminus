@@ -5,6 +5,7 @@ import { glassMorphism } from "../../theme/mixins.js";
 
 const PANEL_WIDTH = "300px";
 const SCROLLABLE_TILE_HEIGHT = "260px";
+const CLIMBS_TILE_HEIGHT = "400px";
 const GAP = "0.5rem";
 const EDGE = "0.75rem";
 
@@ -25,22 +26,35 @@ const style = (Component) => styled(Component)`
 
   .panel-left {
     flex-direction: column;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    justify-content: space-between;
     top: calc(env(safe-area-inset-top) + ${EDGE});
     left: calc(env(safe-area-inset-left) + ${EDGE});
     bottom: calc(env(safe-area-inset-bottom) + ${EDGE});
-    width: ${PANEL_WIDTH};
-    justify-content: space-between;
+
+    > .tile {
+      width: ${PANEL_WIDTH};
+    }
   }
 
-  /* Bottom-left row: each tile keeps its own full width */
-  .panel-bottom {
+  /* Right panel: PeakSummary (top) + StageETA (below), anchored top-right */
+  .panel-right {
     flex-direction: column;
-    align-items: flex-end;
-    bottom: calc(env(safe-area-inset-bottom) + ${EDGE});
-    right: calc(env(safe-area-inset-left) + ${EDGE});
+    gap: 1rem;
+    top: calc(env(safe-area-inset-top) + ${EDGE});
+    right: calc(env(safe-area-inset-right) + ${EDGE});
 
-    .tile {
+    > .tile {
       width: ${PANEL_WIDTH};
+    }
+
+    /* First tile (PeakSummary) gets the tall fixed height */
+    > .tile:first-child > * {
+      height: ${CLIMBS_TILE_HEIGHT};
+      overflow: hidden;
+      padding-top: 0;
+      padding-bottom: 0;
     }
   }
 
