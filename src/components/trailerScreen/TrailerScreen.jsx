@@ -53,7 +53,7 @@ function TrailerScreen({ className }) {
   const bottomPanelRef = useRef();
   const bottomIsOpen = useRef(false);
 
-  const PUSH_THRESHOLD_GAP = 40; // px of breathing room between the two panels
+  const PUSH_THRESHOLD_GAP = 50; // px of breathing room between the two panels
   const handleTopHeightChange = useCallback((topH) => {
     const bottomVisibleTop =
       containerHeight.current -
