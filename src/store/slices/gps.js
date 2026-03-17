@@ -85,6 +85,7 @@ export const createGPSSlice = (set, get) => {
             ? null
             : Notification.permission
           : null,
+      followerConnectionStatus: "idle", // "idle" | "connecting" | "connected" | "disconnected"
     },
 
     // Initialize/sync buffer from persisted state (called after rehydration)
@@ -276,12 +277,27 @@ export const createGPSSlice = (set, get) => {
         followerSocket.close();
       }
 
+      set(
+        (state) => ({
+          gps: { ...state.gps, followerConnectionStatus: "connecting" },
+        }),
+        undefined,
+        "gps/followerConnectionStatus",
+      );
+
       followerSocket = new PartySocket({
         host: PARTYKIT_HOST,
         room: roomId,
       });
 
       followerSocket.addEventListener("open", async () => {
+        set(
+          (state) => ({
+            gps: { ...state.gps, followerConnectionStatus: "connected" },
+          }),
+          undefined,
+          "gps/followerConnectionStatus",
+        );
         if (Notification.permission === "granted") {
           const subscription = await subscribeToPush();
           if (subscription && followerSocket?.readyState === WebSocket.OPEN) {
@@ -293,6 +309,26 @@ export const createGPSSlice = (set, get) => {
             );
           }
         }
+      });
+
+      followerSocket.addEventListener("close", () => {
+        set(
+          (state) => ({
+            gps: { ...state.gps, followerConnectionStatus: "disconnected" },
+          }),
+          undefined,
+          "gps/followerConnectionStatus",
+        );
+      });
+
+      followerSocket.addEventListener("error", () => {
+        set(
+          (state) => ({
+            gps: { ...state.gps, followerConnectionStatus: "disconnected" },
+          }),
+          undefined,
+          "gps/followerConnectionStatus",
+        );
       });
 
       followerSocket.addEventListener("message", (event) => {
@@ -344,6 +380,13 @@ export const createGPSSlice = (set, get) => {
         followerSocket.close();
         followerSocket = null;
       }
+      set(
+        (state) => ({
+          gps: { ...state.gps, followerConnectionStatus: "idle" },
+        }),
+        undefined,
+        "gps/followerConnectionStatus",
+      );
     },
 
     disconnectTrailerSession: () => {
