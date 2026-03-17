@@ -152,11 +152,6 @@ const TrailData = memo(function TrailData({ className, showElevationProfile }) {
         <div className="component-children">
           <TrailOverview />
         </div>
-        {showElevationProfile && (
-          <div className="component-children">
-            <ElevationProfile />
-          </div>
-        )}
         <div className="component-children">
           <TrailProgression />
         </div>

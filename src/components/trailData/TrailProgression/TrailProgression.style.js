@@ -7,7 +7,7 @@ const style = (Component) => styled(Component)`
   gap: 1.25rem;
   width: 100%;
   height: 100%;
-  padding: 0 1rem;
+  padding: 1rem;
 
   .progression-header {
     display: flex;
@@ -118,6 +118,10 @@ const style = (Component) => styled(Component)`
         props.theme.colors[props.theme.currentVariant]["--color-text"],
         0.07,
       )};
+  }
+
+  .elevation-profile-container {
+    padding-top: 2rem;
   }
 `;
 

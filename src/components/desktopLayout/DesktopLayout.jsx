@@ -17,18 +17,16 @@ const DesktopLayout = memo(function DesktopLayout({ className }) {
           <TrailOverview />
         </div>
         <div className="tile">
-          <TrailProgression />
-        </div>
-
-        <div className="tile">
           <StageAnalytics />
         </div>
         <div className="tile">
           <SectionAnalytics />
         </div>
       </div>
-
       <div className="panel panel-right">
+        <div className="tile">
+          <TrailProgression />
+        </div>
         <div className="tile tile-scrollable">
           <PeakSummary />
         </div>
