@@ -6,7 +6,7 @@ import { useDrag } from "@use-gesture/react";
 import style from "./TopSheetPanel.style.js";
 
 export const COLLAPSED_HEIGHT = 140;
-const BOTTOM_MARGIN = 0;
+const BOTTOM_MARGIN = 12;
 
 function ExpandablePanel({
   children,
