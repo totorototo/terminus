@@ -88,6 +88,8 @@ const style = (Component) => styled(Component)`
     align-items: flex-start;
     justify-content: center;
     gap: 0.325rem;
+    flex: 1;
+    min-width: 0;
   }
 
   .distance-value {
@@ -120,7 +122,7 @@ const style = (Component) => styled(Component)`
     flex-direction: column;
     justify-content: flex-start;
     padding: 0 1rem;
-    min-width: 0;
+    flex-shrink: 0;
     gap: 0.1rem;
   }
 
@@ -135,7 +137,7 @@ const style = (Component) => styled(Component)`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    // line-height: 0.8;
+    width: 100%;
   }
 
   /* Elevation indicators */
