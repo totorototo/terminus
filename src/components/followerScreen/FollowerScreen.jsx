@@ -19,13 +19,13 @@ import TopSheetPanel, {
 import TrailData from "../trailData/TrailData.jsx";
 import LocationFreshness from "./LocationFreshness/LocationFreshness.jsx";
 
-import style from "./Follower.style";
+import style from "./FollowerScreen.style";
 
 const Scene = lazy(() => import("../scene/Scene.jsx"));
 
 const PUSH_NOTIFICATIONS_ENABLED = false;
 
-function Follower({ className }) {
+function FollowerScreen({ className }) {
   const { roomId, raceId } = useParams();
   useGPXWorker(raceId);
   const isDesktop = useIsDesktop();
@@ -130,4 +130,4 @@ function Follower({ className }) {
   );
 }
 
-export default style(Follower);
+export default style(FollowerScreen);

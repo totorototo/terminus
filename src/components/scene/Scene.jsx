@@ -8,11 +8,11 @@ import useStore from "../../store/store.js";
 import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 import CameraController from "../cameraController/CameraController.jsx";
 import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
-import { Helicopter } from "../helicopter/Helicopter.jsx";
+import { Trailer } from "../trailer/Trailer.jsx";
 import Marker from "../marker/Marker.jsx";
 import OffCourseEffect from "../offCourseEffect/OffCourseEffect.jsx";
 import Peaks from "../peaks/Peaks.jsx";
-import TrailFollower from "../trailFollower/TrailFollower";
+import FlyBy from "../flyBy/FlyBy";
 
 import style from "./Scene.style";
 
@@ -107,7 +107,7 @@ function Scene({ width, height, className }) {
         />
 
         {trackingMode && (
-          <TrailFollower
+          <FlyBy
             speed={0.002}
             height={0.08}
             scale={0.05}
@@ -119,7 +119,7 @@ function Scene({ width, height, className }) {
 
         {projectedLocation && projectedLocation.timestamp !== 0 && (
           <Suspense fallback={null}>
-            <Helicopter scale={0.01} coordinateScales={coordinateScales} />
+            <Trailer scale={0.01} coordinateScales={coordinateScales} />
           </Suspense>
         )}
 
