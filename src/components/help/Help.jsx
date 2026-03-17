@@ -215,9 +215,30 @@ function Help({ className }) {
           <p className="sec-label">04 — Top Panel</p>
           <h2 className="sec-title">Race header</h2>
           <p className="sec-body">
-            The top panel displays the current section at a glance — how far you
-            have left to run and how much elevation remains in the section.
+            The race header shows the current section at a glance — how far you
+            have left to run, how much elevation remains, and the direction to
+            the next waypoint. Its layout and container differ between mobile
+            and desktop.
           </p>
+          <div className="role-grid">
+            <div className="role-card rn">
+              <h3>Mobile</h3>
+              <p>
+                A spring-animated sheet anchored to the top of the screen. Drag
+                it down to expand and reveal all remaining sections in sequence.
+                When collapsed it shows only the current section. Expansion is
+                blocked while the bottom stats panel is open.
+              </p>
+            </div>
+            <div className="role-card fo">
+              <h3>Desktop</h3>
+              <p>
+                There is no separate race-header sheet. Section information is
+                embedded directly in the sidebar alongside the other stat tiles
+                — always visible, no dragging needed.
+              </p>
+            </div>
+          </div>
           <div className="panel-list">
             <div className="pi">
               <div className="pi-icon primary">
@@ -239,8 +260,32 @@ function Help({ className }) {
                   Current section — km &amp; elevation left
                 </p>
                 <p className="pi-desc">
-                  Distance remaining and elevation gain left in the current
-                  section of the course.
+                  Distance remaining and elevation gain (D+) and loss (D−) left
+                  in the current section of the course.
+                </p>
+              </div>
+            </div>
+            <div className="pi">
+              <div className="pi-icon primary">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+              <div>
+                <p className="pi-name">Direction arrow &amp; next waypoint</p>
+                <p className="pi-desc">
+                  A bearing arrow points toward the end of the current section.
+                  The destination waypoint name is shown alongside the distance
+                  and elevation figures.
                 </p>
               </div>
             </div>
@@ -254,9 +299,29 @@ function Help({ className }) {
           <p className="sec-label">05 — Bottom Panel</p>
           <h2 className="sec-title">Stats carousel</h2>
           <p className="sec-body">
-            The bottom panel is a swipeable carousel. Each card gives you a
-            different lens on your race — swipe left or right to browse.
+            The stats panel gives you multiple lenses on your race. How it is
+            presented depends on the device.
           </p>
+          <div className="role-grid">
+            <div className="role-card rn">
+              <h3>Mobile</h3>
+              <p>
+                A swipeable bottom sheet. Drag it up to open, down to minimise
+                to a peek strip. Scroll vertically inside to browse all stat
+                cards one by one. An ETA summary (km left, ETA, time remaining)
+                is pinned at the top of the sheet.
+              </p>
+            </div>
+            <div className="role-card fo">
+              <h3>Desktop</h3>
+              <p>
+                All stat tiles are displayed simultaneously in a fixed sidebar —
+                no swiping or dragging. The left column shows overview,
+                progression, stage and section analytics; a bottom strip shows
+                checkpoint ETAs.
+              </p>
+            </div>
+          </div>
           <div className="panel-list">
             <div className="pi">
               <div className="pi-icon primary">
@@ -459,9 +524,28 @@ function Help({ className }) {
           <p className="sec-label">06 — Controls</p>
           <h2 className="sec-title">Commands</h2>
           <p className="sec-body">
-            The command panel sits at the bottom of the screen. Tap any button
-            to trigger the action.
+            All commands are the same regardless of device — only the
+            interaction differs.
           </p>
+          <div className="role-grid">
+            <div className="role-card rn">
+              <h3>Mobile</h3>
+              <p>
+                A horizontal row of icon buttons fixed at the bottom of the
+                screen. Each button triggers its action directly with a single
+                tap.
+              </p>
+            </div>
+            <div className="role-card fo">
+              <h3>Desktop</h3>
+              <p>
+                A Floating Action Button (FAB) sits in the bottom-right corner.
+                Click it to open a radial fan of command buttons on a
+                quarter-circle arc. Click a command or click outside the fan to
+                close it.
+              </p>
+            </div>
+          </div>
           <table className="gtable">
             <thead>
               <tr>
