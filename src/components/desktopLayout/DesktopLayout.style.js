@@ -28,10 +28,11 @@ const style = (Component) => styled(Component)`
     flex-direction: column;
     flex-wrap: wrap;
     align-content: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start;
     top: calc(env(safe-area-inset-top) + ${EDGE});
     left: calc(env(safe-area-inset-left) + ${EDGE});
     bottom: calc(env(safe-area-inset-bottom) + ${EDGE});
+    gap: 1rem;
 
     > .tile {
       width: ${PANEL_WIDTH};
@@ -51,10 +52,9 @@ const style = (Component) => styled(Component)`
 
     /* First tile (PeakSummary) gets the tall fixed height */
     > .tile:first-child > * {
-      height: ${CLIMBS_TILE_HEIGHT};
       overflow: hidden;
-      padding-top: 0;
-      padding-bottom: 0;
+      padding-top: 1;
+      padding-bottom: 1rem;
     }
   }
 

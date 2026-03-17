@@ -2,6 +2,7 @@ import { memo, useMemo } from "react";
 
 import { useProjectedLocation } from "../../../store/store.js";
 import useStore from "../../../store/store.js";
+import ElevationProfile from "../ElevationProfile/ElevationProfile.jsx";
 
 import style from "./TrailProgression.style.js";
 
@@ -72,6 +73,9 @@ const TrailProgression = memo(function TrailProgression({ className }) {
             {stats.elevationLoss.toFixed(0)} m
           </span>
         </div>
+      </div>
+      <div className="elevation-profile-container">
+        <ElevationProfile />
       </div>
     </div>
   );
