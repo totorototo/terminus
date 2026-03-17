@@ -58,6 +58,10 @@ function FollowerScreen({ className }) {
     return () => disconnectFollowerSession();
   }, [roomId, connectToFollowerSession, disconnectFollowerSession]);
 
+  const projectedTimestamp = useStore(
+    (state) => state.gps.projectedLocation.timestamp,
+  );
+
   // containerHeight ref keeps handleTopHeightChange stable across resizes.
   const containerHeight = useRef(0);
   const bottomPanelRef = useRef();
@@ -99,7 +103,7 @@ function FollowerScreen({ className }) {
                     bottomPanelOpenRef={bottomIsOpen}
                     locked
                   >
-                    <LocationFreshness />
+                    <LocationFreshness waiting={projectedTimestamp === 0} />
                   </TopSheetPanel>
                   {PUSH_NOTIFICATIONS_ENABLED &&
                     notificationPermission == null && (

@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useState } from "react";
 
+import { rgba } from "polished";
 import { useTheme } from "styled-components";
 
 import { useProjectedLocation } from "../../../store/store.js";
@@ -16,7 +17,10 @@ function formatAge(ageMs) {
   return `Updated ${hours}h ${remainingMinutes}m ago`;
 }
 
-const LocationFreshness = memo(function LocationFreshness({ className }) {
+const LocationFreshness = memo(function LocationFreshness({
+  className,
+  waiting = false,
+}) {
   const projectedLocation = useProjectedLocation();
   const [now, setNow] = useState(Date.now());
   const theme = useTheme();
@@ -33,8 +37,8 @@ const LocationFreshness = memo(function LocationFreshness({ className }) {
 
     if (!ts) {
       return {
-        label: "No data",
-        color: colors["--color-text"],
+        label: waiting ? "Waiting for runner" : "No data",
+        color: rgba(colors["--color-text"], waiting ? 0.35 : 1),
         elevation: null,
       };
     }
