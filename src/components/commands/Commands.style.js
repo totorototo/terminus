@@ -242,14 +242,14 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  /* ── Desktop follower FAB (top-right) ───────────────────────── */
+  /* ── Desktop follower FAB (bottom-right) ────────────────────── */
   &.desktop-dock {
     position: absolute;
     height: 48px;
     width: 48px;
     right: calc(env(safe-area-inset-right) + 0.75rem);
-    top: calc(env(safe-area-inset-top) + 0.75rem);
-    bottom: auto;
+    bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
+    top: auto;
     left: auto;
     transform: none;
     padding: 0;
