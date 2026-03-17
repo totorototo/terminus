@@ -8,6 +8,7 @@ const SECTIONS = [
   { id: "bottom", label: "Bottom Panel" },
   { id: "commands", label: "Commands" },
   { id: "follower", label: "Follower" },
+  { id: "install", label: "Install" },
 ];
 
 function Help({ className }) {
@@ -193,6 +194,17 @@ function Help({ className }) {
                 showing your current position on the climb.
               </p>
             </div>
+            <div className="feat">
+              <h4>
+                <span className="dot g" />
+                Fly-by Mode
+              </h4>
+              <p>
+                Animated 3D camera that flies the entire route from start to
+                finish. Start it from the Extra commands card. Camera controls
+                are disabled while the fly-by is running.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -268,6 +280,29 @@ function Help({ className }) {
                 <p className="pi-desc">
                   Top-level race stats — total distance, total elevation gain,
                   and overall progress.
+                </p>
+              </div>
+            </div>
+            <div className="pi">
+              <div className="pi-icon primary">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+              </div>
+              <div>
+                <p className="pi-name">Elevation profile</p>
+                <p className="pi-desc">
+                  Interactive cross-section graph of the full route with your
+                  current position highlighted on the climb.
                 </p>
               </div>
             </div>
@@ -468,6 +503,17 @@ function Help({ className }) {
                 <td>Switch theme</td>
                 <td>Switch between light and dark colour schemes.</td>
               </tr>
+              <tr>
+                <td>Help</td>
+                <td>Open this documentation page.</td>
+              </tr>
+              <tr>
+                <td>Leave session</td>
+                <td>
+                  Exit the current race and return to the start screen. Your
+                  saved route data is preserved.
+                </td>
+              </tr>
             </tbody>
           </table>
         </section>
@@ -529,6 +575,50 @@ function Help({ className }) {
             device GPS and broadcasts position. The follower app only receives
             it. Both see the same race map and elevation profile, but only the
             runner accumulates stats (pace, D+, elapsed time).
+          </div>
+        </section>
+
+        <hr className="divider" />
+
+        {/* INSTALL */}
+        <section id="install" className="section">
+          <p className="sec-label">08 — Install</p>
+          <h2 className="sec-title">Add to Home Screen</h2>
+          <p className="sec-body">
+            Terminus is a Progressive Web App (PWA). You can install it on your
+            phone like a native app — it runs full-screen with no browser
+            chrome, loads instantly, and keeps working offline.
+          </p>
+          <div className="feat-grid">
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                Android (Chrome)
+              </h4>
+              <p>
+                Open Terminus in Chrome. Tap the&nbsp;
+                <strong>⋮ menu</strong> in the top-right corner, then tap{" "}
+                <strong>Add to Home screen</strong>. Confirm by tapping{" "}
+                <strong>Add</strong> — the app icon appears on your home screen.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                iPhone / iPad (Safari)
+              </h4>
+              <p>
+                Open Terminus in Safari. Tap the <strong>Share button</strong>{" "}
+                (the square with an arrow pointing up) at the bottom of the
+                screen, then tap <strong>Add to Home Screen</strong>. Tap{" "}
+                <strong>Add</strong> to confirm.
+              </p>
+            </div>
+          </div>
+          <div className="info-box">
+            <strong>Safari required on iPhone</strong> — iOS only allows PWA
+            installation from Safari. If you are using Chrome or another browser
+            on iPhone, open the same URL in Safari first.
           </div>
         </section>
 
