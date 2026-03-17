@@ -3,7 +3,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { rgba } from "polished";
 import { useTheme } from "styled-components";
 
-import { useProjectedLocation } from "../../../store/store.js";
+import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./LocationFreshness.style.js";
 
@@ -22,6 +22,9 @@ const LocationFreshness = memo(function LocationFreshness({
   waiting = false,
 }) {
   const projectedLocation = useProjectedLocation();
+  const connectionStatus = useStore(
+    (state) => state.gps.followerConnectionStatus,
+  );
   const [now, setNow] = useState(Date.now());
   const theme = useTheme();
   const colors = theme.colors.dark;
@@ -59,6 +62,20 @@ const LocationFreshness = memo(function LocationFreshness({
     };
   }, [projectedLocation, now, colors]);
 
+  const connectionLabel =
+    connectionStatus === "disconnected"
+      ? "connection lost"
+      : connectionStatus === "connecting"
+        ? "reconnecting…"
+        : "last position";
+
+  const connectionLabelColor =
+    connectionStatus === "disconnected"
+      ? colors["--color-accent"]
+      : connectionStatus === "connecting"
+        ? rgba(colors["--color-text"], 0.4)
+        : null;
+
   return (
     <div className={className}>
       <div className="freshness-left">
@@ -68,7 +85,12 @@ const LocationFreshness = memo(function LocationFreshness({
             {label}
           </span>
         </div>
-        <span className="freshness-sublabel">last position</span>
+        <span
+          className="freshness-sublabel"
+          style={connectionLabelColor ? { color: connectionLabelColor } : null}
+        >
+          {connectionLabel}
+        </span>
       </div>
       <div className="freshness-right">
         <span className="freshness-value" data-testid="freshness-elevation">
