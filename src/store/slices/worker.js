@@ -469,6 +469,24 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       }
     },
 
+    workerGenerateAudioFrames: async (elevations, distances, slopes) => {
+      try {
+        if (!messenger) {
+          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
+        }
+
+        const response = await messenger.send("GENERATE_AUDIO_FRAMES", {
+          elevations,
+          distances,
+          slopes,
+        });
+
+        return response.frames;
+      } catch (error) {
+        handleWorkerError(error, "Failed to generate audio frames");
+      }
+    },
+
     findClosestLocation: async () => {
       try {
         if (!messenger) {
