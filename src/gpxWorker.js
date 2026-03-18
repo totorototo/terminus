@@ -4,6 +4,7 @@
 
 import { readGPXComplete } from "../zig/gpx.zig";
 import { __zigar, Trace } from "../zig/trace.zig";
+import { generateAudioFrames } from "../zig/soundscape.zig";
 
 // Initialize Zig/WASM in worker context
 let isInitialized = false;
@@ -85,6 +86,10 @@ self.onmessage = async function (e) {
 
       case "FIND_CLOSEST_LOCATION":
         await findClosestLocation(data, id);
+        break;
+
+      case "GENERATE_AUDIO_FRAMES":
+        await generateSoundscapeFrames(data, id);
         break;
 
       default:
@@ -463,6 +468,38 @@ async function getRouteSection(data, requestId) {
   });
 
   trace.deinit();
+}
+
+// Generate soundscape AudioFrame[] from pre-computed trace arrays
+async function generateSoundscapeFrames(data, requestId) {
+  markStart("generateAudioFrames");
+  const { elevations, distances, slopes } = data;
+
+  const zigFrames = await generateAudioFrames(elevations, distances, slopes);
+
+  // Copy Zigar proxy structs to plain JS before postMessage
+  const frames = [];
+  for (let i = 0; i < zigFrames.length; i++) {
+    const f = zigFrames[i];
+    frames.push({
+      t: f.t,
+      pitch: f.pitch,
+      intensity: f.intensity,
+      tempo: f.tempo,
+      distance: f.distance,
+    });
+  }
+
+  zigFrames.delete?.();
+
+  markEnd("generateAudioFrames");
+
+  self.postMessage({
+    type: "AUDIO_FRAMES_READY",
+    id: requestId,
+    frames,
+    timingMs: { audioFrames: measureMs("generateAudioFrames") },
+  });
 }
 
 // Find closest point to target location
