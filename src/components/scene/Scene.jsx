@@ -73,6 +73,9 @@ function Scene({ width, height, className }) {
         className={className}
         style={{ width, height }}
         shadows
+        onCreated={({ gl }) => {
+          gl.domElement.setAttribute("aria-label", "3D trail visualization");
+        }}
         camera={{
           fov: 75,
           near: 0.1,

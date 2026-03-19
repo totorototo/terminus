@@ -41,7 +41,7 @@ const PeakSummary = memo(function PeakSummary({ className }) {
         <span className="header-label">Climbs</span>
         <span className="header-count">{climbs.length}</span>
       </div>
-      <div className="climb-list">
+      <div className="climb-list" tabIndex={0} role="list" aria-label="Climbs">
         {climbs.map((climb, i) => {
           const isPast = currentIdx >= climb.endIndex;
           const isCurrent = !isPast && i === currentClimbIndex;
@@ -50,6 +50,7 @@ const PeakSummary = memo(function PeakSummary({ className }) {
           return (
             <div
               key={`${climb.startIndex}-${climb.endIndex}`}
+              role="listitem"
               className={`climb-row${isPast ? " past" : ""}${isCurrent ? " current" : ""}`}
             >
               <div className="climb-left">
