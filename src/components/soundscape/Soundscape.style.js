@@ -34,6 +34,56 @@ const style = (Component) => styled(Component)`
     text-transform: uppercase;
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .dl-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.12,
+        )};
+    background: transparent;
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.35,
+      )};
+    cursor: pointer;
+    transition: all ${(props) => props.theme.transitions["--transition-fast"]};
+    padding: 0;
+
+    &:hover:not(:disabled) {
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.3,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
+      background: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.06,
+        )};
+    }
+
+    &:disabled {
+      opacity: 0.2;
+      cursor: default;
+    }
+  }
+
   .live-badge {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};

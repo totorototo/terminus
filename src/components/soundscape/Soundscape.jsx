@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef } from "react";
 
+import { Download } from "@styled-icons/feather";
 import PropTypes from "prop-types";
 
 import { useSoundscape } from "../../hooks/useSoundscape.js";
@@ -30,6 +31,8 @@ const Soundscape = memo(function Soundscape({ className }) {
     resume,
     stop,
     restart,
+    download,
+    isDownloading,
     analyserRef,
     audioCtxRef,
     startTimeRef,
@@ -152,7 +155,18 @@ const Soundscape = memo(function Soundscape({ className }) {
     <div className={className}>
       <div className="soundscape-header">
         <span className="header-label">Soundscape</span>
-        {isActive && <span className="live-badge">live</span>}
+        <div className="header-actions">
+          {isActive && <span className="live-badge">live</span>}
+          <button
+            className="dl-btn"
+            onClick={download}
+            disabled={isLoading || isDownloading}
+            aria-label="Download WAV"
+            title="Download as WAV"
+          >
+            <Download size={13} />
+          </button>
+        </div>
       </div>
 
       {/* Controls */}
