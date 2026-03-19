@@ -301,7 +301,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.25,
+        0.85,
       )};
     letter-spacing: 0.04em;
     pointer-events: none;

@@ -706,7 +706,9 @@ function Help({ className }) {
           </div>
         </section>
 
-        <footer className="help-footer">© 2026 Terminus — La Vallée</footer>
+        <footer className="help-footer" aria-hidden="true">
+          © 2026 Terminus — La Vallée
+        </footer>
       </main>
     </div>
   );
