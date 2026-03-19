@@ -7,6 +7,7 @@ const style = (Component) => styled(Component)`
   width: 100%;
   padding: 0 0.75rem;
   gap: 0.5rem;
+  height: 100%;
 
   .soundscape-header {
     display: flex;
@@ -19,6 +20,8 @@ const style = (Component) => styled(Component)`
           props.theme.colors[props.theme.currentVariant]["--color-text"],
           0.07,
         )};
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
   }
 
   .header-label {
