@@ -8,6 +8,83 @@ const DURATION_S = 60;
 const FREQ_MIN = 110; // A2 — low elevation
 const FREQ_MAX = 880; // A5 — high elevation (3 octaves up)
 
+// ── WAV export ────────────────────────────────────────────────────────────────
+
+function buildAudioGraph(ctx, frames) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+
+  osc.type = "sine";
+  filter.type = "lowpass";
+  filter.Q.value = 1.5;
+
+  osc.connect(gain);
+  gain.connect(filter);
+  filter.connect(ctx.destination);
+
+  const now = ctx.currentTime;
+
+  osc.frequency.setValueAtTime(toFreq(frames[0].pitch), now);
+  gain.gain.setValueAtTime(0.001, now);
+  filter.frequency.setValueAtTime(toFilterFreq(frames[0].tempo), now);
+  gain.gain.linearRampToValueAtTime(toGain(frames[0].intensity), now + 0.8);
+
+  for (const f of frames) {
+    const t = now + f.t * DURATION_S;
+    osc.frequency.linearRampToValueAtTime(toFreq(f.pitch), t);
+    gain.gain.linearRampToValueAtTime(toGain(f.intensity), t);
+    filter.frequency.linearRampToValueAtTime(toFilterFreq(f.tempo), t);
+  }
+
+  gain.gain.linearRampToValueAtTime(0.001, now + DURATION_S);
+  osc.start(now);
+  osc.stop(now + DURATION_S);
+
+  return osc;
+}
+
+async function renderToWav(frames) {
+  const sampleRate = 44100;
+  const numSamples = Math.ceil(DURATION_S * sampleRate);
+  const offCtx = new OfflineAudioContext(1, numSamples, sampleRate);
+
+  buildAudioGraph(offCtx, frames);
+  const audioBuffer = await offCtx.startRendering();
+
+  // Encode PCM 16-bit mono WAV
+  const pcm = audioBuffer.getChannelData(0);
+  const ab = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(ab);
+
+  function str(off, s) {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  }
+
+  str(0, "RIFF");
+  view.setUint32(4, 36 + numSamples * 2, true);
+  str(8, "WAVE");
+  str(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  str(36, "data");
+  view.setUint32(40, numSamples * 2, true);
+
+  let off = 44;
+  for (let i = 0; i < numSamples; i++) {
+    const s = Math.max(-1, Math.min(1, pcm[i]));
+    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    off += 2;
+  }
+
+  return ab;
+}
+
 function toFreq(pitch) {
   return FREQ_MIN * Math.pow(FREQ_MAX / FREQ_MIN, pitch);
 }
@@ -30,6 +107,7 @@ export function useSoundscape() {
   // "stopped" | "playing" | "paused"
   const [playbackState, setPlaybackState] = useState("stopped");
   const [genRecord, setGenRecord] = useState({ key: null, status: "ready" });
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const { gpxData, gpxSlopes, gpxDistances, workerGenerateAudioFrames } =
     useStore(
@@ -157,7 +235,6 @@ export function useSoundscape() {
     osc.frequency.setValueAtTime(toFreq(frames[0].pitch), now);
     gain.gain.setValueAtTime(0.001, now);
     filter.frequency.setValueAtTime(toFilterFreq(frames[0].tempo), now);
-
     gain.gain.linearRampToValueAtTime(toGain(frames[0].intensity), now + 0.8);
 
     for (const f of frames) {
@@ -168,7 +245,6 @@ export function useSoundscape() {
     }
 
     gain.gain.linearRampToValueAtTime(0.001, now + DURATION_S);
-
     osc.start(now);
     osc.stop(now + DURATION_S);
     osc.onended = () => setPlaybackState("stopped");
@@ -180,7 +256,7 @@ export function useSoundscape() {
     if (soundState !== "ready") return;
     startAudio();
     setPlaybackState("playing");
-  }, [soundState]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [soundState]);
 
   const pause = useCallback(() => {
     if (audioCtxRef.current?.state === "running") {
@@ -199,21 +275,39 @@ export function useSoundscape() {
   const stop = useCallback(() => {
     teardown();
     setPlaybackState("stopped");
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const restart = useCallback(() => {
     if (!framesRef.current?.length) return;
     teardown();
     startAudio();
     setPlaybackState("playing");
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  const download = useCallback(async () => {
+    const frames = framesRef.current;
+    if (!frames?.length || isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const wav = await renderToWav(frames);
+      const blob = new Blob([wav], { type: "audio/wav" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "soundscape.wav";
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [isDownloading]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       teardown();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     soundState,
@@ -222,6 +316,8 @@ export function useSoundscape() {
     resume,
     stop,
     restart,
+    download,
+    isDownloading,
     analyserRef,
     audioCtxRef,
     startTimeRef,
