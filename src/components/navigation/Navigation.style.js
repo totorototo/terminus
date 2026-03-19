@@ -165,12 +165,14 @@ const style = (Component) => styled(Component)`
 
     &.gain {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
     }
 
     &.loss {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-secondary-text"
+        ]};
     }
   }
 
