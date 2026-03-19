@@ -1,4 +1,19 @@
 /**
+ * Shared GPS fixtures — reused across multiple spec files.
+ *
+ * MID_TRAIL  ~50% into vvx-xgtv-2026.gpx — projects to roughly half the route remaining.
+ * NEAR_START  Near the start — more trail ahead than MID_TRAIL.
+ * OFF_TRAIL   Eiffel Tower — far from the route, triggers off-course handling.
+ */
+export const MID_TRAIL = { latitude: 45.4982, longitude: 2.9089, accuracy: 10 };
+export const NEAR_START = {
+  latitude: 45.1937,
+  longitude: 2.7541,
+  accuracy: 10,
+};
+export const OFF_TRAIL = { latitude: 48.8584, longitude: 2.2945, accuracy: 10 };
+
+/**
  * Click "I'm running" on the wizard, pick the first available race, and wait
  * for the app to load.
  * Call this after page.goto("/") in any test that needs the runner (trailer) UI.
