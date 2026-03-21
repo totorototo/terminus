@@ -49,6 +49,7 @@
     "@axe-core/playwright": "^4.11.1",
     "@eslint/js": "9.39.1",
     "@playwright/test": "1.57.0",
+    "@react-three/test-renderer": "^11.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "24.10.1",
