@@ -4,7 +4,10 @@ import { shaderMaterial } from "@react-three/drei";
 import { extend, useFrame } from "@react-three/fiber";
 import { Color, DoubleSide, DynamicDrawUsage } from "three";
 
-import { createVertices } from "../../helpers/createVertices";
+import {
+  buildSlopeAttribute,
+  createVertices,
+} from "../../helpers/createVertices";
 
 // Shared progress coloring logic for shaders
 const PROGRESS_COLORING_LOGIC = `
@@ -218,23 +221,10 @@ function Profile({
   }, []);
 
   // Create slope attribute buffer from slopes array
-  const slopeAttribute = useMemo(() => {
-    if (!slopes || slopes.length === 0 || !points || points.length < 2) {
-      // Default slopes to 0 if not provided
-      const defaultSlopes = new Float32Array((points.length - 1) * 6);
-      return defaultSlopes;
-    }
-
-    const slopeArray = [];
-    for (let i = 0; i < points.length - 1; i++) {
-      const slope = slopes[i + 1] || 0;
-      // 6 vertices per segment (2 triangles)
-      for (let j = 0; j < 6; j++) {
-        slopeArray.push(slope);
-      }
-    }
-    return new Float32Array(slopeArray);
-  }, [points, slopes]);
+  const slopeAttribute = useMemo(
+    () => buildSlopeAttribute(points, slopes),
+    [points, slopes],
+  );
 
   // Create vertex index attribute for progress tracking
   const vertexIndexAttribute = useMemo(() => {
