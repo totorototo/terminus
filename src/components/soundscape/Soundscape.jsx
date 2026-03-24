@@ -263,7 +263,8 @@ const Soundscape = memo(function Soundscape({ className }) {
       </div>
 
       <p className="soundscape-desc">
-        Elevation → pitch · gradient → timbre · dynamism → brightness
+        Elevation → pitch + echo · slope → volume + timbre · pace → pulse ·
+        bearing → binaural space
       </p>
     </div>
   );

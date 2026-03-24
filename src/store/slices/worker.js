@@ -469,7 +469,12 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       }
     },
 
-    workerGenerateAudioFrames: async (elevations, distances, slopes) => {
+    workerGenerateAudioFrames: async (
+      elevations,
+      distances,
+      slopes,
+      sections,
+    ) => {
       try {
         if (!messenger) {
           throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
@@ -479,6 +484,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           elevations,
           distances,
           slopes,
+          sections,
         });
 
         return response.frames;
