@@ -473,9 +473,31 @@ async function getRouteSection(data, requestId) {
 // Generate soundscape AudioFrame[] from pre-computed trace arrays
 async function generateSoundscapeFrames(data, requestId) {
   markStart("generateAudioFrames");
-  const { elevations, distances, slopes } = data;
+  const { elevations, distances, slopes, sections = [] } = data;
+  const n = elevations.length;
 
-  const zigFrames = await generateAudioFrames(elevations, distances, slopes);
+  // Build per-point bearing and pace arrays from section data.
+  // Each point gets the bearing/pace of the section it falls in.
+  // Points not covered by any section default to 0 (handled gracefully in Zig).
+  const bearings = new Float64Array(n);
+  const paces = new Float64Array(n);
+  for (const section of sections) {
+    const { startIndex, endIndex, bearing, estimatedDuration, totalDistance } =
+      section;
+    const pace = totalDistance > 0 ? estimatedDuration / totalDistance : 0;
+    for (let i = startIndex; i <= endIndex && i < n; i++) {
+      bearings[i] = bearing;
+      paces[i] = pace;
+    }
+  }
+
+  const zigFrames = await generateAudioFrames(
+    elevations,
+    distances,
+    slopes,
+    bearings,
+    paces,
+  );
 
   // Copy Zigar proxy structs to plain JS before postMessage
   const frames = [];
@@ -483,10 +505,12 @@ async function generateSoundscapeFrames(data, requestId) {
     const f = zigFrames[i];
     frames.push({
       t: f.t,
+      distance: f.distance,
       pitch: f.pitch,
       intensity: f.intensity,
-      tempo: f.tempo,
-      distance: f.distance,
+      timbre: f.timbre,
+      bearing: f.bearing,
+      pace: f.pace,
     });
   }
 
