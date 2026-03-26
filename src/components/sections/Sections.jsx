@@ -23,24 +23,18 @@ export default function Sections({ sectionsPoints3D }) {
     );
 
   const theme = useTheme();
+  const themeVariantColors = theme.colors[theme.currentVariant];
+  const colorPrimary = themeVariantColors["--color-primary"];
+  const colorSecondary = themeVariantColors["--color-secondary"];
+  const colorAccent = themeVariantColors["--color-accent"];
+  const colorProgress = themeVariantColors["--color-progress"];
 
   const themeColors = useMemo(
-    () => [
-      theme.colors[theme.currentVariant]["--color-primary"],
-      theme.colors[theme.currentVariant]["--color-secondary"],
-      theme.colors[theme.currentVariant]["--color-accent"],
-    ],
-    [
-      theme.colors[theme.currentVariant]["--color-primary"],
-      theme.colors[theme.currentVariant]["--color-secondary"],
-      theme.colors[theme.currentVariant]["--color-accent"],
-    ],
+    () => [colorPrimary, colorSecondary, colorAccent],
+    [colorPrimary, colorSecondary, colorAccent],
   );
 
-  const progressColor = useMemo(
-    () => theme.colors[theme.currentVariant]["--color-progress"],
-    [theme.colors[theme.currentVariant]["--color-progress"]],
-  );
+  const progressColor = useMemo(() => colorProgress, [colorProgress]);
 
   const sectionElements = useMemo(() => {
     if (!sectionsPoints3D || sectionsPoints3D.length === 0) return null;

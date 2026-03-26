@@ -1,5 +1,6 @@
 import { rgba } from "polished";
 import styled from "styled-components";
+
 import { glassMorphism } from "../../theme/mixins";
 
 const style = (Component) => styled(Component)`

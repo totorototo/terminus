@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { ELEVATION_COLORS, ELEVATION_GRADE } from "../constants.js";
 import {

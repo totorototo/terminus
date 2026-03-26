@@ -3,8 +3,8 @@
 // All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
 
 import { readGPXComplete } from "../zig/gpx.zig";
-import { __zigar, Trace } from "../zig/trace.zig";
 import { generateAudioFrames } from "../zig/soundscape.zig";
+import { __zigar, Trace } from "../zig/trace.zig";
 
 // Initialize Zig/WASM in worker context
 let isInitialized = false;

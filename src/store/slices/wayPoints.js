@@ -1,4 +1,4 @@
-export const createWayPointsSlice = (set, get) => ({
+export const createWayPointsSlice = (set) => ({
   waypoints: [],
 
   setWayPoints: (waypoints) =>

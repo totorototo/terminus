@@ -5,7 +5,6 @@ import { format } from "date-fns";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import Soundscape from "../soundscape/Soundscape.jsx";
-import ElevationProfile from "./ElevationProfile/ElevationProfile.jsx";
 import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PeakSummary from "./PeakSummary/PeakSummary.jsx";
 import SectionAnalytics from "./SectionAnalytics/SectionAnalytics.jsx";
@@ -59,10 +58,10 @@ export const calculateTimeMetrics = (
   };
 };
 
-const TrailData = memo(function TrailData({ className, showElevationProfile }) {
+const TrailData = memo(function TrailData({ className }) {
   // Use optimized selectors for better performance
   const projectedLocation = useProjectedLocation();
-  const stats = useStats();
+  useStats();
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
   );
@@ -75,6 +74,7 @@ const TrailData = memo(function TrailData({ className, showElevationProfile }) {
     sections[0].startTime * 1000;
 
   // Memoize expensive time calculations
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const timeMetrics = useMemo(() => {
     if (
       !cumulativeDistances?.length ||
@@ -93,6 +93,7 @@ const TrailData = memo(function TrailData({ className, showElevationProfile }) {
       cumulativeDistances,
       startingDate,
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     projectedLocation.index,
     projectedLocation.timestamp,
@@ -101,6 +102,7 @@ const TrailData = memo(function TrailData({ className, showElevationProfile }) {
   ]);
 
   // Memoize remaining values for spring animation
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const remainingValues = useMemo(() => {
     const currentPositionIndex = projectedLocation?.index || 0;
     const distanceDone = cumulativeDistances[currentPositionIndex] || 0;

@@ -26,7 +26,7 @@ describe("WorkerMessenger", () => {
 
   describe("send", () => {
     it("should send message to worker with correct structure", async () => {
-      const sendPromise = messenger.send("TEST_MESSAGE", { test: "data" });
+      const _sendPromise = messenger.send("TEST_MESSAGE", { test: "data" });
 
       await new Promise((resolve) => setImmediate(resolve));
 
@@ -70,7 +70,7 @@ describe("WorkerMessenger", () => {
   describe("handleMessage - Progress", () => {
     it("should handle progress messages", async () => {
       const onProgress = vi.fn();
-      const sendPromise = messenger.send("TEST", {}, onProgress);
+      const _sendPromise = messenger.send("TEST", {}, onProgress);
 
       await new Promise((resolve) => setImmediate(resolve));
 

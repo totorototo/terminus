@@ -1,10 +1,10 @@
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import zigar from "rollup-plugin-zigar";
-import { VitePWA } from "vite-plugin-pwa";
-import arraybuffer from "vite-plugin-arraybuffer";
 import { visualizer } from "rollup-plugin-visualizer";
+import zigar from "rollup-plugin-zigar";
+import { defineConfig } from "vite";
+import arraybuffer from "vite-plugin-arraybuffer";
 import compression from "vite-plugin-compression";
+import { VitePWA } from "vite-plugin-pwa";
 
 // ── Bundle size budget plugin ─────────────────────────────────────────────────
 // Runs in the generateBundle hook so it has access to minified chunk source

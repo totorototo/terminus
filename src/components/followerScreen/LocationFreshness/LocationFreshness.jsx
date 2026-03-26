@@ -25,7 +25,7 @@ const LocationFreshness = memo(function LocationFreshness({
   const connectionStatus = useStore(
     (state) => state.gps.followerConnectionStatus,
   );
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const theme = useTheme();
   const colors = theme.colors.dark;
 
@@ -60,7 +60,7 @@ const LocationFreshness = memo(function LocationFreshness({
       color: freshnessColor,
       elevation: elev != null ? `${Math.round(elev)} m` : null,
     };
-  }, [projectedLocation, now, colors]);
+  }, [projectedLocation, now, colors, waiting]);
 
   const connectionLabel =
     connectionStatus === "disconnected"

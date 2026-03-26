@@ -5,12 +5,13 @@
  * edge cases (second fix at a different position, off-trail position).
  */
 
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+
 import {
-  selectRunnerRole,
   MID_TRAIL,
   NEAR_START,
   OFF_TRAIL,
+  selectRunnerRole,
 } from "./helpers.js";
 
 const kmLeft = (page) =>

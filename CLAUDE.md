@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## General Rules
+
+- When asked to fix or update something, scope changes narrowly to the specific request. Do not change unrelated code, global styles, or other components unless explicitly asked.
+
 ## Project Overview
 
 Terminus is a high-performance GPS trail visualization web application combining React for UI and Zig compiled to WebAssembly for computational performance.
@@ -57,4 +61,5 @@ See `src/CLAUDE.md` for frontend conventions and `zig/CLAUDE.md` for Zig/WASM co
 
 ## Git Workflow
 
+- Always run tests and lint before committing or pushing. Never commit code that fails tests or lint checks.
 - Always run `npm run test:all` before committing or pushing; fix failures before proceeding

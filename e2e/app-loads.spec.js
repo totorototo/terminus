@@ -6,7 +6,8 @@
  *  - Desktop (≥ 993 px) — DesktopLayout aside panel
  */
 
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+
 import { selectRunnerRole } from "./helpers.js";
 
 test.describe("Smoke", () => {

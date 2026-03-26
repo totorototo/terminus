@@ -11,7 +11,6 @@ export default function FlyBy({
   speed = 0.02,
   height = 0.01,
   scale = 0.01,
-  color = "red",
   lerpFactor = 0.02,
   maxRollAngle = Math.PI / 12, // Maximum 15 degrees roll
   rollSensitivity = 5.5, // How sensitive the roll is to direction changes
@@ -33,10 +32,6 @@ export default function FlyBy({
   const previousDirection = useRef(new Vector3(0, 0, -1));
   const currentRoll = useRef(0);
 
-  const setCurrentPositionIndex = useStore(
-    (state) => state.setCurrentPositionIndex,
-  );
-  const setStartingDate = useStore((state) => state.setStartingDate);
   const coordinates = useStore((state) => state.gpx.data);
 
   const { nodes, animations } = useGLTF("/cartoon_plane.glb");
@@ -59,6 +54,7 @@ export default function FlyBy({
       const firstAction = Object.values(actions)[0];
       firstAction.setEffectiveTimeScale(2.5).play();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions]);
 
   useEffect(() => {

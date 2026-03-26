@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
 
 import { CameraControls } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { Vector3 } from "three";
-
 import { useShallow } from "zustand/react/shallow";
 
 import useStore from "../../store/store.js";

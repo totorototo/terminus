@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import useStore, {
   useAppState,
-  useCurrentClosestLocation,
   useDisplaySlopes,
   useGpxCoordinates,
   useGpxData,

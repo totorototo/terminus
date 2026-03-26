@@ -54,15 +54,19 @@ vi.mock("@react-spring/web", () => ({
 
 // Mock styled icons
 vi.mock("@styled-icons/feather", () => ({
-  ArrowUp: ({ size, ...props }) => <div data-icon="arrow-up" {...props} />,
-  ArrowDown: ({ size, ...props }) => <div data-icon="arrow-down" {...props} />,
-  CornerUpLeft: ({ size, ...props }) => (
+  ArrowUp: ({ size: _size, ...props }) => (
+    <div data-icon="arrow-up" {...props} />
+  ),
+  ArrowDown: ({ size: _size, ...props }) => (
+    <div data-icon="arrow-down" {...props} />
+  ),
+  CornerUpLeft: ({ size: _size, ...props }) => (
     <div data-icon="corner-up-left" {...props} />
   ),
-  CornerUpRight: ({ size, ...props }) => (
+  CornerUpRight: ({ size: _size, ...props }) => (
     <div data-icon="corner-up-right" {...props} />
   ),
-  Clock: ({ size, ...props }) => <div data-icon="clock" {...props} />,
+  Clock: ({ size: _size, ...props }) => <div data-icon="clock" {...props} />,
 }));
 
 // Mock Navigation.style

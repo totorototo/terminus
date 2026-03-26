@@ -8,7 +8,8 @@
  * Verified through aria-pressed state changes and canvas survival after toggling.
  */
 
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+
 import { selectRunnerRole } from "./helpers.js";
 
 test.describe("Trail View Modes", () => {

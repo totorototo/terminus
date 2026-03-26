@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-import { Tv, Trash2, HelpCircle, LogOut } from "@styled-icons/feather";
+import { HelpCircle, LogOut, Trash2, Tv } from "@styled-icons/feather";
 import { useLocation } from "wouter";
 
 import useStore from "../../../store/store.js";

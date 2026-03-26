@@ -32,6 +32,11 @@ for (let i = 0; i < zigData.items.length; i++) {
 }
 ```
 
+## Code Conventions
+
+- Always use theme tokens for colors — never inline colors or hardcoded color values.
+- Keep styles in separate `.styles.js` files, not in component files.
+
 ## Performance
 
 - Use refs (not state) for high-frequency 60fps updates (e.g. `useFrame` loops)

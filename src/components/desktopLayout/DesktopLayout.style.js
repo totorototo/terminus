@@ -5,7 +5,6 @@ import { glassMorphism } from "../../theme/mixins.js";
 
 const PANEL_WIDTH = "300px";
 const SCROLLABLE_TILE_HEIGHT = "260px";
-const CLIMBS_TILE_HEIGHT = "400px";
 const GAP = "0.5rem";
 const EDGE = "0.75rem";
 

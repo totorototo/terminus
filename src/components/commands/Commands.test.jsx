@@ -13,23 +13,25 @@ vi.mock("../../store/store.js", () => ({
 
 // Mock styled icons
 vi.mock("@styled-icons/feather/MapPin", () => ({
-  MapPin: ({ size, ...props }) => <div data-icon="map-pin" {...props} />,
+  MapPin: ({ size: _size, ...props }) => <div data-icon="map-pin" {...props} />,
 }));
 
 vi.mock("@styled-icons/feather/Video", () => ({
-  Video: ({ size, ...props }) => <div data-icon="video" {...props} />,
+  Video: ({ size: _size, ...props }) => <div data-icon="video" {...props} />,
 }));
 
 vi.mock("@styled-icons/feather/BarChart2", () => ({
-  BarChart2: ({ size, ...props }) => <div data-icon="bar-chart" {...props} />,
+  BarChart2: ({ size: _size, ...props }) => (
+    <div data-icon="bar-chart" {...props} />
+  ),
 }));
 
 vi.mock("@styled-icons/feather/Map", () => ({
-  Map: ({ size, ...props }) => <div data-icon="map" {...props} />,
+  Map: ({ size: _size, ...props }) => <div data-icon="map" {...props} />,
 }));
 
 vi.mock("@styled-icons/feather/Share2", () => ({
-  Share2: ({ size, ...props }) => <div data-icon="share" {...props} />,
+  Share2: ({ size: _size, ...props }) => <div data-icon="share" {...props} />,
 }));
 
 // Mock Commands.style

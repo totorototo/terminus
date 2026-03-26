@@ -39,20 +39,6 @@ export const createWorkerSlice = (set, get, workerFactory) => {
   let worker = null;
   let messenger = null;
 
-  // Helper: Update worker state on successful operation
-  const updateWorkerSuccess = () =>
-    set(
-      (state) => ({
-        ...state,
-        worker: {
-          ...state.worker,
-          errorMessage: "",
-        },
-      }),
-      undefined,
-      "worker/updateWorkerSuccess",
-    );
-
   // Helper: Handle worker operation errors and update state
   const handleWorkerError = (error, defaultMessage) => {
     set(
@@ -194,7 +180,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
         worker.onmessage = (e) => messenger.handleMessage(e);
 
-        worker.onerror = (error) => {
+        worker.onerror = (_error) => {
           set(
             (state) => ({
               ...state,
@@ -221,7 +207,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           undefined,
           "worker/setWorkerReady",
         );
-      } catch (error) {
+      } catch (_error) {
         set(
           (state) => ({
             ...state,

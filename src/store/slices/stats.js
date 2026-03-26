@@ -1,4 +1,4 @@
-export const createStatsSlice = (set, get) => ({
+export const createStatsSlice = (set) => ({
   stats: {
     distance: 0,
     elevationGain: 0,
