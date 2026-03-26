@@ -86,6 +86,11 @@ vi.mock("./ElevationProfile/ElevationProfile.jsx", () => ({
   default: () => <div data-testid="elevation-profile">ElevationProfile</div>,
 }));
 
+// Mock PaceProfile component
+vi.mock("./PaceProfile/PaceProfile.jsx", () => ({
+  default: () => <div data-testid="pace-profile">PaceProfile</div>,
+}));
+
 describe("TrailData Component", () => {
   const mockStats = {
     distance: 10000,

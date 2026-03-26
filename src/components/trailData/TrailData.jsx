@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import Soundscape from "../soundscape/Soundscape.jsx";
 import ElevationProfile from "./ElevationProfile/ElevationProfile.jsx";
+import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PeakSummary from "./PeakSummary/PeakSummary.jsx";
 import SectionAnalytics from "./SectionAnalytics/SectionAnalytics.jsx";
 import StageAnalytics from "./StageAnalytics/StageAnalytics.jsx";
@@ -164,6 +165,9 @@ const TrailData = memo(function TrailData({ className, showElevationProfile }) {
         </div>
         <div className="component-children">
           <StageETA />
+        </div>
+        <div className="component-children">
+          <PaceProfile />
         </div>
         <div className="component-children">
           <PeakSummary />
