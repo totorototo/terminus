@@ -80,11 +80,15 @@ const PaceProfile = memo(function PaceProfile({ className }) {
       { min: HEIGHT, max: 0 },
     );
 
-    // One curve point per section at midpoint distance
-    const curvePoints = bars.map((b) => ({
-      x: scaleX(b.midDist),
-      y: scaleY(b.pace),
-    }));
+    // One curve point per section at midpoint distance, anchored to route edges
+    const curvePoints = [
+      { x: scaleX(bars[0].startDist), y: scaleY(bars[0].pace) },
+      ...bars.map((b) => ({ x: scaleX(b.midDist), y: scaleY(b.pace) })),
+      {
+        x: scaleX(bars[bars.length - 1].endDist),
+        y: scaleY(bars[bars.length - 1].pace),
+      },
+    ];
 
     const lineShape = line()
       .x((d) => d.x)
