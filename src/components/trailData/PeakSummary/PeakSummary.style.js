@@ -186,10 +186,9 @@ const style = (Component) => styled(Component)`
 
     &.gradient {
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-secondary"],
-          0.65,
-        )};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-secondary-text"
+        ]};
     }
   }
 
