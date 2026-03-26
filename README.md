@@ -24,6 +24,7 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
   - Slope gradient coloring (5 difficulty levels)
 - **Section Analytics**: Distance, elevation gain/loss, slope percentages, difficulty rating
 - **Stage Analytics**: Per-stage details including distance, elevation, estimated/max time, cutoff time, difficulty, and slowest required pace
+- **Pace Profile**: Smooth chart of the slowest allowed pace (km/h) over distance, with tightest-cutoff and current-section stats
 - **Live Trail Progression**: Real-time progress bar with cumulative distance percentage, elevation gain and loss based on runner position
 - **ETA Estimation**: Arrival time prediction per section based on difficulty
 - **Peak Detection**: Automatic identification and visualization of peaks
