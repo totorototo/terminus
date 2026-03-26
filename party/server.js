@@ -38,6 +38,17 @@ export default class Server {
     if (message.length > 512) return;
     if (parsed.type !== "location") return;
 
+    // Validate coordinate ranges before broadcasting
+    if (!Array.isArray(parsed.coords) || parsed.coords.length !== 2) return;
+    const [lat, lon] = parsed.coords;
+    if (
+      typeof lat !== "number" ||
+      typeof lon !== "number" ||
+      Math.abs(lat) > 90 ||
+      Math.abs(lon) > 180
+    )
+      return;
+
     await this.room.storage.put("lastLocation", message);
     this.room.broadcast(message, [sender.id]);
 

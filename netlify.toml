@@ -3,6 +3,15 @@
   command = ""
   publish = "dist"
 
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://terminus.totorototo.partykit.dev wss://terminus.totorototo.partykit.dev; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

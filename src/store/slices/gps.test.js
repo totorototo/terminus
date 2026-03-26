@@ -392,7 +392,7 @@ describe("GPS Slice", () => {
 
       expect(mockShare).toHaveBeenCalledWith({
         title: "Follow my run",
-        url: expect.stringMatching(/\/follow\/test-race-2026\/[A-Z0-9]{6}$/),
+        url: expect.stringMatching(/\/follow\/test-race-2026\/[A-F0-9]{8}$/),
       });
       expect(store.getState().setLiveSessionId).toHaveBeenCalled();
     });
@@ -448,7 +448,7 @@ describe("GPS Slice", () => {
 
       expect(mockShare).toHaveBeenCalledWith({
         title: "Follow my run",
-        url: expect.stringMatching(/\/follow\/test-race-2026\/[A-Z0-9]{6}$/),
+        url: expect.stringMatching(/\/follow\/test-race-2026\/[A-F0-9]{8}$/),
       });
     });
 

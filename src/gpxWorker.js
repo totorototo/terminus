@@ -453,6 +453,14 @@ async function findPointsAtDistances(data, requestId) {
 // Get route section between two points (light computation)
 async function getRouteSection(data, requestId) {
   const { coordinates, start, end } = data;
+  if (
+    !Number.isInteger(start) ||
+    !Number.isInteger(end) ||
+    start < 0 ||
+    end > coordinates.length ||
+    start >= end
+  )
+    throw new Error("Invalid section range");
   const section = coordinates.slice(start, end); // Copy to avoid modifying original
 
   const trace = Trace.init(section);

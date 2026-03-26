@@ -10,7 +10,10 @@ import {
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";
 
 const generateSessionId = () =>
-  Math.random().toString(36).slice(2, 8).toUpperCase();
+  Array.from(crypto.getRandomValues(new Uint8Array(4)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
 
 export const createGPSSlice = (set, get) => {
   // Create ring buffer for storing last 10 GPS positions

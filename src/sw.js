@@ -5,6 +5,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Relay from postMessage — triggers when app is backgrounded/minimized
 self.addEventListener("message", (event) => {
   if (event.origin !== self.location.origin) return;
+  if (typeof event.data !== "object" || event.data === null) return;
   if (event.data?.type === "PARTYKIT_MESSAGE") {
     const { payload } = event.data;
     event.waitUntil(
