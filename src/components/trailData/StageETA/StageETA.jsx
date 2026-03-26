@@ -1,8 +1,7 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 
 import { format } from "date-fns";
 
-import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./StageETA.style.js";
@@ -22,6 +21,7 @@ const StageETA = memo(function StageETA({ className }) {
   // How fast is this runner relative to Naismith's flat baseline (5 km/h = 720 ms/m)?
   // speedFactor > 1 = slower than baseline, < 1 = faster.
   // Used to scale each section's terrain-adjusted estimatedDuration.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const speedFactor = useMemo(() => {
     if (!raceStart || !projectedLocation?.index || !cumulativeDistances?.length)
       return 1.0;
@@ -37,11 +37,13 @@ const StageETA = memo(function StageETA({ className }) {
     cumulativeDistances,
   ]);
 
+  const [currentTime] = useState(() => Date.now());
+
   const sectionRows = useMemo(() => {
     if (!sections?.length || !cumulativeDistances?.length) return [];
 
     const currentIndex = projectedLocation?.index || 0;
-    const now = projectedLocation?.timestamp || Date.now();
+    const now = projectedLocation?.timestamp || currentTime;
 
     // Race hasn't started yet — no ETAs to show
     if (raceStart && now < raceStart) {
@@ -131,6 +133,7 @@ const StageETA = memo(function StageETA({ className }) {
     projectedLocation?.timestamp,
     raceStart,
     speedFactor,
+    currentTime,
   ]);
 
   if (!sectionRows.length) {

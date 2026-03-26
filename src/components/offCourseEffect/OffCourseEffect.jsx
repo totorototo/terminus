@@ -40,6 +40,7 @@ function OffCourseEffect({
   }, [projectedLocation, coordinateScales]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
     scene.background = new Color(bgColor);
   }, [scene, bgColor]);
 

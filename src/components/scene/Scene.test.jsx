@@ -1,5 +1,5 @@
-import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import { ThemeProvider } from "styled-components";
 import {
   afterAll,
   beforeAll,
@@ -9,11 +9,12 @@ import {
   it,
   vi,
 } from "vitest";
-import { ThemeProvider } from "styled-components";
 
-import StyledScene from "./Scene.jsx";
 import useStore from "../../store/store.js";
 import THEME from "../../theme/Theme.js";
+import StyledScene from "./Scene.jsx";
+
+import "@testing-library/jest-dom";
 
 const theme = { ...THEME, currentVariant: "dark" };
 

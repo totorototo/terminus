@@ -8,9 +8,10 @@
  * Regression guard for: 025c183 — helicopter position must survive a theme switch.
  */
 
-import { test, expect } from "@playwright/test";
-import { selectRunnerRole, MID_TRAIL } from "./helpers.js";
+import { expect, test } from "@playwright/test";
+
 import THEME from "../src/theme/Theme.js";
+import { MID_TRAIL, selectRunnerRole } from "./helpers.js";
 
 const DARK_BG = THEME.colors.dark["--color-background"].toLowerCase();
 const LIGHT_BG = THEME.colors.light["--color-background"].toLowerCase();

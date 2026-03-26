@@ -14,8 +14,9 @@
  * so assertions work without programmatic scrolling.
  */
 
-import { test, expect } from "@playwright/test";
-import { selectRunnerRole, MID_TRAIL } from "./helpers.js";
+import { expect, test } from "@playwright/test";
+
+import { MID_TRAIL, selectRunnerRole } from "./helpers.js";
 
 /** Wait for the GPX route to finish loading (km-left stat populated). */
 async function waitForGpx(page) {

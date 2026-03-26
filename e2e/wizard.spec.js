@@ -2,7 +2,7 @@
  * Wizard e2e tests — covers the first-run role selection flow.
  */
 
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Wizard", () => {
   test("shows role choice screen on first load", async ({ page }) => {

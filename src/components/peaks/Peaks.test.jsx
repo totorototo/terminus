@@ -1,11 +1,12 @@
-import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "styled-components";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Peaks from "./Peaks.jsx";
 import useStore from "../../store/store.js";
 import THEME from "../../theme/Theme.js";
+import Peaks from "./Peaks.jsx";
+
+import "@testing-library/jest-dom";
 
 const theme = { ...THEME, currentVariant: "dark" };
 

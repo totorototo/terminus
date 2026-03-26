@@ -14,24 +14,21 @@ function FadingText({
 }) {
   const { camera } = useThree();
 
-  // 1. Créer les uniforms de façon persistante
-  const uniforms = useMemo(
-    () => ({
-      uFadeDistance: { value: fadeDistance },
-      uFadeStrength: { value: fadeStrength },
-      uFadeFrom: { value: fadeFrom },
-      uCameraPos: { value: new THREE.Vector3() },
-      uOrigin: { value: new THREE.Vector3(0, 0, 0) },
-    }),
-    [],
-  );
+  // 1. Créer les uniforms de façon persistante (ref = mutable by design)
+  const uniformsRef = useRef({
+    uFadeDistance: { value: fadeDistance },
+    uFadeStrength: { value: fadeStrength },
+    uFadeFrom: { value: fadeFrom },
+    uCameraPos: { value: new THREE.Vector3() },
+    uOrigin: { value: new THREE.Vector3(0, 0, 0) },
+  });
 
   // 2. Mettre à jour les uniforms à chaque frame
   useFrame(() => {
-    uniforms.uCameraPos.value.copy(camera.position);
-    uniforms.uFadeDistance.value = fadeDistance;
-    uniforms.uFadeStrength.value = fadeStrength;
-    uniforms.uFadeFrom.value = fadeFrom;
+    uniformsRef.current.uCameraPos.value.copy(camera.position);
+    uniformsRef.current.uFadeDistance.value = fadeDistance;
+    uniformsRef.current.uFadeStrength.value = fadeStrength;
+    uniformsRef.current.uFadeFrom.value = fadeFrom;
   });
 
   // 3. Créer le matériau de base que Text va "Troika-fier"
@@ -40,7 +37,7 @@ function FadingText({
     const mat = new THREE.MeshBasicMaterial({ color, transparent: true });
 
     mat.onBeforeCompile = (shader) => {
-      shader.uniforms = { ...shader.uniforms, ...uniforms };
+      shader.uniforms = { ...shader.uniforms, ...uniformsRef.current };
 
       shader.vertexShader = `
         varying vec3 vWorldPosFade;
@@ -76,6 +73,7 @@ function FadingText({
         );
     };
     return mat;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [color]); // On ne recrée le matériau que si la couleur change
 
   return (

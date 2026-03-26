@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { a, config, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
@@ -21,7 +21,9 @@ function ExpandablePanel({
   // Keep a ref so the drag handler always reads the latest containerHeight
   // without needing to be recreated on every resize.
   const containerHeightRef = useRef(containerHeight);
-  containerHeightRef.current = containerHeight;
+  useEffect(() => {
+    containerHeightRef.current = containerHeight;
+  });
 
   const getExpandedHeight = () =>
     containerHeightRef.current - BOTTOM_MARGIN * 2;

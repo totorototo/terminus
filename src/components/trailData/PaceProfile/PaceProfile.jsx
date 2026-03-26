@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 
-import { useShallow } from "zustand/react/shallow";
 import { area, curveCatmullRom, line } from "d3-shape";
+import { useShallow } from "zustand/react/shallow";
 
 import { createXScale, createYScale } from "../../../helpers/d3.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";

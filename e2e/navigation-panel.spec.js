@@ -6,8 +6,9 @@
  * section has the class "current".
  */
 
-import { test, expect } from "@playwright/test";
-import { selectRunnerRole, MID_TRAIL } from "./helpers.js";
+import { expect, test } from "@playwright/test";
+
+import { MID_TRAIL, selectRunnerRole } from "./helpers.js";
 
 const kmLeft = (page) =>
   page

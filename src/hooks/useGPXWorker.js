@@ -27,7 +27,7 @@ export function useGPXWorker(raceId) {
   useEffect(() => {
     initGPXWorker();
     return () => terminateGPXWorker();
-  }, []);
+  }, [initGPXWorker, terminateGPXWorker]);
 
   useEffect(() => {
     if (!isWorkerReady || !raceId) return;

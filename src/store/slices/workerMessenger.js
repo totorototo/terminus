@@ -17,7 +17,7 @@ export function createWorkerMessenger(worker, callbacks) {
 
   // Clean up all pending requests (e.g., on worker termination)
   function cleanupAllRequests(error) {
-    for (const [id, request] of requests.entries()) {
+    for (const [, request] of requests.entries()) {
       clearTimeout(request.timeoutHandle);
       request.reject(error);
     }

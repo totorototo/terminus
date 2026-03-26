@@ -1,5 +1,5 @@
-import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import { ThemeProvider } from "styled-components";
 import {
   afterAll,
   beforeAll,
@@ -9,10 +9,11 @@ import {
   it,
   vi,
 } from "vitest";
-import { ThemeProvider } from "styled-components";
 
-import OffCourseEffect from "./OffCourseEffect.jsx";
 import THEME from "../../theme/Theme.js";
+import OffCourseEffect from "./OffCourseEffect.jsx";
+
+import "@testing-library/jest-dom";
 
 const theme = { ...THEME, currentVariant: "dark" };
 

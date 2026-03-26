@@ -1,5 +1,7 @@
 import { useEffect } from "react";
+
 import { useLocation } from "wouter";
+
 import useStore from "../store/store";
 
 const EPHEMERAL_ROUTES = ["/"];

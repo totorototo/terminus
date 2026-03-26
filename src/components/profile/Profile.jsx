@@ -215,8 +215,9 @@ function Profile({
   const materialRef = useRef();
 
   useEffect(() => {
+    const material = materialRef.current;
     return () => {
-      materialRef.current?.dispose();
+      material?.dispose();
     };
   }, []);
 
@@ -285,6 +286,7 @@ function Profile({
     for (let i = 0; i < targetVertices.length; i++) {
       const start = prevVerticesRef.current[i] ?? 0;
       const end = targetVertices[i] ?? 0;
+      // eslint-disable-next-line react-hooks/immutability
       interpolatedPositions.current[i] = start + (end - start) * t;
     }
 

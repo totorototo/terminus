@@ -17,7 +17,7 @@
  *        - elevation loss advances from 0 m to a non-zero value
  */
 
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import {
   mockClipboard,

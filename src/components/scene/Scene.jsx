@@ -1,4 +1,4 @@
-import { Suspense, memo, useMemo, useRef } from "react";
+import { memo, Suspense, useMemo, useRef } from "react";
 
 import { Canvas } from "@react-three/fiber";
 import { useTheme } from "styled-components";
@@ -8,11 +8,11 @@ import useStore from "../../store/store.js";
 import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 import CameraController from "../cameraController/CameraController.jsx";
 import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
-import { Trailer } from "../trailer/Trailer.jsx";
+import FlyBy from "../flyBy/FlyBy";
 import Marker from "../marker/Marker.jsx";
 import OffCourseEffect from "../offCourseEffect/OffCourseEffect.jsx";
 import Peaks from "../peaks/Peaks.jsx";
-import FlyBy from "../flyBy/FlyBy";
+import { Trailer } from "../trailer/Trailer.jsx";
 
 import style from "./Scene.style";
 

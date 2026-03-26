@@ -5,8 +5,8 @@ import Help from "./components/help/Help.jsx";
 import LandscapeOverlay from "./components/landscapeOverlay/LandscapeOverlay.jsx";
 import TrailerScreen from "./components/trailerScreen/TrailerScreen.jsx";
 import Wizard from "./components/wizard/Wizard.jsx";
-
 import { useRouteSync } from "./hooks/useRouteSync.js";
+
 import style from "./App.style.js";
 
 function App({ className }) {

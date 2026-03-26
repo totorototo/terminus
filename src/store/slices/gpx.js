@@ -1,4 +1,4 @@
-export const createGpxSlice = (set, get) => ({
+export const createGpxSlice = (set) => ({
   gpx: {
     data: [],
     slopes: [],

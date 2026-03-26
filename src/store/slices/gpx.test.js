@@ -126,7 +126,6 @@ describe("gpxSlice", () => {
       const {
         setGpxData,
         setSlopes,
-        setSections,
         setCumulativeDistances,
         setCumulativeElevations,
         setCumulativeElevationLosses,

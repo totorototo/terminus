@@ -9,10 +9,11 @@
  *  - App survives reduced-motion preference
  */
 
-import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { selectRunnerRole } from "./helpers.js";
+import { expect, test } from "@playwright/test";
+
 import THEME from "../src/theme/Theme.js";
+import { selectRunnerRole } from "./helpers.js";
 
 // ── Axe helper ────────────────────────────────────────────────────────────────
 
