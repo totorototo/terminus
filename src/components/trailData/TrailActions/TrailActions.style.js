@@ -80,10 +80,9 @@ const style = (Component) => styled(Component)`
 
     &.danger {
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-secondary"],
-          0.6,
-        )};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-secondary-text"
+        ]};
 
       &:hover {
         background: ${(props) =>
