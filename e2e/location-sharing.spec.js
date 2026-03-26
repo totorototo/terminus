@@ -87,7 +87,7 @@ test.describe("Location Sharing", () => {
         const capturedUrl = await runnerPage.evaluate(
           () => window.__capturedCode,
         );
-        expect(capturedUrl).toMatch(/\/follow\/[^/]+\/[A-Z0-9]{6}$/);
+        expect(capturedUrl).toMatch(/\/follow\/[^/]+\/[A-F0-9]{8}$/);
         const roomCode = capturedUrl.split("/").pop();
 
         // ── 3. Follower goes through the wizard with that code ─────────────
