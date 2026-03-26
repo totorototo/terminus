@@ -31,6 +31,11 @@ function toLfoFreq(pace) {
   return 0.5 + (1 - pace) * 2.5;
 }
 
+// Tremolo depth from intensity: subtle on flat terrain, noticeable on steep
+function toLfoDepth(intensity) {
+  return 0.02 + intensity * 0.1;
+}
+
 // Filter Q from timbre: flat (0.5) → Q=1, steep ascent (1.0) → Q=9, descent (0.0) → Q=1
 function toFilterQ(timbre) {
   return 1 + Math.abs(timbre - 0.5) * 2 * 8;
@@ -39,6 +44,11 @@ function toFilterQ(timbre) {
 // Filter frequency: higher on ascent, lower on descent (brightness)
 function toFilterFreq(timbre) {
   return 800 + timbre * 3200; // 800–4000 Hz
+}
+
+// EQ boost from intensity: flat terrain → 0 dB (neutral filter), steep → 12 dB
+function toFilterGainDb(intensity) {
+  return intensity * 12;
 }
 
 // Reverb wet mix from elevation: low → dry, high → echoing
@@ -55,9 +65,21 @@ function toFeedbackGain(pitch) {
   return 0.15 + pitch * 0.4; // 0.15–0.55 (never reaches 1 to avoid runaway)
 }
 
-// ── WAV export (stereo) ────────────────────────────────────────────────────────
+// ── Shared audio graph ────────────────────────────────────────────────────────
+//
+// Graph:
+// osc → mainGain → filter → panner → dryGain ──┐
+//                                → delayNode    ├→ masterOut → [analyser →] destination
+//                                    → feedbackGain → delayNode (loop)
+//                                    → wetGain ──┘
+// lfo → lfoGain → mainGain.gain (tremolo)
+//
+// analyser is optional (live playback only — not used for WAV export).
+// masterOut merges dry+wet so the analyser captures the full binaural mix.
+//
+// Returns { osc, lfo } so callers can manage node lifetimes.
 
-function buildAudioGraph(ctx, frames) {
+function buildAudioGraph(ctx, frames, analyser = null) {
   const osc = ctx.createOscillator();
   const lfo = ctx.createOscillator();
   const mainGain = ctx.createGain();
@@ -68,53 +90,50 @@ function buildAudioGraph(ctx, frames) {
   const feedbackGain = ctx.createGain();
   const wetGain = ctx.createGain();
   const dryGain = ctx.createGain();
+  const masterOut = ctx.createGain(); // merges dry+wet for analyser tap
 
-  // Oscillator config
   osc.type = "sine";
   lfo.type = "sine";
-  lfoGain.gain.value = 0.07; // subtle tremolo depth
 
-  // Filter config (peaking EQ for timbre)
   filter.type = "peaking";
-  filter.gain.value = 6;
 
-  // HRTF panner config
   panner.panningModel = "HRTF";
   panner.distanceModel = "inverse";
   panner.refDistance = 1;
   panner.rolloffFactor = 0; // gain handles amplitude — no distance rolloff
 
-  // Echo delay
   delayNode.delayTime.value = DELAY_TIME;
 
-  // Graph:
-  // osc → mainGain → filter → panner → dryGain → destination
-  //                                  → delayNode → feedbackGain → delayNode (loop)
-  //                                              → wetGain → destination
-  // lfo → lfoGain → mainGain.gain (tremolo)
   osc.connect(mainGain);
   mainGain.connect(filter);
   filter.connect(panner);
   panner.connect(dryGain);
   panner.connect(delayNode);
-  dryGain.connect(ctx.destination);
+  dryGain.connect(masterOut);
   delayNode.connect(feedbackGain);
   delayNode.connect(wetGain);
   feedbackGain.connect(delayNode);
-  wetGain.connect(ctx.destination);
+  wetGain.connect(masterOut);
   lfo.connect(lfoGain);
   lfoGain.connect(mainGain.gain);
+
+  if (analyser) {
+    masterOut.connect(analyser);
+    analyser.connect(ctx.destination);
+  } else {
+    masterOut.connect(ctx.destination);
+  }
 
   const now = ctx.currentTime;
   const f0 = frames[0];
   const { x: x0, z: z0 } = bearingToXZ(f0.bearing);
 
-  // Initial values
   osc.frequency.setValueAtTime(toFreq(f0.pitch), now);
   mainGain.gain.setValueAtTime(0.001, now);
   mainGain.gain.linearRampToValueAtTime(toGain(f0.intensity), now + 0.8);
   filter.frequency.setValueAtTime(toFilterFreq(f0.timbre), now);
   filter.Q.setValueAtTime(toFilterQ(f0.timbre), now);
+  filter.gain.setValueAtTime(toFilterGainDb(f0.intensity), now);
   panner.positionX.setValueAtTime(x0, now);
   panner.positionY.setValueAtTime(f0.pitch - 0.5, now);
   panner.positionZ.setValueAtTime(z0, now);
@@ -122,6 +141,7 @@ function buildAudioGraph(ctx, frames) {
   wetGain.gain.setValueAtTime(toWetGain(f0.pitch), now);
   feedbackGain.gain.setValueAtTime(toFeedbackGain(f0.pitch), now);
   lfo.frequency.setValueAtTime(toLfoFreq(f0.pace), now);
+  lfoGain.gain.setValueAtTime(toLfoDepth(f0.intensity), now);
 
   for (const f of frames) {
     const t = now + f.t * DURATION_S;
@@ -130,6 +150,7 @@ function buildAudioGraph(ctx, frames) {
     mainGain.gain.linearRampToValueAtTime(toGain(f.intensity), t);
     filter.frequency.linearRampToValueAtTime(toFilterFreq(f.timbre), t);
     filter.Q.linearRampToValueAtTime(toFilterQ(f.timbre), t);
+    filter.gain.linearRampToValueAtTime(toFilterGainDb(f.intensity), t);
     panner.positionX.linearRampToValueAtTime(x, t);
     panner.positionY.linearRampToValueAtTime(f.pitch - 0.5, t);
     panner.positionZ.linearRampToValueAtTime(z, t);
@@ -137,6 +158,7 @@ function buildAudioGraph(ctx, frames) {
     wetGain.gain.linearRampToValueAtTime(toWetGain(f.pitch), t);
     feedbackGain.gain.linearRampToValueAtTime(toFeedbackGain(f.pitch), t);
     lfo.frequency.linearRampToValueAtTime(toLfoFreq(f.pace), t);
+    lfoGain.gain.linearRampToValueAtTime(toLfoDepth(f.intensity), t);
   }
 
   mainGain.gain.linearRampToValueAtTime(0.001, now + DURATION_S);
@@ -146,13 +168,17 @@ function buildAudioGraph(ctx, frames) {
   lfo.start(now);
   lfo.stop(now + DURATION_S);
 
-  return osc;
+  return { osc, lfo };
 }
+
+// ── WAV export (stereo) ────────────────────────────────────────────────────────
 
 async function renderToWav(frames) {
   const sampleRate = 44100;
   const numSamples = Math.ceil(DURATION_S * sampleRate);
-  // Stereo (2 channels) for binaural HRTF output
+  // Stereo (2 channels) for binaural HRTF output.
+  // Note: HRTF support in OfflineAudioContext is browser-dependent — Chrome
+  // honours it; Firefox may fall back to "equalpower" silently.
   const offCtx = new OfflineAudioContext(2, numSamples, sampleRate);
 
   buildAudioGraph(offCtx, frames);
@@ -202,6 +228,7 @@ export function useSoundscape() {
   const framesRef = useRef(null);
   const audioCtxRef = useRef(null);
   const oscRef = useRef(null);
+  const lfoRef = useRef(null);
   const analyserRef = useRef(null);
   const startTimeRef = useRef(null);
 
@@ -310,6 +337,14 @@ export function useSoundscape() {
       }
       oscRef.current = null;
     }
+    if (lfoRef.current) {
+      try {
+        lfoRef.current.stop();
+      } catch {
+        // already stopped
+      }
+      lfoRef.current = null;
+    }
     if (audioCtxRef.current) {
       audioCtxRef.current.close();
       audioCtxRef.current = null;
@@ -326,95 +361,15 @@ export function useSoundscape() {
     const ctx = new AudioContext();
     audioCtxRef.current = ctx;
 
-    const osc = ctx.createOscillator();
-    const lfo = ctx.createOscillator();
-    const mainGain = ctx.createGain();
-    const lfoGain = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-    const panner = ctx.createPanner();
-    const delayNode = ctx.createDelay(1.0);
-    const feedbackGain = ctx.createGain();
-    const wetGain = ctx.createGain();
-    const dryGain = ctx.createGain();
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 256;
     analyserRef.current = analyser;
     startTimeRef.current = ctx.currentTime;
 
-    // Oscillator config
-    osc.type = "sine";
-    lfo.type = "sine";
-    lfoGain.gain.value = 0.07;
-
-    // Filter config
-    filter.type = "peaking";
-    filter.gain.value = 6;
-
-    // HRTF panner
-    panner.panningModel = "HRTF";
-    panner.distanceModel = "inverse";
-    panner.refDistance = 1;
-    panner.rolloffFactor = 0;
-
-    delayNode.delayTime.value = DELAY_TIME;
-
-    // Graph (analyser taps after dryGain for oscilloscope)
-    osc.connect(mainGain);
-    mainGain.connect(filter);
-    filter.connect(panner);
-    panner.connect(dryGain);
-    panner.connect(delayNode);
-    dryGain.connect(analyser);
-    analyser.connect(ctx.destination);
-    delayNode.connect(feedbackGain);
-    delayNode.connect(wetGain);
-    feedbackGain.connect(delayNode);
-    wetGain.connect(ctx.destination);
-    lfo.connect(lfoGain);
-    lfoGain.connect(mainGain.gain);
-
-    const now = ctx.currentTime;
-    const f0 = frames[0];
-    const { x: x0, z: z0 } = bearingToXZ(f0.bearing);
-
-    osc.frequency.setValueAtTime(toFreq(f0.pitch), now);
-    mainGain.gain.setValueAtTime(0.001, now);
-    mainGain.gain.linearRampToValueAtTime(toGain(f0.intensity), now + 0.8);
-    filter.frequency.setValueAtTime(toFilterFreq(f0.timbre), now);
-    filter.Q.setValueAtTime(toFilterQ(f0.timbre), now);
-    panner.positionX.setValueAtTime(x0, now);
-    panner.positionY.setValueAtTime(f0.pitch - 0.5, now);
-    panner.positionZ.setValueAtTime(z0, now);
-    dryGain.gain.setValueAtTime(toDryGain(f0.pitch), now);
-    wetGain.gain.setValueAtTime(toWetGain(f0.pitch), now);
-    feedbackGain.gain.setValueAtTime(toFeedbackGain(f0.pitch), now);
-    lfo.frequency.setValueAtTime(toLfoFreq(f0.pace), now);
-
-    for (const f of frames) {
-      const t = now + f.t * DURATION_S;
-      const { x, z } = bearingToXZ(f.bearing);
-      osc.frequency.linearRampToValueAtTime(toFreq(f.pitch), t);
-      mainGain.gain.linearRampToValueAtTime(toGain(f.intensity), t);
-      filter.frequency.linearRampToValueAtTime(toFilterFreq(f.timbre), t);
-      filter.Q.linearRampToValueAtTime(toFilterQ(f.timbre), t);
-      panner.positionX.linearRampToValueAtTime(x, t);
-      panner.positionY.linearRampToValueAtTime(f.pitch - 0.5, t);
-      panner.positionZ.linearRampToValueAtTime(z, t);
-      dryGain.gain.linearRampToValueAtTime(toDryGain(f.pitch), t);
-      wetGain.gain.linearRampToValueAtTime(toWetGain(f.pitch), t);
-      feedbackGain.gain.linearRampToValueAtTime(toFeedbackGain(f.pitch), t);
-      lfo.frequency.linearRampToValueAtTime(toLfoFreq(f.pace), t);
-    }
-
-    mainGain.gain.linearRampToValueAtTime(0.001, now + DURATION_S);
-
-    osc.start(now);
-    osc.stop(now + DURATION_S);
-    lfo.start(now);
-    lfo.stop(now + DURATION_S);
+    const { osc, lfo } = buildAudioGraph(ctx, frames, analyser);
     osc.onended = () => setPlaybackState("stopped");
-
     oscRef.current = osc;
+    lfoRef.current = lfo;
   }
 
   const play = useCallback(() => {
