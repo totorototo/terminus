@@ -30,15 +30,11 @@ const PaceProfile = memo(function PaceProfile({ className }) {
   const chart = useMemo(() => {
     if (!sections?.length || !cumulativeDistances?.length) return null;
 
-    const hasMaxTime = sections.some((s) => s.maxCompletionTime != null);
+    const hasMaxTime = sections.every((s) => s.maxCompletionTime != null);
 
     const getPaceKmh = (section) => {
       if (section.totalDistance <= 0) return null;
-      if (
-        hasMaxTime &&
-        section.maxCompletionTime != null &&
-        section.maxCompletionTime > 0
-      ) {
+      if (section.maxCompletionTime != null && section.maxCompletionTime > 0) {
         return (section.totalDistance / section.maxCompletionTime) * 3.6;
       }
       if (section.estimatedDuration > 0) {
@@ -98,20 +94,26 @@ const PaceProfile = memo(function PaceProfile({ className }) {
     const areaShape = area()
       .x((d) => d.x)
       .y1((d) => d.y)
-      .y0(HEIGHT)
+      .y0(scaleY(minPace - paceRange * 0.15))
       .curve(curveCatmullRom.alpha(0.5));
 
     const linePath = lineShape(curvePoints);
     const areaPath = areaShape(curvePoints);
 
-    // Tightest section (lowest required pace = hardest cutoff)
+    // Tightest section (highest required pace = hardest cutoff)
     const tightestBar = bars.reduce(
-      (min, b) => (b.pace < min.pace ? b : min),
+      (max, b) => (b.pace > max.pace ? b : max),
       bars[0],
     );
 
-    // Average required pace across all sections
-    const avgPace = paces.reduce((sum, p) => sum + p, 0) / paces.length;
+    // Distance-weighted average required pace across all sections
+    const totalDist = bars.reduce(
+      (sum, b) => sum + (b.endDist - b.startDist),
+      0,
+    );
+    const avgPace =
+      bars.reduce((sum, b) => sum + b.pace * (b.endDist - b.startDist), 0) /
+      totalDist;
 
     // Runner position
     let markerX = null;
@@ -131,7 +133,16 @@ const PaceProfile = memo(function PaceProfile({ className }) {
       currentBar =
         bars.find((b) => distM >= b.startDist && distM < b.endDist) ??
         bars[bars.length - 1];
-      if (currentBar) markerY = scaleY(currentBar.pace);
+
+      // Interpolate Y on the curve between the two nearest midpoint samples
+      const left = curvePoints.filter((p) => p.x <= markerX).at(-1);
+      const right = curvePoints.find((p) => p.x >= markerX);
+      if (left && right && right.x !== left.x) {
+        const t = (markerX - left.x) / (right.x - left.x);
+        markerY = left.y + t * (right.y - left.y);
+      } else {
+        markerY = (left ?? right)?.y ?? null;
+      }
     }
 
     // Section boundary labels — skip first bar, deduplicate overlapping labels
