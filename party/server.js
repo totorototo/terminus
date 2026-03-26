@@ -39,7 +39,7 @@ export default class Server {
     if (parsed.type !== "location") return;
 
     // Validate coordinate ranges before broadcasting
-    if (!Array.isArray(parsed.coords) || parsed.coords.length !== 2) return;
+    if (!Array.isArray(parsed.coords) || parsed.coords.length < 2) return;
     const [lat, lon] = parsed.coords;
     if (
       typeof lat !== "number" ||
