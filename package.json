@@ -45,6 +45,9 @@
     "wouter": "^3.9.0",
     "zustand": "5.0.9"
   },
+  "overrides": {
+    "serialize-javascript": "7.0.5"
+  },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
     "@eslint/js": "9.39.1",
