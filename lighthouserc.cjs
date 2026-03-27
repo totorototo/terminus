@@ -9,17 +9,17 @@ module.exports = {
     },
     assert: {
       assertions: {
-        // Category scores — warn only, 3D/WASM apps have lower perf ceilings
-        "categories:performance": ["warn", { minScore: 0.65 }],
-        "categories:accessibility": ["warn", { minScore: 0.95 }],
-        "categories:best-practices": ["warn", { minScore: 0.95 }],
-        "categories:seo": ["warn", { minScore: 0.85 }],
+        // Category scores — error only, 3D/WASM apps have lower perf ceilings
+        "categories:performance": ["error", { minScore: 0.65 }],
+        "categories:accessibility": ["error", { minScore: 0.95 }],
+        "categories:best-practices": ["error", { minScore: 0.95 }],
+        "categories:seo": ["error", { minScore: 0.85 }],
         // Core Web Vitals
-        "first-contentful-paint": ["warn", { maxNumericValue: 1000 }],
-        "largest-contentful-paint": ["warn", { maxNumericValue: 1500 }],
-        "total-blocking-time": ["warn", { maxNumericValue: 600 }],
-        "cumulative-layout-shift": ["warn", { maxNumericValue: 0.2 }],
-        "speed-index": ["warn", { maxNumericValue: 1500 }],
+        "first-contentful-paint": ["error", { maxNumericValue: 1000 }],
+        "largest-contentful-paint": ["error", { maxNumericValue: 1500 }],
+        "total-blocking-time": ["error", { maxNumericValue: 600 }],
+        "cumulative-layout-shift": ["error", { maxNumericValue: 0.2 }],
+        "speed-index": ["error", { maxNumericValue: 1500 }],
       },
     },
     upload: {
