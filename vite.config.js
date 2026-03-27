@@ -128,6 +128,7 @@ export default defineConfig({
       srcDir: "src",
       filename: "sw.js",
       registerType: "autoUpdate",
+      injectRegister: "script-defer",
       injectManifest: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
       },

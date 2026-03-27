@@ -1,20 +1,13 @@
-import { lazy, Suspense } from "react";
-
 import { Route, Switch } from "wouter";
 
+import FollowerScreen from "./components/followerScreen/FollowerScreen.jsx";
+import Help from "./components/help/Help.jsx";
 import LandscapeOverlay from "./components/landscapeOverlay/LandscapeOverlay.jsx";
+import TrailerScreen from "./components/trailerScreen/TrailerScreen.jsx";
 import Wizard from "./components/wizard/Wizard.jsx";
 import { useRouteSync } from "./hooks/useRouteSync.js";
 
 import style from "./App.style.js";
-
-const FollowerScreen = lazy(
-  () => import("./components/followerScreen/FollowerScreen.jsx"),
-);
-const Help = lazy(() => import("./components/help/Help.jsx"));
-const TrailerScreen = lazy(
-  () => import("./components/trailerScreen/TrailerScreen.jsx"),
-);
 
 function App({ className }) {
   useRouteSync();
@@ -22,22 +15,20 @@ function App({ className }) {
   return (
     <div className={className}>
       <LandscapeOverlay />
-      <Suspense fallback={null}>
-        <Switch>
-          <Route path="/follow/:raceId/:roomId">
-            <FollowerScreen />
-          </Route>
-          <Route path="/run/:raceId">
-            <TrailerScreen />
-          </Route>
-          <Route path="/help">
-            <Help />
-          </Route>
-          <Route>
-            <Wizard />
-          </Route>
-        </Switch>
-      </Suspense>
+      <Switch>
+        <Route path="/follow/:raceId/:roomId">
+          <FollowerScreen />
+        </Route>
+        <Route path="/run/:raceId">
+          <TrailerScreen />
+        </Route>
+        <Route path="/help">
+          <Help />
+        </Route>
+        <Route>
+          <Wizard />
+        </Route>
+      </Switch>
     </div>
   );
 }
