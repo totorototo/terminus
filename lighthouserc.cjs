@@ -14,7 +14,6 @@ module.exports = {
         "categories:accessibility": ["warn", { minScore: 0.95 }],
         "categories:best-practices": ["warn", { minScore: 0.95 }],
         "categories:seo": ["warn", { minScore: 0.85 }],
-        "categories:pwa": ["warn", { minScore: 0.6 }],
         // Core Web Vitals
         "first-contentful-paint": ["warn", { maxNumericValue: 1000 }],
         "largest-contentful-paint": ["warn", { maxNumericValue: 1500 }],
