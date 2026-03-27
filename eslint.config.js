@@ -71,6 +71,7 @@ export default [
     files: [
       "vite.config.js",
       "playwright.config.js",
+      "lighthouserc.js",
       "scripts/**/*.js",
       "src/store/store.js",
     ],
