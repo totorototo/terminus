@@ -27,7 +27,8 @@ const PaceProfile = memo(function PaceProfile({ className }) {
   const projectedLocation = useProjectedLocation();
   const projectedIndex = projectedLocation?.index ?? null;
 
-  const chart = useMemo(() => {
+  // Static chart — only recomputes when sections or distances change (not on GPS ticks)
+  const staticChart = useMemo(() => {
     if (!sections?.length || !cumulativeDistances?.length) return null;
 
     const hasMaxTime = sections.every((s) => s.maxCompletionTime != null);
@@ -119,7 +120,41 @@ const PaceProfile = memo(function PaceProfile({ className }) {
       bars.reduce((sum, b) => sum + b.pace * (b.endDist - b.startDist), 0) /
       totalDist;
 
-    // Runner position
+    // Section boundary labels — deduplicate overlapping labels (runner proximity handled in overlay)
+    let lastLabelPct = -MIN_GAP_PCT;
+    const sectionMarkersBase = bars
+      .slice(1)
+      .map((bar) => {
+        const x = scaleX(bar.startDist);
+        return { x, pct: (x / WIDTH) * 100, name: truncate(bar.startLocation) };
+      })
+      .filter((s) => {
+        if (s.pct - lastLabelPct < MIN_GAP_PCT) return false;
+        lastLabelPct = s.pct;
+        return true;
+      });
+
+    return {
+      bars,
+      scaleX,
+      curvePoints,
+      linePath,
+      areaPath,
+      minPace,
+      maxPace,
+      totalDistKm,
+      hasMaxTime,
+      tightestBar,
+      avgPace,
+      sectionMarkersBase,
+    };
+  }, [sections, cumulativeDistances]);
+
+  // Dynamic overlay — recomputes on every GPS tick, but cheap
+  const overlay = useMemo(() => {
+    if (!staticChart) return null;
+    const { bars, scaleX, curvePoints, sectionMarkersBase } = staticChart;
+
     let markerX = null;
     let markerY = null;
     let markerPct = null;
@@ -149,42 +184,22 @@ const PaceProfile = memo(function PaceProfile({ className }) {
       }
     }
 
-    // Section boundary labels — skip first bar, deduplicate overlapping labels
-    let lastLabelPct = -MIN_GAP_PCT;
-    const sectionMarkers = bars
-      .slice(1)
-      .map((bar) => {
-        const x = scaleX(bar.startDist);
-        return { x, pct: (x / WIDTH) * 100, name: truncate(bar.startLocation) };
-      })
-      .filter((s) => {
-        const tooCloseToRunner =
-          markerPct !== null && Math.abs(s.pct - markerPct) < MIN_GAP_PCT;
-        if (tooCloseToRunner) return false;
-        if (s.pct - lastLabelPct < MIN_GAP_PCT) return false;
-        lastLabelPct = s.pct;
-        return true;
-      });
+    // Filter section labels too close to the runner marker
+    const sectionMarkers = sectionMarkersBase.filter(
+      (s) => markerPct === null || Math.abs(s.pct - markerPct) >= MIN_GAP_PCT,
+    );
 
     return {
-      linePath,
-      areaPath,
-      minPace,
-      maxPace,
-      totalDistKm,
       markerX,
       markerY,
       markerPct,
       runnerDistKm,
-      sectionMarkers,
-      hasMaxTime,
-      tightestBar,
       currentBar,
-      avgPace,
+      sectionMarkers,
     };
-  }, [sections, cumulativeDistances, projectedIndex]);
+  }, [staticChart, projectedIndex, cumulativeDistances]);
 
-  if (!chart) return null;
+  if (!staticChart || !overlay) return null;
 
   const {
     linePath,
@@ -192,16 +207,18 @@ const PaceProfile = memo(function PaceProfile({ className }) {
     minPace,
     maxPace,
     totalDistKm,
+    hasMaxTime,
+    tightestBar,
+    avgPace,
+  } = staticChart;
+  const {
     markerX,
     markerY,
     markerPct,
     runnerDistKm,
     sectionMarkers,
-    hasMaxTime,
-    tightestBar,
     currentBar,
-    avgPace,
-  } = chart;
+  } = overlay;
 
   return (
     <div className={className}>
