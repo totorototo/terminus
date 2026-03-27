@@ -2,6 +2,7 @@ module.exports = {
   ci: {
     collect: {
       staticDistDir: "./dist",
+      isSinglePageApplication: true,
       url: ["http://localhost/run/vvx-xgtv-2026"],
       numberOfRuns: 3,
     },
