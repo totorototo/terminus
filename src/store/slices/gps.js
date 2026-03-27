@@ -1,11 +1,17 @@
-import PartySocket from "partysocket";
-
 import createRingBuffer from "../../helpers/createRingBuffer";
 import {
   notifyLocationUpdate,
   requestNotificationPermission,
   subscribeToPush,
 } from "../../helpers/notify";
+
+let PartySocketModule = null;
+const getPartySocket = async () => {
+  if (!PartySocketModule) {
+    PartySocketModule = (await import("partysocket")).default;
+  }
+  return PartySocketModule;
+};
 
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";
 
@@ -23,13 +29,14 @@ export const createGPSSlice = (set, get) => {
   let followerSocket = null;
   let pendingMessage = null;
 
-  const ensureSocket = (sessionId) => {
+  const ensureSocket = async (sessionId) => {
     const isUnusable =
       !partySocket ||
       partySocket.readyState === WebSocket.CLOSED ||
       partySocket.readyState === WebSocket.CLOSING;
 
     if (isUnusable) {
+      const PartySocket = await getPartySocket();
       partySocket = new PartySocket({ host: PARTYKIT_HOST, room: sessionId });
       // Drain the single pending-message slot on every (re)connect
       const socket = partySocket;
@@ -42,8 +49,8 @@ export const createGPSSlice = (set, get) => {
     }
   };
 
-  const broadcastLocation = (sessionId, location, raceId) => {
-    ensureSocket(sessionId);
+  const broadcastLocation = async (sessionId, location, raceId) => {
+    await ensureSocket(sessionId);
     const { timestamp, coords, index } = location;
     const message = JSON.stringify({
       type: "location",
@@ -201,7 +208,7 @@ export const createGPSSlice = (set, get) => {
         // Broadcast to followers if in trailer mode
         const sessionId = get().app.liveSessionId;
         if (get().app.mode === "trailer" && sessionId) {
-          broadcastLocation(sessionId, projected, get().app.raceId);
+          await broadcastLocation(sessionId, projected, get().app.raceId);
         }
       } catch (error) {
         let errorMessage = "Failed to get current location";
@@ -270,7 +277,7 @@ export const createGPSSlice = (set, get) => {
       }
     },
 
-    connectToFollowerSession: (roomId) => {
+    connectToFollowerSession: async (roomId) => {
       if (!roomId) return;
 
       get().setFollowerRoomId(roomId);
@@ -288,6 +295,7 @@ export const createGPSSlice = (set, get) => {
         "gps/followerConnectionStatus",
       );
 
+      const PartySocket = await getPartySocket();
       followerSocket = new PartySocket({
         host: PARTYKIT_HOST,
         room: roomId,

@@ -67,6 +67,14 @@ function bundleSizePlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   build: {
+    modulePreload: {
+      resolveDependencies: (_filename, deps) => {
+        // Only preload small shared vendor chunks (zustand, react-vendor).
+        // Exclude heavy 3D / data-viz chunks — they are lazy-loaded per route.
+        const heavy = /three|drei|fiber|spring|d3-vendor|Scene|TrailData/;
+        return deps.filter((d) => !heavy.test(d));
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks: {
@@ -104,7 +112,7 @@ export default defineConfig({
     arraybuffer(),
     !process.env.GITHUB_ACTIONS &&
       compression({
-        algorithm: "brotli",
+        algorithm: "brotliCompress",
         ext: ".br",
         deleteOriginFile: false,
       }),
