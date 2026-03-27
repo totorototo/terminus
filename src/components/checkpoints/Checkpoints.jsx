@@ -1,6 +1,8 @@
+import { memo } from "react";
+
 import Marker from "../marker/Marker.jsx";
 
-export default function Checkpoints({ checkpointsPoints3D }) {
+function Checkpoints({ checkpointsPoints3D }) {
   return checkpointsPoints3D?.map((checkpoint, idx) => {
     // Prefer stable IDs; fallback to name, then index (use index only if unavoidable)
     const stableKey = checkpoint.id || checkpoint.name || idx;
@@ -28,3 +30,5 @@ export default function Checkpoints({ checkpointsPoints3D }) {
     );
   });
 }
+
+export default memo(Checkpoints);
