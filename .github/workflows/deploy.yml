@@ -54,23 +54,18 @@ jobs:
           retention-days: 1
 
   lighthouse:
-    needs: build
+    needs: deploy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
 
       - name: Run Lighthouse CI
         run: |
           npm install -g @lhci/cli@0.14.0
           lhci autorun
         env:
+          LHCI_BASE_URL: ${{ vars.NETLIFY_SITE_URL }}
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 
   e2e:

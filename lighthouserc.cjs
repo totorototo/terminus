@@ -1,9 +1,7 @@
 module.exports = {
   ci: {
     collect: {
-      staticDistDir: "./dist",
-      isSinglePageApplication: true,
-      url: ["http://localhost/run/vvx-xgtv-2026"],
+      url: [`${process.env.LHCI_BASE_URL}/run/vvx-xgtv-2026`],
       numberOfRuns: 3,
       settings: {
         preset: "desktop",
