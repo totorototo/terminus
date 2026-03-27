@@ -216,7 +216,9 @@ function Profile({
 
   useEffect(() => {
     const material = materialRef.current;
+    const geometry = geometryRef.current;
     return () => {
+      geometry?.dispose();
       material?.dispose();
     };
   }, []);
