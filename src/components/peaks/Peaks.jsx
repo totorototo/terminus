@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 
 import { Billboard } from "@react-three/drei";
 import { useTheme } from "styled-components";
@@ -55,4 +55,4 @@ function Peaks({ coordinateScales }) {
   ));
 }
 
-export default Peaks;
+export default memo(Peaks);
