@@ -69,8 +69,10 @@ function TrailerScreen({ className }) {
   }, []);
 
   return (
-    isWorkerReady && (
-      <div className={className}>
+    <div className={className}>
+      {!isWorkerReady ? (
+        <LoadingSpinner />
+      ) : (
         <AutoSizer>
           {({ width, height }) => {
             containerHeight.current = height;
@@ -104,8 +106,8 @@ function TrailerScreen({ className }) {
             );
           }}
         </AutoSizer>
-      </div>
-    )
+      )}
+    </div>
   );
 }
 

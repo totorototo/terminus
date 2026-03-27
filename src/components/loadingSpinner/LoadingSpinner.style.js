@@ -1,9 +1,15 @@
 import { rgba } from "polished";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+
+const spin = keyframes`
+  to {
+    transform: rotate(360deg);
+  }
+`;
 
 const style = (Component) => styled(Component)`
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,7 +31,7 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-primary"]};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-full"]};
-    animation: spin 0.8s linear infinite;
+    animation: ${spin} 0.8s linear infinite;
   }
 
   p {
@@ -35,12 +41,6 @@ const style = (Component) => styled(Component)`
     opacity: 0.7;
     letter-spacing: 1.5px;
     margin: 0;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
