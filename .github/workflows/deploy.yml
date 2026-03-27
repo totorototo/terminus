@@ -65,7 +65,7 @@ jobs:
           npm install -g @lhci/cli@0.14.0
           lhci autorun
         env:
-          LHCI_BASE_URL: ${{ vars.NETLIFY_SITE_URL }}
+          NETLIFY_SITE_URL: ${{ vars.NETLIFY_SITE_URL }}
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 
   e2e:
