@@ -1,7 +1,7 @@
 module.exports = {
   ci: {
     collect: {
-      url: [`${process.env.LHCI_BASE_URL}/run/vvx-xgtv-2026`],
+      url: [`${process.env.NETLIFY_SITE_URL}/run/vvx-xgtv-2026`],
       numberOfRuns: 3,
       settings: {
         preset: "desktop",
