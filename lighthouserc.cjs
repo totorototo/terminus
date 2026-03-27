@@ -5,6 +5,9 @@ module.exports = {
       isSinglePageApplication: true,
       url: ["http://localhost/run/vvx-xgtv-2026"],
       numberOfRuns: 3,
+      settings: {
+        preset: "desktop",
+      },
     },
     assert: {
       assertions: {
@@ -13,6 +16,7 @@ module.exports = {
         "categories:accessibility": ["warn", { minScore: 0.85 }],
         "categories:best-practices": ["warn", { minScore: 0.9 }],
         "categories:seo": ["warn", { minScore: 0.8 }],
+        "categories:pwa": ["warn", { minScore: 0.6 }],
         // Core Web Vitals
         "first-contentful-paint": ["warn", { maxNumericValue: 2000 }],
         "largest-contentful-paint": ["warn", { maxNumericValue: 4000 }],
