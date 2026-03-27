@@ -7,7 +7,7 @@ Source: https://sketchfab.com/3d-models/simple-low-poly-helicopter-d7a4f68877ac4
 Title: Simple low poly helicopter
 */
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 
 import { a, useSpring } from "@react-spring/three";
 import { useAnimations, useGLTF } from "@react-three/drei";
@@ -23,10 +23,11 @@ export function Trailer({ coordinateScales, ...props }) {
   );
   const { actions } = useAnimations(animations, group);
 
-  // Change material color to pink
-  if (materials.Material) {
-    materials.Material.color.set(0xfca3b7);
-  }
+  useLayoutEffect(() => {
+    if (materials.Material) {
+      materials.Material.color.set(0xfca3b7);
+    }
+  }, [materials.Material]);
 
   const projectedLocation = useProjectedLocation();
 
