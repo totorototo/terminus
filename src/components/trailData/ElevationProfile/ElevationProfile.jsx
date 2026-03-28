@@ -164,15 +164,20 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
           {markerX !== null && (
             <>
               <line
+                className="ep-runner-line"
                 x1={markerX}
                 y1={-VPAD}
                 x2={markerX}
                 y2={HEIGHT + VPAD}
-                stroke="#ECBC3E"
                 strokeWidth="1.5"
                 strokeDasharray="3 2"
               />
-              <circle cx={markerX} cy={markerY} r={3} fill="#ECBC3E" />
+              <circle
+                className="ep-runner-dot"
+                cx={markerX}
+                cy={markerY}
+                r={3}
+              />
             </>
           )}
         </svg>

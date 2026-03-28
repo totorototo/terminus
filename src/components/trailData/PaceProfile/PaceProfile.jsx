@@ -263,16 +263,21 @@ const PaceProfile = memo(function PaceProfile({ className }) {
           {markerX !== null && (
             <>
               <line
+                className="pp-runner-line"
                 x1={markerX}
                 y1={-VPAD}
                 x2={markerX}
                 y2={HEIGHT + VPAD}
-                stroke="#ECBC3E"
                 strokeWidth="1.5"
                 strokeDasharray="3 2"
               />
               {markerY !== null && (
-                <circle cx={markerX} cy={markerY} r={3} fill="#ECBC3E" />
+                <circle
+                  className="pp-runner-dot"
+                  cx={markerX}
+                  cy={markerY}
+                  r={3}
+                />
               )}
             </>
           )}
