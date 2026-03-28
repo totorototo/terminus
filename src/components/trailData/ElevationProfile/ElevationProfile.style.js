@@ -17,6 +17,21 @@ const style = (Component) => styled(Component)`
     overflow: visible;
   }
 
+  .ep-area {
+    fill: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.06)};
+  }
+
+  .ep-line {
+    stroke: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.4)};
+  }
+
+  .ep-section-line {
+    stroke: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.2)};
+  }
+
   /* HTML overlay for axis labels — avoids SVG text distortion */
   .ep-overlay {
     position: absolute;
