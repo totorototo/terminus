@@ -56,6 +56,16 @@ const style = (Component) => styled(Component)`
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.2)};
   }
 
+  .pp-runner-line {
+    stroke: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-primary"]};
+  }
+
+  .pp-runner-dot {
+    fill: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-primary"]};
+  }
+
   /* HTML overlay for axis labels — avoids SVG text distortion */
   .pp-overlay {
     position: absolute;
