@@ -41,6 +41,21 @@ const style = (Component) => styled(Component)`
     overflow: visible;
   }
 
+  .pp-area {
+    fill: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.06)};
+  }
+
+  .pp-line {
+    stroke: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.4)};
+  }
+
+  .pp-section-line {
+    stroke: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.2)};
+  }
+
   /* HTML overlay for axis labels — avoids SVG text distortion */
   .pp-overlay {
     position: absolute;

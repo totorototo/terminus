@@ -235,14 +235,12 @@ const PaceProfile = memo(function PaceProfile({ className }) {
           width="100%"
           height={HEIGHT + VPAD * 2}
         >
-          {areaPath && (
-            <path d={areaPath} fill="rgba(244,247,245,0.06)" stroke="none" />
-          )}
+          {areaPath && <path className="pp-area" d={areaPath} stroke="none" />}
           {linePath && (
             <path
+              className="pp-line"
               d={linePath}
               fill="none"
-              stroke="rgba(244,247,245,0.35)"
               strokeWidth="1.5"
             />
           )}
@@ -251,11 +249,11 @@ const PaceProfile = memo(function PaceProfile({ className }) {
           {sectionMarkers.map((s, i) => (
             <line
               key={i}
+              className="pp-section-line"
               x1={s.x}
               y1={-VPAD}
               x2={s.x}
               y2={HEIGHT + VPAD}
-              stroke="rgba(244,247,245,0.2)"
               strokeWidth="1"
               strokeDasharray="2 3"
             />
