@@ -46,6 +46,7 @@ const useStore = create(
             raceId: state.app.raceId,
             currentRoute: state.app.currentRoute,
             theme: state.app.theme,
+            installPromptDismissed: state.app.installPromptDismissed,
           },
           gps: {
             location: state.gps.location,
