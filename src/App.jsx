@@ -2,6 +2,7 @@ import { Route, Switch } from "wouter";
 
 import FollowerScreen from "./components/followerScreen/FollowerScreen.jsx";
 import Help from "./components/help/Help.jsx";
+import InstallPromptOverlay from "./components/installPromptOverlay/InstallPromptOverlay.jsx";
 import LandscapeOverlay from "./components/landscapeOverlay/LandscapeOverlay.jsx";
 import TrailerScreen from "./components/trailerScreen/TrailerScreen.jsx";
 import Wizard from "./components/wizard/Wizard.jsx";
@@ -15,6 +16,7 @@ function App({ className }) {
   return (
     <div className={className}>
       <LandscapeOverlay />
+      <InstallPromptOverlay />
       <Switch>
         <Route path="/follow/:raceId/:roomId">
           <FollowerScreen />

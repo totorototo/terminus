@@ -11,6 +11,7 @@ export const createAppSlice = (set, get) => {
       followerRoomId: null,
       raceId: null,
       currentRoute: "/",
+      installPromptDismissed: false,
       theme:
         typeof window !== "undefined" &&
         typeof window.matchMedia === "function" &&
@@ -112,6 +113,13 @@ export const createAppSlice = (set, get) => {
         }),
         undefined,
         "app/toggleTheme",
+      ),
+
+    dismissInstallPrompt: () =>
+      set(
+        (state) => ({ app: { ...state.app, installPromptDismissed: true } }),
+        undefined,
+        "app/dismissInstallPrompt",
       ),
   };
 };
