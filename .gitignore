@@ -42,6 +42,7 @@ zig/test/
 /playwright/.auth/
 /test
 stats.html
+/coverage
 
 # mcp
 .playwright-mcp/
