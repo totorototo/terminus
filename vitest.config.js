@@ -26,6 +26,7 @@ export default defineConfig({
         "src/**/*.styles.{js,jsx}",
         "src/main.jsx",
         "src/sw.js",
+        "src/components/**",
       ],
       thresholds: {
         lines: 30,
