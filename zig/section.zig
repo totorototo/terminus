@@ -141,3 +141,179 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
 
     return try sections.toOwnedSlice(allocator);
 }
+
+test "computeSectionsFromWaypoints: returns null with no section boundaries" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 110.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.0, .lon = 0.0, .name = "A", .time = null },
+        .{ .lat = 0.001, .lon = 0.0, .name = "B", .time = null },
+    };
+    const result = try computeFromWaypoints(&trace, allocator, &waypoints);
+    try std.testing.expect(result == null);
+}
+
+test "computeSectionsFromWaypoints: returns null with only one section boundary" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 110.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.0, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.001, .lon = 0.0, .name = "Plain", .time = null },
+    };
+    const result = try computeFromWaypoints(&trace, allocator, &waypoints);
+    try std.testing.expect(result == null);
+}
+
+test "computeSectionsFromWaypoints: basic two-boundary section" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 105.0 },
+        [3]f64{ 0.002, 0.0, 110.0 },
+        [3]f64{ 0.003, 0.0, 115.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
+    };
+
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    defer if (sections) |s| allocator.free(s);
+
+    try std.testing.expect(sections != null);
+    try std.testing.expectEqual(@as(usize, 1), sections.?.len);
+    try std.testing.expectEqual(@as(usize, 0), sections.?[0].sectionId);
+    try std.testing.expect(sections.?[0].totalDistance > 0.0);
+    try std.testing.expect(sections.?[0].pointCount > 0);
+}
+
+test "computeSectionsFromWaypoints: plain (untyped) waypoints are ignored" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 102.0 },
+        [3]f64{ 0.002, 0.0, 104.0 },
+        [3]f64{ 0.003, 0.0, 106.0 },
+        [3]f64{ 0.004, 0.0, 108.0 },
+        [3]f64{ 0.005, 0.0, 110.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // 3 section boundaries with plain waypoints interspersed
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",  .wptType = "Start",       .time = null },
+        .{ .lat = 0.001, .lon = 0.0, .name = "Plain1", .wptType = null,           .time = null },
+        .{ .lat = 0.002, .lon = 0.0, .name = "TB1",    .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "Plain2", .wptType = null,           .time = null },
+        .{ .lat = 0.005, .lon = 0.0, .name = "End",    .wptType = "Arrival",     .time = null },
+    };
+
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    defer if (sections) |s| allocator.free(s);
+
+    // 2 sections: Start→TB1 and TB1→Arrival; plain waypoints are skipped
+    try std.testing.expect(sections != null);
+    try std.testing.expectEqual(@as(usize, 2), sections.?.len);
+}
+
+test "computeSectionsFromWaypoints: stageIdx increments at LifeBase boundary" {
+    const allocator = std.testing.allocator;
+    var points = try allocator.alloc([3]f64, 12);
+    defer allocator.free(points);
+    for (0..12) |i| {
+        const t = @as(f64, @floatFromInt(i)) * 0.001;
+        points[i] = [3]f64{ t, 0.0, 100.0 + t * 500.0 };
+    }
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    // Sections: Start→TB1→LifeBase→TB2→Arrival
+    // Stage 0: Start→TB1, TB1→LifeBase  (sections 0 and 1)
+    // Stage 1: LifeBase→TB2, TB2→Arrival (sections 2 and 3)
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.006, .lon = 0.0, .name = "LB1",     .wptType = "LifeBase",    .time = null },
+        .{ .lat = 0.009, .lon = 0.0, .name = "TB2",     .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.011, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
+    };
+
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    defer if (sections) |s| allocator.free(s);
+
+    try std.testing.expect(sections != null);
+    try std.testing.expectEqual(@as(usize, 4), sections.?.len);
+    // Sections 0 and 1 belong to stage 0 (before LifeBase)
+    try std.testing.expectEqual(@as(usize, 0), sections.?[0].stageIdx);
+    try std.testing.expectEqual(@as(usize, 0), sections.?[1].stageIdx);
+    // Sections 2 and 3 belong to stage 1 (after LifeBase)
+    try std.testing.expectEqual(@as(usize, 1), sections.?[2].stageIdx);
+    try std.testing.expectEqual(@as(usize, 1), sections.?[3].stageIdx);
+}
+
+test "computeSectionsFromWaypoints: maxCompletionTime computed from timestamps" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 105.0 },
+        [3]f64{ 0.002, 0.0, 110.0 },
+        [3]f64{ 0.003, 0.0, 115.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",       .time = 1_000_000 },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_007_200 },
+    };
+
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    defer if (sections) |s| allocator.free(s);
+
+    try std.testing.expect(sections != null);
+    try std.testing.expectEqual(@as(usize, 1), sections.?.len);
+    try std.testing.expect(sections.?[0].maxCompletionTime != null);
+    try std.testing.expectEqual(@as(i64, 7200), sections.?[0].maxCompletionTime.?);
+    try std.testing.expectEqual(@as(i64, 1_000_000), sections.?[0].startTime.?);
+    try std.testing.expectEqual(@as(i64, 1_007_200), sections.?[0].endTime.?);
+}
+
+test "computeSectionsFromWaypoints: maxCompletionTime is null without timestamps" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 105.0 },
+        [3]f64{ 0.002, 0.0, 110.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",   .time = null },
+        .{ .lat = 0.002, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = null },
+    };
+
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    defer if (sections) |s| allocator.free(s);
+
+    try std.testing.expect(sections != null);
+    try std.testing.expectEqual(@as(?i64, null), sections.?[0].maxCompletionTime);
+    try std.testing.expectEqual(@as(?i64, null), sections.?[0].startTime);
+    try std.testing.expectEqual(@as(?i64, null), sections.?[0].endTime);
+}

@@ -45,6 +45,78 @@ pub const Waypoint = struct {
     }
 };
 
+test "Waypoint.isStageBoundary: Start, LifeBase, Arrival return true" {
+    const wpt_start = Waypoint{ .lat = 0, .lon = 0, .name = "S", .wptType = "Start", .time = null };
+    const wpt_lb = Waypoint{ .lat = 0, .lon = 0, .name = "L", .wptType = "LifeBase", .time = null };
+    const wpt_arr = Waypoint{ .lat = 0, .lon = 0, .name = "A", .wptType = "Arrival", .time = null };
+    try std.testing.expect(wpt_start.isStageBoundary());
+    try std.testing.expect(wpt_lb.isStageBoundary());
+    try std.testing.expect(wpt_arr.isStageBoundary());
+}
+
+test "Waypoint.isStageBoundary: TimeBarrier returns false" {
+    const wpt = Waypoint{ .lat = 0, .lon = 0, .name = "T", .wptType = "TimeBarrier", .time = null };
+    try std.testing.expect(!wpt.isStageBoundary());
+}
+
+test "Waypoint.isStageBoundary: null wptType returns false" {
+    const wpt = Waypoint{ .lat = 0, .lon = 0, .name = "P", .wptType = null, .time = null };
+    try std.testing.expect(!wpt.isStageBoundary());
+}
+
+test "Waypoint.isSectionBoundary: any non-null wptType returns true" {
+    const wpt_tb = Waypoint{ .lat = 0, .lon = 0, .name = "T", .wptType = "TimeBarrier", .time = null };
+    const wpt_start = Waypoint{ .lat = 0, .lon = 0, .name = "S", .wptType = "Start", .time = null };
+    try std.testing.expect(wpt_tb.isSectionBoundary());
+    try std.testing.expect(wpt_start.isSectionBoundary());
+}
+
+test "Waypoint.isSectionBoundary: null wptType returns false" {
+    const wpt = Waypoint{ .lat = 0, .lon = 0, .name = "P", .wptType = null, .time = null };
+    try std.testing.expect(!wpt.isSectionBoundary());
+}
+
+test "Metadata.deinit: frees owned name and description" {
+    const allocator = std.testing.allocator;
+    var meta = Metadata{
+        .name = try allocator.dupe(u8, "Trail Name"),
+        .description = try allocator.dupe(u8, "A description"),
+    };
+    meta.deinit(allocator);
+}
+
+test "Metadata.deinit: handles null fields without crash" {
+    const allocator = std.testing.allocator;
+    var meta = Metadata{ .name = null, .description = null };
+    meta.deinit(allocator);
+}
+
+test "Waypoint.deinit: frees all optional strings" {
+    const allocator = std.testing.allocator;
+    var wpt = Waypoint{
+        .lat = 48.85,
+        .lon = 2.35,
+        .name = try allocator.dupe(u8, "Checkpoint 1"),
+        .desc = try allocator.dupe(u8, "A checkpoint"),
+        .cmt = try allocator.dupe(u8, "some comment"),
+        .sym = try allocator.dupe(u8, "Flag"),
+        .wptType = try allocator.dupe(u8, "TimeBarrier"),
+        .time = 1_700_000_000,
+    };
+    wpt.deinit(allocator);
+}
+
+test "Waypoint.deinit: handles null optional fields" {
+    const allocator = std.testing.allocator;
+    var wpt = Waypoint{
+        .lat = 0,
+        .lon = 0,
+        .name = try allocator.dupe(u8, "Plain"),
+        .time = null,
+    };
+    wpt.deinit(allocator);
+}
+
 pub const GPXData = struct {
     trace: Trace,
     waypoints: []Waypoint,

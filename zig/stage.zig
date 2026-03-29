@@ -130,6 +130,92 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
     return try stages.toOwnedSlice(allocator);
 }
 
+test "computeStagesFromWaypoints: returns null with fewer than 2 stage boundaries" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 110.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // No stage boundaries at all
+    const waypoints_none = [_]Waypoint{
+        .{ .lat = 0.0, .lon = 0.0, .name = "A", .time = null },
+        .{ .lat = 0.001, .lon = 0.0, .name = "B", .time = null },
+    };
+    try expect((try computeFromWaypoints(&trace, allocator, &waypoints_none)) == null);
+
+    // Only one stage boundary (Start)
+    const waypoints_one = [_]Waypoint{
+        .{ .lat = 0.0, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.001, .lon = 0.0, .name = "Plain", .time = null },
+    };
+    try expect((try computeFromWaypoints(&trace, allocator, &waypoints_one)) == null);
+}
+
+test "computeStagesFromWaypoints: TimeBarrier waypoints are excluded" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 105.0 },
+        [3]f64{ 0.002, 0.0, 110.0 },
+        [3]f64{ 0.003, 0.0, 115.0 },
+        [3]f64{ 0.004, 0.0, 120.0 },
+        [3]f64{ 0.005, 0.0, 125.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // TimeBarrier at 0.002 is a section boundary but NOT a stage boundary — should be skipped.
+    // Result: 1 stage (Start→Arrival), not 2.
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
+        .{ .lat = 0.002, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.005, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
+    };
+
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints);
+    defer if (stages) |s| allocator.free(s);
+
+    try expect(stages != null);
+    try expectEqual(@as(usize, 1), stages.?.len);
+    try expectEqual(@as(usize, 0), stages.?[0].stageId);
+    try expect(stages.?[0].totalDistance > 0.0);
+}
+
+test "computeStagesFromWaypoints: Start-LifeBase-Arrival produces two stages" {
+    const allocator = std.testing.allocator;
+    var points = try allocator.alloc([3]f64, 10);
+    defer allocator.free(points);
+    for (0..10) |i| {
+        const t = @as(f64, @floatFromInt(i)) * 0.001;
+        points[i] = [3]f64{ t, 0.0, 100.0 + t * 500.0 };
+    }
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",    .wptType = "Start",    .time = null },
+        .{ .lat = 0.005, .lon = 0.0, .name = "LifeBase", .wptType = "LifeBase", .time = null },
+        .{ .lat = 0.009, .lon = 0.0, .name = "Arrival",  .wptType = "Arrival",  .time = null },
+    };
+
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints);
+    defer if (stages) |s| allocator.free(s);
+
+    try expect(stages != null);
+    try expectEqual(@as(usize, 2), stages.?.len);
+    // stageId is zero-indexed and sequential
+    try expectEqual(@as(usize, 0), stages.?[0].stageId);
+    try expectEqual(@as(usize, 1), stages.?[1].stageId);
+    // Each stage covers a non-zero distance
+    try expect(stages.?[0].totalDistance > 0.0);
+    try expect(stages.?[1].totalDistance > 0.0);
+    // Stages are non-overlapping: first stage ends where second begins
+    try expect(stages.?[0].endIndex <= stages.?[1].startIndex);
+}
+
 test "stage maxCompletionTime is set from waypoint timestamps" {
     const allocator = std.testing.allocator;
 
