@@ -1,3 +1,5 @@
+import { track } from "../../lib/analytics.js";
+
 export const createAppSlice = (set, get) => {
   return {
     app: {
@@ -32,7 +34,8 @@ export const createAppSlice = (set, get) => {
         "app/toggleTrackingMode",
       ),
 
-    toggleProfileMode: () =>
+    toggleProfileMode: () => {
+      track("toggle-profile");
       set(
         (state) => ({
           app: {
@@ -42,8 +45,10 @@ export const createAppSlice = (set, get) => {
         }),
         undefined,
         "app/toggleProfileMode",
-      ),
-    toggleSlopesMode: () =>
+      );
+    },
+    toggleSlopesMode: () => {
+      track("toggle-slopes");
       set(
         (state) => ({
           app: {
@@ -53,7 +58,8 @@ export const createAppSlice = (set, get) => {
         }),
         undefined,
         "app/toggleSlopesMode",
-      ),
+      );
+    },
 
     setPendingUrl: (url) =>
       set(
@@ -103,7 +109,8 @@ export const createAppSlice = (set, get) => {
         "app/setCurrentRoute",
       ),
 
-    toggleTheme: () =>
+    toggleTheme: () => {
+      track("toggle-theme");
       set(
         (state) => ({
           app: {
@@ -113,7 +120,8 @@ export const createAppSlice = (set, get) => {
         }),
         undefined,
         "app/toggleTheme",
-      ),
+      );
+    },
 
     dismissInstallPrompt: () =>
       set(

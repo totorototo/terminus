@@ -4,6 +4,7 @@ import {
   requestNotificationPermission,
   subscribeToPush,
 } from "../../helpers/notify";
+import { track } from "../../lib/analytics.js";
 
 let PartySocketModule = null;
 const getPartySocket = async () => {
@@ -148,6 +149,7 @@ export const createGPSSlice = (set, get) => {
       ),
 
     spotMe: async () => {
+      track("spot-me");
       try {
         const position = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -251,6 +253,7 @@ export const createGPSSlice = (set, get) => {
     },
 
     shareLocation: async () => {
+      track("share-location");
       const raceId = get().app.raceId;
       if (!raceId) return;
 
@@ -279,6 +282,7 @@ export const createGPSSlice = (set, get) => {
 
     connectToFollowerSession: async (roomId) => {
       if (!roomId) return;
+      track("follower-session-start", { raceId: get().app.raceId });
 
       get().setFollowerRoomId(roomId);
 

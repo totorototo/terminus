@@ -4,6 +4,7 @@ import { Download } from "@styled-icons/feather";
 import PropTypes from "prop-types";
 
 import { useSoundscape } from "../../hooks/useSoundscape.js";
+import { track } from "../../lib/analytics.js";
 
 import style from "./Soundscape.style.js";
 
@@ -159,7 +160,10 @@ const Soundscape = memo(function Soundscape({ className }) {
           {isActive && <span className="live-badge">live</span>}
           <button
             className="dl-btn"
-            onClick={download}
+            onClick={() => {
+              track("soundscape-download");
+              download();
+            }}
             disabled={isLoading || isDownloading}
             aria-label="Download WAV"
             title="Download as WAV"
@@ -173,7 +177,10 @@ const Soundscape = memo(function Soundscape({ className }) {
       <div className="controls">
         <button
           className="ctrl-btn"
-          onClick={restart}
+          onClick={() => {
+            track("soundscape-restart");
+            restart();
+          }}
           disabled={isLoading || (!isActive && soundState !== "ready")}
           aria-label="Restart"
           title="Restart"
@@ -184,7 +191,10 @@ const Soundscape = memo(function Soundscape({ className }) {
         {isPlaying ? (
           <button
             className="ctrl-btn ctrl-primary active"
-            onClick={pause}
+            onClick={() => {
+              track("soundscape-pause");
+              pause();
+            }}
             aria-label="Pause"
             title="Pause"
           >
@@ -193,7 +203,17 @@ const Soundscape = memo(function Soundscape({ className }) {
         ) : (
           <button
             className={`ctrl-btn ctrl-primary${isPaused ? " active" : ""}`}
-            onClick={isPaused ? resume : play}
+            onClick={
+              isPaused
+                ? () => {
+                    track("soundscape-resume");
+                    resume();
+                  }
+                : () => {
+                    track("soundscape-play");
+                    play();
+                  }
+            }
             disabled={isLoading || (!isPaused && soundState !== "ready")}
             aria-label={isPaused ? "Resume" : "Play"}
             title={isPaused ? "Resume" : "Play"}
@@ -204,7 +224,10 @@ const Soundscape = memo(function Soundscape({ className }) {
 
         <button
           className="ctrl-btn"
-          onClick={stop}
+          onClick={() => {
+            track("soundscape-stop");
+            stop();
+          }}
           disabled={!isActive}
           aria-label="Stop"
           title="Stop"

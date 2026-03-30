@@ -9,6 +9,8 @@ import {
 } from "@styled-icons/feather";
 import { useLocation } from "wouter";
 
+import { track } from "../../lib/analytics.js";
+
 import style from "./Wizard.style.js";
 
 function Wizard({ className }) {
@@ -37,17 +39,23 @@ function Wizard({ className }) {
 
   // Runner flow
   const handleRunnerNext = () => {
+    track("role-selected", { role: "runner" });
     retryIfNeeded();
     setStep(2);
   };
-  const handleRunnerRacePick = (raceId) => navigate(`/run/${raceId}`);
+  const handleRunnerRacePick = (raceId) => {
+    track("race-selected", { role: "runner", raceId });
+    navigate(`/run/${raceId}`);
+  };
 
   // Follower flow
   const handleFollowerNext = () => {
+    track("role-selected", { role: "follower" });
     retryIfNeeded();
     setStep(3);
   };
   const handleFollowerRacePick = (raceId) => {
+    track("race-selected", { role: "follower", raceId });
     setFollowerRaceId(raceId);
     setStep(4);
   };
@@ -55,6 +63,7 @@ function Wizard({ className }) {
   const handleConfirm = () => {
     const trimmed = code.trim().toUpperCase();
     if (!followerRaceId || trimmed.length < 6) return;
+    track("follower-join");
     navigate(`/follow/${followerRaceId}/${trimmed}`);
   };
 
