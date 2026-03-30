@@ -10,7 +10,7 @@
     X-Frame-Options = "SAMEORIGIN"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://PARTYKIT_HOST_REDACTED wss://PARTYKIT_HOST_REDACTED blob: https://cdn.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob: https://cloud.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://PARTYKIT_HOST_REDACTED wss://PARTYKIT_HOST_REDACTED blob: https://cdn.jsdelivr.net https://cloud.umami.is; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
 
 [[headers]]
   for = "/assets/*"
