@@ -510,7 +510,7 @@ async function generateSoundscapeFrames(data, requestId) {
   // Copy Zigar proxy structs to plain JS before postMessage
   const frames = [];
   for (let i = 0; i < zigFrames.length; i++) {
-    const f = zigFrames[i];
+    const f = zigFrames[i].valueOf();
     frames.push({
       t: f.t,
       distance: f.distance,
