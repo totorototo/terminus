@@ -476,6 +476,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         return response.frames;
       } catch (error) {
         handleWorkerError(error, "Failed to generate audio frames");
+        throw error;
       }
     },
 

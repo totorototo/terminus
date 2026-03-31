@@ -522,7 +522,7 @@ async function generateSoundscapeFrames(data, requestId) {
     });
   }
 
-  zigFrames.delete?.();
+  zigFrames.deinit();
 
   markEnd("generateAudioFrames");
 
