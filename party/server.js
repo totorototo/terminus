@@ -75,12 +75,14 @@ export default class Server {
     await this.room.storage.put("lastPushAt", Date.now());
 
     const subs = (await this.room.storage.get("pushSubs")) ?? {};
-    const payload = JSON.stringify({
-      title: "Runner update",
-      body: Array.isArray(locationMsg.coords)
-        ? `${locationMsg.coords[0].toFixed(5)}, ${locationMsg.coords[1].toFixed(5)}`
-        : "New position received",
-    });
+    const [lat, lon, ele] = Array.isArray(locationMsg.coords)
+      ? locationMsg.coords
+      : [];
+    const body =
+      typeof lat === "number" && typeof lon === "number"
+        ? `Runner at ${lat.toFixed(4)}, ${lon.toFixed(4)}${typeof ele === "number" ? ` · ${Math.round(ele)}m` : ""}`
+        : "Runner's position updated";
+    const payload = JSON.stringify({ title: "Runner update", body });
 
     const toRemove = [];
     await Promise.allSettled(
