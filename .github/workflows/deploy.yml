@@ -56,10 +56,8 @@ jobs:
           echo "VITE_UMAMI_WEBSITE_ID=${{ secrets.VITE_UMAMI_WEBSITE_ID }}" >> .env
           npm run build
           PARTYKIT_HOST="terminus.${{ secrets.PARTYKIT_LOGIN }}.partykit.dev"
-          cat >> dist/_headers << EOF
-          /*
-            Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob: https://cloud.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://${PARTYKIT_HOST} wss://${PARTYKIT_HOST} blob: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev; worker-src 'self' blob:; object-src 'none'; base-uri 'self'
-          EOF
+          CSP="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob: https://cloud.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://${PARTYKIT_HOST} wss://${PARTYKIT_HOST} blob: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
+          printf '/*\n  Content-Security-Policy: %s\n' "$CSP" >> dist/_headers
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v5
