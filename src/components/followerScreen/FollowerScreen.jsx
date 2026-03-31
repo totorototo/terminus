@@ -23,7 +23,7 @@ import style from "./FollowerScreen.style";
 
 const Scene = lazy(() => import("../scene/Scene.jsx"));
 
-const PUSH_NOTIFICATIONS_ENABLED = false;
+const PUSH_NOTIFICATIONS_ENABLED = true;
 
 function FollowerScreen({ className }) {
   const { roomId, raceId } = useParams();
@@ -33,8 +33,6 @@ function FollowerScreen({ className }) {
   const {
     connectToFollowerSession,
     disconnectFollowerSession,
-    // enableNotifications and notificationPermission are kept here for when
-    // PUSH_NOTIFICATIONS_ENABLED is re-enabled; remove these comments then.
     enableNotifications,
     notificationPermission,
     setRaceId,
@@ -106,7 +104,8 @@ function FollowerScreen({ className }) {
                     <LocationFreshness waiting={projectedTimestamp === 0} />
                   </TopSheetPanel>
                   {PUSH_NOTIFICATIONS_ENABLED &&
-                    notificationPermission == null && (
+                    notificationPermission == null &&
+                    projectedTimestamp !== 0 && (
                       <button
                         className="notify-btn"
                         onClick={enableNotifications}

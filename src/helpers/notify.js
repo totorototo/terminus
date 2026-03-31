@@ -37,9 +37,11 @@ const relayToServiceWorker = (payload) => {
 export const notifyLocationUpdate = (msg) => {
   if (Notification.permission !== "granted") return;
 
-  const body = msg.coords
-    ? `${msg.coords[0].toFixed(5)}, ${msg.coords[1].toFixed(5)}`
-    : "New position received";
+  const [lat, lon, ele] = msg.coords ?? [];
+  const body =
+    typeof lat === "number" && typeof lon === "number"
+      ? `Runner at ${lat.toFixed(4)}, ${lon.toFixed(4)}${typeof ele === "number" ? ` · ${Math.round(ele)}m` : ""}`
+      : "Runner's position updated";
 
   relayToServiceWorker({
     title: "Runner update",
