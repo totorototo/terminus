@@ -126,6 +126,9 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Write env for preview server
+        run: echo "VITE_PARTYKIT_HOST=terminus.${{ secrets.PARTYKIT_LOGIN }}.partykit.dev" > .env
+
       - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
