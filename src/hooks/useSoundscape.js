@@ -231,6 +231,7 @@ export function useSoundscape() {
   const lfoRef = useRef(null);
   const analyserRef = useRef(null);
   const startTimeRef = useRef(null);
+  const generationRef = useRef(0);
 
   // "stopped" | "playing" | "paused"
   const [playbackState, setPlaybackState] = useState("stopped");
@@ -349,6 +350,7 @@ export function useSoundscape() {
       audioCtxRef.current.close();
       audioCtxRef.current = null;
     }
+    generationRef.current += 1;
     analyserRef.current = null;
     startTimeRef.current = null;
   }
@@ -367,7 +369,10 @@ export function useSoundscape() {
     startTimeRef.current = ctx.currentTime;
 
     const { osc, lfo } = buildAudioGraph(ctx, frames, analyser);
-    osc.onended = () => setPlaybackState("stopped");
+    const gen = generationRef.current;
+    osc.onended = () => {
+      if (generationRef.current === gen) setPlaybackState("stopped");
+    };
     oscRef.current = osc;
     lfoRef.current = lfo;
   }
@@ -416,7 +421,7 @@ export function useSoundscape() {
       a.href = url;
       a.download = "soundscape.wav";
       a.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } finally {
       setIsDownloading(false);
     }

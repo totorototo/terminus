@@ -529,7 +529,7 @@ async function generateSoundscapeFrames(data, requestId) {
   self.postMessage({
     type: "AUDIO_FRAMES_READY",
     id: requestId,
-    frames,
+    results: { frames },
     timingMs: { audioFrames: measureMs("generateAudioFrames") },
   });
 }
