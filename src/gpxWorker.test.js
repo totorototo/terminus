@@ -228,7 +228,9 @@ describe("message routing", () => {
   });
 
   it("routes GENERATE_AUDIO_FRAMES and posts AUDIO_FRAMES_READY", async () => {
-    generateAudioFrames.mockResolvedValue([]);
+    generateAudioFrames.mockResolvedValue(
+      Object.assign([], { deinit: vi.fn() }),
+    );
     await dispatch("GENERATE_AUDIO_FRAMES", {
       elevations: [100],
       distances: [0],
@@ -566,33 +568,38 @@ describe("generateSoundscapeFrames bearing/pace assignment", () => {
   });
 
   it("extracts frame fields from Zigar proxy objects", async () => {
-    generateAudioFrames.mockResolvedValue([
-      {
-        t: 0,
-        distance: 0,
-        pitch: 0.5,
-        intensity: 0.3,
-        timbre: 0.4,
-        bearing: 90,
-        pace: 0.1,
-      },
-      {
-        t: 1,
-        distance: 400,
-        pitch: 0.8,
-        intensity: 0.6,
-        timbre: 0.7,
-        bearing: 180,
-        pace: 0.2,
-      },
-    ]);
+    generateAudioFrames.mockResolvedValue(
+      Object.assign(
+        [
+          {
+            t: 0,
+            distance: 0,
+            pitch: 0.5,
+            intensity: 0.3,
+            timbre: 0.4,
+            bearing: 90,
+            pace: 0.1,
+          },
+          {
+            t: 1,
+            distance: 400,
+            pitch: 0.8,
+            intensity: 0.6,
+            timbre: 0.7,
+            bearing: 180,
+            pace: 0.2,
+          },
+        ],
+        { deinit: vi.fn() },
+      ),
+    );
     await dispatch("GENERATE_AUDIO_FRAMES", {
       elevations,
       distances,
       slopes,
     });
 
-    const { frames } = postMessage.mock.calls[0][0];
+    const { frames } = postMessage.mock.calls[0][0].results;
     expect(frames).toHaveLength(2);
     expect(frames[0]).toEqual({
       t: 0,
