@@ -273,3 +273,99 @@ test "douglasPeuckerSimplify: real-world GPS data pattern" {
     try expectApproxEqAbs(simplified[0][0], points[0][0], 0.0001);
     try expectApproxEqAbs(simplified[simplified.len - 1][0], points[points.len - 1][0], 0.0001);
 }
+
+// ── Benchmarks ────────────────────────────────────────────────────────────────
+//
+// Synthetic mountain-trail GPS path: north-east bearing with sinusoidal
+// switchbacks (lateral noise) and an ascending elevation profile.
+// This exercises the typical real-world input shape — neither a perfectly
+// straight line (trivially fast) nor a worst-case adversarial zigzag.
+//
+// Thresholds are deliberately generous so they pass in debug mode, but are
+// tight enough to catch an accidental O(n²) regression: the current algorithm
+// is O(n·depth) where depth ≤ MAX_RECURSION_DEPTH (64), so 100 K points
+// perform ~6.4 M perpendicular-distance evaluations. An O(n²) implementation
+// would require ~10 B evaluations — orders of magnitude beyond the threshold.
+
+fn makeSyntheticTrace(allocator: std.mem.Allocator, n: usize) ![][3]f64 {
+    const points = try allocator.alloc([3]f64, n);
+    for (0..n) |i| {
+        const t = @as(f64, @floatFromInt(i)) / @as(f64, @floatFromInt(n));
+        // Northward bearing with sinusoidal lateral displacement (switchbacks)
+        const lat = 45.0 + t * 0.5;
+        const lon = -122.0 + t * 0.3 + @sin(t * std.math.pi * 30.0) * 0.002;
+        // Ascending profile with undulating ridge line
+        const elev = 500.0 + t * 1500.0 + @sin(t * std.math.pi * 60.0) * 100.0;
+        points[i] = [3]f64{ lat, lon, elev };
+    }
+    return points;
+}
+
+test "bench: douglasPeuckerSimplify 10K points completes within 2s" {
+    const allocator = std.testing.allocator;
+    const n = 10_000;
+    const limit_ns = 2 * std.time.ns_per_s;
+
+    const points = try makeSyntheticTrace(allocator, n);
+    defer allocator.free(points);
+
+    var timer = try std.time.Timer.start();
+    const simplified = try douglasPeuckerSimplify(allocator, points, 10.0);
+    const elapsed_ns = timer.read();
+    defer allocator.free(simplified);
+
+    std.debug.print(
+        "\n[bench] douglasPeuckerSimplify {d}K points: {d}ms  ({d} → {d} pts)\n",
+        .{ n / 1000, elapsed_ns / std.time.ns_per_ms, n, simplified.len },
+    );
+
+    try expect(simplified.len >= 2);
+    try expect(simplified.len <= n);
+    try expect(elapsed_ns < limit_ns);
+}
+
+test "bench: douglasPeuckerSimplify 50K points completes within 10s" {
+    const allocator = std.testing.allocator;
+    const n = 50_000;
+    const limit_ns = 10 * std.time.ns_per_s;
+
+    const points = try makeSyntheticTrace(allocator, n);
+    defer allocator.free(points);
+
+    var timer = try std.time.Timer.start();
+    const simplified = try douglasPeuckerSimplify(allocator, points, 10.0);
+    const elapsed_ns = timer.read();
+    defer allocator.free(simplified);
+
+    std.debug.print(
+        "\n[bench] douglasPeuckerSimplify {d}K points: {d}ms  ({d} → {d} pts)\n",
+        .{ n / 1000, elapsed_ns / std.time.ns_per_ms, n, simplified.len },
+    );
+
+    try expect(simplified.len >= 2);
+    try expect(simplified.len <= n);
+    try expect(elapsed_ns < limit_ns);
+}
+
+test "bench: douglasPeuckerSimplify 100K points completes within 30s" {
+    const allocator = std.testing.allocator;
+    const n = 100_000;
+    const limit_ns = 30 * std.time.ns_per_s;
+
+    const points = try makeSyntheticTrace(allocator, n);
+    defer allocator.free(points);
+
+    var timer = try std.time.Timer.start();
+    const simplified = try douglasPeuckerSimplify(allocator, points, 10.0);
+    const elapsed_ns = timer.read();
+    defer allocator.free(simplified);
+
+    std.debug.print(
+        "\n[bench] douglasPeuckerSimplify {d}K points: {d}ms  ({d} → {d} pts)\n",
+        .{ n / 1000, elapsed_ns / std.time.ns_per_ms, n, simplified.len },
+    );
+
+    try expect(simplified.len >= 2);
+    try expect(simplified.len <= n);
+    try expect(elapsed_ns < limit_ns);
+}
