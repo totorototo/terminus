@@ -96,6 +96,59 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  .action-confirm {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 32px;
+    padding: 0 0.5rem;
+  }
+
+  .confirm-label {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  .confirm-btn {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-base"]};
+    border: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.2,
+        )};
+    background: transparent;
+    cursor: pointer;
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.6,
+      )};
+
+    &.danger {
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-secondary"],
+          0.4,
+        )};
+    }
+  }
+
   .row-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 
 import { HelpCircle, LogOut, Trash2, Tv } from "@styled-icons/feather";
 import { useLocation } from "wouter";
@@ -12,8 +12,15 @@ const TrailActions = memo(function TrailActions({ className }) {
   const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
   const trackingMode = useStore((state) => state.app.trackingMode);
   const [, navigate] = useLocation();
+  const [confirmingFlush, setConfirmingFlush] = useState(false);
 
   const buildNumber = import.meta.env.VITE_NUMBER || "dev";
+
+  const handleFlushClick = () => setConfirmingFlush(true);
+  const handleFlushConfirm = () => {
+    flush();
+    setConfirmingFlush(false);
+  };
 
   return (
     <div className={className}>
@@ -31,10 +38,30 @@ const TrailActions = memo(function TrailActions({ className }) {
           {trackingMode && <span className="row-badge">on</span>}
         </button>
 
-        <button className="action-row" onClick={flush}>
-          <Trash2 size={14} />
-          <span className="row-label">Flush Saved Locations</span>
-        </button>
+        {confirmingFlush ? (
+          <div className="action-confirm">
+            <span className="confirm-label">Erase all saved locations?</span>
+            <button
+              className="confirm-btn danger"
+              onClick={handleFlushConfirm}
+              aria-label="Confirm flush saved locations"
+            >
+              Yes
+            </button>
+            <button
+              className="confirm-btn"
+              onClick={() => setConfirmingFlush(false)}
+              aria-label="Cancel flush"
+            >
+              No
+            </button>
+          </div>
+        ) : (
+          <button className="action-row" onClick={handleFlushClick}>
+            <Trash2 size={14} />
+            <span className="row-label">Flush Saved Locations</span>
+          </button>
+        )}
 
         <button className="action-row" onClick={() => navigate("/help")}>
           <HelpCircle size={14} />
