@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import {
   animated,
+  useReducedMotion,
   useSpring as useSpringWeb,
   useTransition,
 } from "@react-spring/web";
@@ -80,6 +81,7 @@ function Navigation({ className, singleSection }) {
   const projectedLocation = useProjectedLocation();
   const currentPositionIndex = projectedLocation.index || 0;
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
 
   const remainingSections = useMemo(
     () =>
@@ -107,6 +109,7 @@ function Navigation({ className, singleSection }) {
           cumulativeElevationLosses[currentPositionIndex]
         : 0,
     config: SPRING_CONFIG,
+    immediate: reducedMotion,
   });
 
   const displaySections = useMemo(
@@ -125,6 +128,7 @@ function Navigation({ className, singleSection }) {
       transform: `translateY(-${SECTION_ITEM_TRANSLATE}px)`,
     },
     keys: (section) => section.segmentId,
+    immediate: reducedMotion,
   });
 
   return (

@@ -1,6 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef } from "react";
 
-import { a, config, useSpring } from "@react-spring/web";
+import { a, config, useReducedMotion, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 
 import style from "./BottomSheetPanel.style.js";
@@ -14,6 +14,8 @@ function BottomSheetPanel(
   { children, className, containerHeight, onOpenChange },
   ref,
 ) {
+  const reducedMotion = useReducedMotion();
+
   // Tracks what position the user has set via dragging (0 = open, PANEL_HEIGHT = peek).
   const intendedY = useRef(PANEL_HEIGHT);
 
@@ -31,7 +33,7 @@ function BottomSheetPanel(
     release() {
       api.start({
         y: intendedY.current,
-        immediate: false,
+        immediate: reducedMotion,
         config: config.stiff,
       });
     },
@@ -42,7 +44,7 @@ function BottomSheetPanel(
     onOpenChange?.(true);
     api.start({
       y: 0,
-      immediate: false,
+      immediate: reducedMotion,
       config: canceled ? config.wobbly : config.stiff,
     });
   };
@@ -52,7 +54,7 @@ function BottomSheetPanel(
     onOpenChange?.(false);
     api.start({
       y: PANEL_HEIGHT,
-      immediate: false,
+      immediate: reducedMotion,
       config: { ...config.stiff, velocity },
     });
   };

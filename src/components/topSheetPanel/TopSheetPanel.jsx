@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { a, config, useSpring } from "@react-spring/web";
+import { a, config, useReducedMotion, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 
 import style from "./TopSheetPanel.style.js";
@@ -16,6 +16,8 @@ function ExpandablePanel({
   bottomPanelOpenRef,
   locked,
 }) {
+  const reducedMotion = useReducedMotion();
+
   const [{ height }, api] = useSpring(() => ({ height: COLLAPSED_HEIGHT }));
 
   // Keep a ref so the drag handler always reads the latest containerHeight
@@ -31,7 +33,7 @@ function ExpandablePanel({
   const handleExpand = ({ canceled }) => {
     api.start({
       height: getExpandedHeight(),
-      immediate: false,
+      immediate: reducedMotion,
       config: canceled ? config.wobbly : config.stiff,
       onChange: ({ value }) => onHeightChange?.(value.height),
     });
@@ -40,7 +42,7 @@ function ExpandablePanel({
   const handleCollapse = (velocity = 0) => {
     api.start({
       height: COLLAPSED_HEIGHT,
-      immediate: false,
+      immediate: reducedMotion,
       config: { ...config.stiff, velocity },
       onChange: ({ value }) => onHeightChange?.(value.height),
     });

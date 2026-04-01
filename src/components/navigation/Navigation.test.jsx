@@ -17,6 +17,7 @@ vi.mock("../../store/store.js", () => ({
 
 // Mock react-spring to avoid animation complexity
 vi.mock("@react-spring/web", () => ({
+  useReducedMotion: vi.fn(() => false),
   useSpring: vi.fn((values) => ({
     distance: {
       to: (fn) => fn(values.distance),

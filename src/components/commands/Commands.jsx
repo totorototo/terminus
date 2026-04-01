@@ -4,6 +4,7 @@ import {
   animated,
   to,
   useChain,
+  useReducedMotion,
   useSpring,
   useSpringRef,
   useTransition,
@@ -132,6 +133,7 @@ function Commands({ className, follower }) {
   const isDesktop = useIsDesktop();
   const [open, setOpen] = useState(false);
   const dockRef = useRef(null);
+  const reducedMotion = useReducedMotion();
 
   const {
     profileMode,
@@ -200,6 +202,7 @@ function Commands({ className, follower }) {
     ref: springRef,
     transform: open ? "rotate(45deg)" : "rotate(0deg)",
     config: { tension: 280, friction: 18 },
+    immediate: reducedMotion,
   });
 
   // Radial fan: quarter-circle from 180° (straight left) to 270° (straight up).
@@ -225,7 +228,8 @@ function Commands({ className, follower }) {
     },
     leave: { x: 0, y: 0, opacity: 0, scale: 0.5 },
     config: { friction: 20, tension: 200 },
-    trail: 40,
+    trail: reducedMotion ? 0 : 40,
+    immediate: reducedMotion,
   });
 
   // open:  FAB rotates first (t=0), then buttons fan out (t=0.1).
