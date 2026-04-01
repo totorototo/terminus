@@ -47,8 +47,8 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: 1px solid
       ${(props) =>
@@ -100,7 +100,7 @@ const style = (Component) => styled(Component)`
 
   .controls {
     display: grid;
-    grid-template-columns: 38px 1fr 38px;
+    grid-template-columns: 44px 1fr 44px;
     gap: 0.4rem;
     align-items: center;
   }
@@ -109,7 +109,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 38px;
+    height: 44px;
     border-radius: 100px;
     border: 1px solid
       ${(props) =>
