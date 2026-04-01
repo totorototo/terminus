@@ -419,4 +419,16 @@ describe("validateRouteSectionResults", () => {
       validateRouteSectionResults({ section: [], distance: null }),
     ).toThrow(/results\.distance/);
   });
+
+  it("throws when distance is NaN (invalid WASM output)", () => {
+    expect(() =>
+      validateRouteSectionResults({ section: [], distance: NaN }),
+    ).toThrow(/results\.distance/);
+  });
+
+  it("throws when distance is Infinity", () => {
+    expect(() =>
+      validateRouteSectionResults({ section: [], distance: Infinity }),
+    ).toThrow(/results\.distance/);
+  });
 });

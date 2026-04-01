@@ -141,22 +141,59 @@ describe("store", () => {
   });
 
   describe("persistence", () => {
-    it("should configure persistence with correct name", () => {
-      // Store is wrapped with persist middleware
-      // The store should have the correct storage key
-      const state = useStore.getState();
-      expect(state).toBeDefined();
+    it("should configure persistence with correct storage key", () => {
+      expect(useStore.persist.getOptions().name).toBe("terminus-storage");
     });
 
-    it("should only persist app slice data", () => {
-      // The partialize function should only include app state
-      // This is configured but we can't directly test without accessing internals
-      const state = useStore.getState();
+    it("partialize serializes exactly the app and gps slices — no other slices", () => {
+      const { partialize } = useStore.persist.getOptions();
+      const persisted = partialize(useStore.getState());
 
-      // Verify app data exists (what should be persisted)
-      expect(state.app).toBeDefined();
-      expect(state.app.trackingMode).toBeDefined();
-      expect(state.app.displaySlopes).toBeDefined();
+      // Only app and gps should be present
+      expect(Object.keys(persisted).sort()).toEqual(["app", "gps"]);
+    });
+
+    it("partialize app contains exactly the expected fields", () => {
+      const { partialize } = useStore.persist.getOptions();
+      const { app } = partialize(useStore.getState());
+
+      expect(Object.keys(app).sort()).toEqual(
+        [
+          "currentRoute",
+          "displaySlopes",
+          "followerRoomId",
+          "installPromptDismissed",
+          "liveSessionId",
+          "mode",
+          "pendingUrl",
+          "profileMode",
+          "raceId",
+          "theme",
+          "trackingMode",
+        ].sort(),
+      );
+    });
+
+    it("partialize gps contains exactly the expected fields", () => {
+      const { partialize } = useStore.persist.getOptions();
+      const { gps } = partialize(useStore.getState());
+
+      expect(Object.keys(gps).sort()).toEqual(
+        ["location", "projectedLocation", "savedLocations"].sort(),
+      );
+    });
+
+    it("partialize excludes transient slices (gpx, stats, worker, sections, legs, stages, waypoints)", () => {
+      const { partialize } = useStore.persist.getOptions();
+      const persisted = partialize(useStore.getState());
+
+      expect(persisted.gpx).toBeUndefined();
+      expect(persisted.stats).toBeUndefined();
+      expect(persisted.worker).toBeUndefined();
+      expect(persisted.sections).toBeUndefined();
+      expect(persisted.legs).toBeUndefined();
+      expect(persisted.stages).toBeUndefined();
+      expect(persisted.waypoints).toBeUndefined();
     });
   });
 

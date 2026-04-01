@@ -106,10 +106,10 @@ export function validateRouteSectionResults(results) {
 
   validateObject(results, "results");
   validateArray(results.section, "results.section");
-  // distance is optional but must be a number if provided
-  if (results.distance !== undefined && typeof results.distance !== "number") {
+  // distance is optional but must be a finite number if provided
+  if (results.distance !== undefined && !Number.isFinite(results.distance)) {
     throw new Error(
-      `Expected results.distance to be a number, got ${typeof results.distance}`,
+      `Expected results.distance to be a finite number, got ${results.distance}`,
     );
   }
 
