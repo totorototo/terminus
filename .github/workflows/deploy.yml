@@ -75,7 +75,7 @@ jobs:
 
       - name: Run Lighthouse CI
         run: |
-          npm install -g @lhci/cli@0.14.0
+          npm install -g @lhci/cli@0.15.1
           lhci autorun
         env:
           NETLIFY_SITE_URL: ${{ vars.NETLIFY_SITE_URL }}
