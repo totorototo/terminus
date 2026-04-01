@@ -93,20 +93,12 @@ const SectionAnalytics = memo(function SectionAnalytics({ className }) {
     };
   }, [currentSection]);
 
-  if (!analytics) {
-    return (
-      <div className={className}>
-        <div className="empty-state">No section</div>
-      </div>
-    );
-  }
-
   const difficultyLabel =
-    analytics.difficulty > 0
+    analytics?.difficulty > 0
       ? DIFFICULTY_LABELS[analytics.difficulty - 1]
       : null;
   const difficultyColor =
-    analytics.difficulty > 0
+    analytics?.difficulty > 0
       ? DIFFICULTY_COLORS[analytics.difficulty - 1]
       : null;
 
@@ -115,9 +107,9 @@ const SectionAnalytics = memo(function SectionAnalytics({ className }) {
       <div className="analytics-header">
         <span className="header-label">Section</span>
         <span className="header-route">
-          {analytics.startLocation}
+          {analytics?.startLocation ?? "--"}
           <span className="route-arrow"> → </span>
-          {analytics.endLocation}
+          {analytics?.endLocation ?? "--"}
         </span>
       </div>
 
@@ -125,41 +117,43 @@ const SectionAnalytics = memo(function SectionAnalytics({ className }) {
         <div className="grid-tile">
           <span className="tile-label">Distance</span>
           <span className="tile-value">
-            {analytics.distanceKm.toFixed(1)} km
+            {analytics ? `${analytics.distanceKm.toFixed(1)} km` : "--"}
           </span>
         </div>
 
         <div className="grid-tile">
           <span className="tile-label">Gain</span>
           <span className="tile-value gain">
-            +{analytics.elevationGain.toFixed(0)} m
+            {analytics ? `+${analytics.elevationGain.toFixed(0)} m` : "--"}
           </span>
         </div>
 
         <div className="grid-tile">
           <span className="tile-label">Loss</span>
           <span className="tile-value loss">
-            -{analytics.elevationLoss.toFixed(0)} m
+            {analytics ? `-${analytics.elevationLoss.toFixed(0)} m` : "--"}
           </span>
         </div>
 
         <div className="grid-tile">
           <span className="tile-label">Est Time</span>
           <span className="tile-value">
-            {formatSectionDuration(analytics.estimatedDurationSec)}
+            {formatSectionDuration(analytics?.estimatedDurationSec)}
           </span>
         </div>
 
         <div className="grid-tile">
           <span className="tile-label">Max Time</span>
           <span className="tile-value">
-            {formatSectionDuration(analytics.maxTimeSec)}
+            {formatSectionDuration(analytics?.maxTimeSec)}
           </span>
         </div>
 
         <div className="grid-tile">
           <span className="tile-label">Cutoff</span>
-          <span className="tile-value">{formatCutoff(analytics.cutoffMs)}</span>
+          <span className="tile-value">
+            {formatCutoff(analytics?.cutoffMs)}
+          </span>
         </div>
 
         <div className="grid-tile">
@@ -179,7 +173,7 @@ const SectionAnalytics = memo(function SectionAnalytics({ className }) {
         <div className="grid-tile">
           <span className="tile-label">Slowest Pace</span>
           <span className="tile-value">
-            {formatSpeed(analytics.slowestPaceSecPerKm)}
+            {formatSpeed(analytics?.slowestPaceSecPerKm)}
           </span>
         </div>
       </div>
