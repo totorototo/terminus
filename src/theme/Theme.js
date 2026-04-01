@@ -18,7 +18,7 @@ const THEME = {
       "--color-secondary": "#6E9075",
       "--color-primary-text": "#f2af29",
       "--color-secondary-text": "#9DC4A4",
-      "--color-accent": "#D81E5B",
+      "--color-accent": "#d81e5b",
       "--color-progress": "#ced5e0",
       "--color-surface": "#3d3b3b",
     },
