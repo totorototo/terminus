@@ -27,7 +27,7 @@ const LocationFreshness = memo(function LocationFreshness({
   );
   const [now, setNow] = useState(() => Date.now());
   const theme = useTheme();
-  const colors = theme.colors.dark;
+  const colors = theme.colors[theme.currentVariant];
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);

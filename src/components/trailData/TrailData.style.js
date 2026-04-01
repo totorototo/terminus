@@ -115,7 +115,39 @@ const style = (Component) => styled(Component)`
     flex: 1;
     flex-flow: row nowrap;
     -webkit-overflow-scrolling: touch;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .panel-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding-bottom: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .panel-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.2,
+      )};
+    transition:
+      background ${(props) => props.theme.transitions["--transition-fast"]},
+      transform ${(props) => props.theme.transitions["--transition-fast"]};
+
+    &.active {
+      background: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
+      transform: scale(1.4);
+    }
   }
 
   .component-children {

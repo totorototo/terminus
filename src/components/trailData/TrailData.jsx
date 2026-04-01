@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 
 import { animated, useSpring as useSpringWeb } from "@react-spring/web";
 import { format } from "date-fns";
@@ -15,6 +15,18 @@ import TrailOverview from "./TrailOverview/TrailOverview.jsx";
 import TrailProgression from "./TrailProgression/TrailProgression.jsx";
 
 import style from "./TrailData.style.js";
+
+const PANEL_LABELS = [
+  "Trail overview",
+  "Trail progression",
+  "Stage analytics",
+  "Section analytics",
+  "Stage ETA",
+  "Pace profile",
+  "Peak summary",
+  "Soundscape",
+  "Trail actions",
+];
 
 // Helper function to calculate ETA and remaining time
 export const calculateTimeMetrics = (
@@ -59,6 +71,22 @@ export const calculateTimeMetrics = (
 };
 
 const TrailData = memo(function TrailData({ className }) {
+  const containerRef = useRef(null);
+  const [activePanel, setActivePanel] = useState(0);
+
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const index = Math.round(el.scrollLeft / el.clientWidth);
+    setActivePanel(index);
+  }, []);
+
+  const scrollToPanel = useCallback((index) => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
+  }, []);
+
   // Use optimized selectors for better performance
   const projectedLocation = useProjectedLocation();
   useStats();
@@ -152,7 +180,11 @@ const TrailData = memo(function TrailData({ className }) {
       <div className="content-divider" />
 
       {/* Components container */}
-      <div className="component-container">
+      <div
+        className="component-container"
+        ref={containerRef}
+        onScroll={handleScroll}
+      >
         <div className="component-children">
           <TrailOverview />
         </div>
@@ -180,6 +212,20 @@ const TrailData = memo(function TrailData({ className }) {
         <div className="component-children">
           <TrailActions />
         </div>
+      </div>
+
+      {/* Pagination dots */}
+      <div className="panel-dots" role="tablist" aria-label="Data panels">
+        {PANEL_LABELS.map((label, i) => (
+          <button
+            key={i}
+            role="tab"
+            aria-selected={i === activePanel}
+            aria-label={label}
+            className={`panel-dot${i === activePanel ? " active" : ""}`}
+            onClick={() => scrollToPanel(i)}
+          />
+        ))}
       </div>
     </div>
   );
