@@ -8,12 +8,13 @@ const Overlay = styled.div`
     position: fixed;
     inset: 0;
     z-index: 10000;
-    background: #1a1a1a;
+    background: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-background"]};
     align-items: center;
     justify-content: center;
     flex-direction: column;
     gap: 1.5rem;
-    color: #fff;
+    color: ${({ theme }) => theme.colors[theme.currentVariant]["--color-text"]};
     text-align: center;
     padding: 2rem;
   }

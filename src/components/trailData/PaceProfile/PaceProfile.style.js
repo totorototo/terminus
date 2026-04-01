@@ -183,7 +183,7 @@ const style = (Component) => styled(Component)`
 
   .pp-stat-unit {
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
-    font-weight: ${({ theme }) => theme.font.weights["--font-weight-regular"]};
+    font-weight: ${({ theme }) => theme.font.weights["--font-weight-medium"]};
     letter-spacing: 0.02em;
     opacity: 0.7;
   }

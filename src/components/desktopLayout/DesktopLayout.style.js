@@ -52,7 +52,7 @@ const style = (Component) => styled(Component)`
     /* First tile (PeakSummary) gets the tall fixed height */
     > .tile:first-child > * {
       overflow: hidden;
-      padding-top: 1;
+      padding-top: 1rem;
       padding-bottom: 1rem;
     }
   }
