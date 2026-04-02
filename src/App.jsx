@@ -16,7 +16,7 @@ function App({ className }) {
   useRouteSync();
 
   return (
-    <div className={className}>
+    <main className={className}>
       <LandscapeOverlay />
       <InstallPromptOverlay />
       <Switch>
@@ -33,7 +33,7 @@ function App({ className }) {
           <Wizard />
         </Route>
       </Switch>
-    </div>
+    </main>
   );
 }
 
