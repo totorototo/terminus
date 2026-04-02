@@ -71,6 +71,14 @@ function Wizard({ className }) {
     if (e.key === "Enter") handleConfirm();
   };
 
+  // step → { current, total } for progress dots (step 1 has no indicator)
+  const PROGRESS = {
+    2: { current: 2, total: 2 },
+    3: { current: 2, total: 3 },
+    4: { current: 3, total: 3 },
+  };
+  const progress = PROGRESS[step] ?? null;
+
   const raceList = (onPick, subtitle) => (
     <>
       <p className="subtitle">{subtitle}</p>
@@ -89,7 +97,19 @@ function Wizard({ className }) {
           <p className="subtitle">Loading races…</p>
         )}
         {racesError && (
-          <p className="subtitle">Could not load races. Please try again.</p>
+          <div className="error-state">
+            <p className="subtitle">Could not load races.</p>
+            <button
+              className="retry-btn"
+              onClick={() => {
+                setRacesError(false);
+                setRaces([]);
+                setRetryCount((c) => c + 1);
+              }}
+            >
+              Try again
+            </button>
+          </div>
         )}
       </div>
     </>
@@ -98,6 +118,19 @@ function Wizard({ className }) {
   return (
     <div className={className}>
       <div className="card">
+        {progress && (
+          <div
+            className="progress-dots"
+            aria-label={`Step ${progress.current} of ${progress.total}`}
+          >
+            {Array.from({ length: progress.total }, (_, i) => (
+              <span
+                key={i}
+                className={`progress-dot${i < progress.current ? " filled" : ""}`}
+              />
+            ))}
+          </div>
+        )}
         {step === 1 && (
           <div className="step">
             <h1 className="title">Terminus</h1>

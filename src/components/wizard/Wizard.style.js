@@ -55,6 +55,72 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  .progress-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 1rem 2rem 0;
+  }
+
+  .progress-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.15,
+      )};
+    transition: background
+      ${(props) => props.theme.transitions["--transition-fast"]};
+
+    &.filled {
+      background: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    }
+  }
+
+  .error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .retry-btn {
+    background: none;
+    border: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.2,
+        )};
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-base"]};
+    padding: 0.375rem 1rem;
+    cursor: pointer;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: 0.8125rem;
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.6,
+      )};
+    transition: all ${(props) => props.theme.transitions["--transition-fast"]};
+    -webkit-tap-highlight-color: transparent;
+
+    &:hover {
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.4,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    }
+  }
+
   .step {
     display: flex;
     flex-direction: column;
