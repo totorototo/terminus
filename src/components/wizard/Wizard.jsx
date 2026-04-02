@@ -71,8 +71,9 @@ function Wizard({ className }) {
     if (e.key === "Enter") handleConfirm();
   };
 
-  // step → { current, total } for progress dots (step 1 has no indicator)
+  // step → { current, total } for progress dots
   const PROGRESS = {
+    1: { current: 1, total: 2 },
     2: { current: 2, total: 2 },
     3: { current: 2, total: 3 },
     4: { current: 3, total: 3 },
@@ -118,19 +119,6 @@ function Wizard({ className }) {
   return (
     <div className={className}>
       <div className="card">
-        {progress && (
-          <div
-            className="progress-dots"
-            aria-label={`Step ${progress.current} of ${progress.total}`}
-          >
-            {Array.from({ length: progress.total }, (_, i) => (
-              <span
-                key={i}
-                className={`progress-dot${i < progress.current ? " filled" : ""}`}
-              />
-            ))}
-          </div>
-        )}
         {step === 1 && (
           <div className="step">
             <h1 className="title">Terminus</h1>
@@ -203,6 +191,19 @@ function Wizard({ className }) {
               <span>Follow</span>
               <ArrowRight size={16} strokeWidth={2.5} />
             </button>
+          </div>
+        )}
+        {progress && (
+          <div
+            className="progress-dots"
+            aria-label={`Step ${progress.current} of ${progress.total}`}
+          >
+            {Array.from({ length: progress.total }, (_, i) => (
+              <span
+                key={i}
+                className={`progress-dot${i < progress.current ? " active" : ""}`}
+              />
+            ))}
           </div>
         )}
       </div>

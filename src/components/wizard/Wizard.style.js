@@ -57,26 +57,30 @@ const style = (Component) => styled(Component)`
 
   .progress-dots {
     display: flex;
+    align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 1rem 2rem 0;
+    padding-bottom: 1rem;
+    flex-shrink: 0;
   }
 
   .progress-dot {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.15,
+        0.2,
       )};
-    transition: background
-      ${(props) => props.theme.transitions["--transition-fast"]};
+    transition:
+      background ${(props) => props.theme.transitions["--transition-fast"]},
+      transform ${(props) => props.theme.transitions["--transition-fast"]};
 
-    &.filled {
+    &.active {
       background: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
+      transform: scale(1.4);
     }
   }
 
