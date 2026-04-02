@@ -12,7 +12,6 @@ const style = (Component) => styled(Component)`
   border-radius: ${(props) => props.theme.borderRadius["--border-radius-xl"]};
   pointer-events: auto;
   height: 40rem;
-  // background-color:pink;
 
   /* Stats container */
   .stats-container {

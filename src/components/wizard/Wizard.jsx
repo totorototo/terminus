@@ -208,9 +208,7 @@ function Wizard({ className }) {
           </div>
         )}
       </div>
-      <footer className="footer" aria-hidden="true">
-        © 2026 Terminus — La Vallée
-      </footer>
+      <footer className="footer">© 2026 Terminus — La Vallée</footer>
     </div>
   );
 }

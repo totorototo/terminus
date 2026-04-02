@@ -321,6 +321,13 @@ const style = (Component) => styled(Component)`
       opacity: 0.4;
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-badge {
+      animation: none;
+      opacity: 1;
+    }
+  }
 `;
 
 export default style;

@@ -69,6 +69,23 @@ function Scene({ width, height, className }) {
 
   return (
     <Suspense fallback={null}>
+      {/* Visually-hidden live region — announces off-course state to screen readers */}
+      <div
+        aria-live="assertive"
+        aria-atomic="true"
+        style={{
+          position: "absolute",
+          width: "1px",
+          height: "1px",
+          overflow: "hidden",
+          clip: "rect(0,0,0,0)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {isOffCourse && deviationDistance > 0
+          ? `Off trail — ${(deviationDistance / 1000).toFixed(1)} km from route`
+          : ""}
+      </div>
       <Canvas
         className={className}
         style={{ width, height }}
