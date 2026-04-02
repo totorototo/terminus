@@ -155,12 +155,13 @@ zig/
   simplify.zig          # Douglas-Peucker simplification
   peaks.zig             # Peak detection algorithms
   climbs.zig            # Climb segment detection (AMPD + Garmin qualification)
+  extrema.zig           # AMPD peak/valley detection algorithm
   gpspoint.zig          # Haversine distance calculations
   time.zig              # Time/duration calculations
-  waypoint.zig          # Waypoint data structure
   section.zig           # Section statistics structure
   leg.zig               # Leg data structure (stage sub-segments)
   stage.zig             # Stage data structure and analytics
+  soundscape.zig        # Audio frame generation from elevation/slope/pace data
   main.zig              # WASM entry point and bindings
 ```
 
