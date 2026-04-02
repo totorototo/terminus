@@ -78,7 +78,12 @@ const LocationFreshness = memo(function LocationFreshness({
 
   return (
     <div className={className}>
-      <div className="freshness-left">
+      <div
+        className="freshness-left"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label={`${connectionLabel}, ${label}`}
+      >
         <div className="freshness-status">
           <span className="freshness-dot" style={{ background: color }} />
           <span className="freshness-value" data-testid="freshness-label">
@@ -92,7 +97,12 @@ const LocationFreshness = memo(function LocationFreshness({
           {connectionLabel}
         </span>
       </div>
-      <div className="freshness-right">
+      <div
+        className="freshness-right"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label={`Elevation: ${elevation ?? "unknown"}`}
+      >
         <span className="freshness-value" data-testid="freshness-elevation">
           {elevation ?? "--"}
         </span>
