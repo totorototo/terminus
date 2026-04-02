@@ -195,6 +195,7 @@ function Wizard({ className }) {
         )}
         {progress && (
           <div
+            role="group"
             className="progress-dots"
             aria-label={`Step ${progress.current} of ${progress.total}`}
           >
