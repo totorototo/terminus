@@ -1,4 +1,5 @@
-import { Route, Switch } from "wouter";
+import { Helmet } from "react-helmet";
+import { Route, Switch, useLocation } from "wouter";
 
 import FollowerScreen from "./components/followerScreen/FollowerScreen.jsx";
 import Help from "./components/help/Help.jsx";
@@ -15,8 +16,13 @@ function App({ className }) {
   usePageTracking();
   useRouteSync();
 
+  const [path] = useLocation();
+
   return (
     <main className={className}>
+      <Helmet>
+        <link rel="canonical" href={`${window.location.origin}${path}`} />
+      </Helmet>
       <LandscapeOverlay />
       <InstallPromptOverlay />
       <Switch>
