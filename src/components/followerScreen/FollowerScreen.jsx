@@ -107,8 +107,10 @@ function FollowerScreen({ className }) {
                     notificationPermission == null &&
                     projectedTimestamp !== 0 && (
                       <button
+                        type="button"
                         className="notify-btn"
                         onClick={enableNotifications}
+                        aria-label="Enable push notifications for runner updates"
                       >
                         Enable notifications
                       </button>

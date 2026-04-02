@@ -49,7 +49,7 @@ const style = (Component) => styled(Component)`
     align-items: center;
     gap: 0.6rem;
     width: 100%;
-    height: 32px;
+    height: 44px;
     padding: 0 0.5rem;
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
@@ -100,7 +100,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    height: 32px;
+    height: 44px;
     padding: 0 0.5rem;
   }
 

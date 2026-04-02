@@ -1,3 +1,4 @@
+import { rgba } from "polished";
 import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
@@ -14,9 +15,12 @@ const style = (Component) => styled(Component)`
     left: 50%;
     transform: translateX(-50%);
     padding: 0.45rem 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid
+      ${({ theme }) =>
+        rgba(theme.colors[theme.currentVariant]["--color-text"], 0.18)};
     border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.08);
+    background: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.08)};
     color: var(--color-text);
     font-size: 0.8rem;
     letter-spacing: 0.04em;

@@ -157,38 +157,37 @@ describe("OffCourseEffect", () => {
   // ── Label text ────────────────────────────────────────────────────────────
   // The formula is Math.round(deviationDistance / 1000).toFixed(1).
   // Math.round fires BEFORE toFixed, so 1499m → 1.0km (not 1.5km).
-  // Tests use non-round inputs to document this rounding contract explicitly.
   describe("label text", () => {
-    it("rounds 1499m down to 1.0km", () => {
+    it("shows 1 decimal place — 1499m → 1.5km", () => {
       renderOCE({
         isOffCourse: true,
         deviationDistance: 1499,
         projectedLocation: mockProjectedLocation,
       });
       expect(screen.getByTestId("r3f-text")).toHaveTextContent(
-        "1.0km off trail",
+        "1.5km off trail",
       );
     });
 
-    it("rounds 1500m up to 2.0km", () => {
+    it("shows 1 decimal place — 1500m → 1.5km", () => {
       renderOCE({
         isOffCourse: true,
         deviationDistance: 1500,
         projectedLocation: mockProjectedLocation,
       });
       expect(screen.getByTestId("r3f-text")).toHaveTextContent(
-        "2.0km off trail",
+        "1.5km off trail",
       );
     });
 
-    it("rounds 2700m to 3.0km", () => {
+    it("shows 1 decimal place — 2700m → 2.7km", () => {
       renderOCE({
         isOffCourse: true,
         deviationDistance: 2700,
         projectedLocation: mockProjectedLocation,
       });
       expect(screen.getByTestId("r3f-text")).toHaveTextContent(
-        "3.0km off trail",
+        "2.7km off trail",
       );
     });
   });

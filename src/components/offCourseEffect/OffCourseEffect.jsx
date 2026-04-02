@@ -76,7 +76,7 @@ function OffCourseEffect({
         outlineWidth={0.003}
         outlineColor={bgColor}
       >
-        {`${Math.round(deviationDistance / 1000).toFixed(1)}km off trail`}
+        {`${(deviationDistance / 1000).toFixed(1)}km off trail`}
       </Text>
     </Billboard>
   );
