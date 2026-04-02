@@ -132,6 +132,10 @@ const style = (Component) => styled(Component)`
     gap: 0.875rem;
     padding: 2rem;
     animation: ${stepEnter} 0.2s ease both;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
   }
 
   .title {

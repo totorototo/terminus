@@ -13,6 +13,7 @@ const TrailActions = memo(function TrailActions({ className }) {
   const trackingMode = useStore((state) => state.app.trackingMode);
   const [, navigate] = useLocation();
   const [confirmingFlush, setConfirmingFlush] = useState(false);
+  const [confirmingLeave, setConfirmingLeave] = useState(false);
 
   const buildNumber = import.meta.env.VITE_NUMBER || "dev";
 
@@ -32,6 +33,7 @@ const TrailActions = memo(function TrailActions({ className }) {
         <button
           className={`action-row ${trackingMode ? "active" : ""}`}
           onClick={toggleTrackingMode}
+          aria-pressed={trackingMode}
         >
           <Tv size={14} />
           <span className="row-label">Fly-by Mode</span>
@@ -68,10 +70,33 @@ const TrailActions = memo(function TrailActions({ className }) {
           <span className="row-label">User Guide</span>
         </button>
 
-        <button className="action-row danger" onClick={() => navigate("/")}>
-          <LogOut size={14} />
-          <span className="row-label">Leave Trail</span>
-        </button>
+        {confirmingLeave ? (
+          <div className="action-confirm">
+            <span className="confirm-label">Leave this trail?</span>
+            <button
+              className="confirm-btn danger"
+              onClick={() => navigate("/")}
+              aria-label="Confirm leave trail"
+            >
+              Yes
+            </button>
+            <button
+              className="confirm-btn"
+              onClick={() => setConfirmingLeave(false)}
+              aria-label="Cancel leave trail"
+            >
+              No
+            </button>
+          </div>
+        ) : (
+          <button
+            className="action-row danger"
+            onClick={() => setConfirmingLeave(true)}
+          >
+            <LogOut size={14} />
+            <span className="row-label">Leave Trail</span>
+          </button>
+        )}
       </div>
 
       <div className="build-number">build {buildNumber}</div>

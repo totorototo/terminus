@@ -162,7 +162,12 @@ const TrailData = memo(function TrailData({ className }) {
         <div className="stat-divider" />
 
         <div className="stat-item">
-          <div className="stat-value">
+          <div
+            className="stat-value"
+            aria-live="polite"
+            aria-atomic="true"
+            aria-label={`ETA: ${timeMetrics.etaDateStr}`}
+          >
             {timeMetrics.etaDateStr.toUpperCase()}
           </div>
           <div className="stat-label">eta</div>
@@ -171,7 +176,14 @@ const TrailData = memo(function TrailData({ className }) {
         <div className="stat-divider" />
 
         <div className="stat-item">
-          <div className="stat-value">{timeMetrics.remainingStr}</div>
+          <div
+            className="stat-value"
+            aria-live="polite"
+            aria-atomic="true"
+            aria-label={`Remaining time: ${timeMetrics.remainingStr}`}
+          >
+            {timeMetrics.remainingStr}
+          </div>
           <div className="stat-label">remaining</div>
         </div>
       </div>

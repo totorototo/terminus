@@ -150,10 +150,11 @@ const StageETA = memo(function StageETA({ className }) {
         <span className="header-label">Checkpoint</span>
         <span className="header-label">ETA</span>
       </div>
-      <div className="section-list">
+      <div className="section-list" role="list">
         {sectionRows.map((section) => (
           <div
             key={section.id}
+            role="listitem"
             className={`section-row${section.isPast ? " past" : ""}${section.isCurrent ? " current" : ""}`}
           >
             <div className="section-left">

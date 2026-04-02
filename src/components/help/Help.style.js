@@ -128,6 +128,10 @@ const style = (Component) => styled(Component)`
     text-align: center;
     padding: 5rem 0 4rem;
     animation: ${fadeUp} 0.45s ease both;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
   }
 
   .hero-eyebrow {
@@ -166,6 +170,10 @@ const style = (Component) => styled(Component)`
   .section {
     margin-bottom: 5rem;
     animation: ${fadeUp} 0.45s ease both;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
   }
 
   .sec-label {
@@ -418,7 +426,8 @@ const style = (Component) => styled(Component)`
     }
 
     &.g {
-      background: #22c55e;
+      background: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-success"]};
     }
   }
 

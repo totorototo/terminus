@@ -132,7 +132,7 @@ function Navigation({ className, singleSection }) {
   });
 
   return (
-    <div className={className}>
+    <div className={className} aria-label="Upcoming sections" role="region">
       {transitions((animStyle, section, _, index) => {
         const isCurrent = index === 0;
         const ArrowIcon = getArrowIcon(section.bearing);
@@ -152,7 +152,10 @@ function Navigation({ className, singleSection }) {
 
             {/* Distance section - large number */}
             <div className="distance-section">
-              <div className="distance-value">
+              <div
+                className="distance-value"
+                aria-label="Distance to next waypoint"
+              >
                 {isCurrent ? (
                   <animated.span>
                     {distance.to((n) => `${(n / 1000).toFixed(1)}`)}
@@ -169,7 +172,10 @@ function Navigation({ className, singleSection }) {
             {/* Elevation info */}
             <div className="info-section">
               <div className="elevation-section">
-                <div className="elevation-item gain">
+                <div
+                  className="elevation-item gain"
+                  aria-label="Elevation gain"
+                >
                   <UpArrow />
                   {isCurrent ? (
                     <animated.span>
@@ -180,7 +186,10 @@ function Navigation({ className, singleSection }) {
                   )}
                   <span className="unit">m</span>
                 </div>
-                <div className="elevation-item loss">
+                <div
+                  className="elevation-item loss"
+                  aria-label="Elevation loss"
+                >
                   <DownArrow />
                   {isCurrent ? (
                     <animated.span>
