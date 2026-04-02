@@ -34,6 +34,8 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 - **Runner / Follower Modes**: First-run wizard for role selection — runners broadcast their position, followers track it on the 3D trail
 - **Live GPS Tracking**: Real-time position updates on the 3D trail
 - **Live Location Sharing**: Broadcast your position to followers in real time
+- **Soundscape**: Generative audio trail — real-time synthesized soundscape driven by elevation, slope, and pace data
+- **PWA**: Installable as a Progressive Web App with offline support and home screen shortcut
 - **Dark/Light Theme**: Toggle between dark and light modes
 
 ## Tech Stack
@@ -43,6 +45,7 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 - **Performance**: Zig 0.15.2 → WASM via Zigar bindings with zero-copy optimization
 - **Real-time**: PartyKit WebSocket relay for live location sharing
 - **Styling**: Styled-components with glass morphism theme
+- **PWA**: Vite PWA plugin with service worker and install prompt
 
 ## Prerequisites
 
