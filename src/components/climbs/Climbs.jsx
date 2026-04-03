@@ -1,19 +1,18 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 
+import { useSpring } from "@react-spring/three";
 import { Line } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
 import useStore from "../../store/store.js";
 import { transformCoordinates } from "../../utils/coordinateTransforms.js";
-
-// Amber for highlighted, muted blue-grey for others, very muted when another is highlighted
-const COLOR_HIGHLIGHT = "#f2af29";
-const COLOR_DEFAULT = "#6A7FDB";
-const COLOR_DIMMED = "#3a4580";
+import { PROFILE_ANIMATION_DURATION } from "../profile/Profile.jsx";
 
 // polygonOffset pushes the line depth slightly toward the camera so it sits
 // on top of the coplanar trail ribbon without z-fighting.
-function ClimbLine({ points, color, lineWidth }) {
+function ClimbLine({ points, color, lineWidth, springOpacity }) {
   const lineRef = useRef();
 
   useEffect(() => {
@@ -22,14 +21,34 @@ function ClimbLine({ points, color, lineWidth }) {
     mat.polygonOffset = true;
     mat.polygonOffsetFactor = -2;
     mat.polygonOffsetUnits = -2;
+    mat.transparent = true;
   }, []);
 
+  useFrame(() => {
+    const mat = lineRef.current?.material;
+    // eslint-disable-next-line react-hooks/immutability
+    if (mat) mat.opacity = springOpacity.get();
+  });
+
   return (
-    <Line ref={lineRef} points={points} color={color} lineWidth={lineWidth} />
+    <Line
+      ref={lineRef}
+      points={points}
+      color={color}
+      lineWidth={lineWidth / 2000}
+      transparent
+      worldUnits={true}
+    />
   );
 }
 
 function Climbs({ coordinateScales }) {
+  const theme = useTheme();
+  const colors = theme.colors[theme.currentVariant];
+  const colorHighlight = colors["--color-primary"];
+  const colorDefault = colors["--color-secondary"];
+  const colorDimmed = colors["--color-surface"];
+
   const { climbs, tracePoints, highlightedClimbIndex } = useStore(
     useShallow((state) => ({
       climbs: state.gpx.climbs,
@@ -37,6 +56,24 @@ function Climbs({ coordinateScales }) {
       highlightedClimbIndex: state.app.highlightedClimbIndex,
     })),
   );
+
+  const [{ opacity: springOpacity }, api] = useSpring(() => ({ opacity: 0 }));
+  const hideTimerRef = useRef(null);
+  const showTimerRef = useRef(null);
+
+  useEffect(() => {
+    clearTimeout(hideTimerRef.current);
+    clearTimeout(showTimerRef.current);
+    hideTimerRef.current = setTimeout(() => api.set({ opacity: 0 }), 0);
+    showTimerRef.current = setTimeout(
+      () => api.start({ opacity: 1, config: { tension: 80, friction: 20 } }),
+      PROFILE_ANIMATION_DURATION,
+    );
+    return () => {
+      clearTimeout(hideTimerRef.current);
+      clearTimeout(showTimerRef.current);
+    };
+  }, [coordinateScales, api]);
 
   const climbSegments = useMemo(() => {
     if (!climbs?.length || !tracePoints?.length) return [];
@@ -60,12 +97,13 @@ function Climbs({ coordinateScales }) {
         points={points}
         color={
           isHighlighted
-            ? COLOR_HIGHLIGHT
+            ? colorHighlight
             : isOtherHighlighted
-              ? COLOR_DIMMED
-              : COLOR_DEFAULT
+              ? colorDimmed
+              : colorDefault
         }
-        lineWidth={isHighlighted ? 4 : 1.5}
+        lineWidth={isHighlighted ? 4 : 3}
+        springOpacity={springOpacity}
       />
     );
   });

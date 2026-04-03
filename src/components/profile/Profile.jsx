@@ -199,13 +199,15 @@ const SolidColorMaterial = shaderMaterial(
 
 extend({ SlopeMaterial, GradientMaterial, SolidColorMaterial });
 
+export const PROFILE_ANIMATION_DURATION = 750;
+
 function Profile({
   points,
   color,
   onClick,
   slopes,
   showSlopeColors = false,
-  duration = 750,
+  duration = PROFILE_ANIMATION_DURATION,
   progressIndex,
   progressColor,
   startIndex,
