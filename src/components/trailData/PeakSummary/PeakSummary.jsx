@@ -7,10 +7,11 @@ import useStore, { useProjectedLocation } from "../../../store/store.js";
 import style from "./PeakSummary.style.js";
 
 const PeakSummary = memo(function PeakSummary({ className }) {
-  const { climbs, cumulativeDistances } = useStore(
+  const { climbs, cumulativeDistances, setHighlightedClimb } = useStore(
     useShallow((state) => ({
       climbs: state.gpx.climbs,
       cumulativeDistances: state.gpx.cumulativeDistances,
+      setHighlightedClimb: state.setHighlightedClimb,
     })),
   );
   const projectedLocation = useProjectedLocation();
@@ -53,6 +54,8 @@ const PeakSummary = memo(function PeakSummary({ className }) {
               key={`${climb.startIndex}-${climb.endIndex}`}
               role="listitem"
               className={`climb-row${isPast ? " past" : ""}${isCurrent ? " current" : ""}`}
+              onMouseEnter={() => setHighlightedClimb(i)}
+              onMouseLeave={() => setHighlightedClimb(null)}
             >
               <div className="climb-left">
                 <div

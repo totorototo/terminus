@@ -8,6 +8,7 @@ import {
   transformSections,
 } from "../../utils/coordinateTransforms.js";
 import Checkpoints from "../checkpoints/Checkpoints.jsx";
+import Climbs from "../climbs/Climbs.jsx";
 import Sections from "../sections/Sections.jsx";
 
 import style from "./EnhancedProfile.style.js";
@@ -35,6 +36,7 @@ function EnhancedProfile({ coordinateScales }) {
     <>
       <Sections sectionsPoints3D={sectionsPoints3D} />
       <Checkpoints checkpointsPoints3D={checkpointsPoints3D} />
+      <Climbs coordinateScales={coordinateScales} />
     </>
   );
 }

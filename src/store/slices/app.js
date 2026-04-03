@@ -14,6 +14,7 @@ export const createAppSlice = (set, get) => {
       raceId: null,
       currentRoute: "/",
       installPromptDismissed: false,
+      highlightedClimbIndex: null,
       theme:
         typeof window !== "undefined" &&
         typeof window.matchMedia === "function" &&
@@ -128,6 +129,13 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, installPromptDismissed: true } }),
         undefined,
         "app/dismissInstallPrompt",
+      ),
+
+    setHighlightedClimb: (index) =>
+      set(
+        (state) => ({ app: { ...state.app, highlightedClimbIndex: index } }),
+        undefined,
+        "app/setHighlightedClimb",
       ),
   };
 };
