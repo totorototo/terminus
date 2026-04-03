@@ -24,10 +24,15 @@ function ClimbLine({ points, color, lineWidth, springOpacity }) {
     mat.transparent = true;
   }, []);
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
     const mat = lineRef.current?.material;
+    if (!mat) return;
     // eslint-disable-next-line react-hooks/immutability
-    if (mat) mat.opacity = springOpacity.get();
+    mat.opacity = springOpacity.get();
+    // Scale linewidth with camera distance so visual thickness stays constant at any zoom level.
+    // Reference distance matches the default camera position (15, 0, 0).
+    // eslint-disable-next-line react-hooks/immutability
+    mat.linewidth = (lineWidth / 200) * (camera.position.length() / 15);
   });
 
   return (
@@ -35,7 +40,7 @@ function ClimbLine({ points, color, lineWidth, springOpacity }) {
       ref={lineRef}
       points={points}
       color={color}
-      lineWidth={lineWidth / 2000}
+      lineWidth={lineWidth / 100}
       transparent
       worldUnits={true}
     />
@@ -46,14 +51,20 @@ function Climbs({ coordinateScales }) {
   const theme = useTheme();
   const colors = theme.colors[theme.currentVariant];
   const colorHighlight = colors["--color-primary"];
-  const colorDefault = colors["--color-secondary"];
+  const colorDefault = colors["--color-primary"];
   const colorDimmed = colors["--color-surface"];
 
-  const { climbs, tracePoints, highlightedClimbIndex } = useStore(
+  const {
+    climbs,
+    tracePoints,
+    highlightedClimbIndex,
+    theme: currentTheme,
+  } = useStore(
     useShallow((state) => ({
       climbs: state.gpx.climbs,
       tracePoints: state.gpx.data,
       highlightedClimbIndex: state.app.highlightedClimbIndex,
+      theme: state.app.theme,
     })),
   );
 
@@ -73,7 +84,7 @@ function Climbs({ coordinateScales }) {
       clearTimeout(hideTimerRef.current);
       clearTimeout(showTimerRef.current);
     };
-  }, [coordinateScales, api]);
+  }, [coordinateScales, highlightedClimbIndex, api, currentTheme]);
 
   const climbSegments = useMemo(() => {
     if (!climbs?.length || !tracePoints?.length) return [];
