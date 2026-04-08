@@ -4,7 +4,6 @@ import { animated, useSpring as useSpringWeb } from "@react-spring/web";
 import { format } from "date-fns";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
-import Soundscape from "../soundscape/Soundscape.jsx";
 import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PeakSummary from "./PeakSummary/PeakSummary.jsx";
 import SectionAnalytics from "./SectionAnalytics/SectionAnalytics.jsx";
@@ -217,9 +216,6 @@ const TrailData = memo(function TrailData({ className }) {
         </div>
         <div className="component-children">
           <PeakSummary />
-        </div>
-        <div className="component-children">
-          <Soundscape />
         </div>
         <div className="component-children">
           <TrailActions />

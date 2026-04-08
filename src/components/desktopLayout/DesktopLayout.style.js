@@ -23,14 +23,14 @@ const style = (Component) => styled(Component)`
     gap: ${GAP};
   }
 
-  .panel-left {
-    flex-direction: column;
+  .panel-top {
+    flex-direction: row;
     flex-wrap: wrap;
     align-content: flex-start;
     justify-content: flex-start;
     top: calc(env(safe-area-inset-top) + ${EDGE});
     left: calc(env(safe-area-inset-left) + ${EDGE});
-    bottom: calc(env(safe-area-inset-bottom) + ${EDGE});
+    right: calc(env(safe-area-inset-right) + ${EDGE});
     gap: 1rem;
 
     > .tile {

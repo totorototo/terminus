@@ -1,6 +1,5 @@
 import { memo } from "react";
 
-import Soundscape from "../soundscape/Soundscape.jsx";
 import PaceProfile from "../trailData/PaceProfile/PaceProfile.jsx";
 import PeakSummary from "../trailData/PeakSummary/PeakSummary.jsx";
 import SectionAnalytics from "../trailData/SectionAnalytics/SectionAnalytics.jsx";
@@ -14,7 +13,7 @@ import style from "./DesktopLayout.style.js";
 const DesktopLayout = memo(function DesktopLayout({ className }) {
   return (
     <aside className={className}>
-      <div className="panel panel-left">
+      <div className="panel panel-top">
         <div className="tile">
           <TrailOverview />
         </div>
@@ -27,11 +26,6 @@ const DesktopLayout = memo(function DesktopLayout({ className }) {
         <div className="tile">
           <PaceProfile />
         </div>
-        <div className="tile">
-          <Soundscape />
-        </div>
-      </div>
-      <div className="panel panel-right">
         <div className="tile">
           <TrailProgression />
         </div>
