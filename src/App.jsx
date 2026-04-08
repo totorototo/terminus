@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import { Route, Switch, useLocation } from "wouter";
 
 import FollowerScreen from "./components/followerScreen/FollowerScreen.jsx";

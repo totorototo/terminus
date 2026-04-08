@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 
 import { createRoot } from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import { createGlobalStyle, ThemeProvider } from "styled-components";
 
 import App from "./App.jsx";
@@ -123,6 +124,8 @@ screen.orientation?.lock?.("portrait").catch(() => {});
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <ThemedApp />
+    <HelmetProvider>
+      <ThemedApp />
+    </HelmetProvider>
   </StrictMode>,
 );
