@@ -23,38 +23,34 @@ const style = (Component) => styled(Component)`
     gap: ${GAP};
   }
 
-  .panel-top {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    justify-content: flex-start;
+  /* Left sidebar: TrailOverview → TrailProgression → PaceProfile → analytics */
+  .panel-left {
+    flex-direction: column;
     top: calc(env(safe-area-inset-top) + ${EDGE});
     left: calc(env(safe-area-inset-left) + ${EDGE});
-    right: calc(env(safe-area-inset-right) + ${EDGE});
+    bottom: calc(env(safe-area-inset-bottom) + ${EDGE});
+    width: ${PANEL_WIDTH};
     gap: 1rem;
+    overflow-y: auto;
+    scrollbar-width: none;
 
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Prevent flex from squishing tiles in a fixed-height scroll container */
     > .tile {
-      width: ${PANEL_WIDTH};
+      flex-shrink: 0;
     }
   }
 
-  /* Right panel: PeakSummary (top) + StageETA (below), anchored top-right */
+  /* Right sidebar: StageETA + PeakSummary, anchored top-right */
   .panel-right {
     flex-direction: column;
     gap: 1rem;
     top: calc(env(safe-area-inset-top) + ${EDGE});
     right: calc(env(safe-area-inset-right) + ${EDGE});
-
-    > .tile {
-      width: ${PANEL_WIDTH};
-    }
-
-    /* First tile (PeakSummary) gets the tall fixed height */
-    > .tile:first-child > * {
-      overflow: hidden;
-      padding-top: 1rem;
-      padding-bottom: 1rem;
-    }
+    width: ${PANEL_WIDTH};
   }
 
   /* ── Tiles ───────────────────────────────────────────────────── */

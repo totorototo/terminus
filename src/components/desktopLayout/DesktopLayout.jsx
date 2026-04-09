@@ -13,9 +13,15 @@ import style from "./DesktopLayout.style.js";
 const DesktopLayout = memo(function DesktopLayout({ className }) {
   return (
     <aside className={className}>
-      <div className="panel panel-top">
+      <div className="panel panel-left">
         <div className="tile">
           <TrailOverview />
+        </div>
+        <div className="tile">
+          <TrailProgression />
+        </div>
+        <div className="tile">
+          <PaceProfile />
         </div>
         <div className="tile">
           <StageAnalytics />
@@ -23,17 +29,13 @@ const DesktopLayout = memo(function DesktopLayout({ className }) {
         <div className="tile">
           <SectionAnalytics />
         </div>
-        <div className="tile">
-          <PaceProfile />
-        </div>
-        <div className="tile">
-          <TrailProgression />
+      </div>
+      <div className="panel panel-right">
+        <div className="tile tile-scrollable">
+          <StageETA />
         </div>
         <div className="tile tile-scrollable">
           <PeakSummary />
-        </div>
-        <div className="tile tile-scrollable">
-          <StageETA />
         </div>
       </div>
     </aside>
