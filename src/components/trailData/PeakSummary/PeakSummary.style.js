@@ -137,7 +137,7 @@ const style = (Component) => styled(Component)`
 
   .climb-at {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
@@ -152,7 +152,7 @@ const style = (Component) => styled(Component)`
 
   .climb-summit {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       rgba(
@@ -170,7 +170,7 @@ const style = (Component) => styled(Component)`
 
   .climb-stat {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) =>
       props.theme.font.weights["--font-weight-regular"]};
     color: ${(props) =>
@@ -194,7 +194,7 @@ const style = (Component) => styled(Component)`
 
   .climb-sep {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],

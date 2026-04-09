@@ -118,7 +118,7 @@ const style = (Component) => styled(Component)`
 
   .section-name {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
@@ -139,7 +139,7 @@ const style = (Component) => styled(Component)`
 
   .section-km {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     color: ${(props) =>
       rgba(
