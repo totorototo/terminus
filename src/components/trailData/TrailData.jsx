@@ -23,7 +23,6 @@ const PANEL_LABELS = [
   "Stage ETA",
   "Pace profile",
   "Peak summary",
-  "Soundscape",
   "Trail actions",
 ];
 
