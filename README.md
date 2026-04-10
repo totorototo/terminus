@@ -4,8 +4,11 @@
 
 <a href="src/"><img src="https://img.shields.io/badge/Frontend-React%20%2B%20Three.js-purple" alt="Frontend React"></a>
 <a href="zig/"><img src="https://img.shields.io/badge/Performance-Zig%200.15.2%20%E2%86%92%20WASM-blue" alt="Zig WASM"></a>
+<a href="https://terminus-beta.netlify.app"><img src="https://img.shields.io/badge/Live%20Demo-terminus--beta.netlify.app-brightgreen" alt="Live Demo"></a>
 
 </p>
+
+**[→ Live Demo](https://terminus-beta.netlify.app)**
 
 High-performance GPS route analysis and 3D visualization tool. Process large GPX files with interactive elevation profiles and real-time section analytics. Supports live location sharing between runners and followers via WebSocket relay.
 
