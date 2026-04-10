@@ -8,6 +8,8 @@ import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./PaceProfile.style.js";
 
+const EMPTY_ARRAY = [];
+
 const WIDTH = 300;
 const HEIGHT = 70;
 const VPAD = 8;
@@ -17,187 +19,186 @@ const MIN_GAP_PCT = 15;
 const truncate = (str) =>
   str && str.length > MAX_NAME_LEN ? str.slice(0, MAX_NAME_LEN) + "…" : str;
 
+function getPaceKmh(section) {
+  if (section.totalDistance <= 0) return null;
+  if (section.maxCompletionTime != null && section.maxCompletionTime > 0) {
+    return (section.totalDistance / section.maxCompletionTime) * 3.6;
+  }
+  if (section.estimatedDuration > 0) {
+    return (section.totalDistance / section.estimatedDuration) * 3.6;
+  }
+  return null;
+}
+
+// Static chart — only recomputes when sections or distances change (not on GPS ticks)
+function buildStaticChart(sections, cumulativeDistances) {
+  if (!sections?.length || !cumulativeDistances?.length) return null;
+
+  const hasMaxTime = sections.every((s) => s.maxCompletionTime != null);
+
+  const bars = sections
+    .map((section) => {
+      const pace = getPaceKmh(section);
+      if (pace == null) return null;
+      const startDist = cumulativeDistances[section.startIndex] ?? 0;
+      const endDist =
+        cumulativeDistances[section.endIndex] ??
+        startDist + section.totalDistance;
+      return {
+        startDist,
+        endDist,
+        midDist: (startDist + endDist) / 2,
+        pace,
+        startLocation: section.startLocation || "",
+      };
+    })
+    .filter(Boolean);
+
+  if (!bars.length) return null;
+
+  const totalDistM = cumulativeDistances[cumulativeDistances.length - 1];
+  const paces = bars.map((b) => b.pace);
+  const minPace = Math.min(...paces);
+  const maxPace = Math.max(...paces);
+  const paceRange = maxPace - minPace || 1;
+
+  const scaleX = createXScale(
+    { min: 0, max: totalDistM },
+    { min: 0, max: WIDTH },
+  );
+  const scaleY = createYScale(
+    { min: minPace - paceRange * 0.15, max: maxPace + paceRange * 0.15 },
+    { min: HEIGHT, max: 0 },
+  );
+
+  // One curve point per section at midpoint distance, anchored to route edges
+  const curvePoints = [
+    { x: scaleX(bars[0].startDist), y: scaleY(bars[0].pace) },
+    ...bars.map((b) => ({ x: scaleX(b.midDist), y: scaleY(b.pace) })),
+    {
+      x: scaleX(bars[bars.length - 1].endDist),
+      y: scaleY(bars[bars.length - 1].pace),
+    },
+  ];
+
+  const linePath = line()
+    .x((d) => d.x)
+    .y((d) => d.y)
+    .curve(curveCatmullRom.alpha(0.5))(curvePoints);
+
+  const areaPath = area()
+    .x((d) => d.x)
+    .y1((d) => d.y)
+    .y0(scaleY(minPace - paceRange * 0.15))
+    .curve(curveCatmullRom.alpha(0.5))(curvePoints);
+
+  // Tightest section = highest required pace (hardest cutoff)
+  const tightestBar = bars.reduce(
+    (max, b) => (b.pace > max.pace ? b : max),
+    bars[0],
+  );
+
+  // Distance-weighted average required pace across all sections
+  const totalDist = bars.reduce((sum, b) => sum + (b.endDist - b.startDist), 0);
+  const avgPace =
+    bars.reduce((sum, b) => sum + b.pace * (b.endDist - b.startDist), 0) /
+    totalDist;
+
+  // Section boundary labels — deduplicate overlapping labels
+  let lastLabelPct = -MIN_GAP_PCT;
+  const sectionMarkersBase = bars
+    .slice(1)
+    .map((bar) => {
+      const x = scaleX(bar.startDist);
+      return { x, pct: (x / WIDTH) * 100, name: truncate(bar.startLocation) };
+    })
+    .filter((s) => {
+      if (s.pct - lastLabelPct < MIN_GAP_PCT) return false;
+      lastLabelPct = s.pct;
+      return true;
+    });
+
+  return {
+    bars,
+    scaleX,
+    curvePoints,
+    linePath,
+    areaPath,
+    minPace,
+    maxPace,
+    totalDistKm: totalDistM / 1000,
+    hasMaxTime,
+    tightestBar,
+    avgPace,
+    sectionMarkersBase,
+  };
+}
+
+// Dynamic overlay — recomputes on every GPS tick, but cheap
+function buildOverlay(staticChart, projectedIndex, cumulativeDistances) {
+  if (!staticChart) return null;
+  const { bars, scaleX, curvePoints, sectionMarkersBase } = staticChart;
+
+  let markerX = null;
+  let markerY = null;
+  let markerPct = null;
+  let runnerDistKm = null;
+  let currentBar = null;
+
+  if (projectedIndex !== null && cumulativeDistances[projectedIndex] != null) {
+    const distM = cumulativeDistances[projectedIndex];
+    markerX = scaleX(distM);
+    markerPct = (markerX / WIDTH) * 100;
+    runnerDistKm = Math.round(distM / 1000);
+    currentBar =
+      bars.find((b) => distM >= b.startDist && distM < b.endDist) ??
+      bars[bars.length - 1];
+
+    // Interpolate Y on the curve between the two nearest midpoint samples
+    const left = curvePoints.filter((p) => p.x <= markerX).at(-1);
+    const right = curvePoints.find((p) => p.x >= markerX);
+    if (left && right && right.x !== left.x) {
+      const t = (markerX - left.x) / (right.x - left.x);
+      markerY = left.y + t * (right.y - left.y);
+    } else {
+      markerY = (left ?? right)?.y ?? null;
+    }
+  }
+
+  // Filter section labels too close to the runner marker
+  const sectionMarkers = sectionMarkersBase.filter(
+    (s) => markerPct === null || Math.abs(s.pct - markerPct) >= MIN_GAP_PCT,
+  );
+
+  return {
+    markerX,
+    markerY,
+    markerPct,
+    runnerDistKm,
+    currentBar,
+    sectionMarkers,
+  };
+}
+
 const PaceProfile = memo(function PaceProfile({ className }) {
   const { sections, cumulativeDistances } = useStore(
     useShallow((state) => ({
       sections: state.sections,
-      cumulativeDistances: state.gpx.cumulativeDistances || [],
+      cumulativeDistances: state.gpx.cumulativeDistances || EMPTY_ARRAY,
     })),
   );
   const projectedLocation = useProjectedLocation();
   const projectedIndex = projectedLocation?.index ?? null;
 
-  // Static chart — only recomputes when sections or distances change (not on GPS ticks)
-  const staticChart = useMemo(() => {
-    if (!sections?.length || !cumulativeDistances?.length) return null;
+  const staticChart = useMemo(
+    () => buildStaticChart(sections, cumulativeDistances),
+    [sections, cumulativeDistances],
+  );
 
-    const hasMaxTime = sections.every((s) => s.maxCompletionTime != null);
-
-    const getPaceKmh = (section) => {
-      if (section.totalDistance <= 0) return null;
-      if (section.maxCompletionTime != null && section.maxCompletionTime > 0) {
-        return (section.totalDistance / section.maxCompletionTime) * 3.6;
-      }
-      if (section.estimatedDuration > 0) {
-        return (section.totalDistance / section.estimatedDuration) * 3.6;
-      }
-      return null;
-    };
-
-    const bars = sections
-      .map((section) => {
-        const pace = getPaceKmh(section);
-        if (pace == null) return null;
-        const startDist = cumulativeDistances[section.startIndex] ?? 0;
-        const endDist =
-          cumulativeDistances[section.endIndex] ??
-          startDist + section.totalDistance;
-        return {
-          startDist,
-          endDist,
-          midDist: (startDist + endDist) / 2,
-          pace,
-          startLocation: section.startLocation || "",
-        };
-      })
-      .filter(Boolean);
-
-    if (!bars.length) return null;
-
-    const totalDistM = cumulativeDistances[cumulativeDistances.length - 1];
-    const totalDistKm = totalDistM / 1000;
-
-    const paces = bars.map((b) => b.pace);
-    const minPace = Math.min(...paces);
-    const maxPace = Math.max(...paces);
-    const paceRange = maxPace - minPace || 1;
-
-    const scaleX = createXScale(
-      { min: 0, max: totalDistM },
-      { min: 0, max: WIDTH },
-    );
-    const scaleY = createYScale(
-      { min: minPace - paceRange * 0.15, max: maxPace + paceRange * 0.15 },
-      { min: HEIGHT, max: 0 },
-    );
-
-    // One curve point per section at midpoint distance, anchored to route edges
-    const curvePoints = [
-      { x: scaleX(bars[0].startDist), y: scaleY(bars[0].pace) },
-      ...bars.map((b) => ({ x: scaleX(b.midDist), y: scaleY(b.pace) })),
-      {
-        x: scaleX(bars[bars.length - 1].endDist),
-        y: scaleY(bars[bars.length - 1].pace),
-      },
-    ];
-
-    const lineShape = line()
-      .x((d) => d.x)
-      .y((d) => d.y)
-      .curve(curveCatmullRom.alpha(0.5));
-
-    const areaShape = area()
-      .x((d) => d.x)
-      .y1((d) => d.y)
-      .y0(scaleY(minPace - paceRange * 0.15))
-      .curve(curveCatmullRom.alpha(0.5));
-
-    const linePath = lineShape(curvePoints);
-    const areaPath = areaShape(curvePoints);
-
-    // Tightest section (highest required pace = hardest cutoff)
-    const tightestBar = bars.reduce(
-      (max, b) => (b.pace > max.pace ? b : max),
-      bars[0],
-    );
-
-    // Distance-weighted average required pace across all sections
-    const totalDist = bars.reduce(
-      (sum, b) => sum + (b.endDist - b.startDist),
-      0,
-    );
-    const avgPace =
-      bars.reduce((sum, b) => sum + b.pace * (b.endDist - b.startDist), 0) /
-      totalDist;
-
-    // Section boundary labels — deduplicate overlapping labels (runner proximity handled in overlay)
-    let lastLabelPct = -MIN_GAP_PCT;
-    const sectionMarkersBase = bars
-      .slice(1)
-      .map((bar) => {
-        const x = scaleX(bar.startDist);
-        return { x, pct: (x / WIDTH) * 100, name: truncate(bar.startLocation) };
-      })
-      .filter((s) => {
-        if (s.pct - lastLabelPct < MIN_GAP_PCT) return false;
-        lastLabelPct = s.pct;
-        return true;
-      });
-
-    return {
-      bars,
-      scaleX,
-      curvePoints,
-      linePath,
-      areaPath,
-      minPace,
-      maxPace,
-      totalDistKm,
-      hasMaxTime,
-      tightestBar,
-      avgPace,
-      sectionMarkersBase,
-    };
-  }, [sections, cumulativeDistances]);
-
-  // Dynamic overlay — recomputes on every GPS tick, but cheap
-  const overlay = useMemo(() => {
-    if (!staticChart) return null;
-    const { bars, scaleX, curvePoints, sectionMarkersBase } = staticChart;
-
-    let markerX = null;
-    let markerY = null;
-    let markerPct = null;
-    let runnerDistKm = null;
-    let currentBar = null;
-
-    if (
-      projectedIndex !== null &&
-      cumulativeDistances[projectedIndex] != null
-    ) {
-      const distM = cumulativeDistances[projectedIndex];
-      markerX = scaleX(distM);
-      markerPct = (markerX / WIDTH) * 100;
-      runnerDistKm = Math.round(distM / 1000);
-      currentBar =
-        bars.find((b) => distM >= b.startDist && distM < b.endDist) ??
-        bars[bars.length - 1];
-
-      // Interpolate Y on the curve between the two nearest midpoint samples
-      const left = curvePoints.filter((p) => p.x <= markerX).at(-1);
-      const right = curvePoints.find((p) => p.x >= markerX);
-      if (left && right && right.x !== left.x) {
-        const t = (markerX - left.x) / (right.x - left.x);
-        markerY = left.y + t * (right.y - left.y);
-      } else {
-        markerY = (left ?? right)?.y ?? null;
-      }
-    }
-
-    // Filter section labels too close to the runner marker
-    const sectionMarkers = sectionMarkersBase.filter(
-      (s) => markerPct === null || Math.abs(s.pct - markerPct) >= MIN_GAP_PCT,
-    );
-
-    return {
-      markerX,
-      markerY,
-      markerPct,
-      runnerDistKm,
-      currentBar,
-      sectionMarkers,
-    };
-  }, [staticChart, projectedIndex, cumulativeDistances]);
+  const overlay = useMemo(
+    () => buildOverlay(staticChart, projectedIndex, cumulativeDistances),
+    [staticChart, projectedIndex, cumulativeDistances],
+  );
 
   if (!staticChart || !overlay) return null;
 
@@ -219,6 +220,9 @@ const PaceProfile = memo(function PaceProfile({ className }) {
     sectionMarkers,
     currentBar,
   } = overlay;
+
+  const displayPace = currentBar?.pace ?? avgPace;
+  const displayLabel = currentBar ? "current" : "avg required";
 
   return (
     <div className={className}>
@@ -341,12 +345,10 @@ const PaceProfile = memo(function PaceProfile({ className }) {
           <span
             className={`pp-stat-value${currentBar ? " pp-stat-value--current" : ""}`}
           >
-            {(currentBar ?? { pace: avgPace }).pace.toFixed(1)}
+            {displayPace.toFixed(1)}
             <span className="pp-stat-unit"> km/h</span>
           </span>
-          <span className="pp-stat-label">
-            {currentBar ? "current" : "avg required"}
-          </span>
+          <span className="pp-stat-label">{displayLabel}</span>
           {currentBar && (
             <span className="pp-stat-name">
               {truncate(currentBar.startLocation) || "—"}
