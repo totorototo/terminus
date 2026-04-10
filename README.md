@@ -3,8 +3,7 @@
 <p align="left">
 
 <a href="src/"><img src="https://img.shields.io/badge/Frontend-React%20%2B%20Three.js-purple" alt="Frontend React"></a>
-<a href="zig/"><img src="https://img.shields.io/badge/Backend-Zig%200.15.2-blue" alt="Zig Backend"></a>
-<a href="CLAUDE.md"><img src="https://img.shields.io/badge/Claude%20Code-Optimized-orange" alt="Claude Code Optimized"></a>
+<a href="zig/"><img src="https://img.shields.io/badge/Performance-Zig%200.15.2%20%E2%86%92%20WASM-blue" alt="Zig WASM"></a>
 
 </p>
 
@@ -12,9 +11,32 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 
 ## Architecture
 
-**Web App**: React + Vite frontend with React Three Fiber for 3D visualization
-**Web Workers**: Background GPS processing to maintain responsive UI
-**Zig WASM**: High-performance route calculations with optimized algorithms
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        React UI (main thread)                    │
+│  Components · Zustand store · React Three Fiber / Three.js       │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ postMessage (plain JS — no proxies)
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Web Worker (gpxWorker.js)                     │
+│  Owns the WASM instance · validates inputs · converts types      │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ Zigar JS↔Zig bindings
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Zig → WebAssembly (zig/)                      │
+│  GPX parsing · Haversine · Douglas-Peucker · AMPD peak           │
+│  detection · Garmin Climb Pro qualification · soundscape         │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│               PartyKit WebSocket relay (party/)                  │
+│  Runner broadcasts GPS position → followers receive in real time │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+The Web Worker acts as a hard boundary: the main thread stays at 60 fps while the Worker owns the WASM module and all Zig memory. Results are sanitized to plain JS before crossing back to avoid Zigar proxy leaks inside React state.
 
 ## Features
 
@@ -101,15 +123,17 @@ PARTYKIT_HOST=<your-partykit-host> node scripts/simulate-partykit.js public/vvx-
 
 Open the app as a follower and join room `ABC123` to watch the position move in real time.
 
-## Claude Code Setup
+## Why Zig?
 
-This project uses structured CLAUDE.md instruction files for Claude Code:
+GPX files for ultra-trail races can contain 10 000+ trackpoints. Running Haversine distance calculations, Douglas-Peucker simplification, and the AMPD peak-detection algorithm over that in JavaScript blocks the main thread for hundreds of milliseconds.
 
-- [`CLAUDE.md`](CLAUDE.md): Global project guidance, architecture, and commands
-- [`src/CLAUDE.md`](src/CLAUDE.md): Frontend conventions and patterns
-- [`zig/CLAUDE.md`](zig/CLAUDE.md): Zig/WASM conventions and memory model
+Zig was chosen over AssemblyScript or hand-written C for three reasons:
 
-Claude Code automatically applies the right context based on file type.
+1. **Manual memory control** — `errdefer` guarantees cleanup on every allocation, making it practical to reason about WASM heap usage without a GC.
+2. **Algorithm clarity** — Zig's comptime, tagged unions, and explicit error sets make it easier to implement and review numerically sensitive code (e.g. the AMPD scalogram) than equivalent TypeScript.
+3. **Compile-time safety** — unreachable enum branches and integer overflow are caught at build time, not at runtime in a user's browser.
+
+The tradeoff is toolchain complexity: contributors need Zig 0.15.2 on `PATH` and the `rollup-plugin-zigar` Vite plugin bridges the module boundary. For pure UI changes, Zig is never touched.
 
 ## Building
 
