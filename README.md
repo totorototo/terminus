@@ -13,26 +13,26 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        React UI (main thread)                    │
-│  Components · Zustand store · React Three Fiber / Three.js       │
+│                        React UI (main thread)                   │
+│  Components · Zustand store · React Three Fiber / Three.js      │
 └───────────────────────────┬─────────────────────────────────────┘
                             │ postMessage (plain JS — no proxies)
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Web Worker (gpxWorker.js)                     │
-│  Owns the WASM instance · validates inputs · converts types      │
+│                    Web Worker (gpxWorker.js)                    │
+│  Owns the WASM instance · validates inputs · converts types     │
 └───────────────────────────┬─────────────────────────────────────┘
                             │ Zigar JS↔Zig bindings
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Zig → WebAssembly (zig/)                      │
-│  GPX parsing · Haversine · Douglas-Peucker · AMPD peak           │
-│  detection · Garmin Climb Pro qualification · soundscape         │
+│                    Zig → WebAssembly (zig/)                     │
+│  GPX parsing · Haversine · Douglas-Peucker · AMPD peak          │
+│  detection · Garmin Climb Pro qualification · soundscape        │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│               PartyKit WebSocket relay (party/)                  │
-│  Runner broadcasts GPS position → followers receive in real time │
+│               PartyKit WebSocket relay (party/)                 │
+│  Runner broadcasts GPS position → followers receive in real time│
 └─────────────────────────────────────────────────────────────────┘
 ```
 
