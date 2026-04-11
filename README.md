@@ -30,7 +30,7 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Zig → WebAssembly (zig/)                     │
 │  GPX parsing · Haversine · Douglas-Peucker · AMPD peak          │
-│  detection · Garmin Climb Pro qualification · soundscape        │
+│  detection · Garmin Climb Pro qualification                     │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -59,7 +59,6 @@ The Web Worker acts as a hard boundary: the main thread stays at 60 fps while th
 - **Runner / Follower Modes**: First-run wizard for role selection — runners broadcast their position, followers track it on the 3D trail
 - **Live GPS Tracking**: Real-time position updates on the 3D trail
 - **Live Location Sharing**: Broadcast your position to followers in real time
-- **Soundscape**: Generative audio trail — real-time synthesized soundscape driven by elevation, slope, and pace data
 - **PWA**: Installable as a Progressive Web App with offline support and home screen shortcut
 - **Dark/Light Theme**: Toggle between dark and light modes
 
