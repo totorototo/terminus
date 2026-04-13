@@ -7,7 +7,8 @@ Source: https://sketchfab.com/3d-models/ufo-f7ac46de718a444384a73e953d49997c
 Title: UFO
 */
 
-import React, { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { a, useSpring } from "@react-spring/three";
 import { useGraph } from "@react-three/fiber";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { SkeletonUtils } from "three-stdlib";
@@ -48,21 +49,36 @@ export function Model({ coordinateScales, ...props }) {
     )[0];
   }, [projectedLocation, coordinateScales]);
 
+  const [springs, api] = useSpring(() => ({
+    position: transformedLocation
+      ? [
+          transformedLocation[0],
+          transformedLocation[1] + 0.2,
+          transformedLocation[2],
+        ]
+      : [0, 0, 0],
+    config: { tension: 170, friction: 26 },
+  }));
+
+  useEffect(() => {
+    if (!transformedLocation) return;
+
+    const x = transformedLocation[0];
+    const y = transformedLocation[1];
+    const z = transformedLocation[2];
+
+    // Ensure all values are valid numbers before animating
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+      return;
+    }
+
+    api.start({
+      position: [x, y + 0.2, z],
+    });
+  }, [transformedLocation, api]);
+
   return (
-    <group
-      position={
-        transformedLocation
-          ? [
-              transformedLocation[0],
-              transformedLocation[1] + 0.2,
-              transformedLocation[2],
-            ]
-          : [0, 0, 0]
-      }
-      ref={group}
-      {...props}
-      dispose={null}
-    >
+    <a.group position={springs.position} ref={group} {...props} dispose={null}>
       <group name="Sketchfab_Scene">
         <group name="Sketchfab_model" rotation={[-Math.PI / 2, 0, 0]}>
           <group name="root">
@@ -111,7 +127,7 @@ export function Model({ coordinateScales, ...props }) {
           </group>
         </group>
       </group>
-    </group>
+    </a.group>
   );
 }
 
