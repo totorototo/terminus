@@ -7,31 +7,62 @@ Source: https://sketchfab.com/3d-models/ufo-f7ac46de718a444384a73e953d49997c
 Title: UFO
 */
 
-import React from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useGraph } from "@react-three/fiber";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { SkeletonUtils } from "three-stdlib";
 
-export function Model(props) {
-  const group = React.useRef();
+import { useProjectedLocation } from "../../store/store.js";
+import { transformCoordinates } from "../../utils/coordinateTransforms.js";
+
+export function Model({ coordinateScales, ...props }) {
+  const group = useRef();
   const { scene, animations } = useGLTF("/ufo.glb");
-  const clone = React.useMemo(() => SkeletonUtils.clone(scene), [scene]);
+  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const { nodes, materials } = useGraph(clone);
   const { actions } = useAnimations(animations, group);
-  React.useEffect(() => {
+
+  useEffect(() => {
     const action = actions[Object.keys(actions)[0]];
     if (action) action.play();
   }, [actions]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     Object.values(materials).forEach((mat) => {
       mat.metalness = 0;
       mat.roughness = 0.9;
     });
   }, [materials]);
 
+  const projectedLocation = useProjectedLocation();
+
+  const transformedLocation = useMemo(() => {
+    if (!projectedLocation) return null;
+    if (!coordinateScales) return null;
+    if (projectedLocation.index === 0) return null;
+
+    return transformCoordinates(
+      [projectedLocation.coords],
+      coordinateScales,
+      projectedLocation.index,
+    )[0];
+  }, [projectedLocation, coordinateScales]);
+
   return (
-    <group ref={group} {...props} dispose={null}>
+    <group
+      position={
+        transformedLocation
+          ? [
+              transformedLocation[0],
+              transformedLocation[1] + 0.2,
+              transformedLocation[2],
+            ]
+          : [0, 0, 0]
+      }
+      ref={group}
+      {...props}
+      dispose={null}
+    >
       <group name="Sketchfab_Scene">
         <group name="Sketchfab_model" rotation={[-Math.PI / 2, 0, 0]}>
           <group name="root">
