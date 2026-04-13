@@ -102,7 +102,22 @@ describe("TrailData Component", () => {
   const mockCumulativeElevations = [0, 100, 200, 300, 400, 500];
   const mockCumulativeElevationLosses = [0, 50, 100, 150, 200, 250];
 
-  const mockSections = [{ startTime: 1000 }, { startTime: 2000 }];
+  const mockSections = [
+    {
+      startTime: 1000,
+      startIndex: 0,
+      endIndex: 2,
+      totalDistance: 2000,
+      estimatedDuration: 500,
+    },
+    {
+      startTime: 2000,
+      startIndex: 2,
+      endIndex: 5,
+      totalDistance: 3000,
+      estimatedDuration: 1000,
+    },
+  ];
 
   const mockProjectedLocation = {
     index: 2,

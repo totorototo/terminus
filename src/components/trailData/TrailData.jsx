@@ -26,38 +26,59 @@ const PANEL_LABELS = [
   "Trail actions",
 ];
 
-// Helper function to calculate ETA and remaining time
+// Helper function to calculate ETA and remaining time using Minetti terrain-adjusted estimates.
+// paceRatio = actual elapsed / Minetti prediction so far — corrects for this runner's fitness.
+// totalMinettiSec = sum of all sections' estimatedDuration — terrain-adjusted total prediction.
 export const calculateTimeMetrics = (
   location,
   cumulativeDistances,
   startingDate,
+  sections,
 ) => {
   const distanceDone = cumulativeDistances[location?.index || 0] || 0;
   const totalDistance =
     cumulativeDistances[cumulativeDistances.length - 1] || 1;
-  const elapsedDuration = (location?.timestamp || 0) - startingDate;
 
-  // Avoid division by zero
-  const estimatedTotalDuration =
-    distanceDone > 0 ? (elapsedDuration * totalDistance) / distanceDone : 0;
+  // Compute paceRatio: actual elapsed vs Minetti prediction for the same terrain covered so far
+  const currentIndex = location?.index || 0;
+  const actualElapsedSec = ((location?.timestamp || 0) - startingDate) / 1000;
+  let minettiSoFar = 0;
+  for (const section of sections) {
+    if (currentIndex >= section.endIndex) {
+      minettiSoFar += section.estimatedDuration;
+    } else if (currentIndex >= section.startIndex) {
+      const distDone =
+        (cumulativeDistances[currentIndex] || 0) -
+        (cumulativeDistances[section.startIndex] || 0);
+      const fractionDone =
+        section.totalDistance > 0 ? distDone / section.totalDistance : 0;
+      minettiSoFar += section.estimatedDuration * fractionDone;
+      break;
+    }
+  }
+  const paceRatio =
+    minettiSoFar > 0 && actualElapsedSec > 0
+      ? actualElapsedSec / minettiSoFar
+      : 1.0;
+
+  // Total Minetti prediction for the full route, scaled by this runner's pace ratio
+  const totalMinettiSec = sections.reduce(
+    (s, sec) => s + sec.estimatedDuration,
+    0,
+  );
+  const estimatedTotalDuration = totalMinettiSec * paceRatio * 1000;
 
   const now = Date.now();
   const eta = startingDate + Math.round(estimatedTotalDuration);
 
-  // Format ETA as a readable date string with validation
   const etaDateStr = Number.isFinite(eta)
     ? format(new Date(eta), "EEE HH:mm")
     : "--:--";
 
-  // Calculate remaining duration in milliseconds
   const remainingMs = Math.max(0, eta - now);
-
-  // Convert to total hours and minutes (1 day = 24 hours)
   const totalMinutes = Math.floor(remainingMs / (1000 * 60));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-
-  // Format remaining duration as hours and minutes only
   const remainingStr = remainingMs > 0 ? `${hours}h ${minutes}m` : "--";
 
   return {
@@ -100,11 +121,11 @@ const TrailData = memo(function TrailData({ className }) {
     sections[0].startTime * 1000;
 
   // Memoize expensive time calculations
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const timeMetrics = useMemo(() => {
     if (
       !cumulativeDistances?.length ||
       !startingDate ||
+      !sections?.length ||
       projectedLocation.timestamp < startingDate
     ) {
       return {
@@ -118,6 +139,7 @@ const TrailData = memo(function TrailData({ className }) {
       projectedLocation,
       cumulativeDistances,
       startingDate,
+      sections,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -125,10 +147,10 @@ const TrailData = memo(function TrailData({ className }) {
     projectedLocation.timestamp,
     cumulativeDistances,
     startingDate,
+    sections,
   ]);
 
   // Memoize remaining values for spring animation
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const remainingValues = useMemo(() => {
     const currentPositionIndex = projectedLocation?.index || 0;
     const distanceDone = cumulativeDistances[currentPositionIndex] || 0;

@@ -18,26 +18,45 @@ const StageETA = memo(function StageETA({ className }) {
     return sections[0].startTime * 1000;
   }, [sections]);
 
-  // How fast is this runner relative to Naismith's flat baseline (5 km/h = 720 ms/m)?
-  // speedFactor > 1 = slower than baseline, < 1 = faster.
-  // Used to scale each section's terrain-adjusted estimatedDuration.
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
-  const speedFactor = useMemo(() => {
-    if (!raceStart || !projectedLocation?.index || !cumulativeDistances?.length)
+  const [currentTime] = useState(() => Date.now());
+
+  // Pace ratio: how fast is this runner relative to what Minetti predicted?
+  // Computed as actual elapsed time / Minetti terrain-adjusted estimate for the same distance.
+  // ratio > 1 = slower than model, < 1 = faster. Applied to future section estimates.
+  const paceRatio = useMemo(() => {
+    if (!raceStart || !sections?.length || !cumulativeDistances?.length)
       return 1.0;
-    const distanceDone = cumulativeDistances[projectedLocation.index] || 0;
-    const elapsedMs = (projectedLocation.timestamp || 0) - raceStart;
-    if (distanceDone <= 0 || elapsedMs <= 0) return 1.0;
-    const NAISMITH_FLAT_MS_PER_M = 720; // 5 km/h
-    return elapsedMs / distanceDone / NAISMITH_FLAT_MS_PER_M;
+    const currentIndex = projectedLocation?.index || 0;
+    const now = projectedLocation?.timestamp || currentTime;
+    const actualElapsedSec = (now - raceStart) / 1000;
+    if (actualElapsedSec <= 0) return 1.0;
+
+    let minettiSoFar = 0;
+    for (const section of sections) {
+      if (currentIndex >= section.endIndex) {
+        // Fully completed section
+        minettiSoFar += section.estimatedDuration;
+      } else if (currentIndex >= section.startIndex) {
+        // Current in-progress section — add the fraction done
+        const distDone =
+          (cumulativeDistances[currentIndex] || 0) -
+          (cumulativeDistances[section.startIndex] || 0);
+        const fractionDone =
+          section.totalDistance > 0 ? distDone / section.totalDistance : 0;
+        minettiSoFar += section.estimatedDuration * fractionDone;
+        break;
+      }
+    }
+
+    return minettiSoFar > 0 ? actualElapsedSec / minettiSoFar : 1.0;
   }, [
     raceStart,
+    sections,
+    cumulativeDistances,
     projectedLocation?.index,
     projectedLocation?.timestamp,
-    cumulativeDistances,
+    currentTime,
   ]);
-
-  const [currentTime] = useState(() => Date.now());
 
   const sectionRows = useMemo(() => {
     if (!sections?.length || !cumulativeDistances?.length) return [];
@@ -59,7 +78,7 @@ const StageETA = memo(function StageETA({ className }) {
     }
 
     // Walk sections forward, accumulating ETA as we go.
-    // Each section contributes its Naismith estimatedDuration × runner's speedFactor.
+    // Minetti estimatedDuration handles terrain; paceRatio corrects for this runner's actual speed.
     let runningEtaMs = raceStart || now;
 
     return sections.map((section) => {
@@ -72,15 +91,15 @@ const StageETA = memo(function StageETA({ className }) {
       let etaMs = null;
 
       if (isPast && section.endTime != null) {
-        // Actual recorded checkpoint time — most accurate
+        // Actual recorded checkpoint time — most accurate, no model correction needed
         etaMs = section.endTime * 1000;
         runningEtaMs = etaMs;
       } else if (isPast) {
-        // No timestamp — advance by Naismith estimate scaled to runner's pace
-        runningEtaMs += section.estimatedDuration * 1000 * speedFactor;
+        // No timestamp — Minetti estimate scaled by runner's observed pace ratio
+        runningEtaMs += section.estimatedDuration * 1000 * paceRatio;
         etaMs = runningEtaMs;
       } else if (isCurrent && raceStart) {
-        // Remaining fraction of this section's Naismith estimate
+        // Remaining fraction of this section's Minetti estimate, scaled by pace ratio
         const remainingDist =
           (cumulativeDistances[section.endIndex] || 0) -
           (cumulativeDistances[currentIndex] || 0);
@@ -88,15 +107,15 @@ const StageETA = memo(function StageETA({ className }) {
           section.totalDistance > 0 ? remainingDist / section.totalDistance : 0;
         etaMs =
           now +
-          section.estimatedDuration * 1000 * fractionRemaining * speedFactor;
+          section.estimatedDuration * 1000 * fractionRemaining * paceRatio;
         runningEtaMs = etaMs;
       } else if (raceStart) {
-        // Future section: full Naismith estimate scaled to runner's pace
-        runningEtaMs += section.estimatedDuration * 1000 * speedFactor;
+        // Future section: Minetti estimate scaled by runner's observed pace ratio
+        runningEtaMs += section.estimatedDuration * 1000 * paceRatio;
         etaMs = runningEtaMs;
       }
 
-      // Cap estimated ETAs at the section's cutoff time to avoid exceeding barriers.
+      // Cap estimated ETAs at the section's cutoff time.
       // Actual recorded times (isPast + endTime) are exempt — they are real data.
       const cutoffMs =
         section.startTime != null && section.maxCompletionTime != null
@@ -132,7 +151,7 @@ const StageETA = memo(function StageETA({ className }) {
     projectedLocation?.index,
     projectedLocation?.timestamp,
     raceStart,
-    speedFactor,
+    paceRatio,
     currentTime,
   ]);
 

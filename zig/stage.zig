@@ -2,6 +2,7 @@ const std = @import("std");
 const Trace = @import("trace.zig").Trace;
 const Waypoint = @import("gpxdata.zig").Waypoint;
 const bearingTo = @import("gpspoint.zig").bearingTo;
+const minetti = @import("minetti.zig");
 
 const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
@@ -27,8 +28,9 @@ pub const StageStats = struct {
     startTime: ?i64, // Unix epoch time in seconds
     endTime: ?i64, // Unix epoch time in seconds
     bearing: f64, // degrees from north
-    difficulty: u8, // 1–5 (Tobler effort ratio vs flat terrain)
-    estimatedDuration: f64, // seconds (Naismith hiking function estimate)
+    difficulty: u8, // 1–5 (Minetti pace factor vs flat: <1.1→1, <1.4→2, <1.8→3, <2.5→4, ≥2.5→5)
+    estimatedDuration: f64, // seconds (Minetti model, base pace 5:30/km with cumulative fatigue)
+    paceFactor: f64, // average Minetti pace factor relative to flat (1.0 = flat equivalent)
     maxCompletionTime: ?i64, // seconds allowed (endTime - startTime), null if absent
 };
 
@@ -54,6 +56,10 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
     errdefer stages.deinit(allocator);
 
     var search_start: usize = 0;
+
+    // Cumulative effort-weighted distance (m) for fatigue model.
+    // Accumulates across stages in race order.
+    var d_eff: f64 = 0.0;
 
     for (0..num_stages) |i| {
         const start_wpt = stage_wpts.items[i];
@@ -90,12 +96,23 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
 
         const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
 
-        const dist_km = dist / 1000.0;
-        const flat_time = dist_km / 5.0;
-        const naismith_time = flat_time + elevation_gain / 600.0;
-        const estimated_duration = naismith_time * 3600.0;
-        const effort_ratio = if (flat_time > 0) naismith_time / flat_time else 1.0;
-        const difficulty: u8 = if (effort_ratio < 1.2) 1 else if (effort_ratio < 1.5) 2 else if (effort_ratio < 2.0) 3 else if (effort_ratio < 2.7) 4 else 5;
+        // Minetti (2002) point-by-point time estimate with cumulative fatigue.
+        var total_time: f64 = 0.0;
+        var total_weighted_dist: f64 = 0.0;
+
+        for (start_index..end_index) |j| {
+            const slope_frac = trace.slopes[j] / 100.0;
+            const seg_dist = trace.cumulativeDistances[j + 1] - trace.cumulativeDistances[j];
+            const pf = minetti.paceFactor(slope_frac);
+            const fatigue_factor = 1.0 + minetti.K_FATIGUE * (d_eff / 1000.0);
+            total_time += (seg_dist / 1000.0) * minetti.DEFAULT_BASE_PACE_S_PER_KM * pf * fatigue_factor;
+            total_weighted_dist += seg_dist * pf;
+            d_eff += seg_dist * pf;
+        }
+
+        const avg_pf = if (dist > 0) total_weighted_dist / dist else 1.0;
+        const estimated_duration = total_time;
+        const difficulty: u8 = if (avg_pf < 1.1) 1 else if (avg_pf < 1.4) 2 else if (avg_pf < 1.8) 3 else if (avg_pf < 2.5) 4 else 5;
 
         const point_count = end_index - start_index + 1;
 
@@ -120,6 +137,7 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
             .bearing = bearing,
             .difficulty = difficulty,
             .estimatedDuration = estimated_duration,
+            .paceFactor = avg_pf,
             .maxCompletionTime = if (start_wpt.time != null and end_wpt.time != null)
                 end_wpt.time.? - start_wpt.time.?
             else

@@ -2,6 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { calculateTimeMetrics } from "./TrailData.jsx";
 
+// Minimal sections fixture: one section covering the full distance.
+// estimatedDuration matches actual elapsed so paceRatio = 1.0 in most tests.
+const makeSections = (totalDistance, estimatedDuration = 28800) => [
+  {
+    startIndex: 0,
+    endIndex: 10,
+    totalDistance,
+    estimatedDuration,
+  },
+];
+
 describe("calculateTimeMetrics", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -27,6 +38,7 @@ describe("calculateTimeMetrics", () => {
         location,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       // Should return actual calculation (not defaults), validation happens in component
@@ -45,6 +57,7 @@ describe("calculateTimeMetrics", () => {
         null,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       // With null, index defaults to 0, timestamp defaults to 0
@@ -73,6 +86,7 @@ describe("calculateTimeMetrics", () => {
         location,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       // Elapsed: 4 hours for 5km → pace: 4h/5km = 0.8h/km
@@ -104,6 +118,7 @@ describe("calculateTimeMetrics", () => {
         location,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       // 2 hours elapsed for 2.5km → pace: 0.8h/km
@@ -135,6 +150,7 @@ describe("calculateTimeMetrics", () => {
         location,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       expect(result.distanceDone).toBe(9500);
@@ -162,6 +178,7 @@ describe("calculateTimeMetrics", () => {
         location,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       expect(result.distanceDone).toBe(10000);
@@ -181,6 +198,7 @@ describe("calculateTimeMetrics", () => {
         location,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       expect(result.distanceDone).toBe(0);
@@ -204,6 +222,7 @@ describe("calculateTimeMetrics", () => {
         location,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       // When distanceDone is 0, estimatedTotalDuration should be 0
@@ -220,6 +239,7 @@ describe("calculateTimeMetrics", () => {
         location,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       expect(result.distanceDone).toBe(0);
@@ -242,6 +262,7 @@ describe("calculateTimeMetrics", () => {
         location,
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       // ETA should always be a valid time string or "--:--"
@@ -264,6 +285,7 @@ describe("calculateTimeMetrics", () => {
         { index: 2, timestamp: new Date("2026-05-13T12:00:00Z").getTime() },
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       // Hour 4: at 4km
@@ -272,6 +294,7 @@ describe("calculateTimeMetrics", () => {
         { index: 4, timestamp: new Date("2026-05-13T14:00:00Z").getTime() },
         cumulativeDistances,
         startingDate,
+        makeSections(),
       );
 
       // Both should have valid ETAs
