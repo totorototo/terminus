@@ -73,8 +73,8 @@ vi.mock("../offCourseEffect/OffCourseEffect.jsx", () => ({
   ),
 }));
 
-vi.mock("../trailer/Trailer.jsx", () => ({
-  Trailer: () => <div data-testid="trailer" />,
+vi.mock("../ufo/Ufo.jsx", () => ({
+  Model: () => <div data-testid="ufo" />,
 }));
 
 vi.mock("../flyBy/FlyBy", () => ({
@@ -185,20 +185,20 @@ describe("Scene", () => {
     });
   });
 
-  // ── Trailer ───────────────────────────────────────────────────────────────
-  describe("Trailer", () => {
+  // ── UFO Model ─────────────────────────────────────────────────────────────
+  describe("UFO Model", () => {
     it("is not rendered when projectedLocation is null", () => {
       const state = {
         ...defaultState,
         gps: { ...defaultState.gps, projectedLocation: null },
       };
       renderScene(state);
-      expect(screen.queryByTestId("trailer")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("ufo")).not.toBeInTheDocument();
     });
 
     it("is not rendered when projectedLocation.timestamp is 0", () => {
       renderScene();
-      expect(screen.queryByTestId("trailer")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("ufo")).not.toBeInTheDocument();
     });
 
     it("is rendered when projectedLocation has a non-zero timestamp", () => {
@@ -210,7 +210,7 @@ describe("Scene", () => {
         },
       };
       renderScene(state);
-      expect(screen.getByTestId("trailer")).toBeInTheDocument();
+      expect(screen.getByTestId("ufo")).toBeInTheDocument();
     });
   });
 

@@ -12,7 +12,7 @@ import FlyBy from "../flyBy/FlyBy";
 import Marker from "../marker/Marker.jsx";
 import OffCourseEffect from "../offCourseEffect/OffCourseEffect.jsx";
 import Peaks from "../peaks/Peaks.jsx";
-import { Trailer } from "../trailer/Trailer.jsx";
+import { Model } from "../ufo/Ufo.jsx";
 
 import style from "./Scene.style";
 
@@ -139,7 +139,7 @@ function Scene({ width, height, className }) {
 
         {projectedLocation && projectedLocation.timestamp !== 0 && (
           <Suspense fallback={null}>
-            <Trailer scale={0.01} coordinateScales={coordinateScales} />
+            <Model scale={0.02} coordinateScales={coordinateScales} />
           </Suspense>
         )}
 
