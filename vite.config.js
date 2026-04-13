@@ -80,6 +80,12 @@ export default defineConfig(({ mode }) => {
   ].join("; ");
 
   return {
+    // Satori's Yoga layout engine reads process.env.NODE_ENV — shim it for the browser
+    define: {
+      "process.env.NODE_ENV": JSON.stringify(
+        mode === "production" ? "production" : "development",
+      ),
+    },
     build: {
       modulePreload: {
         resolveDependencies: (_filename, deps) => {

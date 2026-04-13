@@ -40,6 +40,7 @@
     "react-dom": "19.2.1",
     "react-helmet-async": "^3.0.0",
     "react-virtualized-auto-sizer": "1.0.26",
+    "satori": "^0.26.0",
     "styled-components": "6.1.19",
     "styled-icons": "10.47.1",
     "three": "0.181.2",
