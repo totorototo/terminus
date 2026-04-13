@@ -39,9 +39,9 @@ pub fn paceFactor(slope: f64) f64 {
 /// Each 1 000 m of effort-weighted distance (d_eff) adds K_FATIGUE to the fatigue factor.
 /// Calibrated for ultra-trail races (≥ 100km, 6000m+ D+):
 ///   d_eff ≈ 234km on a 224km/8000D+/9000D- course
-///   fatigue_factor at finish = 1 + 0.006 × 234 = 2.40
-/// Use 0.012 for 50km races, 0.006 for 200km+.
-pub const K_FATIGUE: f64 = 0.006;
+///   fatigue_factor at finish = 1 + 0.004 × 234 = 1.94
+/// Use 0.012 for 50km races, 0.004 for 200km+.
+pub const K_FATIGUE: f64 = 0.004;
 
 /// Default flat-terrain pace used when no user pace is provided.
 /// 490 s/km = 8:10/km — calibrated for ultra-trail (VMA ~14-15 km/h, races ≥ 100km).
