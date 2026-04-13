@@ -4,6 +4,7 @@ import { animated, useSpring as useSpringWeb } from "@react-spring/web";
 import { format } from "date-fns";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
+import EffortBreakdown from "./EffortBreakdown/EffortBreakdown.jsx";
 import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PeakSummary from "./PeakSummary/PeakSummary.jsx";
 import SectionAnalytics from "./SectionAnalytics/SectionAnalytics.jsx";
@@ -16,6 +17,7 @@ import TrailProgression from "./TrailProgression/TrailProgression.jsx";
 import style from "./TrailData.style.js";
 
 const PANEL_LABELS = [
+  "Effort profile",
   "Trail overview",
   "Trail progression",
   "Stage analytics",
@@ -231,6 +233,9 @@ const TrailData = memo(function TrailData({ className }) {
         </div>
         <div className="component-children">
           <StageETA />
+        </div>
+        <div className="component-children">
+          <EffortBreakdown />
         </div>
         <div className="component-children">
           <PaceProfile />

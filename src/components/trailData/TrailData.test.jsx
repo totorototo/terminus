@@ -66,6 +66,11 @@ vi.mock("./SectionAnalytics/SectionAnalytics.jsx", () => ({
   ),
 }));
 
+// Mock EffortBreakdown component
+vi.mock("./EffortBreakdown/EffortBreakdown.jsx", () => ({
+  default: () => <div data-testid="effort-breakdown">EffortBreakdown</div>,
+}));
+
 // Mock TrailOverview component
 vi.mock("./TrailOverview/TrailOverview.jsx", () => ({
   default: () => <div data-testid="trail-overview">TrailOverview</div>,

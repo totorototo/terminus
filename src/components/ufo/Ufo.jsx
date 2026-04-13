@@ -9,11 +9,11 @@ Title: UFO
 */
 
 import { useEffect, useMemo, useRef } from "react";
-import { a, useSpring } from "@react-spring/three";
-import { useGraph } from "@react-three/fiber";
-import { useGLTF, useAnimations } from "@react-three/drei";
-import { useTheme } from "styled-components";
 
+import { a, useSpring } from "@react-spring/three";
+import { useAnimations, useGLTF } from "@react-three/drei";
+import { useGraph } from "@react-three/fiber";
+import { useTheme } from "styled-components";
 import { SkeletonUtils } from "three-stdlib";
 
 import { useProjectedLocation } from "../../store/store.js";
@@ -21,7 +21,6 @@ import { transformCoordinates } from "../../utils/coordinateTransforms.js";
 
 export function Model({ coordinateScales, ...props }) {
   const group = useRef();
-  const bounceRef = useRef();
   const { scene, animations } = useGLTF("/scene-transformed.glb");
   const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const { nodes, materials } = useGraph(clone);
@@ -43,18 +42,22 @@ export function Model({ coordinateScales, ...props }) {
     if (materials.PaletteMaterial001) {
       materials.PaletteMaterial001.color.set(palette["--color-secondary"]);
     }
-    if (materials.PaletteMaterial002) {
-      materials.PaletteMaterial002.color.set(palette["--color-text"]);
-      materials.PaletteMaterial002.emissive.set(palette["--color-text"]);
-      materials.PaletteMaterial002.emissiveIntensity = 1;
+    const mat002 = materials.PaletteMaterial002;
+    if (mat002) {
+      mat002.color.set(palette["--color-text"]);
+      mat002.emissive.set(palette["--color-text"]);
+      // eslint-disable-next-line react-hooks/immutability
+      mat002.emissiveIntensity = 1;
     }
     if (materials.PaletteMaterial003) {
       materials.PaletteMaterial003.color.set(palette["--color-accent"]);
     }
-    if (materials.PaletteMaterial004) {
-      materials.PaletteMaterial004.color.set(palette["--color-text"]);
-      materials.PaletteMaterial004.emissive.set(palette["--color-text"]);
-      materials.PaletteMaterial004.emissiveIntensity = 0.4;
+    const mat004 = materials.PaletteMaterial004;
+    if (mat004) {
+      mat004.color.set(palette["--color-text"]);
+      mat004.emissive.set(palette["--color-text"]);
+      // eslint-disable-next-line react-hooks/immutability
+      mat004.emissiveIntensity = 0.4;
     }
   }, [materials, palette]);
 
