@@ -73,7 +73,7 @@ export default defineConfig(({ mode }) => {
     "script-src 'self' 'wasm-unsafe-eval' blob: https://cloud.umami.is",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
-    `connect-src 'self'${partykitHost ? ` https://${partykitHost} wss://${partykitHost}` : ""} blob: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev`,
+    `connect-src 'self'${partykitHost ? ` https://${partykitHost} wss://${partykitHost}` : ""} blob: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev https://www.gstatic.com`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
