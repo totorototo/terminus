@@ -70,7 +70,7 @@ export default defineConfig(({ mode }) => {
   const partykitHost = env.VITE_PARTYKIT_HOST;
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'wasm-unsafe-eval' blob: https://cloud.umami.is 'sha256-PSbJmyvxZNzvRDi+D/Qj0klN/RcQ2sw/ms/fz2MzO6Y=' 'sha256-STS9SqU0XU6MD9z/R5Vuu133130JZh3udAlYzLFvda4='",
+    "script-src 'self' 'wasm-unsafe-eval' blob: https://cloud.umami.is 'sha256-PSbJmyvxZNzvRDi+D/Qj0klN/RcQ2sw/ms/fz2MzO6Y=' 'sha256-STS9SqU0XU6MD9z/R5Vuu133130JZh3udAlYzLFvda4=' 'sha256-oIEi4iCPg+4WpAtqhNLH8uygoZUNTajBplrVE7Dn0X8='",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     `connect-src 'self'${partykitHost ? ` https://${partykitHost} wss://${partykitHost}` : ""} blob: data: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev https://www.gstatic.com`,
