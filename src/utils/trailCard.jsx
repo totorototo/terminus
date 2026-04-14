@@ -148,14 +148,11 @@ function buildElement({
   totalSec,
   elevationGain,
   distance,
-  sections,
+  stages,
   url,
 }) {
   const distKm = distance ? `${(distance / 1000).toFixed(0)} km` : "";
-  const totalDur = sections.reduce(
-    (s, sec) => s + (sec.estimatedDuration || 0),
-    0,
-  );
+  const totalDist = stages.reduce((s, st) => s + (st.totalDistance || 0), 0);
 
   // Terrain multiplier: how much harder than running flat at 8:10/km pace
   const flatTimeSec = distance > 0 ? (distance / 1000) * FLAT_PACE_S_PER_KM : 0;
@@ -261,28 +258,29 @@ function buildElement({
         })}
       </div>
 
-      {/* Effort bar */}
-      {totalDur > 0 ? (
+      {/* Stage bar — uniform height, width = distance, color = difficulty */}
+      {totalDist > 0 ? (
         <div
           style={{
             display: "flex",
             flexDirection: "row",
-            height: 5,
+            height: 8,
+            gap: 2,
+            marginTop: 12,
+            marginBottom: 16,
             borderRadius: 3,
             overflow: "hidden",
-            gap: 1,
-            marginBottom: 16,
           }}
         >
-          {sections.map((sec, i) => (
+          {stages.map((st, i) => (
             <div
               key={i}
               style={{
-                flex: (sec.estimatedDuration || 0) / totalDur,
-                background: sec.difficulty
-                  ? DIFFICULTY_COLORS[sec.difficulty - 1]
+                flex: (st.totalDistance || 0) / totalDist,
+                height: 8,
+                background: st.difficulty
+                  ? DIFFICULTY_COLORS[st.difficulty - 1]
                   : C.muted,
-                height: 5,
               }}
             />
           ))}
@@ -338,7 +336,7 @@ function svgToPng(svgString) {
  * @param {number} data.totalSec - Total estimated duration in seconds
  * @param {number} data.elevationGain - Total D+ in metres
  * @param {number} data.distance - Total distance in metres
- * @param {Array}  data.sections - Section objects with estimatedDuration, difficulty
+ * @param {Array}  data.stages - Stage objects with totalDistance, totalElevation, totalElevationLoss, difficulty
  * @param {string} [data.url] - URL to encode as QR code in the card footer
  * @returns {Promise<Blob>} PNG blob
  */

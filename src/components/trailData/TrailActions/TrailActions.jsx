@@ -24,18 +24,18 @@ const TrailActions = memo(function TrailActions({ className }) {
   const [sharingCard, setSharingCard] = useState(false);
   const [cardError, setCardError] = useState(false);
 
-  const sections = useStore((state) => state.sections);
+  const stages = useStore((state) => state.stages);
   const stats = useStore((state) => state.stats);
   const metadata = useStore((state) => state.gpx.metadata);
 
   const buildNumber = import.meta.env.VITE_NUMBER || "dev";
 
   const handleShareCard = async () => {
-    if (!sections?.length) return;
+    if (!stages?.length) return;
     setSharingCard(true);
     try {
-      const totalSec = sections.reduce(
-        (s, sec) => s + (sec.estimatedDuration || 0),
+      const totalSec = stages.reduce(
+        (s, st) => s + (st.estimatedDuration || 0),
         0,
       );
 
@@ -44,7 +44,7 @@ const TrailActions = memo(function TrailActions({ className }) {
         totalSec,
         elevationGain: stats?.elevationGain || 0,
         distance: stats?.distance || 0,
-        sections,
+        stages,
         url: window.location.href,
       });
 
@@ -104,7 +104,7 @@ const TrailActions = memo(function TrailActions({ className }) {
         <button
           className="action-row"
           onClick={handleShareCard}
-          disabled={sharingCard || !sections?.length}
+          disabled={sharingCard || !stages?.length}
           aria-busy={sharingCard}
         >
           <Download size={14} />
