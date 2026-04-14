@@ -36,6 +36,7 @@
     "date-fns": "4.1.0",
     "partysocket": "^1.1.15",
     "polished": "4.3.1",
+    "qrcode": "^1.5.4",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-helmet-async": "^3.0.0",

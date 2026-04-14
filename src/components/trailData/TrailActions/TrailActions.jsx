@@ -45,6 +45,7 @@ const TrailActions = memo(function TrailActions({ className }) {
         elevationGain: stats?.elevationGain || 0,
         distance: stats?.distance || 0,
         sections,
+        url: window.location.href,
       });
 
       const file = new File(

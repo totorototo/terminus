@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import satori from "satori";
 
 import { DIFFICULTY_COLORS } from "../constants.js";
@@ -104,10 +105,52 @@ function statBlock({ label, value, color }) {
   );
 }
 
+// Renders a QR code matrix as nested flex rows — Satori-compatible (no canvas)
+function qrElement(url, size = 72) {
+  const qr = QRCode.create(url, { errorCorrectionLevel: "M" });
+  const { data, size: n } = qr.modules;
+  const cell = size / n;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: size,
+        height: size,
+        borderRadius: 4,
+        overflow: "hidden",
+      }}
+    >
+      {Array.from({ length: n }, (_, row) => (
+        <div key={row} style={{ display: "flex", flexDirection: "row" }}>
+          {Array.from({ length: n }, (_, col) => (
+            <div
+              key={col}
+              style={{
+                width: cell,
+                height: cell,
+                background: data[row * n + col] ? C.text : C.bg,
+              }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // DEFAULT_BASE_PACE_S_PER_KM from zig/minetti.zig — flat terrain reference
 const FLAT_PACE_S_PER_KM = 490;
 
-function buildElement({ name, totalSec, elevationGain, distance, sections }) {
+function buildElement({
+  name,
+  totalSec,
+  elevationGain,
+  distance,
+  sections,
+  url,
+}) {
   const distKm = distance ? `${(distance / 1000).toFixed(0)} km` : "";
   const totalDur = sections.reduce(
     (s, sec) => s + (sec.estimatedDuration || 0),
@@ -128,14 +171,23 @@ function buildElement({ name, totalSec, elevationGain, distance, sections }) {
         background: C.bg,
         padding: "28px 32px",
         fontFamily: "JB",
+        position: "relative",
       }}
     >
+      {/* QR code — absolute top-right, out of flow */}
+      {url ? (
+        <div
+          style={{ display: "flex", position: "absolute", top: 28, right: 32 }}
+        >
+          {qrElement(url, 56)}
+        </div>
+      ) : null}
+
       {/* Branding */}
       <div
         style={{
           display: "flex",
           flexDirection: "row",
-          justifyContent: "space-between",
           marginBottom: 18,
         }}
       >
@@ -286,8 +338,8 @@ function svgToPng(svgString) {
  * @param {number} data.totalSec - Total estimated duration in seconds
  * @param {number} data.elevationGain - Total D+ in metres
  * @param {number} data.distance - Total distance in metres
- * @param {number} data.effortScore - Weighted avg difficulty (1–5)
  * @param {Array}  data.sections - Section objects with estimatedDuration, difficulty
+ * @param {string} [data.url] - URL to encode as QR code in the card footer
  * @returns {Promise<Blob>} PNG blob
  */
 export async function generateTrailCard(data) {
