@@ -56,7 +56,7 @@ jobs:
           echo "VITE_UMAMI_WEBSITE_ID=${{ secrets.VITE_UMAMI_WEBSITE_ID }}" >> .env
           npm run build
           PARTYKIT_HOST="terminus.${{ secrets.PARTYKIT_LOGIN }}.partykit.dev"
-          CSP="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob: https://cloud.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://${PARTYKIT_HOST} wss://${PARTYKIT_HOST} blob: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev https://www.gstatic.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
+          CSP="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob: https://cloud.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://${PARTYKIT_HOST} wss://${PARTYKIT_HOST} blob: data: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev https://www.gstatic.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
           printf '/*\n  Content-Security-Policy: %s\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: SAMEORIGIN\n  Referrer-Policy: strict-origin-when-cross-origin\n  Strict-Transport-Security: max-age=31536000; includeSubDomains\n' "$CSP" >> dist/_headers
 
       - name: Upload build artifact
