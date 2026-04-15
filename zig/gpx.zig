@@ -11,6 +11,7 @@ const SectionStats = section_mod.SectionStats;
 const stage_mod = @import("stage.zig");
 const StageStats = stage_mod.StageStats;
 const parseIso8601ToEpoch = @import("time.zig").parseIso8601ToEpoch;
+const minetti = @import("minetti.zig");
 
 pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
     var points = std.ArrayList([3]f64){};
@@ -206,7 +207,7 @@ pub fn readMetadata(allocator: std.mem.Allocator, bytes: []const u8) !Metadata {
     return metadata;
 }
 
-pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData {
+pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8, base_pace_s_per_km: f64, k_fatigue: f64) !GPXData {
     var metadata = try readMetadata(allocator, bytes);
     errdefer metadata.deinit(allocator);
 
@@ -233,11 +234,11 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData
     errdefer if (legs) |l| allocator.free(l);
 
     // Sections: computed between consecutive section-boundary waypoints (Start/TimeBarrier/LifeBase/Arrival)
-    const sections: ?[]const SectionStats = try section_mod.computeFromWaypoints(&trace, allocator, waypoints);
+    const sections: ?[]const SectionStats = try section_mod.computeFromWaypoints(&trace, allocator, waypoints, base_pace_s_per_km, k_fatigue);
     errdefer if (sections) |s| allocator.free(s);
 
     // Stages: computed between consecutive stage-boundary waypoints (Start/LifeBase/Arrival)
-    const stages: ?[]const StageStats = try stage_mod.computeFromWaypoints(&trace, allocator, waypoints);
+    const stages: ?[]const StageStats = try stage_mod.computeFromWaypoints(&trace, allocator, waypoints, base_pace_s_per_km, k_fatigue);
     errdefer if (stages) |st| allocator.free(st);
 
     return GPXData{
@@ -268,7 +269,7 @@ test "readGPXComplete creates valid trace" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 3), gpx_data.trace.points.len);
@@ -649,7 +650,7 @@ test "readGPXComplete parses both tracks and waypoints" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 3), gpx_data.trace.points.len);
@@ -677,7 +678,7 @@ test "readGPXComplete: legs null when no waypoints" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 2), gpx_data.trace.points.len);
@@ -700,7 +701,7 @@ test "readGPXComplete: legs null when single waypoint" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 1), gpx_data.waypoints.len);
@@ -733,7 +734,7 @@ test "readGPXComplete: legs computed with multiple waypoints" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 11), gpx_data.trace.points.len);
