@@ -34,8 +34,10 @@ export default class Server {
       return;
     }
 
-    // Stricter size limit for location messages
-    if (message.length > 512) return;
+    // Stricter size limit for location messages.
+    // Base payload is ~120 bytes; paceSettings adds ~55 bytes. 1 024 gives
+    // room for longer raceIds and future fields without risking silent drops.
+    if (message.length > 1024) return;
     if (parsed.type !== "location") return;
 
     // Validate coordinate ranges before broadcasting
