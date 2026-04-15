@@ -22,16 +22,19 @@ function fatigueName(k) {
 }
 
 const PaceSettings = memo(function PaceSettings({ className }) {
-  const { paceSettings, setPaceSettings, reprocessGPXFile } = useStore(
-    useShallow((state) => ({
-      paceSettings: state.app?.paceSettings ?? {
-        basePaceSPerKm: 490,
-        kFatigue: 0.004,
-      },
-      setPaceSettings: state.setPaceSettings ?? (() => {}),
-      reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
-    })),
-  );
+  const { paceSettings, setPaceSettings, reprocessGPXFile, isFollower } =
+    useStore(
+      useShallow((state) => ({
+        paceSettings: state.app?.paceSettings ?? {
+          basePaceSPerKm: 490,
+          kFatigue: 0.004,
+        },
+        setPaceSettings: state.setPaceSettings ?? (() => {}),
+        reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
+        // Follower mode: connected to a runner's session (not broadcasting)
+        isFollower: state.gps?.followerConnectionStatus === "connected",
+      })),
+    );
 
   const { basePaceSPerKm, kFatigue } = paceSettings;
 
@@ -57,6 +60,7 @@ const PaceSettings = memo(function PaceSettings({ className }) {
     <div className={className}>
       <div className="settings-header">
         <span className="header-label">Pace &amp; Effort</span>
+        {isFollower && <span className="synced-badge">synced from runner</span>}
       </div>
 
       <div className="settings-body">
@@ -73,7 +77,9 @@ const PaceSettings = memo(function PaceSettings({ className }) {
             step={5}
             value={basePaceSPerKm}
             onChange={handlePaceChange}
+            disabled={isFollower}
             aria-label="Base flat-terrain pace"
+            aria-readonly={isFollower}
           />
           <div className="slider-bounds">
             <span>5:00</span>
@@ -94,7 +100,9 @@ const PaceSettings = memo(function PaceSettings({ className }) {
             step={0.001}
             value={kFatigue}
             onChange={handleFatigueChange}
+            disabled={isFollower}
             aria-label="Cumulative fatigue coefficient"
+            aria-readonly={isFollower}
           />
           <div className="slider-bounds">
             <span>Low</span>
@@ -103,8 +111,9 @@ const PaceSettings = memo(function PaceSettings({ className }) {
         </div>
 
         <p className="settings-hint">
-          Adjusts ETA predictions for all checkpoints. Followers will
-          automatically receive your settings.
+          {isFollower
+            ? "These settings are automatically synced from the runner and cannot be changed."
+            : "Adjusts ETA predictions for all checkpoints. Followers will automatically receive your settings."}
         </p>
       </div>
     </div>
