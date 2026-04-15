@@ -40,6 +40,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
   // Closure-local state (fresh for each store instance, no cross-test contamination)
   let worker = null;
   let messenger = null;
+  let rawGpxBytes = null; // stored so we can re-process with updated pace settings
 
   // Helper: Handle worker operation errors and update state
   const handleWorkerError = (error, defaultMessage) => {
@@ -259,9 +260,12 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
         }
 
+        rawGpxBytes = gpxBytes;
+        const { basePaceSPerKm = 490, kFatigue = 0.004 } =
+          get().app?.paceSettings ?? {};
         const results = await messenger.send(
           "PROCESS_GPX_FILE",
-          { gpxBytes },
+          { gpxBytes, basePaceSPerKm, kFatigue },
           onProgress,
         );
 
@@ -296,6 +300,11 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       } catch (error) {
         handleWorkerError(error, ERROR_MESSAGES.GPX_FILE);
       }
+    },
+
+    reprocessGPXFile: async () => {
+      if (!rawGpxBytes || !messenger) return;
+      await get().processGPXFile(rawGpxBytes);
     },
 
     processGPSData: async (coordinates, onProgress) => {

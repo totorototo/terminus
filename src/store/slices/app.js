@@ -15,6 +15,10 @@ export const createAppSlice = (set, get) => {
       currentRoute: "/",
       installPromptDismissed: false,
       highlightedClimbIndex: null,
+      paceSettings: {
+        basePaceSPerKm: 490, // 8:10/km — ultra-trail default
+        kFatigue: 0.004, // cumulative fatigue coefficient for 200km+ races
+      },
       theme:
         typeof window !== "undefined" &&
         typeof window.matchMedia === "function" &&
@@ -136,6 +140,22 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, highlightedClimbIndex: index } }),
         undefined,
         "app/setHighlightedClimb",
+      ),
+
+    setPaceSettings: ({ basePaceSPerKm, kFatigue }) =>
+      set(
+        (state) => ({
+          app: {
+            ...state.app,
+            paceSettings: {
+              basePaceSPerKm:
+                basePaceSPerKm ?? state.app.paceSettings.basePaceSPerKm,
+              kFatigue: kFatigue ?? state.app.paceSettings.kFatigue,
+            },
+          },
+        }),
+        undefined,
+        "app/setPaceSettings",
       ),
   };
 };
