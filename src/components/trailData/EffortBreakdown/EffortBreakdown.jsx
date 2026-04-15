@@ -21,6 +21,7 @@ function DifficultyDots({ difficulty }) {
   return (
     <div
       className="eb-dots"
+      role="img"
       aria-label={DIFFICULTY_LABELS[difficulty - 1] ?? ""}
     >
       {[1, 2, 3, 4, 5].map((d) => (
