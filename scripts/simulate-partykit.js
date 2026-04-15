@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // Replay a GPX route as live location updates sent to a PartyKit room.
-// Usage: node scripts/simulate-partykit.js <gpx-file> <room-id> <race-id> [speed_m_per_s] [update_every_m]
-//   gpx-file      - path to the GPX file (absolute or relative to cwd)
-//   room-id       - PartyKit room / session ID (e.g. "ABC123")
-//   race-id       - race identifier sent in each message (e.g. "vvx-xgtv-2026")
-//   speed_m_per_s - simulated running speed in m/s (default: 2)
-//   update_every_m- send a position update every N metres travelled (default: 100)
+// Usage: node scripts/simulate-partykit.js <gpx-file> <room-id> <race-id> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
+//   gpx-file         - path to the GPX file (absolute or relative to cwd)
+//   room-id          - PartyKit room / session ID (e.g. "ABC123")
+//   race-id          - race identifier sent in each message (e.g. "vvx-xgtv-2026")
+//   speed_m_per_s    - simulated running speed in m/s (default: 2)
+//   update_every_m   - send a position update every N metres travelled (default: 100)
+//   base_pace_s_per_km - flat-terrain pace in s/km used for ETA estimates (default: 490 = 8:10/km)
+//   k_fatigue        - cumulative fatigue coefficient (default: 0.004, calibrated for 200 km+)
 //
 // Environment:
 //   PARTYKIT_HOST - PartyKit host (default: localhost:1999)
@@ -13,17 +15,20 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-const [, , gpxArg, roomId, raceId, speedArg, intervalArg] = process.argv;
+const [, , gpxArg, roomId, raceId, speedArg, intervalArg, paceArg, fatigueArg] =
+  process.argv;
 
 if (!gpxArg || !roomId || !raceId) {
   console.error(
-    "Usage: node scripts/simulate-partykit.js <gpx-file> <room-id> <race-id> [speed_m_per_s] [update_every_m]",
+    "Usage: node scripts/simulate-partykit.js <gpx-file> <room-id> <race-id> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]",
   );
   process.exit(1);
 }
 
 const speed = parseFloat(speedArg ?? 2);
 const updateEvery = parseFloat(intervalArg ?? 100);
+const basePaceSPerKm = parseFloat(paceArg ?? 490);
+const kFatigue = parseFloat(fatigueArg ?? 0.004);
 
 if (isNaN(speed) || speed <= 0) {
   console.error("Error: speed_m_per_s must be a positive number");
@@ -31,6 +36,14 @@ if (isNaN(speed) || speed <= 0) {
 }
 if (isNaN(updateEvery) || updateEvery <= 0) {
   console.error("Error: update_every_m must be a positive number");
+  process.exit(1);
+}
+if (isNaN(basePaceSPerKm) || basePaceSPerKm <= 0) {
+  console.error("Error: base_pace_s_per_km must be a positive number");
+  process.exit(1);
+}
+if (isNaN(kFatigue) || kFatigue <= 0) {
+  console.error("Error: k_fatigue must be a positive number");
   process.exit(1);
 }
 
@@ -108,6 +121,7 @@ console.log(
 console.log(
   `Speed: ${speed} m/s  ·  update every: ${updateEvery} m  ·  ETA: ${formatDuration(totalDist / speed)}`,
 );
+console.log(`Pace: ${formatPace(basePaceSPerKm)}  ·  fatigue k: ${kFatigue}`);
 console.log(`Room: ${roomId}  ·  Race: ${raceId}`);
 
 // ── PartyKit WebSocket connection ─────────────────────────────────────────────
@@ -158,6 +172,7 @@ function runReplay() {
       coords: [wp.lat, wp.lon, wp.ele],
       index: wp.index,
       raceId,
+      paceSettings: { basePaceSPerKm, kFatigue },
     });
 
     ws.send(message);
@@ -195,4 +210,10 @@ function formatDuration(seconds) {
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
   return h > 0 ? `${h}h ${m}m ${s}s` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function formatPace(sPerKm) {
+  const m = Math.floor(sPerKm / 60);
+  const s = Math.round(sPerKm % 60);
+  return `${m}:${String(s).padStart(2, "0")} /km`;
 }
