@@ -107,7 +107,12 @@ self.onmessage = async function (e) {
 
 async function processGPXFile(gpxFileBytes, requestId) {
   markStart("processGPXFile");
-  const gpxData = await readGPXComplete(gpxFileBytes.gpxBytes);
+  const { basePaceSPerKm = 490.0, kFatigue = 0.004 } = gpxFileBytes;
+  const gpxData = await readGPXComplete(
+    gpxFileBytes.gpxBytes,
+    basePaceSPerKm,
+    kFatigue,
+  );
 
   // Convert Zigar proxy objects to plain JS before sending
   // Note: Zig string fields ([]const u8) need .string property to convert to JS strings

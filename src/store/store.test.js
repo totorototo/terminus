@@ -165,6 +165,7 @@ describe("store", () => {
           "installPromptDismissed",
           "liveSessionId",
           "mode",
+          "paceSettings",
           "pendingUrl",
           "profileMode",
           "raceId",

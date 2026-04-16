@@ -50,7 +50,12 @@ export const createGPSSlice = (set, get) => {
     }
   };
 
-  const broadcastLocation = async (sessionId, location, raceId) => {
+  const broadcastLocation = async (
+    sessionId,
+    location,
+    raceId,
+    paceSettings,
+  ) => {
     await ensureSocket(sessionId);
     const { timestamp, coords, index } = location;
     const message = JSON.stringify({
@@ -59,6 +64,7 @@ export const createGPSSlice = (set, get) => {
       coords,
       index,
       raceId,
+      paceSettings,
     });
     if (partySocket.readyState === WebSocket.OPEN) {
       partySocket.send(message);
@@ -210,7 +216,12 @@ export const createGPSSlice = (set, get) => {
         // Broadcast to followers if in trailer mode
         const sessionId = get().app.liveSessionId;
         if (get().app.mode === "trailer" && sessionId) {
-          await broadcastLocation(sessionId, projected, get().app.raceId);
+          await broadcastLocation(
+            sessionId,
+            projected,
+            get().app.raceId,
+            get().app.paceSettings,
+          );
         }
       } catch (error) {
         let errorMessage = "Failed to get current location";
@@ -360,6 +371,19 @@ export const createGPSSlice = (set, get) => {
             index: msg.index,
           });
           notifyLocationUpdate(msg);
+
+          // Apply runner's pace settings if they differ — triggers re-processing
+          // so followers see the same ETAs as the trailer.
+          if (msg.paceSettings) {
+            const current = get().app.paceSettings;
+            if (
+              msg.paceSettings.basePaceSPerKm !== current.basePaceSPerKm ||
+              msg.paceSettings.kFatigue !== current.kFatigue
+            ) {
+              get().setPaceSettings(msg.paceSettings);
+              get().reprocessGPXFile();
+            }
+          }
         }
       });
     },
