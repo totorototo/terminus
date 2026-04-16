@@ -13,7 +13,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { a, useSpring } from "@react-spring/three";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useGraph } from "@react-three/fiber";
-import { useTheme } from "styled-components";
 import { SkeletonUtils } from "three-stdlib";
 
 import { useProjectedLocation } from "../../store/store.js";
@@ -26,9 +25,6 @@ export function Model({ coordinateScales, ...props }) {
   const { nodes, materials } = useGraph(clone);
   const { actions } = useAnimations(animations, group);
 
-  const theme = useTheme();
-  const palette = theme.colors[theme.currentVariant];
-
   useEffect(() => {
     const action = actions[Object.keys(actions)[0]];
     if (action) action.play();
@@ -39,27 +35,7 @@ export function Model({ coordinateScales, ...props }) {
       mat.metalness = 0.5;
       mat.roughness = 0.9;
     });
-    if (materials.PaletteMaterial001) {
-      materials.PaletteMaterial001.color.set(palette["--color-secondary"]);
-    }
-    const mat002 = materials.PaletteMaterial002;
-    if (mat002) {
-      mat002.color.set(palette["--color-text"]);
-      mat002.emissive.set(palette["--color-text"]);
-      // eslint-disable-next-line react-hooks/immutability
-      mat002.emissiveIntensity = 1;
-    }
-    if (materials.PaletteMaterial003) {
-      materials.PaletteMaterial003.color.set(palette["--color-accent"]);
-    }
-    const mat004 = materials.PaletteMaterial004;
-    if (mat004) {
-      mat004.color.set(palette["--color-text"]);
-      mat004.emissive.set(palette["--color-text"]);
-      // eslint-disable-next-line react-hooks/immutability
-      mat004.emissiveIntensity = 0.4;
-    }
-  }, [materials, palette]);
+  }, [materials]);
 
   const projectedLocation = useProjectedLocation();
 
