@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { calculateTimeMetrics } from "./TrailData.jsx";
@@ -225,9 +226,40 @@ describe("calculateTimeMetrics", () => {
         makeSections(),
       );
 
-      // When distanceDone is 0, estimatedTotalDuration should be 0
       expect(Number.isFinite(result.distanceDone)).toBe(true);
       expect(result.etaDateStr).toMatch(/^[A-Za-z]{3} \d{2}:\d{2}$|^--:--$/);
+    });
+
+    it("should account for elapsed time when runner is at 0 km (paceRatio=1 fallback)", () => {
+      // Regression: race started 2h ago, runner still at 0 km.
+      // ETA must be now + totalMinetti, NOT raceStart + totalMinetti (which is already 2h stale).
+      const startingDate = new Date("2026-05-13T10:00:00Z").getTime();
+      const raceTime = new Date("2026-05-13T12:00:00Z").getTime(); // 2h elapsed
+
+      vi.setSystemTime(raceTime);
+
+      const location = { index: 0, timestamp: raceTime };
+      const cumulativeDistances = [0, 1000, 2000, 5000];
+      const estimatedDuration = 3600; // 1h total Minetti estimate
+
+      const result = calculateTimeMetrics(
+        location,
+        cumulativeDistances,
+        startingDate,
+        makeSections(5000, estimatedDuration),
+      );
+
+      // ETA = now + 1h, not raceStart + 1h (which would be 2h earlier)
+      const expectedEta = format(
+        new Date(raceTime + estimatedDuration * 1000),
+        "EEE HH:mm",
+      );
+      const staleEta = format(
+        new Date(startingDate + estimatedDuration * 1000),
+        "EEE HH:mm",
+      );
+      expect(result.etaDateStr).toBe(expectedEta);
+      expect(result.etaDateStr).not.toBe(staleEta);
     });
 
     it("should handle missing location properties", () => {

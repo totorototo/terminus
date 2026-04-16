@@ -68,10 +68,12 @@ export const calculateTimeMetrics = (
     (s, sec) => s + sec.estimatedDuration,
     0,
   );
-  const estimatedTotalDuration = totalMinettiSec * paceRatio * 1000;
 
+  // Use now + remaining*paceRatio so the fallback paceRatio=1 case (runner at 0 km)
+  // still accounts for any already-elapsed time.
   const now = Date.now();
-  const eta = startingDate + Math.round(estimatedTotalDuration);
+  const minettiRemaining = totalMinettiSec - minettiSoFar;
+  const eta = now + Math.round(minettiRemaining * paceRatio * 1000);
 
   const etaDateStr = Number.isFinite(eta)
     ? format(new Date(eta), "EEE HH:mm")
