@@ -1,0 +1,8 @@
+#!/bin/bash
+# Workaround: force Zig to use macOS 15.4 SDK (from Command Line Tools) instead of
+# macOS 26 SDK from Xcode 26, which dropped arm64-macos TBD entries that Zig 0.15.2 needs.
+if [[ "$*" == *"--show-sdk-path"* ]]; then
+  echo "/Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk"
+else
+  exec /usr/bin/xcrun "$@"
+fi
