@@ -86,21 +86,15 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
         var min_elevation = trace.points[start_index][2];
         var max_elevation = trace.points[start_index][2];
         var max_slope: f64 = 0.0;
+        var total_time: f64 = 0.0;
+        var total_weighted_dist: f64 = 0.0;
 
         for (start_index..end_index) |j| {
             const ele = trace.points[j][2];
             min_elevation = @min(min_elevation, ele);
             max_elevation = @max(max_elevation, ele);
             max_slope = @max(max_slope, @abs(trace.slopes[j]));
-        }
 
-        const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
-
-        // Minetti (2002) point-by-point time estimate with cumulative fatigue.
-        var total_time: f64 = 0.0;
-        var total_weighted_dist: f64 = 0.0;
-
-        for (start_index..end_index) |j| {
             const slope_frac = trace.slopes[j] / 100.0;
             const seg_dist = trace.cumulativeDistances[j + 1] - trace.cumulativeDistances[j];
             const pf = minetti.paceFactor(slope_frac);
@@ -109,6 +103,8 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
             total_weighted_dist += seg_dist * pf;
             d_eff += seg_dist * pf;
         }
+
+        const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
 
         const avg_pf = if (dist > 0) total_weighted_dist / dist else 1.0;
         const estimated_duration = total_time;

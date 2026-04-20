@@ -113,31 +113,31 @@ pub const Trace = struct {
         for (0..final_points.len) |i| {
             const current_dist = cumulativeDistances[i];
 
-            // Find point ~5m behind (or use first point if near start)
-            var behind_idx = i;
-            if (i > 0) {
-                var j = i;
-                while (j > 0) {
-                    j -= 1;
-                    if (current_dist - cumulativeDistances[j] >= half_window) {
-                        behind_idx = j;
-                        break;
-                    }
-                    behind_idx = j;
+            // Binary search backward: largest j in [0,i) where dist[j] <= current_dist - half_window
+            const behind_idx: usize = blk: {
+                if (i == 0) break :blk 0;
+                const target = current_dist - half_window;
+                var lo: usize = 0;
+                var hi: usize = i;
+                while (lo < hi) {
+                    const mid = lo + (hi - lo) / 2;
+                    if (cumulativeDistances[mid] <= target) lo = mid + 1 else hi = mid;
                 }
-            }
+                break :blk if (lo > 0) lo - 1 else 0;
+            };
 
-            // Find point ~5m ahead (or use last point if near end)
-            var ahead_idx = i;
-            for (i + 1..final_points.len) |j| {
-                if (cumulativeDistances[j] - current_dist >= half_window) {
-                    ahead_idx = j;
-                    break;
+            // Binary search forward: smallest j in (i,len) where dist[j] >= current_dist + half_window
+            const ahead_idx: usize = blk: {
+                const target = current_dist + half_window;
+                var lo: usize = i + 1;
+                var hi: usize = final_points.len;
+                while (lo < hi) {
+                    const mid = lo + (hi - lo) / 2;
+                    if (cumulativeDistances[mid] < target) lo = mid + 1 else hi = mid;
                 }
-                ahead_idx = j;
-            }
+                break :blk if (lo < final_points.len) lo else final_points.len - 1;
+            };
 
-            // Calculate slope between behind and ahead points
             const segment_dist = cumulativeDistances[ahead_idx] - cumulativeDistances[behind_idx];
             const segment_elev = final_points[ahead_idx][2] - final_points[behind_idx][2];
             slopes[i] = if (segment_dist > 0.0) (segment_elev / segment_dist) * 100.0 else 0.0;
