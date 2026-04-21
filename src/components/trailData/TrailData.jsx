@@ -251,11 +251,11 @@ const TrailData = memo(function TrailData({ className }) {
       </div>
 
       {/* Pagination dots */}
-      <div className="panel-nav" role="tablist" aria-label="Data panels">
+      <div className="panel-nav">
         <div className="panel-name" aria-live="polite">
           {PANEL_LABELS[activePanel]}
         </div>
-        <div className="panel-dots">
+        <div className="panel-dots" role="tablist" aria-label="Data panels">
           {PANEL_LABELS.map((label, i) => (
             <button
               key={i}
