@@ -17,12 +17,12 @@ import TrailProgression from "./TrailProgression/TrailProgression.jsx";
 import style from "./TrailData.style.js";
 
 const PANEL_LABELS = [
-  "Effort profile",
   "Trail overview",
   "Trail progression",
   "Stage analytics",
   "Section analytics",
   "Stage ETA",
+  "Effort profile",
   "Pace profile",
   "Peak summary",
   "Trail actions",
@@ -251,17 +251,22 @@ const TrailData = memo(function TrailData({ className }) {
       </div>
 
       {/* Pagination dots */}
-      <div className="panel-dots" role="tablist" aria-label="Data panels">
-        {PANEL_LABELS.map((label, i) => (
-          <button
-            key={i}
-            role="tab"
-            aria-selected={i === activePanel}
-            aria-label={label}
-            className={`panel-dot${i === activePanel ? " active" : ""}`}
-            onClick={() => scrollToPanel(i)}
-          />
-        ))}
+      <div className="panel-nav" role="tablist" aria-label="Data panels">
+        <div className="panel-name" aria-live="polite">
+          {PANEL_LABELS[activePanel]}
+        </div>
+        <div className="panel-dots">
+          {PANEL_LABELS.map((label, i) => (
+            <button
+              key={i}
+              role="tab"
+              aria-selected={i === activePanel}
+              aria-label={label}
+              className={`panel-dot${i === activePanel ? " active" : ""}`}
+              onClick={() => scrollToPanel(i)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

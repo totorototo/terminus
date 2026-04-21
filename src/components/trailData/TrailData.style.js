@@ -39,7 +39,7 @@ const style = (Component) => styled(Component)`
 
   .stat-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
@@ -53,7 +53,7 @@ const style = (Component) => styled(Component)`
 
   .stat-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       rgba(
@@ -62,13 +62,13 @@ const style = (Component) => styled(Component)`
       )};
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    margin-top: 8px;
+    margin-top: 6px;
     line-height: 1;
   }
 
   .stat-divider {
     width: 1px;
-    height: 48px;
+    height: 56px;
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
@@ -117,21 +117,43 @@ const style = (Component) => styled(Component)`
     margin-bottom: 0.75rem;
   }
 
-  .panel-dots {
+  .panel-nav {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
+    gap: 12px;
     padding-bottom: 0.75rem;
     flex-shrink: 0;
   }
 
+  .panel-name {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.4,
+      )};
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .panel-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
   .panel-dot {
-    width: 5px;
-    height: 5px;
+    width: 1px;
+    height: 1px;
     border-radius: 50%;
     border: none;
-    padding: 0;
+    padding: 5px;
+    box-sizing: content-box;
     cursor: pointer;
     background: ${(props) =>
       rgba(
@@ -145,7 +167,7 @@ const style = (Component) => styled(Component)`
     &.active {
       background: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-text"]};
-      transform: scale(1.4);
+      transform: scale(1.2);
     }
   }
 

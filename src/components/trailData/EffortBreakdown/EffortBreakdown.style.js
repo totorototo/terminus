@@ -57,7 +57,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     gap: 0.55rem;
-    padding: 0.45rem 0;
+    padding: 0.65rem 0;
     opacity: 0.55;
     transition: opacity ${({ theme }) => theme.transitions["--transition-fast"]};
 
@@ -104,7 +104,7 @@ const style = (Component) => styled(Component)`
 
   .eb-name {
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
-    font-size: ${({ theme }) => theme.font.sizes["--font-size-medium"]};
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-large"]};
     font-weight: ${({ theme }) => theme.font.weights["--font-weight-bold"]};
     color: ${({ theme }) => theme.colors[theme.currentVariant]["--color-text"]};
     letter-spacing: -0.5px;
@@ -116,7 +116,7 @@ const style = (Component) => styled(Component)`
 
   .eb-meta {
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
-    font-size: ${({ theme }) => theme.font.sizes["--font-size-tiny"]};
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-small"]};
     color: ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.35)};
     letter-spacing: 0.3px;
@@ -150,7 +150,7 @@ const style = (Component) => styled(Component)`
   /* Estimated duration on the right */
   .eb-duration {
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
-    font-size: ${({ theme }) => theme.font.sizes["--font-size"]};
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-medium"]};
     font-weight: ${({ theme }) => theme.font.weights["--font-weight-bold"]};
     color: ${({ theme }) => theme.colors[theme.currentVariant]["--color-text"]};
     flex-shrink: 0;

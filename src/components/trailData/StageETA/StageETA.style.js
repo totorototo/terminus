@@ -54,7 +54,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.5rem 0;
+    padding: 0.65rem 0;
     gap: 0.5rem;
     opacity: 0.65;
     transition: opacity
@@ -118,7 +118,7 @@ const style = (Component) => styled(Component)`
 
   .section-name {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
@@ -139,7 +139,7 @@ const style = (Component) => styled(Component)`
 
   .section-km {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     color: ${(props) =>
       rgba(
@@ -153,7 +153,7 @@ const style = (Component) => styled(Component)`
 
   .section-difficulty {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -161,7 +161,7 @@ const style = (Component) => styled(Component)`
 
   .section-eta {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};

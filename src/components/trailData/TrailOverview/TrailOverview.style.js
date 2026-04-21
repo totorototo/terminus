@@ -70,7 +70,7 @@ const style = (Component) => styled(Component)`
 
   .tile-value {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
@@ -92,7 +92,7 @@ const style = (Component) => styled(Component)`
 
   .tile-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
     color: ${(props) =>
       rgba(
