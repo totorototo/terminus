@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 
-import {
-  Activity,
-  ArrowRight,
-  Eye,
-  HelpCircle,
-  Map,
-} from "@styled-icons/feather";
+import { Activity } from "@styled-icons/feather/Activity";
+import { ArrowRight } from "@styled-icons/feather/ArrowRight";
+import { Eye } from "@styled-icons/feather/Eye";
+import { HelpCircle } from "@styled-icons/feather/HelpCircle";
+import { Map } from "@styled-icons/feather/Map";
 import { useLocation } from "wouter";
 
 import { track } from "../../lib/analytics.js";

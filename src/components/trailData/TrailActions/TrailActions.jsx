@@ -1,12 +1,10 @@
 import { memo, useState } from "react";
 
-import {
-  Download,
-  HelpCircle,
-  LogOut,
-  Trash2,
-  Tv,
-} from "@styled-icons/feather";
+import { Download } from "@styled-icons/feather/Download";
+import { HelpCircle } from "@styled-icons/feather/HelpCircle";
+import { LogOut } from "@styled-icons/feather/LogOut";
+import { Trash2 } from "@styled-icons/feather/Trash2";
+import { Tv } from "@styled-icons/feather/Tv";
 import { useLocation } from "wouter";
 
 import useStore from "../../../store/store.js";

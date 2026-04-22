@@ -6,12 +6,10 @@ import {
   useSpring as useSpringWeb,
   useTransition,
 } from "@react-spring/web";
-import {
-  ArrowDown,
-  ArrowUp,
-  CornerUpLeft,
-  CornerUpRight,
-} from "@styled-icons/feather";
+import { ArrowDown } from "@styled-icons/feather/ArrowDown";
+import { ArrowUp } from "@styled-icons/feather/ArrowUp";
+import { CornerUpLeft } from "@styled-icons/feather/CornerUpLeft";
+import { CornerUpRight } from "@styled-icons/feather/CornerUpRight";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 

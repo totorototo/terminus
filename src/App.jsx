@@ -1,9 +1,12 @@
+import { lazy, Suspense } from "react";
+
 import { Helmet } from "react-helmet-async";
 import { Route, Switch, useLocation } from "wouter";
 
 import FollowerScreen from "./components/followerScreen/FollowerScreen.jsx";
-import Help from "./components/help/Help.jsx";
 import InstallPromptOverlay from "./components/installPromptOverlay/InstallPromptOverlay.jsx";
+
+const Help = lazy(() => import("./components/help/Help.jsx"));
 import LandscapeOverlay from "./components/landscapeOverlay/LandscapeOverlay.jsx";
 import TrailerScreen from "./components/trailerScreen/TrailerScreen.jsx";
 import Wizard from "./components/wizard/Wizard.jsx";
@@ -33,7 +36,9 @@ function App({ className }) {
           <TrailerScreen />
         </Route>
         <Route path="/help">
-          <Help />
+          <Suspense>
+            <Help />
+          </Suspense>
         </Route>
         <Route>
           <Wizard />

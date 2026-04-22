@@ -24,6 +24,7 @@ const BUNDLE_BUDGETS = {
   "react-vendor": 350 * 1024, // React 19    minified ≈ 200 KB
   "d3-vendor": 200 * 1024, // d3-*        minified ≈ 100 KB
   zustand: 80 * 1024, // Zustand     minified ≈  25 KB
+  satori: 700 * 1024, // Satori      minified ≈ 400 KB
   index: 2_000 * 1024, // Main chunk (includes embedded WASM)
 };
 
@@ -112,6 +113,8 @@ export default defineConfig(({ mode }) => {
             "react-vendor": ["react", "react-dom"],
             // Split Zustand separately for better caching
             zustand: ["zustand"],
+            // Satori is only loaded on-demand (trail card share) — keep it isolated
+            satori: ["satori"],
           },
         },
       },

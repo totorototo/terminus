@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef } from "react";
 
-import { Download } from "@styled-icons/feather";
+import { Download } from "@styled-icons/feather/Download";
 import PropTypes from "prop-types";
 
 import { useSoundscape } from "../../hooks/useSoundscape.js";

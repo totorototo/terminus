@@ -1,5 +1,4 @@
 import QRCode from "qrcode";
-import satori from "satori";
 
 import { DIFFICULTY_COLORS } from "../constants.js";
 import THEME from "../theme/Theme.js";
@@ -341,7 +340,10 @@ function svgToPng(svgString) {
  * @returns {Promise<Blob>} PNG blob
  */
 export async function generateTrailCard(data) {
-  const fonts = await getFonts();
+  const [{ default: satori }, fonts] = await Promise.all([
+    import("satori"),
+    getFonts(),
+  ]);
   const element = buildElement(data);
 
   const svg = await satori(element, {
