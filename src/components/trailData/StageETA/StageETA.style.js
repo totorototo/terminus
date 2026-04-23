@@ -137,6 +137,24 @@ const style = (Component) => styled(Component)`
     justify-content: center;
   }
 
+  .section-weather {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .section-weather-temp {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.35,
+      )};
+    line-height: 1;
+  }
+
   .section-km {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};

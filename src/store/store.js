@@ -10,6 +10,7 @@ import { createSectionsSlice } from "./slices/sections";
 import { createStagesSlice } from "./slices/stages";
 import { createStatsSlice } from "./slices/stats";
 import { createWayPointsSlice } from "./slices/wayPoints";
+import { createWeatherSlice } from "./slices/weather";
 import { createWorkerSlice } from "./slices/worker";
 
 const useStore = create(
@@ -25,6 +26,7 @@ const useStore = create(
         ...createSectionsSlice(...a),
         ...createStagesSlice(...a),
         ...createGPSSlice(...a),
+        ...createWeatherSlice(...a),
       })),
       {
         name: "terminus-storage",

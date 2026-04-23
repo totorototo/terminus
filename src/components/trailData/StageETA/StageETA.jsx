@@ -1,159 +1,90 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useEffect, useMemo } from "react";
 
+import { Cloud } from "@styled-icons/feather/Cloud";
+import { CloudDrizzle } from "@styled-icons/feather/CloudDrizzle";
+import { CloudLightning } from "@styled-icons/feather/CloudLightning";
+import { CloudRain } from "@styled-icons/feather/CloudRain";
+import { CloudSnow } from "@styled-icons/feather/CloudSnow";
+import { Sun } from "@styled-icons/feather/Sun";
+import { Wind } from "@styled-icons/feather/Wind";
 import { format } from "date-fns";
+import { useTheme } from "styled-components";
+import { useShallow } from "zustand/react/shallow";
 
-import useStore, { useProjectedLocation } from "../../../store/store.js";
+import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
+import useStore from "../../../store/store.js";
 
 import style from "./StageETA.style.js";
 
+const WEATHER_ICONS = {
+  Sun,
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  CloudDrizzle,
+  CloudLightning,
+  Wind,
+};
+
 const StageETA = memo(function StageETA({ className }) {
-  const projectedLocation = useProjectedLocation();
-  const sections = useStore((state) => state.sections);
-  const cumulativeDistances = useStore(
-    (state) => state.gpx.cumulativeDistances || [],
+  const theme = useTheme();
+  const { raceStart, checkpointETAs, isPreRace } = useCheckpointETAs();
+  const { forecasts, fetchWeatherForCheckpoints } = useStore(
+    useShallow((state) => ({
+      forecasts: state.weather.forecasts,
+      fetchWeatherForCheckpoints: state.fetchWeatherForCheckpoints,
+    })),
   );
 
-  const raceStart = useMemo(() => {
-    if (!sections?.length || sections[0].startTime == null) return null;
-    return sections[0].startTime * 1000;
-  }, [sections]);
+  const mutedColor = theme.colors[theme.currentVariant]["--color-text"] + "59";
 
-  const [currentTime] = useState(() => Date.now());
+  // Compute both the fetch key (30-min buckets) and the payload together so the
+  // effect always uses ETAs that are in sync with the key that triggered it.
+  const { etaFetchKey, fetchCheckpoints } = useMemo(() => {
+    if (!raceStart || isPreRace)
+      return { etaFetchKey: null, fetchCheckpoints: [] };
 
-  // Pace ratio: how fast is this runner relative to what Minetti predicted?
-  // Computed as actual elapsed time / Minetti terrain-adjusted estimate for the same distance.
-  // ratio > 1 = slower than model, < 1 = faster. Applied to future section estimates.
-  const paceRatio = useMemo(() => {
-    if (!raceStart || !sections?.length || !cumulativeDistances?.length)
-      return 1.0;
-    const currentIndex = projectedLocation?.index || 0;
-    const now = projectedLocation?.timestamp || currentTime;
-    const actualElapsedSec = (now - raceStart) / 1000;
-    if (actualElapsedSec <= 0) return 1.0;
+    const eligible = checkpointETAs.filter(
+      (cp) => cp.lat != null && cp.lon != null && cp.etaMs != null,
+    );
+    const key = eligible
+      .map((cp) => Math.round(cp.etaMs / (30 * 60 * 1000)))
+      .join(",");
+    const checkpoints = eligible.map((cp) => ({
+      name: cp.endLocation,
+      lat: cp.lat,
+      lon: cp.lon,
+      etaMs: cp.etaMs,
+    }));
 
-    let minettiSoFar = 0;
-    for (const section of sections) {
-      if (currentIndex >= section.endIndex) {
-        // Fully completed section
-        minettiSoFar += section.estimatedDuration;
-      } else if (currentIndex >= section.startIndex) {
-        // Current in-progress section — add the fraction done
-        const distDone =
-          (cumulativeDistances[currentIndex] || 0) -
-          (cumulativeDistances[section.startIndex] || 0);
-        const fractionDone =
-          section.totalDistance > 0 ? distDone / section.totalDistance : 0;
-        minettiSoFar += section.estimatedDuration * fractionDone;
-        break;
-      }
-    }
+    return { etaFetchKey: key, fetchCheckpoints: checkpoints };
+  }, [checkpointETAs, raceStart, isPreRace]);
 
-    return minettiSoFar > 0 ? actualElapsedSec / minettiSoFar : 1.0;
-  }, [
-    raceStart,
-    sections,
-    cumulativeDistances,
-    projectedLocation?.index,
-    projectedLocation?.timestamp,
-    currentTime,
-  ]);
+  useEffect(() => {
+    if (!etaFetchKey || !fetchCheckpoints.length) return;
+    fetchWeatherForCheckpoints(fetchCheckpoints);
+    // fetchCheckpoints intentionally omitted: it's always in sync with etaFetchKey
+    // (same useMemo), so including it would re-fetch on every GPS tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [etaFetchKey, fetchWeatherForCheckpoints]);
 
-  const sectionRows = useMemo(() => {
-    if (!sections?.length || !cumulativeDistances?.length) return [];
-
-    const currentIndex = projectedLocation?.index || 0;
-    const now = projectedLocation?.timestamp || currentTime;
-
-    // Race hasn't started yet — no ETAs to show
-    if (raceStart && now < raceStart) {
-      return sections.map((section) => ({
-        id: section.sectionId,
-        endLocation: section.endLocation,
-        endKm: cumulativeDistances[section.endIndex] / 1000,
-        isPast: false,
-        isCurrent: false,
-        etaStr: "--:--",
-        difficulty: section.difficulty || 0,
-      }));
-    }
-
-    // Walk sections forward, accumulating ETA as we go.
-    // Minetti estimatedDuration handles terrain; paceRatio corrects for this runner's actual speed.
-    let runningEtaMs = raceStart || now;
-
-    return sections.map((section) => {
-      const isPast = currentIndex >= section.endIndex;
-      const isCurrent =
-        !isPast &&
-        currentIndex >= section.startIndex &&
-        currentIndex < section.endIndex;
-
-      let etaMs = null;
-
-      if (isPast && section.endTime != null) {
-        // Actual recorded checkpoint time — most accurate, no model correction needed
-        etaMs = section.endTime * 1000;
-        runningEtaMs = etaMs;
-      } else if (isPast) {
-        // No timestamp — Minetti estimate scaled by runner's observed pace ratio
-        runningEtaMs += section.estimatedDuration * 1000 * paceRatio;
-        etaMs = runningEtaMs;
-      } else if (isCurrent && raceStart) {
-        // Remaining fraction of this section's Minetti estimate, scaled by pace ratio
-        const remainingDist =
-          (cumulativeDistances[section.endIndex] || 0) -
-          (cumulativeDistances[currentIndex] || 0);
-        const fractionRemaining =
-          section.totalDistance > 0 ? remainingDist / section.totalDistance : 0;
-        etaMs =
-          now +
-          section.estimatedDuration * 1000 * fractionRemaining * paceRatio;
-        runningEtaMs = etaMs;
-      } else if (raceStart) {
-        // Future section: Minetti estimate scaled by runner's observed pace ratio
-        runningEtaMs += section.estimatedDuration * 1000 * paceRatio;
-        etaMs = runningEtaMs;
-      }
-
-      // Cap estimated ETAs at the section's cutoff time.
-      // Actual recorded times (isPast + endTime) are exempt — they are real data.
-      const cutoffMs =
-        section.startTime != null && section.maxCompletionTime != null
-          ? (section.startTime + section.maxCompletionTime) * 1000
-          : null;
-
-      const isRecorded = isPast && section.endTime != null;
-      if (
-        !isRecorded &&
-        cutoffMs != null &&
-        etaMs != null &&
-        etaMs > cutoffMs
-      ) {
-        etaMs = cutoffMs;
-        runningEtaMs = cutoffMs;
-      }
-
-      const etaStr = etaMs ? format(new Date(etaMs), "EEE HH:mm") : "--:--";
-
-      return {
-        id: section.sectionId,
-        endLocation: section.endLocation,
-        endKm: cumulativeDistances[section.endIndex] / 1000,
-        isPast,
-        isCurrent,
-        etaStr,
-        difficulty: section.difficulty || 0,
-      };
-    });
-  }, [
-    sections,
-    cumulativeDistances,
-    projectedLocation?.index,
-    projectedLocation?.timestamp,
-    raceStart,
-    paceRatio,
-    currentTime,
-  ]);
+  const sectionRows = useMemo(
+    () =>
+      checkpointETAs.map((cp) => ({
+        id: cp.sectionId,
+        endLocation: cp.endLocation,
+        endKm: cp.endKm,
+        isPast: cp.isPast,
+        isCurrent: cp.isCurrent,
+        etaStr:
+          raceStart && cp.etaMs && !isPreRace
+            ? format(new Date(cp.etaMs), "EEE HH:mm")
+            : "--:--",
+        difficulty: cp.difficulty,
+        weather: forecasts[cp.endLocation] ?? null,
+      })),
+    [checkpointETAs, raceStart, isPreRace, forecasts],
+  );
 
   if (!sectionRows.length) {
     return (
@@ -170,30 +101,44 @@ const StageETA = memo(function StageETA({ className }) {
         <span className="header-label">ETA</span>
       </div>
       <div className="section-list" role="list">
-        {sectionRows.map((section) => (
-          <div
-            key={section.id}
-            role="listitem"
-            className={`section-row${section.isPast ? " past" : ""}${section.isCurrent ? " current" : ""}`}
-          >
-            <div className="section-left">
-              <div
-                className={`section-dot${section.isPast ? " past" : section.isCurrent ? " current" : ""}`}
-              />
-              <div className="section-info">
-                <span className="section-name">{section.endLocation}</span>
-                <div className="section-meta">
-                  <span className="section-km">
-                    {Number.isFinite(section.endKm)
-                      ? `${section.endKm.toFixed(1)} km`
-                      : ""}
-                  </span>
+        {sectionRows.map((section) => {
+          const WeatherIcon = section.weather
+            ? (WEATHER_ICONS[section.weather.icon] ?? Cloud)
+            : null;
+
+          return (
+            <div
+              key={section.id}
+              role="listitem"
+              className={`section-row${section.isPast ? " past" : ""}${section.isCurrent ? " current" : ""}`}
+            >
+              <div className="section-left">
+                <div
+                  className={`section-dot${section.isPast ? " past" : section.isCurrent ? " current" : ""}`}
+                />
+                <div className="section-info">
+                  <span className="section-name">{section.endLocation}</span>
+                  <div className="section-meta">
+                    <span className="section-km">
+                      {Number.isFinite(section.endKm)
+                        ? `${section.endKm.toFixed(1)} km`
+                        : ""}
+                    </span>
+                  </div>
+                  {WeatherIcon && (
+                    <div className="section-weather">
+                      <WeatherIcon size={13} color={mutedColor} />
+                      <span className="section-weather-temp">
+                        {section.weather.temp}°C
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
+              <span className="section-eta">{section.etaStr}</span>
             </div>
-            <span className="section-eta">{section.etaStr}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

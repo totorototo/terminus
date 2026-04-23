@@ -31,7 +31,7 @@ function ClimbLine({ points, color, lineWidth, springOpacity }) {
     mat.opacity = springOpacity.get();
     // Scale linewidth with camera distance so visual thickness stays constant at any zoom level.
     // Reference distance matches the default camera position (15, 0, 0).
-    // eslint-disable-next-line react-hooks/immutability
+
     mat.linewidth = (lineWidth / 200) * (camera.position.length() / 15);
   });
 

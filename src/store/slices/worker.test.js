@@ -169,6 +169,8 @@ describe("Worker Slice", () => {
           "waypoints/setWayPoints",
         ),
 
+      fetchWeatherForCheckpoints: () => {},
+
       // The actual slice under test, with injected worker factory (closure-local state)
       ...createWorkerSlice(set, get, () => mockWorkerInstance),
     }));
@@ -360,6 +362,8 @@ describe("Worker Slice", () => {
             undefined,
             "waypoints/setWayPoints",
           ),
+        fetchWeatherForCheckpoints: () => {},
+
         // Pass a factory that throws
         ...createWorkerSlice(set, get, () => {
           throw new Error("Worker creation failed");

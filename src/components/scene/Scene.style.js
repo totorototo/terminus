@@ -2,6 +2,9 @@ import { rgba } from "polished";
 import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
+  position: relative;
+  z-index: 0;
+
   .checkpoint-label {
     background: ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-background"], 0.4)};

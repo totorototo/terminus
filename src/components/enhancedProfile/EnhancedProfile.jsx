@@ -7,7 +7,7 @@ import {
   createCheckpoints,
   transformSections,
 } from "../../utils/coordinateTransforms.js";
-import Checkpoints from "../checkpoints/Checkpoints.jsx";
+import CheckpointPins from "../checkpointPin/CheckpointPin.jsx";
 import Sections from "../sections/Sections.jsx";
 
 import style from "./EnhancedProfile.style.js";
@@ -34,7 +34,7 @@ function EnhancedProfile({ coordinateScales }) {
   return (
     <>
       <Sections sectionsPoints3D={sectionsPoints3D} />
-      <Checkpoints checkpointsPoints3D={checkpointsPoints3D} />
+      <CheckpointPins checkpointsPoints3D={checkpointsPoints3D} />
     </>
   );
 }

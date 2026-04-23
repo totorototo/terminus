@@ -73,7 +73,6 @@ function FadingText({
         );
     };
     return mat;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [color]); // On ne recrée le matériau que si la couleur change
 
   return (

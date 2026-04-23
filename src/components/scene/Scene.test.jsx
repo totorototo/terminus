@@ -90,6 +90,8 @@ const defaultState = {
     isOffCourse: false,
     deviationDistance: 0,
   },
+  sections: [],
+  weather: { forecasts: {} },
 };
 
 function renderScene(state = defaultState, props = {}) {

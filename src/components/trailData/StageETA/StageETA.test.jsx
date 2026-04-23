@@ -24,6 +24,17 @@ vi.mock("../../../constants.js", () => ({
   DIFFICULTY_LABELS: ["Easy", "Moderate", "Hard", "Very Hard", "Extreme"],
 }));
 
+vi.mock("styled-components", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useTheme: () => ({
+      currentVariant: "dark",
+      colors: { dark: { "--color-text": "#D8DBE2" } },
+    }),
+  };
+});
+
 // ─── Fixtures ───────────────────────────────────────────────────────────────
 
 const START_TIME = 1_000_000; // epoch seconds
@@ -76,7 +87,9 @@ function setupStore(sections, cumulativeDistances, projectedLocation) {
   storeModule.default.mockImplementation((selector) =>
     selector({
       sections,
-      gpx: { cumulativeDistances },
+      gpx: { cumulativeDistances, data: [] },
+      weather: { forecasts: {} },
+      fetchWeatherForCheckpoints: () => {},
     }),
   );
   storeModule.useProjectedLocation.mockReturnValue(projectedLocation);
