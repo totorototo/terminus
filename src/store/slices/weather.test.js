@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { create } from "zustand";
 
-import { createWeatherSlice } from "./weather.js";
+import { clearWeatherCache, createWeatherSlice } from "./weather.js";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -37,6 +37,7 @@ describe("weatherSlice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.setSystemTime(NOW);
+    clearWeatherCache();
     store = create((set) => ({ ...createWeatherSlice(set) }));
   });
 

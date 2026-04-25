@@ -30,6 +30,19 @@ const WMO_ICON = {
 };
 
 const MAX_FORECAST_MS = 16 * 24 * 60 * 60 * 1000;
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
+// key: "lat,lon" (toFixed(2)) → { data, fetchedAt }
+const responseCache = new Map();
+
+export function clearWeatherCache() {
+  responseCache.clear();
+}
+
+function isCached(key) {
+  const entry = responseCache.get(key);
+  return entry != null && Date.now() - entry.fetchedAt < CACHE_TTL_MS;
+}
 
 function wmoToIcon(code) {
   return WMO_ICON[code] ?? "Cloud";
@@ -48,19 +61,36 @@ function findClosestHourIndex(timestamps, etaMs) {
   return best;
 }
 
-async function fetchOpenMeteo(lat, lon) {
-  try {
-    const url =
-      `https://api.open-meteo.com/v1/forecast` +
-      `?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}` +
-      `&hourly=temperature_2m,precipitation_probability,weathercode,windspeed_10m` +
-      `&timezone=auto&forecast_days=16`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
+async function fetchOpenMeteo(key, lat, lon) {
+  if (isCached(key)) return responseCache.get(key).data;
+
+  const url =
+    `https://api.open-meteo.com/v1/forecast` +
+    `?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}` +
+    `&hourly=temperature_2m,precipitation_probability,weathercode,windspeed_10m` +
+    `&timezone=auto&forecast_days=16`;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (res.status === 429) {
+        const header = res.headers.get("Retry-After");
+        const delay =
+          header != null && /^\d+$/.test(header.trim())
+            ? parseInt(header, 10) * 1000
+            : 2000;
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      if (!res.ok) return null;
+      const data = await res.json();
+      responseCache.set(key, { data, fetchedAt: Date.now() });
+      return data;
+    } catch {
+      return null;
+    }
   }
+  return null;
 }
 
 export const createWeatherSlice = (set) => ({
@@ -88,46 +118,58 @@ export const createWeatherSlice = (set) => ({
     for (const cp of eligible) {
       const key = `${cp.lat.toFixed(2)},${cp.lon.toFixed(2)}`;
       if (!byLocation.has(key)) {
-        byLocation.set(key, { lat: cp.lat, lon: cp.lon, checkpoints: [] });
+        byLocation.set(key, { key, lat: cp.lat, lon: cp.lon, checkpoints: [] });
       }
       byLocation.get(key).checkpoints.push(cp);
     }
 
+    const locations = Array.from(byLocation.values());
+
+    // Fetch cache misses sequentially to avoid burst 429s.
+    // Cache hits skip the network entirely; only misses get the stagger.
+    let stagger = false;
+    for (const { key, lat, lon } of locations) {
+      if (isCached(key)) continue;
+      if (stagger) await new Promise((r) => setTimeout(r, 150));
+      await fetchOpenMeteo(key, lat, lon);
+      stagger = true;
+    }
+
     const forecasts = {};
+    for (const { key, lat, lon, checkpoints: cps } of locations) {
+      const data = await fetchOpenMeteo(key, lat, lon);
+      if (!data) continue;
 
-    await Promise.all(
-      Array.from(byLocation.values()).map(
-        async ({ lat, lon, checkpoints: cps }) => {
-          const data = await fetchOpenMeteo(lat, lon);
-          if (!data) return;
+      const {
+        time,
+        temperature_2m,
+        precipitation_probability,
+        weathercode,
+        windspeed_10m,
+      } = data.hourly;
 
-          const {
-            time,
-            temperature_2m,
-            precipitation_probability,
-            weathercode,
-            windspeed_10m,
-          } = data.hourly;
+      const timestamps = time.map((t) => new Date(t).getTime());
 
-          const timestamps = time.map((t) => new Date(t).getTime());
-
-          for (const cp of cps) {
-            const idx = findClosestHourIndex(timestamps, cp.etaMs);
-            forecasts[cp.name] = {
-              icon: wmoToIcon(weathercode[idx]),
-              temp: Math.round(temperature_2m[idx]),
-              wind: Math.round(windspeed_10m[idx]),
-              precipitation: precipitation_probability?.[idx] ?? null,
-              weatherCode: weathercode[idx],
-              etaMs: cp.etaMs,
-            };
-          }
-        },
-      ),
-    );
+      for (const cp of cps) {
+        const idx = findClosestHourIndex(timestamps, cp.etaMs);
+        forecasts[cp.name] = {
+          icon: wmoToIcon(weathercode[idx]),
+          temp: Math.round(temperature_2m[idx]),
+          wind: Math.round(windspeed_10m[idx]),
+          precipitation: precipitation_probability?.[idx] ?? null,
+          weatherCode: weathercode[idx],
+          etaMs: cp.etaMs,
+        };
+      }
+    }
 
     set(
-      (state) => ({ weather: { ...state.weather, forecasts } }),
+      (state) => ({
+        weather: {
+          ...state.weather,
+          forecasts: { ...state.weather.forecasts, ...forecasts },
+        },
+      }),
       undefined,
       "weather/setForecasts",
     );
