@@ -93,9 +93,6 @@ export function useCheckpointETAs() {
         // Pre-race: pure Minetti estimate, paceRatio = 1
         runningEtaMs += section.estimatedDuration * 1000;
         etaMs = runningEtaMs;
-      } else if (isPast && section.endTime != null) {
-        etaMs = section.endTime * 1000;
-        runningEtaMs = etaMs;
       } else if (isPast) {
         runningEtaMs += section.estimatedDuration * 1000 * paceRatio;
         etaMs = runningEtaMs;
@@ -105,8 +102,12 @@ export function useCheckpointETAs() {
           (cumulativeDistances[currentIndex] || 0);
         const fractionRemaining =
           section.totalDistance > 0 ? remainingDist / section.totalDistance : 0;
+        // Without a GPS lock (timestamp=0) use runningEtaMs (raceStart) as base
+        // so the initial display matches Minetti estimates from race start.
+        const hasGPSLock = (projectedLocation?.timestamp ?? 0) > 0;
+        const etaBase = hasGPSLock ? now : runningEtaMs;
         etaMs =
-          now +
+          etaBase +
           section.estimatedDuration * 1000 * fractionRemaining * paceRatio;
         runningEtaMs = etaMs;
       } else if (raceStart) {
@@ -118,13 +119,7 @@ export function useCheckpointETAs() {
         section.startTime != null && section.maxCompletionTime != null
           ? (section.startTime + section.maxCompletionTime) * 1000
           : null;
-      const isRecorded = isPast && section.endTime != null;
-      if (
-        !isRecorded &&
-        cutoffMs != null &&
-        etaMs != null &&
-        etaMs > cutoffMs
-      ) {
+      if (!isPast && cutoffMs != null && etaMs != null && etaMs > cutoffMs) {
         etaMs = cutoffMs;
         runningEtaMs = cutoffMs;
       }

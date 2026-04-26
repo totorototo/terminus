@@ -161,14 +161,16 @@ describe("useCheckpointETAs", () => {
     expect(s2.isCurrent).toBe(true);
   });
 
-  // ── Recorded endTime ─────────────────────────────────────────────────────
+  // ── Past section ETA uses Minetti * paceRatio ────────────────────────────
 
-  it("uses actual recorded endTime for a past section", () => {
-    const recorded = START_TIME + 3500;
-    const sections = [{ ...SECTION_1, endTime: recorded }, SECTION_2];
+  it("past sections use Minetti estimate scaled by paceRatio, not endTime", () => {
+    // endTime is the planned/scheduled time — it should not be used as the ETA
+    const sections = [{ ...SECTION_1, endTime: START_TIME + 3500 }, SECTION_2];
     setup(sections, { index: 150, timestamp: START_MS + 5_000_000 });
     const { result } = renderHook(() => useCheckpointETAs());
-    expect(result.current.checkpointETAs[0].etaMs).toBe(recorded * 1000);
+    // paceRatio = 5000 / (3600 + 1800) = 5000/5400; etaMs = raceStart + 3600s * paceRatio
+    const expected = START_MS + (3600 * 1000 * 5_000_000) / 5_400_000;
+    expect(result.current.checkpointETAs[0].etaMs).toBeCloseTo(expected, 0);
   });
 
   // ── paceRatio = 1 when no distance covered ───────────────────────────────
@@ -197,15 +199,14 @@ describe("useCheckpointETAs", () => {
     );
   });
 
-  it("does not cap recorded past sections at cutoff", () => {
-    const recorded = START_TIME + 2000; // under cutoff
-    const sections = [
-      { ...SECTION_1, endTime: recorded, maxCompletionTime: 3000 },
-      SECTION_2,
-    ];
+  it("does not cap past sections at cutoff even when Minetti estimate exceeds it", () => {
+    // cutoff = START_TIME + 3000; Minetti estimate ≈ START_TIME + 3333s — above cutoff
+    // but since the section is past, the cap must not apply
+    const sections = [{ ...SECTION_1, maxCompletionTime: 3000 }, SECTION_2];
     setup(sections, { index: 150, timestamp: START_MS + 5_000_000 });
     const { result } = renderHook(() => useCheckpointETAs());
-    expect(result.current.checkpointETAs[0].etaMs).toBe(recorded * 1000);
+    const expected = START_MS + (3600 * 1000 * 5_000_000) / 5_400_000;
+    expect(result.current.checkpointETAs[0].etaMs).toBeCloseTo(expected, 0);
   });
 
   // ── endKm ────────────────────────────────────────────────────────────────
