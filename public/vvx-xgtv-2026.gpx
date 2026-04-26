@@ -8,37 +8,37 @@
     <desc>VVX XGTV 2026 Trail with Checkpoints</desc>
   </metadata>
   <wpt lat="45.081830" lon="2.747700">
-    <time>2026-04-26T08:00:00Z</time>
+    <time>2026-05-13T08:00:00Z</time>
     <name>Station Lioran</name>
     <type>Start</type>
   </wpt>
   <wpt lat="45.110770" lon="2.683600">
-    <time>2026-04-26T18:00:00Z</time>
+    <time>2026-05-13T18:00:00Z</time>
     <name>Col d'Eylac</name>
     <type>TimeBarrier</type>
   </wpt>
   <wpt lat="45.338430" lon="2.755600">
-    <time>2026-04-27T04:20:00Z</time>
+    <time>2026-05-14T04:20:00Z</time>
     <name>Condat</name>
     <type>LifeBase</type>
   </wpt>
   <wpt lat="45.502160" lon="2.910070">
-    <time>2026-04-27T14:35:00Z</time>
+    <time>2026-05-14T14:35:00Z</time>
     <name>Pertuyzat</name>
     <type>LifeBase</type>
   </wpt>
   <wpt lat="45.571720" lon="2.808990">
-    <time>2026-04-27T21:15:00Z</time>
+    <time>2026-05-14T21:15:00Z</time>
     <name>Mont-Dore</name>
     <type>LifeBase</type>
   </wpt>
   <wpt lat="45.660911" lon="2.947825">
-    <time>2026-04-28T10:20:00Z</time>
+    <time>2026-05-15T10:20:00Z</time>
     <name>La Garandie</name>
     <type>LifeBase</type>
   </wpt>
   <wpt lat="45.871670" lon="3.027770">
-    <time>2026-04-28T22:00:00Z</time>
+    <time>2026-05-15T22:00:00Z</time>
     <name>Volvic</name>
     <type>Arrival</type>
   </wpt>
