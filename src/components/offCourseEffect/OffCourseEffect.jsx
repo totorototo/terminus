@@ -51,7 +51,7 @@ function OffCourseEffect({
     }
     prevOffCourse.current = isOffCourse;
 
-    if (blinkStart.current !== null) {
+    if (blinkStart.current !== null && scene.background) {
       const elapsed = clock.elapsedTime - blinkStart.current;
       if (elapsed < BLINK_DURATION) {
         const envelope = 1 - elapsed / BLINK_DURATION;
