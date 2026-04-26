@@ -96,6 +96,11 @@ vi.mock("./PaceProfile/PaceProfile.jsx", () => ({
   default: () => <div data-testid="pace-profile">PaceProfile</div>,
 }));
 
+// Mock PaceSettings component
+vi.mock("./PaceSettings/PaceSettings.jsx", () => ({
+  default: () => <div data-testid="pace-settings">PaceSettings</div>,
+}));
+
 describe("TrailData Component", () => {
   const mockStats = {
     distance: 10000,

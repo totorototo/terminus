@@ -49,6 +49,7 @@ const useStore = create(
             currentRoute: state.app.currentRoute,
             theme: state.app.theme,
             installPromptDismissed: state.app.installPromptDismissed,
+            paceSettings: state.app.paceSettings,
           },
           gps: {
             location: state.gps.location,

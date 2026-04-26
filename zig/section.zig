@@ -34,7 +34,9 @@ pub const SectionStats = struct {
 
 /// Compute section statistics between consecutive section-boundary waypoints
 /// (Start/TimeBarrier/LifeBase/Arrival). Returns null when fewer than 2 section boundaries.
-pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint) !?[]SectionStats {
+/// base_pace_s_per_km: flat-terrain pace in seconds per km (e.g. 490 = 8:10/km).
+/// k_fatigue: cumulative fatigue coefficient (e.g. 0.004 for 200km+ ultra).
+pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint, base_pace_s_per_km: f64, k_fatigue: f64) !?[]SectionStats {
     // Collect section-boundary waypoints (those with a non-null wptType)
     var section_wpts = std.ArrayList(Waypoint){};
     defer section_wpts.deinit(allocator);
@@ -110,8 +112,8 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
             const slope_frac = trace.slopes[j] / 100.0;
             const seg_dist = trace.cumulativeDistances[j + 1] - trace.cumulativeDistances[j];
             const pf = minetti.paceFactor(slope_frac);
-            const fatigue_factor = 1.0 + minetti.K_FATIGUE * (d_eff / 1000.0);
-            total_time += (seg_dist / 1000.0) * minetti.DEFAULT_BASE_PACE_S_PER_KM * pf * fatigue_factor;
+            const fatigue_factor = 1.0 + k_fatigue * (d_eff / 1000.0);
+            total_time += (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor;
             total_weighted_dist += seg_dist * pf;
             d_eff += seg_dist * pf;
         }
@@ -170,7 +172,7 @@ test "computeSectionsFromWaypoints: returns null with no section boundaries" {
         .{ .lat = 0.0, .lon = 0.0, .name = "A", .time = null },
         .{ .lat = 0.001, .lon = 0.0, .name = "B", .time = null },
     };
-    const result = try computeFromWaypoints(&trace, allocator, &waypoints);
+    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     try std.testing.expect(result == null);
 }
 
@@ -187,7 +189,7 @@ test "computeSectionsFromWaypoints: returns null with only one section boundary"
         .{ .lat = 0.0, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
         .{ .lat = 0.001, .lon = 0.0, .name = "Plain", .time = null },
     };
-    const result = try computeFromWaypoints(&trace, allocator, &waypoints);
+    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     try std.testing.expect(result == null);
 }
 
@@ -207,7 +209,7 @@ test "computeSectionsFromWaypoints: basic two-boundary section" {
         .{ .lat = 0.003, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -239,7 +241,7 @@ test "computeSectionsFromWaypoints: plain (untyped) waypoints are ignored" {
         .{ .lat = 0.005, .lon = 0.0, .name = "End",    .wptType = "Arrival",     .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer if (sections) |s| allocator.free(s);
 
     // 2 sections: Start→TB1 and TB1→Arrival; plain waypoints are skipped
@@ -269,7 +271,7 @@ test "computeSectionsFromWaypoints: stageIdx increments at LifeBase boundary" {
         .{ .lat = 0.011, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -298,7 +300,7 @@ test "computeSectionsFromWaypoints: maxCompletionTime computed from timestamps" 
         .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_007_200 },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -324,7 +326,7 @@ test "computeSectionsFromWaypoints: maxCompletionTime is null without timestamps
         .{ .lat = 0.002, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
