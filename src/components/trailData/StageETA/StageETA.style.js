@@ -146,11 +146,12 @@ const style = (Component) => styled(Component)`
   .section-weather-temp {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    font-weight: ${(props) =>
+      props.theme.font.weights["--font-weight-regular"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.35,
+        0.6,
       )};
     line-height: 1;
   }
@@ -158,11 +159,12 @@ const style = (Component) => styled(Component)`
   .section-km {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    font-weight: ${(props) =>
+      props.theme.font.weights["--font-weight-regular"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.35,
+        0.6,
       )};
     letter-spacing: 0.5px;
     text-transform: uppercase;

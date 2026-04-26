@@ -36,7 +36,7 @@ const StageETA = memo(function StageETA({ className }) {
     })),
   );
 
-  const mutedColor = theme.colors[theme.currentVariant]["--color-text"] + "59";
+  const mutedColor = theme.colors[theme.currentVariant]["--color-text"] + "99";
 
   // Compute both the fetch key (30-min buckets) and the payload together so the
   // effect always uses ETAs that are in sync with the key that triggered it.
@@ -124,15 +124,15 @@ const StageETA = memo(function StageETA({ className }) {
                         ? `${section.endKm.toFixed(1)} km`
                         : ""}
                     </span>
+                    {WeatherIcon && (
+                      <div className="section-weather">
+                        <WeatherIcon size={15} color={mutedColor} />
+                        <span className="section-weather-temp">
+                          {section.weather.temp}°C
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  {WeatherIcon && (
-                    <div className="section-weather">
-                      <WeatherIcon size={13} color={mutedColor} />
-                      <span className="section-weather-temp">
-                        {section.weather.temp}°C
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
               <span className="section-eta">{section.etaStr}</span>
