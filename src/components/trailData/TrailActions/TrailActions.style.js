@@ -171,16 +171,24 @@ const style = (Component) => styled(Component)`
 
   .build-number {
     margin-top: auto;
-    margin-left: auto;
+    padding-top: 0.4rem;
+    border-top: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.07,
+        )};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.2,
+        0.3,
       )};
-    letter-spacing: 0.5px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
+    text-align: center;
   }
 `;
 
