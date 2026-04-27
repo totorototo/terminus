@@ -79,6 +79,7 @@ export function useCheckpointETAs() {
     const raceNotStarted = raceStart && now < raceStart;
 
     let runningEtaMs = raceStart || now;
+    let cutoffBreached = false;
 
     return sections.map((section) => {
       const isPast = currentIndex >= section.endIndex;
@@ -119,7 +120,14 @@ export function useCheckpointETAs() {
         section.startTime != null && section.maxCompletionTime != null
           ? (section.startTime + section.maxCompletionTime) * 1000
           : null;
-      if (!isPast && cutoffMs != null && etaMs != null && etaMs > cutoffMs) {
+      const isOverCutoff =
+        !cutoffBreached &&
+        !isPast &&
+        cutoffMs != null &&
+        etaMs != null &&
+        etaMs > cutoffMs;
+      if (isOverCutoff) {
+        cutoffBreached = true;
         etaMs = cutoffMs;
         runningEtaMs = cutoffMs;
       }
@@ -133,6 +141,7 @@ export function useCheckpointETAs() {
         etaMs,
         isPast,
         isCurrent,
+        isOverCutoff,
         difficulty: section.difficulty || 0,
         lat: coord ? coord[0] : null,
         lon: coord ? coord[1] : null,

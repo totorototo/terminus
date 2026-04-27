@@ -76,6 +76,7 @@ const StageETA = memo(function StageETA({ className }) {
         endKm: cp.endKm,
         isPast: cp.isPast,
         isCurrent: cp.isCurrent,
+        isOverCutoff: cp.isOverCutoff,
         etaStr:
           raceStart && cp.etaMs && !isPreRace
             ? format(new Date(cp.etaMs), "EEE HH:mm")
@@ -110,7 +111,7 @@ const StageETA = memo(function StageETA({ className }) {
             <div
               key={section.id}
               role="listitem"
-              className={`section-row${section.isPast ? " past" : ""}${section.isCurrent ? " current" : ""}`}
+              className={`section-row${section.isPast ? " past" : ""}${section.isCurrent ? " current" : ""}${section.isOverCutoff ? " over-cutoff" : ""}`}
             >
               <div className="section-left">
                 <div

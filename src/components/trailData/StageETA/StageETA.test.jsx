@@ -274,6 +274,47 @@ describe("StageETA", () => {
     expect(screen.getByText("Sat 10:00")).toBeInTheDocument();
   });
 
+  it("adds 'over-cutoff' class only to the first section that exceeds its cutoff", () => {
+    const tightCutoffSections = [
+      {
+        sectionId: "s1",
+        startIndex: 0,
+        endIndex: 100,
+        totalDistance: 5000,
+        estimatedDuration: 36000, // 10 hours — will exceed 1s cutoff
+        difficulty: 5,
+        startTime: START_TIME,
+        endTime: null,
+        maxCompletionTime: 1,
+        endLocation: "Checkpoint A",
+      },
+      {
+        sectionId: "s2",
+        startIndex: 100,
+        endIndex: 200,
+        totalDistance: 5000,
+        estimatedDuration: 36000,
+        difficulty: 5,
+        startTime: START_TIME + 1,
+        endTime: null,
+        maxCompletionTime: 1,
+        endLocation: "Checkpoint B",
+      },
+    ];
+
+    setupStore(tightCutoffSections, CUMULATIVE_DISTANCES, {
+      index: 0,
+      timestamp: START_MS,
+    });
+
+    render(<StageETA />);
+
+    const overCutoffRows = document.querySelectorAll(
+      ".section-row.over-cutoff",
+    );
+    expect(overCutoffRows.length).toBe(1);
+  });
+
   // ── Speed factor edge cases ───────────────────────────────────────────────
 
   it("defaults to speedFactor=1 when race has not started (no raceStart)", () => {

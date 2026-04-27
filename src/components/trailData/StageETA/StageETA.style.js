@@ -203,6 +203,11 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-primary"]};
   }
 
+  .section-row.over-cutoff .section-eta {
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+  }
+
   .empty-state {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
