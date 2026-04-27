@@ -472,7 +472,36 @@ function Help({ className }) {
                 <p className="pi-name">ETAs — checkpoints</p>
                 <p className="pi-desc">
                   Estimated arrival times at upcoming checkpoints based on your
-                  current pace.
+                  current pace. The first checkpoint where your ETA exceeds the
+                  cutoff time is highlighted in accent colour — subsequent
+                  checkpoints are dimmed since they are moot once that cutoff is
+                  missed.
+                </p>
+              </div>
+            </div>
+            <div className="pi">
+              <div className="pi-icon secondary">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z" />
+                </svg>
+              </div>
+              <div>
+                <p className="pi-name">Weather at checkpoints</p>
+                <p className="pi-desc">
+                  A weather icon and temperature are shown below each checkpoint
+                  ETA, forecasted for your predicted arrival time using
+                  Open-Meteo. Updates automatically when your estimated pace
+                  shifts significantly. Hidden silently when offline or when no
+                  forecast is available.
                 </p>
               </div>
             </div>
