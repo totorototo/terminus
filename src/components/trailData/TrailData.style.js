@@ -127,17 +127,27 @@ const style = (Component) => styled(Component)`
   }
 
   .panel-name {
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
-      )};
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    line-height: 1;
+    position: relative;
+    height: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    span {
+      position: absolute;
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+      color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.4,
+        )};
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      line-height: 1;
+      white-space: nowrap;
+    }
   }
 
   .panel-dots {

@@ -1,6 +1,10 @@
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 
-import { animated, useSpring as useSpringWeb } from "@react-spring/web";
+import {
+  animated,
+  useSpring as useSpringWeb,
+  useTransition,
+} from "@react-spring/web";
 import { format } from "date-fns";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
@@ -167,6 +171,13 @@ const TrailData = memo(function TrailData({ className }) {
     };
   }, [projectedLocation?.index, cumulativeDistances]);
 
+  const labelTransitions = useTransition(activePanel, {
+    from: { opacity: 0, transform: "translateY(-5px)" },
+    enter: { opacity: 1, transform: "translateY(0px)" },
+    leave: { opacity: 0, transform: "translateY(5px)" },
+    config: { tension: 300, friction: 24 },
+  });
+
   const { remainingKm } = useSpringWeb({
     ...remainingValues,
     config: { tension: 170, friction: 26 },
@@ -253,7 +264,11 @@ const TrailData = memo(function TrailData({ className }) {
       {/* Pagination dots */}
       <div className="panel-nav">
         <div className="panel-name" aria-live="polite">
-          {PANEL_LABELS[activePanel]}
+          {labelTransitions((springStyle, index) => (
+            <animated.span style={springStyle}>
+              {PANEL_LABELS[index]}
+            </animated.span>
+          ))}
         </div>
         <div className="panel-dots" role="tablist" aria-label="Data panels">
           {PANEL_LABELS.map((label, i) => (

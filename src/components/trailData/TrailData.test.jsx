@@ -20,12 +20,17 @@ vi.mock("@react-spring/web", () => ({
       to: (fn) => fn(values.remainingKm),
     },
   })),
+  useTransition: vi.fn(
+    (item, _config) => (render) =>
+      render({ opacity: 1, transform: "translateY(0px)" }, item),
+  ),
   animated: {
     div: ({ children, className, style }) => (
       <div className={className} style={style}>
         {children}
       </div>
     ),
+    span: ({ children, style }) => <span style={style}>{children}</span>,
   },
 }));
 
