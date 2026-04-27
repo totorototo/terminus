@@ -59,10 +59,6 @@ vi.mock("../peaks/Peaks.jsx", () => ({
   default: () => null,
 }));
 
-vi.mock("../marker/Marker.jsx", () => ({
-  default: ({ children }) => <div data-testid="marker">{children}</div>,
-}));
-
 vi.mock("../offCourseEffect/OffCourseEffect.jsx", () => ({
   default: ({ isOffCourse, deviationDistance }) => (
     <div
@@ -84,7 +80,7 @@ vi.mock("../flyBy/FlyBy", () => ({
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const defaultState = {
   app: { profileMode: false, trackingMode: false },
-  gpx: { data: [], metadata: { name: null } },
+  gpx: { data: [], metadata: {} },
   gps: {
     projectedLocation: { timestamp: 0 },
     isOffCourse: false,
@@ -142,32 +138,6 @@ describe("Scene", () => {
     renderScene(defaultState, { width: 1024, height: 768 });
     const canvas = screen.getByTestId("canvas-root");
     expect(canvas).toHaveStyle({ width: "1024px", height: "768px" });
-  });
-
-  // ── Marker ────────────────────────────────────────────────────────────────
-  describe("Marker", () => {
-    it("is not rendered when name is null", () => {
-      renderScene();
-      expect(screen.queryByTestId("marker")).not.toBeInTheDocument();
-    });
-
-    it("is rendered when a trail name exists in the store", () => {
-      const state = {
-        ...defaultState,
-        gpx: { ...defaultState.gpx, metadata: { name: "Mont Blanc Tour" } },
-      };
-      renderScene(state);
-      expect(screen.getByTestId("marker")).toBeInTheDocument();
-    });
-
-    it("displays the trail name as its content", () => {
-      const state = {
-        ...defaultState,
-        gpx: { ...defaultState.gpx, metadata: { name: "Mont Blanc Tour" } },
-      };
-      renderScene(state);
-      expect(screen.getByTestId("marker")).toHaveTextContent("Mont Blanc Tour");
-    });
   });
 
   // ── FlyBy ─────────────────────────────────────────────────────────────────

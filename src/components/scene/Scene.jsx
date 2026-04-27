@@ -1,7 +1,6 @@
 import { memo, Suspense, useMemo, useRef } from "react";
 
 import { Canvas } from "@react-three/fiber";
-import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
 import useStore from "../../store/store.js";
@@ -9,7 +8,6 @@ import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 import CameraController from "../cameraController/CameraController.jsx";
 import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
 import FlyBy from "../flyBy/FlyBy";
-import Marker from "../marker/Marker.jsx";
 import OffCourseEffect from "../offCourseEffect/OffCourseEffect.jsx";
 import Peaks from "../peaks/Peaks.jsx";
 import { Model } from "../ufo/Ufo.jsx";
@@ -43,7 +41,6 @@ function Scene({ width, height, className }) {
     profileMode,
     trackingMode,
     coordinates,
-    name,
     projectedLocation,
     isOffCourse,
     deviationDistance,
@@ -52,7 +49,6 @@ function Scene({ width, height, className }) {
       profileMode: state.app.profileMode,
       trackingMode: state.app.trackingMode,
       coordinates: state.gpx.data,
-      name: state.gpx.metadata.name,
       projectedLocation: state.gps.projectedLocation,
       isOffCourse: state.gps.isOffCourse,
       deviationDistance: state.gps.deviationDistance,
@@ -60,7 +56,6 @@ function Scene({ width, height, className }) {
   );
 
   const modelRef = useRef();
-  const theme = useTheme();
 
   // Compute coordinate scales once and pass to children to avoid duplicate computations
   const coordinateScales = useMemo(() => {
@@ -108,16 +103,6 @@ function Scene({ width, height, className }) {
         />
         {/* <Perf minimal position="bottom-right" /> */}
         <SceneLights />
-
-        {name && (
-          <Marker
-            position={[0, 1.5, 0]}
-            fontSize={0.15}
-            color={theme.colors[theme.currentVariant]["--color-text"]}
-          >
-            {name}
-          </Marker>
-        )}
 
         <Peaks coordinateScales={coordinateScales} profileMode={profileMode} />
 
