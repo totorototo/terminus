@@ -2,6 +2,20 @@ import { precacheAndRoute } from "workbox-precaching";
 
 precacheAndRoute(self.__WB_MANIFEST);
 
+// Return an empty script when the analytics CDN is unreachable (offline)
+self.addEventListener("fetch", (event) => {
+  if (new URL(event.request.url).hostname === "cloud.umami.is") {
+    event.respondWith(
+      fetch(event.request).catch(
+        () =>
+          new Response("", {
+            headers: { "Content-Type": "application/javascript" },
+          }),
+      ),
+    );
+  }
+});
+
 // Relay from postMessage — triggers when app is backgrounded/minimized
 self.addEventListener("message", (event) => {
   if (event.origin !== self.location.origin) return;
