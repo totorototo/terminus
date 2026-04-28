@@ -160,6 +160,9 @@ export default defineConfig(({ mode }) => {
           "logo150.png",
           "logo512.png",
           "apple-touch-icon.png",
+          "races.json",
+          "*.glb",
+          "textures/Material_baseColor.png",
         ],
         manifest: {
           name: "Terminus - GPS Route Analysis & 3D Trail Visualization",

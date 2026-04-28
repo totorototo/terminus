@@ -1,6 +1,18 @@
 import { precacheAndRoute } from "workbox-precaching";
+import { registerRoute } from "workbox-routing";
+import { CacheFirst } from "workbox-strategies";
+import { ExpirationPlugin } from "workbox-expiration";
 
 precacheAndRoute(self.__WB_MANIFEST);
+
+// Cache GPX files on first network access so they're available offline
+registerRoute(
+  ({ url }) => url.pathname.endsWith(".gpx"),
+  new CacheFirst({
+    cacheName: "gpx-files",
+    plugins: [new ExpirationPlugin({ maxEntries: 10 })],
+  }),
+);
 
 // Return an empty script when the analytics CDN is unreachable (offline)
 self.addEventListener("fetch", (event) => {
