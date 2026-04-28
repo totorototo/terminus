@@ -1,4 +1,4 @@
-import { memo, Suspense, useMemo, useRef } from "react";
+import { memo, Suspense, useMemo } from "react";
 
 import { Canvas } from "@react-three/fiber";
 import { useShallow } from "zustand/react/shallow";
@@ -7,10 +7,8 @@ import useStore from "../../store/store.js";
 import { createCoordinateScales } from "../../utils/coordinateTransforms.js";
 import CameraController from "../cameraController/CameraController.jsx";
 import EnhancedProfile from "../enhancedProfile/EnhancedProfile.jsx";
-import FlyBy from "../flyBy/FlyBy";
 import OffCourseEffect from "../offCourseEffect/OffCourseEffect.jsx";
 import Peaks from "../peaks/Peaks.jsx";
-import { Model } from "../ufo/Ufo.jsx";
 
 import style from "./Scene.style";
 
@@ -39,7 +37,6 @@ const SceneLights = memo(function SceneLights() {
 function Scene({ width, height, className }) {
   const {
     profileMode,
-    trackingMode,
     coordinates,
     projectedLocation,
     isOffCourse,
@@ -47,15 +44,12 @@ function Scene({ width, height, className }) {
   } = useStore(
     useShallow((state) => ({
       profileMode: state.app.profileMode,
-      trackingMode: state.app.trackingMode,
       coordinates: state.gpx.data,
       projectedLocation: state.gps.projectedLocation,
       isOffCourse: state.gps.isOffCourse,
       deviationDistance: state.gps.deviationDistance,
     })),
   );
-
-  const modelRef = useRef();
 
   // Compute coordinate scales once and pass to children to avoid duplicate computations
   const coordinateScales = useMemo(() => {
@@ -111,24 +105,7 @@ function Scene({ width, height, className }) {
           profileMode={profileMode}
         />
 
-        {trackingMode && (
-          <FlyBy
-            speed={0.002}
-            height={0.08}
-            scale={0.05}
-            color="red"
-            modelRef={modelRef}
-            coordinateScales={coordinateScales}
-          />
-        )}
-
-        {projectedLocation && projectedLocation.timestamp !== 0 && (
-          <Suspense fallback={null}>
-            <Model scale={0.02} coordinateScales={coordinateScales} />
-          </Suspense>
-        )}
-
-        <CameraController modelRef={modelRef} />
+        <CameraController />
       </Canvas>
     </Suspense>
   );

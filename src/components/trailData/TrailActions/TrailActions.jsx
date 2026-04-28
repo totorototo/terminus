@@ -4,7 +4,6 @@ import { Download } from "@styled-icons/feather/Download";
 import { HelpCircle } from "@styled-icons/feather/HelpCircle";
 import { LogOut } from "@styled-icons/feather/LogOut";
 import { Trash2 } from "@styled-icons/feather/Trash2";
-import { Tv } from "@styled-icons/feather/Tv";
 import { useLocation } from "wouter";
 
 import useStore from "../../../store/store.js";
@@ -14,8 +13,6 @@ import style from "./TrailActions.style.js";
 
 const TrailActions = memo(function TrailActions({ className }) {
   const flush = useStore((state) => state.flush);
-  const toggleTrackingMode = useStore((state) => state.toggleTrackingMode);
-  const trackingMode = useStore((state) => state.app.trackingMode);
   const [, navigate] = useLocation();
   const [confirmingFlush, setConfirmingFlush] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
@@ -89,16 +86,6 @@ const TrailActions = memo(function TrailActions({ className }) {
       </div>
 
       <div className="actions-list">
-        <button
-          className={`action-row ${trackingMode ? "active" : ""}`}
-          onClick={toggleTrackingMode}
-          aria-pressed={trackingMode}
-        >
-          <Tv size={14} />
-          <span className="row-label">Fly-by Mode</span>
-          {trackingMode && <span className="row-badge">on</span>}
-        </button>
-
         <button
           className="action-row"
           onClick={handleShareCard}

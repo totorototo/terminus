@@ -69,17 +69,9 @@ vi.mock("../offCourseEffect/OffCourseEffect.jsx", () => ({
   ),
 }));
 
-vi.mock("../ufo/Ufo.jsx", () => ({
-  Model: () => <div data-testid="ufo" />,
-}));
-
-vi.mock("../flyBy/FlyBy", () => ({
-  default: () => <div data-testid="fly-by" />,
-}));
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const defaultState = {
-  app: { profileMode: false, trackingMode: false },
+  app: { profileMode: false },
   gpx: { data: [], metadata: {} },
   gps: {
     projectedLocation: { timestamp: 0 },
@@ -138,52 +130,6 @@ describe("Scene", () => {
     renderScene(defaultState, { width: 1024, height: 768 });
     const canvas = screen.getByTestId("canvas-root");
     expect(canvas).toHaveStyle({ width: "1024px", height: "768px" });
-  });
-
-  // ── FlyBy ─────────────────────────────────────────────────────────────────
-  describe("FlyBy", () => {
-    it("is not rendered when trackingMode is false", () => {
-      renderScene();
-      expect(screen.queryByTestId("fly-by")).not.toBeInTheDocument();
-    });
-
-    it("is rendered when trackingMode is true", () => {
-      const state = {
-        ...defaultState,
-        app: { ...defaultState.app, trackingMode: true },
-      };
-      renderScene(state);
-      expect(screen.getByTestId("fly-by")).toBeInTheDocument();
-    });
-  });
-
-  // ── UFO Model ─────────────────────────────────────────────────────────────
-  describe("UFO Model", () => {
-    it("is not rendered when projectedLocation is null", () => {
-      const state = {
-        ...defaultState,
-        gps: { ...defaultState.gps, projectedLocation: null },
-      };
-      renderScene(state);
-      expect(screen.queryByTestId("ufo")).not.toBeInTheDocument();
-    });
-
-    it("is not rendered when projectedLocation.timestamp is 0", () => {
-      renderScene();
-      expect(screen.queryByTestId("ufo")).not.toBeInTheDocument();
-    });
-
-    it("is rendered when projectedLocation has a non-zero timestamp", () => {
-      const state = {
-        ...defaultState,
-        gps: {
-          ...defaultState.gps,
-          projectedLocation: { timestamp: 1747123456789 },
-        },
-      };
-      renderScene(state);
-      expect(screen.getByTestId("ufo")).toBeInTheDocument();
-    });
   });
 
   // ── OffCourseEffect ───────────────────────────────────────────────────────
