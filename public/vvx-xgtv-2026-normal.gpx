@@ -14,32 +14,32 @@
     <name>Col de Serre</name>
     <type>TimeBarrier</type>
   </wpt>
-  <wpt lat="45.317750" lon="2.757370">
+  <wpt lat="45.318340" lon="2.768300">
     <time>2026-05-14T04:20:00Z</time>
     <name>Condat</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.488500" lon="2.878710">
+  <wpt lat="45.497010" lon="2.892400">
     <time>2026-05-14T14:35:00Z</time>
     <name>Pertuyzat</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.556070" lon="2.809220">
+  <wpt lat="45.563910" lon="2.818860">
     <time>2026-05-14T23:30:00Z</time>
     <name>Mont-Dore</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.635590" lon="2.854450">
+  <wpt lat="45.642510" lon="2.881790">
     <time>2026-05-15T08:30:00Z</time>
     <name>Pessade - Chouette Parc</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.756610" lon="2.956890">
+  <wpt lat="45.767250" lon="2.960370">
     <time>2026-05-15T17:00:00Z</time>
     <name>Col de Ceyssat</name>
     <type>TimeBarrier</type>
   </wpt>
-  <wpt lat="45.844380" lon="2.991950">
+  <wpt lat="45.871670" lon="3.027770">
     <time>2026-05-15T22:00:00Z</time>
     <name>Volvic</name>
     <type>Arrival</type>

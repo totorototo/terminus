@@ -9,37 +9,37 @@
     <name>Station Lioran</name>
     <type>Start</type>
   </wpt>
-  <wpt lat="45.132700" lon="2.706290">
+  <wpt lat="45.143390" lon="2.725640">
     <time>2026-05-13T15:30:00Z</time>
     <name>Col de Serre</name>
     <type>TimeBarrier</type>
   </wpt>
-  <wpt lat="45.260950" lon="2.791890">
+  <wpt lat="45.287520" lon="2.764180">
     <time>2026-05-14T02:15:00Z</time>
     <name>Condat</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.444840" lon="2.833400">
+  <wpt lat="45.489330" lon="2.862280">
     <time>2026-05-14T13:00:00Z</time>
     <name>Pertuyzat</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.530540" lon="2.767700">
+  <wpt lat="45.572060" lon="2.775780">
     <time>2026-05-15T01:30:00Z</time>
     <name>Mont-Dore</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.594420" lon="2.766380">
+  <wpt lat="45.647790" lon="2.857100">
     <time>2026-05-15T08:30:00Z</time>
     <name>Pessade - Chouette Parc</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.688000" lon="2.961820">
+  <wpt lat="45.770310" lon="2.961370">
     <time>2026-05-15T17:00:00Z</time>
     <name>Col de Ceyssat</name>
     <type>TimeBarrier</type>
   </wpt>
-  <wpt lat="45.772030" lon="2.952240">
+  <wpt lat="45.871670" lon="3.027770">
     <time>2026-05-15T22:00:00Z</time>
     <name>Volvic</name>
     <type>Arrival</type>
