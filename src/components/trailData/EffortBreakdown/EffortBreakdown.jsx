@@ -89,7 +89,7 @@ const EffortBreakdown = memo(function EffortBreakdown({ className }) {
         <span className="eb-total">{formatDuration(totalEstSec)} total</span>
       </div>
 
-      <div className="eb-list" role="list">
+      <div className="eb-list" role="list" tabIndex={0}>
         {rows.map((row) => (
           <div
             key={row.id}

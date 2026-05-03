@@ -12,6 +12,7 @@ export function useGPXWorker(raceId) {
     isWorkerReady,
     processGPXFile,
     setSections,
+    setLegs,
     flush,
   } = useStore(
     useShallow((state) => ({
@@ -20,6 +21,7 @@ export function useGPXWorker(raceId) {
       isWorkerReady: state.worker.isReady,
       processGPXFile: state.processGPXFile,
       setSections: state.setSections,
+      setLegs: state.setLegs,
       flush: state.flush,
     })),
   );
@@ -32,10 +34,11 @@ export function useGPXWorker(raceId) {
   useEffect(() => {
     if (!isWorkerReady || !raceId) return;
 
-    // Clear sections immediately so all Profile components unmount before new
-    // race data arrives — ensures all sections remount simultaneously as fresh
-    // components, avoiding shader/material initialization issues.
+    // Clear legs and sections immediately so EnhancedProfile renders nothing
+    // during the transition — prevents stale legs from being transformed with
+    // the new race's coordinateScales before fresh legs arrive.
     setSections([]);
+    setLegs([]);
     // Only flush GPS state on trail switch, not on initial load, so that
     // rehydrated GPS positions are preserved across page reloads.
     if (prevRaceIdRef.current !== null && prevRaceIdRef.current !== raceId) {
@@ -64,7 +67,7 @@ export function useGPXWorker(raceId) {
     });
 
     return () => controller.abort();
-  }, [isWorkerReady, raceId, processGPXFile, setSections, flush]);
+  }, [isWorkerReady, raceId, processGPXFile, setSections, setLegs, flush]);
 
   return { isWorkerReady };
 }

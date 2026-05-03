@@ -22,6 +22,7 @@ describe("useGPXWorker", () => {
       worker: { isReady: false },
       processGPXFile: vi.fn().mockResolvedValue(undefined),
       setSections: vi.fn(),
+      setLegs: vi.fn(),
       flush: vi.fn(),
     };
     useStore.mockImplementation((selector) => selector(mockStore));

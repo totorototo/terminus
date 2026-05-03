@@ -101,7 +101,7 @@ const StageETA = memo(function StageETA({ className }) {
         <span className="header-label">Checkpoint</span>
         <span className="header-label">ETA</span>
       </div>
-      <div className="section-list" role="list">
+      <div className="section-list" role="list" tabIndex={0}>
         {sectionRows.map((section) => {
           const WeatherIcon = section.weather
             ? (WEATHER_ICONS[section.weather.icon] ?? Cloud)
