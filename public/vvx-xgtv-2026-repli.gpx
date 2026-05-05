@@ -34,7 +34,7 @@
     <name>Pessade - Chouette Parc</name>
     <type>LifeBase</type>
   </wpt>
-  <wpt lat="45.763889" lon="2.955556">
+  <wpt lat="45.872000" lon="3.038300">
     <time>2026-05-15T17:00:00Z</time>
     <name>Col de Ceyssat</name>
     <type>TimeBarrier</type>
@@ -4600,11 +4600,7 @@
         <ele>1306.4</ele>
         <time>2022-09-05T15:36:51Z</time>
       </trkpt>
-      <trkpt lat="45.130710" lon="2.703240">
-        <ele>1304.7</ele>
-        <time>2022-09-05T15:37:07Z</time>
-      </trkpt>
-      <trkpt lat="45.187300" lon="2.765210">
+            <trkpt lat="45.187300" lon="2.765210">
         <ele>1304</ele>
         <time>2022-09-05T15:37:21Z</time>
       </trkpt>
