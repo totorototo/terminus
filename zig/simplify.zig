@@ -1,23 +1,25 @@
 const std = @import("std");
-const distance3D = @import("gpspoint.zig").distance3D;
+const distance = @import("gpspoint.zig").distance;
 
 const expect = std.testing.expect;
 const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 
 /// Calculate perpendicular distance from point to line segment
-/// Uses haversine distance for accurate geographic calculations
+/// Uses 2D haversine distance (ignoring elevation) so simplification
+/// preserves horizontal path shape rather than being influenced by
+/// elevation noise.
 pub fn perpendicularDistance(point: [3]f64, line_start: [3]f64, line_end: [3]f64) f64 {
     // Calculate total line segment distance (cache to avoid duplicate call)
-    const line_distance = distance3D(line_start, line_end);
+    const line_distance = distance(line_start, line_end);
 
     // Special case: line segment is actually a point
     if (line_distance < 0.001) {
-        return distance3D(point, line_start);
+        return distance(point, line_start);
     }
 
     // Calculate distances to create triangle
-    const dist_start_to_point = distance3D(line_start, point);
-    const dist_end_to_point = distance3D(line_end, point);
+    const dist_start_to_point = distance(line_start, point);
+    const dist_end_to_point = distance(line_end, point);
 
     // Use formula: perpendicular distance = 2 * area / base
     // where area is calculated using Heron's formula
