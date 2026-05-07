@@ -51,7 +51,7 @@ pub const Trace = struct {
 
         // Apply Douglas-Peucker simplification for large datasets (> 1000 points)
         const final_points = if (coordinates.len > 1000) blk: {
-            const simplified = try douglasPeuckerSimplify(allocator, coordinates, 5.0);
+            const simplified = try douglasPeuckerSimplify(allocator, coordinates, 15.0);
             break :blk simplified; // Transfer ownership, no copy needed
         } else blk: {
             // Small dataset: copy to ensure we own the data
