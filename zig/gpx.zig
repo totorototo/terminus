@@ -26,14 +26,16 @@ pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f6
         const content_start = tag_end + 1;
         const content = bytes[content_start..trkpt_end];
 
-        const lat_pos = std.mem.indexOf(u8, tag_section, "lat=\"") orelse continue :trkpt_loop;
+        const lat_pos = std.mem.indexOf(u8, tag_section, "lat=") orelse continue :trkpt_loop;
         const lat_start = trkpt_start + lat_pos + 5;
-        const lat_end = std.mem.indexOfScalarPos(u8, bytes, lat_start, '"') orelse continue :trkpt_loop;
+        const lat_quote = bytes[lat_start - 1];
+        const lat_end = std.mem.indexOfScalarPos(u8, bytes, lat_start, lat_quote) orelse continue :trkpt_loop;
         const lat = std.fmt.parseFloat(f64, bytes[lat_start..lat_end]) catch continue :trkpt_loop;
 
-        const lon_pos = std.mem.indexOf(u8, tag_section, "lon=\"") orelse continue :trkpt_loop;
+        const lon_pos = std.mem.indexOf(u8, tag_section, "lon=") orelse continue :trkpt_loop;
         const lon_start = trkpt_start + lon_pos + 5;
-        const lon_end = std.mem.indexOfScalarPos(u8, bytes, lon_start, '"') orelse continue :trkpt_loop;
+        const lon_quote = bytes[lon_start - 1];
+        const lon_end = std.mem.indexOfScalarPos(u8, bytes, lon_start, lon_quote) orelse continue :trkpt_loop;
         const lon = std.fmt.parseFloat(f64, bytes[lon_start..lon_end]) catch continue :trkpt_loop;
 
         const ele_str = parseTagContent(bytes, content, content_start, trkpt_end, "<ele>", "</ele>") orelse continue :trkpt_loop;
@@ -516,6 +518,28 @@ test "readTracePoints with high precision coordinates" {
     try testing.expectApproxEqAbs(37.123456789, points[0][0], 0.000000001);
     try testing.expectApproxEqAbs(-122.987654321, points[0][1], 0.000000001);
     try testing.expectApproxEqAbs(123.456789, points[0][2], 0.000001);
+}
+
+test "readTracePoints with single-quote attributes" {
+    const allocator = testing.allocator;
+    const single_quote_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk><trkseg>
+        \\  <trkpt lat='42.82976' lon='0.327362'><ele>791</ele></trkpt>
+        \\  <trkpt lat='42.83000' lon='0.327500'><ele>800</ele></trkpt>
+        \\ </trkseg></trk>
+        \\</gpx>
+    ;
+
+    const points = try readTracePoints(allocator, single_quote_gpx);
+    defer allocator.free(points);
+
+    try testing.expectEqual(@as(usize, 2), points.len);
+    try testing.expectApproxEqAbs(42.82976, points[0][0], 0.00001);
+    try testing.expectApproxEqAbs(0.327362, points[0][1], 0.00001);
+    try testing.expectApproxEqAbs(791.0, points[0][2], 0.01);
+    try testing.expectApproxEqAbs(42.83000, points[1][0], 0.00001);
 }
 
 test "readTracePoints with scientific notation" {

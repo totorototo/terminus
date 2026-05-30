@@ -2,7 +2,7 @@ import { scaleLinear } from "d3-scale";
 
 export function createCoordinateScales(coordinates, options = {}) {
   const {
-    xRange = [-2, 2],
+    xRange = [-7, 7],
     yRange = [0, 1],
     zRange = [5, -5],
     padding = 0.1,
@@ -73,10 +73,15 @@ export function createCoordinateScales(coordinates, options = {}) {
   const yExtent = [minEle, maxEle]; // elevation (coord[2])
   const zExtent = [minLat, maxLat]; // latitude (coord[0])
 
-  // Apply padding based on aspect ratio
+  // Apply padding based on aspect ratio.
+  // Longitude degrees shrink with latitude (cos factor), so compute the
+  // geographic aspect ratio in km-equivalent units to avoid over-padding z
+  // for routes at higher latitudes (e.g. cos(43°) ≈ 0.73 for Pyrenees).
   const lonDelta = xExtent[1] - xExtent[0];
   const latDelta = zExtent[1] - zExtent[0];
-  const aspectRatio = lonDelta / latDelta;
+  const midLat = (zExtent[0] + zExtent[1]) / 2;
+  const cosLat = Math.cos((midLat * Math.PI) / 180);
+  const aspectRatio = (lonDelta * cosLat) / latDelta;
 
   if (aspectRatio > 1) {
     // wider than tall

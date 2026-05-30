@@ -68,7 +68,9 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
 
         const start_result = trace.findClosestPointAfter(start_coord, search_start) orelse continue;
         const end_result = trace.findClosestPointAfter(end_coord, start_result.index + 1) orelse continue;
-        search_start = start_result.index + 1;
+        // Advance floor to the END of this leg so the next search does not snap to
+        // an earlier (outbound) track occurrence of the shared boundary on loop courses.
+        search_start = end_result.index;
 
         const bearing = bearingTo(start_coord, end_coord);
 

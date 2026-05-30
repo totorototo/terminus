@@ -238,10 +238,14 @@ pub const Trace = struct {
     }
 
     /// Find the closest point on the trace at or after `start_from` index.
-    /// Used for loop courses where searching the full trace would match the
-    /// wrong (earlier) occurrence of a geographically repeated location.
+    /// Uses an early-stop heuristic: once a candidate within 1km is found,
+    /// scanning stops when the distance exceeds candidate + 2km. This ensures
+    /// loop courses snap to the first close occurrence rather than a later
+    /// return-leg occurrence that may be marginally closer globally.
     pub fn findClosestPointAfter(self: *const Trace, target: [3]f64, start_from: usize) ?ClosestPointResult {
         if (self.points.len == 0 or start_from >= self.points.len) return null;
+
+        const EARLY_STOP_MARGIN: f64 = 2000.0; // meters past the current best before giving up
 
         var closest_distance: f64 = std.math.inf(f64);
         var closest_index: usize = start_from;
@@ -253,6 +257,8 @@ pub const Trace = struct {
                 closest_distance = dist;
                 closest_index = i;
                 closest_point = point;
+            } else if (dist > closest_distance + EARLY_STOP_MARGIN) {
+                break;
             }
         }
 
@@ -732,6 +738,46 @@ test "findClosestPoint: identical points" {
     // Should find the first occurrence (index 0)
     try expect(result.?.index == 0);
     try expectApproxEqAbs(result.?.distance, 0.0, 0.1);
+}
+
+test "findClosestPointAfter: early-stop prefers first close occurrence on loop course" {
+    // Simulates a loop course where the outbound and return legs both pass
+    // near waypoint W. The outbound occurrence is at idx 2 (dist ~30m) and
+    // the return occurrence is at idx 6 (dist ~15m, slightly closer).
+    // Without early-stop the global minimum would be idx 6 (wrong).
+    // With early-stop the first close occurrence (idx 2) wins.
+    const allocator = std.testing.allocator;
+
+    // Points in degrees. Use tight spacing (~10m) so Haversine gives realistic distances.
+    // One degree lat ≈ 111km, so 0.0001 deg ≈ 11m.
+    const points = [_][3]f64{
+        [3]f64{ 43.0, 0.0, 800.0 }, // 0: start
+        [3]f64{ 43.0, 0.001, 810.0 }, // 1: ~111m from start
+        [3]f64{ 43.0, 0.002, 820.0 }, // 2: outbound — ~222m, 30m from waypoint W
+        [3]f64{ 43.0, 0.010, 900.0 }, // 3: far east, 1.1km from start
+        [3]f64{ 43.0, 0.020, 950.0 }, // 4: further east, 2.2km
+        [3]f64{ 43.0, 0.030, 930.0 }, // 5: turnaround, 3.3km
+        // Return leg comes back through same area:
+        [3]f64{ 43.0, 0.0019, 820.0 }, // 6: return — slightly closer to W (15m), 3.6km
+        [3]f64{ 43.0, 0.001, 810.0 }, // 7: return
+        [3]f64{ 43.0, 0.0, 800.0 }, // 8: arrival
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // Waypoint W is at lon=0.002 (matches idx 2 outbound; idx 6 return is at 0.0019, slightly closer)
+    const waypoint_W = [3]f64{ 43.0, 0.002, 820.0 };
+
+    // Searching from start: should find the OUTBOUND occurrence (idx 2), not return (idx 6)
+    const result = trace.findClosestPointAfter(waypoint_W, 0);
+    try expect(result != null);
+    try expect(result.?.index == 2);
+
+    // Searching from past the turnaround: should find the RETURN occurrence (idx 6)
+    const result_return = trace.findClosestPointAfter(waypoint_W, 5);
+    try expect(result_return != null);
+    try expect(result_return.?.index == 6);
 }
 
 test "peaks detection: trace with clear peaks" {
