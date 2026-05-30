@@ -25,9 +25,9 @@ import {
   selectRunnerRole,
 } from "./helpers.js";
 
-// Near the middle of the vvx-xgtv-2026.gpx track (index ~3846 / 7693).
+// Near the middle of the grp-160-2026.gpx track (index ~15449 / 30899).
 // findClosestLocation snaps to this point, making distance progress to ~half the route.
-const FAKE_GEOLOCATION = { latitude: 45.4982, longitude: 2.9089, accuracy: 10 };
+const FAKE_GEOLOCATION = { latitude: 42.9308, longitude: 0.154, accuracy: 10 };
 
 // Runner page: km-left stat in the mobile bottom sheet (confirms GPX loaded).
 const kmLeftValue = (page) =>
