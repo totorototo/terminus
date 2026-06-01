@@ -18,7 +18,40 @@ const TYPE_ICONS = {
   Checkpoint: CheckCircle,
 };
 
-const CheckpointPin = memo(function CheckpointPin({ checkpoint }) {
+const MIN_TRAIL_GAP = 1.6;
+const LEVEL_HEIGHT = 0.18;
+const BASE_OFFSET = 0.28;
+
+function computeLabelLevels(checkpoints) {
+  const ordered = checkpoints
+    .map((checkpoint, index) => ({
+      index,
+      z: checkpoint.point3D[2],
+      y: checkpoint.point3D[1],
+    }))
+    .sort((a, b) => a.z - b.z);
+
+  const placed = [];
+  const levelByIndex = new Map();
+
+  for (const { index, z, y } of ordered) {
+    const neighbors = placed.filter((p) => Math.abs(p.z - z) < MIN_TRAIL_GAP);
+
+    let level = 0;
+    let labelY = y + BASE_OFFSET;
+    while (neighbors.some((p) => Math.abs(p.labelY - labelY) < LEVEL_HEIGHT)) {
+      level += 1;
+      labelY = y + BASE_OFFSET + level * LEVEL_HEIGHT;
+    }
+
+    placed.push({ z, labelY });
+    levelByIndex.set(index, level);
+  }
+
+  return levelByIndex;
+}
+
+const CheckpointPin = memo(function CheckpointPin({ checkpoint, level = 0 }) {
   const theme = useTheme();
   const palette = theme.colors[theme.currentVariant];
   const color = palette["--color-text"];
@@ -54,7 +87,7 @@ const CheckpointPin = memo(function CheckpointPin({ checkpoint }) {
     <Html
       position={[
         checkpoint.point3D[0],
-        checkpoint.point3D[1] + 0.28,
+        checkpoint.point3D[1] + BASE_OFFSET + level * LEVEL_HEIGHT,
         checkpoint.point3D[2],
       ]}
       center
@@ -70,10 +103,16 @@ const CheckpointPin = memo(function CheckpointPin({ checkpoint }) {
 });
 
 function CheckpointPins({ checkpointsPoints3D }) {
-  return checkpointsPoints3D?.map((checkpoint) => (
+  const levelByIndex = useMemo(
+    () => computeLabelLevels(checkpointsPoints3D ?? []),
+    [checkpointsPoints3D],
+  );
+
+  return checkpointsPoints3D?.map((checkpoint, index) => (
     <CheckpointPin
       key={checkpoint.name ?? checkpoint.index}
       checkpoint={checkpoint}
+      level={levelByIndex.get(index) ?? 0}
     />
   ));
 }

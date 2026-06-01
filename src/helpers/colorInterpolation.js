@@ -13,7 +13,6 @@ export const interpolateColor = (t, color1, color2, brightenFactor = 1.3) => {
   let g = Math.round(g1 + (g2 - g1) * t);
   let b = Math.round(b1 + (b2 - b1) * t);
 
-  // Brighten the colors
   r = Math.min(255, Math.round(r * brightenFactor));
   g = Math.min(255, Math.round(g * brightenFactor));
   b = Math.min(255, Math.round(b * brightenFactor));
@@ -29,7 +28,6 @@ export const getInterpolatedColor = (
 ) => {
   if (total === 1) return colors[0];
 
-  // Map index to color segments
   const segment = (index / (total - 1)) * (colors.length - 1);
   const segmentIndex = Math.floor(segment);
   const t = segment - segmentIndex;
@@ -38,4 +36,24 @@ export const getInterpolatedColor = (
   const color2 = colors[Math.min(segmentIndex + 1, colors.length - 1)];
 
   return interpolateColor(t, color1, color2, brightenFactor);
+};
+
+export const getSectionShade = (
+  index,
+  total,
+  baseColor,
+  minFactor = 0.75,
+  maxFactor = 1.35,
+) => {
+  const [r, g, b] = parseHex(baseColor);
+
+  const factor =
+    total <= 1
+      ? maxFactor
+      : minFactor + (index / (total - 1)) * (maxFactor - minFactor);
+
+  const shade = (channel) =>
+    Math.min(255, Math.max(0, Math.round(channel * factor)));
+
+  return `rgb(${shade(r)}, ${shade(g)}, ${shade(b)})`;
 };
