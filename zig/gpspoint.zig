@@ -29,13 +29,6 @@ pub fn distance(a: [3]f64, b: [3]f64) f64 {
     return R * c;
 }
 
-/// Compute 3D distance between two [3]f64 points (haversine + elevation)
-pub fn distance3D(a: [3]f64, b: [3]f64) f64 {
-    const horizontal = distance(a, b);
-    const elev_delta = b[IDX_ELEV] - a[IDX_ELEV];
-    return math.sqrt(horizontal * horizontal + elev_delta * elev_delta);
-}
-
 /// Elevation difference (absolute value)
 pub fn elevationDelta(a: [3]f64, b: [3]f64) f64 {
     const delta = a[IDX_ELEV] - b[IDX_ELEV];
@@ -97,31 +90,6 @@ test "distance: known coordinates (Paris to London)" {
     const d = distance(paris, london);
     // Actual distance is approximately 343,560 meters
     try std.testing.expectApproxEqAbs(343560.0, d, 1000.0);
-}
-
-test "distance3D: horizontal only (same elevation)" {
-    const a = [3]f64{ 0.0, 0.0, 100.0 };
-    const b = [3]f64{ 1.0, 0.0, 100.0 };
-    const d2d = distance(a, b);
-    const d3d = distance3D(a, b);
-    try std.testing.expectApproxEqAbs(d2d, d3d, 0.001);
-}
-
-test "distance3D: vertical only (same location)" {
-    const a = [3]f64{ 0.0, 0.0, 0.0 };
-    const b = [3]f64{ 0.0, 0.0, 100.0 };
-    const d3d = distance3D(a, b);
-    try std.testing.expectApproxEqAbs(100.0, d3d, 0.001);
-}
-
-test "distance3D: pythagorean theorem (3-4-5 triangle)" {
-    // Create points where horizontal distance is ~3000m and vertical is 4000m
-    // Expected 3D distance: 5000m
-    const a = [3]f64{ 0.0, 0.0, 0.0 };
-    // At equator, ~0.027 degrees ≈ 3000 meters
-    const b = [3]f64{ 0.027, 0.0, 4000.0 };
-    const d3d = distance3D(a, b);
-    try std.testing.expectApproxEqAbs(5000.0, d3d, 50.0);
 }
 
 test "elevationDelta: positive difference" {

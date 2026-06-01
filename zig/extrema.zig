@@ -4,6 +4,7 @@ const std = @import("std");
 pub const AMPDConfig = struct {
     scale_max: usize = 21,
     threshold: usize = 15,
+    min_prominence: f32 = 20.0,
 
     pub fn validate(self: AMPDConfig, signal_len: usize) !void {
         if (self.scale_max == 0) return error.InvalidScaleMax;
@@ -127,16 +128,81 @@ pub fn ampdValleys(allocator: std.mem.Allocator, signal: []const f32, scale_max:
     return clusterExtrema(allocator, raw, signal, false);
 }
 
+fn extremumProminence(signal: []const f32, idx: usize, comptime find_peaks: bool) f32 {
+    const v = signal[idx];
+
+    var left_col: f32 = v;
+    var i = idx;
+    while (i > 0) {
+        i -= 1;
+        const s = signal[i];
+        if (find_peaks) {
+            if (s > v) break;
+            if (s < left_col) left_col = s;
+        } else {
+            if (s < v) break;
+            if (s > left_col) left_col = s;
+        }
+    }
+
+    var right_col: f32 = v;
+    var j = idx;
+    while (j + 1 < signal.len) {
+        j += 1;
+        const s = signal[j];
+        if (find_peaks) {
+            if (s > v) break;
+            if (s < right_col) right_col = s;
+        } else {
+            if (s < v) break;
+            if (s > right_col) right_col = s;
+        }
+    }
+
+    return if (find_peaks)
+        v - @max(left_col, right_col)
+    else
+        @min(left_col, right_col) - v;
+}
+
+fn filterByProminence(
+    allocator: std.mem.Allocator,
+    candidates: []const usize,
+    signal: []const f32,
+    min_prominence: f32,
+    comptime find_peaks: bool,
+) ![]usize {
+    if (candidates.len == 0 or min_prominence <= 0.0) {
+        return allocator.dupe(usize, candidates);
+    }
+
+    var kept = std.ArrayList(usize){};
+    defer kept.deinit(allocator);
+
+    for (candidates) |idx| {
+        std.debug.assert(idx < signal.len);
+        if (extremumProminence(signal, idx, find_peaks) >= min_prominence) {
+            try kept.append(allocator, idx);
+        }
+    }
+
+    return try kept.toOwnedSlice(allocator);
+}
+
 pub fn findPeaks(allocator: std.mem.Allocator, signal: []const f32) ![]usize {
     const config = AMPDConfig{};
     try config.validate(signal.len);
-    return ampd(allocator, signal, config.scale_max, config.threshold);
+    const candidates = try ampd(allocator, signal, config.scale_max, config.threshold);
+    defer allocator.free(candidates);
+    return filterByProminence(allocator, candidates, signal, config.min_prominence, true);
 }
 
 pub fn findValleys(allocator: std.mem.Allocator, signal: []const f32) ![]usize {
     const config = AMPDConfig{};
     try config.validate(signal.len);
-    return ampdValleys(allocator, signal, config.scale_max, config.threshold);
+    const candidates = try ampdValleys(allocator, signal, config.scale_max, config.threshold);
+    defer allocator.free(candidates);
+    return filterByProminence(allocator, candidates, signal, config.min_prominence, false);
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -221,6 +287,52 @@ test "findValleys: symmetric to findPeaks on inverted signal" {
     const valleys = try ampdValleys(allocator, &signal, 2, 1);
     defer allocator.free(valleys);
     try std.testing.expectEqual(peaks.len, valleys.len);
+}
+
+test "extremumProminence: peak prominence relative to higher key col" {
+    const signal = [_]f32{ 0, 50, 100, 60, 40, 55, 70, 30, 0 };
+    try std.testing.expectApproxEqAbs(@as(f32, 30.0), extremumProminence(&signal, 6, true), 0.001);
+    try std.testing.expectApproxEqAbs(@as(f32, 100.0), extremumProminence(&signal, 2, true), 0.001);
+}
+
+test "extremumProminence: valley prominence mirrors peak logic" {
+    const signal = [_]f32{ 100, 50, 0, 40, 60, 45, 30, 70, 100 };
+    try std.testing.expectApproxEqAbs(@as(f32, 30.0), extremumProminence(&signal, 6, false), 0.001);
+    try std.testing.expectApproxEqAbs(@as(f32, 100.0), extremumProminence(&signal, 2, false), 0.001);
+}
+
+test "filterByProminence: drops low-prominence extrema" {
+    const allocator = std.testing.allocator;
+    const signal = [_]f32{ 0, 50, 100, 60, 40, 55, 70, 30, 0 };
+    const candidates = [_]usize{ 2, 6 };
+    const kept = try filterByProminence(allocator, &candidates, &signal, 35.0, true);
+    defer allocator.free(kept);
+    try std.testing.expectEqual(@as(usize, 1), kept.len);
+    try std.testing.expectEqual(@as(usize, 2), kept[0]);
+}
+
+test "filterByProminence: zero threshold keeps everything" {
+    const allocator = std.testing.allocator;
+    const signal = [_]f32{ 0, 50, 100, 60, 40, 55, 70, 30, 0 };
+    const candidates = [_]usize{ 2, 6 };
+    const kept = try filterByProminence(allocator, &candidates, &signal, 0.0, true);
+    defer allocator.free(kept);
+    try std.testing.expectEqual(@as(usize, 2), kept.len);
+}
+
+test "findPeaks: prominence filter removes noise bumps" {
+    const allocator = std.testing.allocator;
+    var signal: [60]f32 = undefined;
+    for (0..signal.len) |i| {
+        const x = @as(f32, @floatFromInt(i));
+        const base = 200.0 - @abs(x - 30.0) * 6.0;
+        signal[i] = base + 2.0 * @sin(x * 1.7);
+    }
+    const peaks = try findPeaks(allocator, &signal);
+    defer allocator.free(peaks);
+    for (peaks) |p| {
+        try std.testing.expect(extremumProminence(&signal, p, true) >= 20.0);
+    }
 }
 
 test "configuration validation" {

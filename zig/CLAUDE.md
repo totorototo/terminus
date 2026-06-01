@@ -7,6 +7,7 @@ gpx.zig        ── GPX parsing (manual std.mem scanning, no XML lib)
 trace.zig      ── Trace struct: core computation (distances, elevations, slopes, peaks)
 peaks.zig      ── AMPD peak detection algorithm
 simplify.zig   ── Douglas-Peucker simplification
+elevation.zig  ── Denoised D+/D- (distance-windowed median + hysteresis deadband)
 gpspoint.zig   ── Pure math on [3]f64 (Haversine, bearing, elevation)
 gpxdata.zig    ── Data structs: GPXData, Waypoint, Metadata
 section.zig    ── SectionStats data struct (camelCase fields — maps to JS)

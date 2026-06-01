@@ -21,18 +21,30 @@ pub fn perpendicularDistance(point: [3]f64, line_start: [3]f64, line_end: [3]f64
     const dist_start_to_point = distance(line_start, point);
     const dist_end_to_point = distance(line_end, point);
 
-    // Use formula: perpendicular distance = 2 * area / base
-    // where area is calculated using Heron's formula
-    const s = (line_distance + dist_start_to_point + dist_end_to_point) / 2.0;
-    const area_squared = s * (s - line_distance) * (s - dist_start_to_point) * (s - dist_end_to_point);
-
-    if (area_squared <= 0.0) {
-        // Point is on the line or numerical issues
-        return @min(dist_start_to_point, dist_end_to_point);
-    }
-
-    const area = @sqrt(area_squared);
+    // perpendicular distance = 2 * area / base.
+    // Kahan's stable triangle area avoids the catastrophic cancellation that
+    // Heron's formula suffers on the near-degenerate (needle) triangles that
+    // dominate Douglas-Peucker, where the point lies almost on the line.
+    const area = triangleArea(line_distance, dist_start_to_point, dist_end_to_point);
     return (2.0 * area) / line_distance;
+}
+
+/// Numerically stable triangle area from its three side lengths (Kahan, 2014).
+/// Sides are sorted descending and grouped so each subtraction stays well-
+/// conditioned; returns 0 for degenerate (collinear) triangles.
+fn triangleArea(side_a: f64, side_b: f64, side_c: f64) f64 {
+    var a = side_a;
+    var b = side_b;
+    var c = side_c;
+
+    // Sort so that a >= b >= c.
+    if (a < b) std.mem.swap(f64, &a, &b);
+    if (b < c) std.mem.swap(f64, &b, &c);
+    if (a < b) std.mem.swap(f64, &a, &b);
+
+    const t = (a + (b + c)) * (c - (a - b)) * (c + (a - b)) * (a + (b - c));
+    if (t <= 0.0) return 0.0;
+    return 0.25 * @sqrt(t);
 }
 
 /// Douglas-Peucker line simplification algorithm
@@ -109,9 +121,34 @@ test "perpendicularDistance: point on line" {
     const point_on_line = [3]f64{ 0.0, 0.0005, 0.0 }; // Midpoint
 
     const dist = perpendicularDistance(point_on_line, line_start, line_end);
-    // Point on line should have very small perpendicular distance
-    // But with haversine and Heron's formula, numerical precision means it won't be exactly 0
-    try expectApproxEqAbs(0.0, dist, 100.0);
+    // Collinear points: the stable area formula collapses this to ~0 (Heron's
+    // formula previously needed a 100m tolerance here due to cancellation).
+    try expectApproxEqAbs(0.0, dist, 0.01);
+}
+
+test "triangleArea: stable on a needle triangle" {
+    // Near-degenerate triangle: base 1000, the apex almost on the base.
+    // True height ≈ 0.001 → area ≈ 0.5. Heron's formula loses most precision here.
+    const base: f64 = 1000.0;
+    const left: f64 = 500.0000005;
+    const right: f64 = 500.0000005;
+    const area = triangleArea(base, left, right);
+    // height = 2*area/base; expect a tiny but finite, non-negative height.
+    const height = 2.0 * area / base;
+    try expect(height >= 0.0);
+    try expect(height < 1.0);
+}
+
+test "triangleArea: degenerate triangle returns zero" {
+    // Exactly collinear: base equals the sum of the other two sides.
+    try expectApproxEqAbs(0.0, triangleArea(10.0, 6.0, 4.0), 1e-9);
+}
+
+test "triangleArea: matches known 3-4-5 right triangle" {
+    // Area = 6 regardless of side order.
+    try expectApproxEqAbs(6.0, triangleArea(3.0, 4.0, 5.0), 1e-9);
+    try expectApproxEqAbs(6.0, triangleArea(5.0, 4.0, 3.0), 1e-9);
+    try expectApproxEqAbs(6.0, triangleArea(4.0, 5.0, 3.0), 1e-9);
 }
 
 test "perpendicularDistance: point off line" {

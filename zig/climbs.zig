@@ -37,6 +37,14 @@ pub fn detectClimbs(
 ) ![]ClimbStats {
     if (peaks.len == 0 or points.len == 0 or cumulative_distances.len == 0) return try allocator.alloc(ClimbStats, 0);
 
+    // Internal invariants guaranteed by the trace pipeline (not input validation).
+    // Compiled out in ReleaseFast; trap loudly in Debug/test builds.
+    std.debug.assert(points.len == cumulative_distances.len);
+    if (std.debug.runtime_safety) {
+        for (1..peaks.len) |i| std.debug.assert(peaks[i] >= peaks[i - 1]);
+        for (1..valleys.len) |i| std.debug.assert(valleys[i] >= valleys[i - 1]);
+    }
+
     var climbs = std.ArrayList(ClimbStats){};
     defer climbs.deinit(allocator);
 
@@ -48,7 +56,7 @@ pub fn detectClimbs(
     var min_valley_start: usize = 0;
 
     for (peaks) |peak_idx| {
-        if (peak_idx >= points.len or peak_idx >= cumulative_distances.len) continue;
+        std.debug.assert(peak_idx < points.len);
 
         // Advance past all valleys that are still before this peak
         while (valley_cursor + 1 < valleys.len and valleys[valley_cursor + 1] < peak_idx) {
@@ -172,7 +180,7 @@ test "detectClimbs: valley is not at previous peak" {
     try std.testing.expectApproxEqAbs(400.0, climbs[1].summitElev, 0.1);
 }
 
-test "detectClimbs: out of bounds peak index is skipped" {
+test "detectClimbs: empty peaks with valid points yields no climbs" {
     const allocator = std.testing.allocator;
 
     const points = [_][3]f64{
@@ -180,9 +188,8 @@ test "detectClimbs: out of bounds peak index is skipped" {
         [3]f64{ 0.0, 0.1, 200.0 },
     };
     const dists = [_]f64{ 0.0, 1000.0 };
-    const peaks = [_]usize{99}; // out of bounds
 
-    const climbs = try detectClimbs(allocator, peaks[0..], &.{}, points[0..], dists[0..]);
+    const climbs = try detectClimbs(allocator, &.{}, &.{}, points[0..], dists[0..]);
     defer allocator.free(climbs);
     try std.testing.expectEqual(@as(usize, 0), climbs.len);
 }

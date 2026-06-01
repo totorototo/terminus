@@ -4,13 +4,17 @@ const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
 const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 const distance = @import("gpspoint.zig").distance;
-const distance3D = @import("gpspoint.zig").distance3D;
 const elevationDeltaSigned = @import("gpspoint.zig").elevationDeltaSigned;
 const findPeaks = @import("extrema.zig").findPeaks;
 const findValleys = @import("extrema.zig").findValleys;
 const detectClimbs = @import("climbs.zig").detectClimbs;
 pub const ClimbStats = @import("climbs.zig").ClimbStats;
 const douglasPeuckerSimplify = @import("simplify.zig").douglasPeuckerSimplify;
+const elevation = @import("elevation.zig");
+
+fn pointsEqual(a: [3]f64, b: [3]f64) bool {
+    return a[0] == b[0] and a[1] == b[1] and a[2] == b[2];
+}
 
 // Structure to return both the closest point and its index
 pub const ClosestPointResult = struct {
@@ -78,32 +82,46 @@ pub const Trace = struct {
 
         // Initialize arrays
         cumulativeDistances[0] = 0.0;
-        cumulativeElevations[0] = 0.0;
-        cumulativeElevationLoss[0] = 0.0;
         slopes[0] = 0.0;
 
         var cum_dist: f64 = 0.0;
-        var cum_elev: f64 = 0.0;
-        var cum_elev_loss: f64 = 0.0;
 
-        // First pass: calculate cumulative values
+        // First pass: cumulative distance + f32 elevation series for peak detection
         for (0..final_points.len) |i| {
             elevations[i] = @floatCast(final_points[i][2]);
 
             if (i > 0) {
-                const d = distance3D(final_points[i - 1], final_points[i]);
+                const d = distance(final_points[i - 1], final_points[i]);
                 cum_dist += d;
                 cumulativeDistances[i] = cum_dist;
+            }
+        }
 
-                const elev_delta = final_points[i][2] - final_points[i - 1][2];
+        // Denoised elevation gain/loss from the full-resolution raw signal:
+        // a distance-windowed median rejects spikes and the hysteresis deadband
+        // rejects low-amplitude jitter, so D+/D- is neither inflated by GPS noise
+        // nor under-reported by 2D simplification.
+        var gain_loss = try elevation.computeGainLoss(
+            allocator,
+            coordinates,
+            elevation.ELEV_MEDIAN_RADIUS_M,
+            elevation.ELEV_NOISE_THRESHOLD_M,
+        );
+        defer gain_loss.deinit(allocator);
 
-                if (elev_delta > 0) {
-                    cum_elev += elev_delta;
-                } else if (elev_delta < 0) {
-                    cum_elev_loss += -elev_delta;
-                }
-                cumulativeElevations[i] = cum_elev;
-                cumulativeElevationLoss[i] = cum_elev_loss;
+        // Map each (possibly simplified) trace point back to its raw index so the
+        // per-point cumulative arrays stay aligned with `final_points` while
+        // reflecting the denoised totals. Douglas-Peucker preserves original point
+        // values verbatim, so exact equality identifies the source sample.
+        {
+            var k: usize = 0;
+            for (final_points, 0..) |fp, fi| {
+                while (k < coordinates.len and !pointsEqual(coordinates[k], fp)) k += 1;
+                std.debug.assert(k < coordinates.len);
+                const src = @min(k, coordinates.len - 1);
+                cumulativeElevations[fi] = gain_loss.cumGain[src];
+                cumulativeElevationLoss[fi] = gain_loss.cumLoss[src];
+                k = src + 1;
             }
         }
 
@@ -171,8 +189,8 @@ pub const Trace = struct {
             .valleys = valleys,
             .climbs = climbs,
             .totalDistance = cum_dist,
-            .totalElevation = cum_elev,
-            .totalElevationLoss = cum_elev_loss,
+            .totalElevation = gain_loss.totalGain,
+            .totalElevationLoss = gain_loss.totalLoss,
         };
     }
 
