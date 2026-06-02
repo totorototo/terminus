@@ -7,6 +7,7 @@ import { createGPSSlice } from "./slices/gps";
 import { createGpxSlice } from "./slices/gpx";
 import { createLegsSlice } from "./slices/legs";
 import { createSectionsSlice } from "./slices/sections";
+import { createSettingsSlice } from "./slices/settings";
 import { createStagesSlice } from "./slices/stages";
 import { createStatsSlice } from "./slices/stats";
 import { createWayPointsSlice } from "./slices/wayPoints";
@@ -25,6 +26,7 @@ const useStore = create(
         ...createLegsSlice(...a),
         ...createSectionsSlice(...a),
         ...createStagesSlice(...a),
+        ...createSettingsSlice(...a),
         ...createGPSSlice(...a),
         ...createWeatherSlice(...a),
       })),
@@ -35,6 +37,10 @@ const useStore = create(
           ...persistedState,
           app: { ...currentState.app, ...(persistedState.app ?? {}) },
           gps: { ...currentState.gps, ...(persistedState.gps ?? {}) },
+          settings: {
+            ...currentState.settings,
+            ...(persistedState.settings ?? {}),
+          },
         }),
         partialize: (state) => ({
           app: {
@@ -54,6 +60,10 @@ const useStore = create(
             location: state.gps.location,
             projectedLocation: state.gps.projectedLocation,
             savedLocations: state.gps.savedLocations,
+          },
+          settings: {
+            basePace: state.settings.basePace,
+            kFatigue: state.settings.kFatigue,
           },
         }),
         onRehydrateStorage: () => (state) => {
@@ -89,6 +99,7 @@ export const useAppState = () => useStore((state) => state.app);
 export const useGpxData = () => useStore((state) => state.gpx);
 export const useStats = () => useStore((state) => state.stats);
 export const useWorkerState = () => useStore((state) => state.worker);
+export const useSettings = () => useStore((state) => state.settings);
 
 // Specific selectors for common use cases
 export const useTrackingMode = () =>

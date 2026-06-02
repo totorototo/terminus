@@ -32,9 +32,32 @@ pub const SectionStats = struct {
     maxCompletionTime: ?i64, // seconds allowed (endTime - startTime), null if absent
 };
 
+/// Compute section statistics using the default base pace and fatigue coefficient
+/// (see zig/minetti.zig). Thin wrapper kept for callers/tests that don't supply
+/// runner-specific values.
+pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint) !?[]SectionStats {
+    return computeFromWaypointsWithPace(
+        trace,
+        allocator,
+        waypoints,
+        minetti.DEFAULT_BASE_PACE_S_PER_KM,
+        minetti.K_FATIGUE,
+    );
+}
+
 /// Compute section statistics between consecutive section-boundary waypoints
 /// (Start/TimeBarrier/LifeBase/Arrival). Returns null when fewer than 2 section boundaries.
-pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint) !?[]SectionStats {
+///
+/// `base_pace_s_per_km` is the runner's flat-terrain reference pace (seconds per km) and
+/// `k_fatigue` is the fatigue coefficient (added per 1 000 m of effort-weighted distance).
+/// See zig/minetti.zig for the defaults used when no user value is supplied.
+pub fn computeFromWaypointsWithPace(
+    trace: *const Trace,
+    allocator: std.mem.Allocator,
+    waypoints: []const Waypoint,
+    base_pace_s_per_km: f64,
+    k_fatigue: f64,
+) !?[]SectionStats {
     // Collect section-boundary waypoints (those with a non-null wptType)
     var section_wpts = std.ArrayList(Waypoint){};
     defer section_wpts.deinit(allocator);
@@ -112,8 +135,8 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
             const slope_frac = trace.slopes[j] / 100.0;
             const seg_dist = trace.cumulativeDistances[j + 1] - trace.cumulativeDistances[j];
             const pf = minetti.paceFactor(slope_frac);
-            const fatigue_factor = 1.0 + minetti.K_FATIGUE * (d_eff / 1000.0);
-            total_time += (seg_dist / 1000.0) * minetti.DEFAULT_BASE_PACE_S_PER_KM * pf * fatigue_factor;
+            const fatigue_factor = 1.0 + k_fatigue * (d_eff / 1000.0);
+            total_time += (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor;
             total_weighted_dist += seg_dist * pf;
             d_eff += seg_dist * pf;
         }
@@ -205,8 +228,8 @@ test "computeSectionsFromWaypoints: basic two-boundary section" {
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
-        .{ .lat = 0.003, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "TB1", .wptType = "TimeBarrier", .time = null },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
@@ -234,11 +257,11 @@ test "computeSectionsFromWaypoints: plain (untyped) waypoints are ignored" {
 
     // 3 section boundaries with plain waypoints interspersed
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",  .wptType = "Start",       .time = null },
-        .{ .lat = 0.001, .lon = 0.0, .name = "Plain1", .wptType = null,           .time = null },
-        .{ .lat = 0.002, .lon = 0.0, .name = "TB1",    .wptType = "TimeBarrier", .time = null },
-        .{ .lat = 0.003, .lon = 0.0, .name = "Plain2", .wptType = null,           .time = null },
-        .{ .lat = 0.005, .lon = 0.0, .name = "End",    .wptType = "Arrival",     .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.001, .lon = 0.0, .name = "Plain1", .wptType = null, .time = null },
+        .{ .lat = 0.002, .lon = 0.0, .name = "TB1", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "Plain2", .wptType = null, .time = null },
+        .{ .lat = 0.005, .lon = 0.0, .name = "End", .wptType = "Arrival", .time = null },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
@@ -264,11 +287,11 @@ test "computeSectionsFromWaypoints: stageIdx increments at LifeBase boundary" {
     // Stage 0: Start→TB1, TB1→LifeBase  (sections 0 and 1)
     // Stage 1: LifeBase→TB2, TB2→Arrival (sections 2 and 3)
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
-        .{ .lat = 0.003, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
-        .{ .lat = 0.006, .lon = 0.0, .name = "LB1",     .wptType = "LifeBase",    .time = null },
-        .{ .lat = 0.009, .lon = 0.0, .name = "TB2",     .wptType = "TimeBarrier", .time = null },
-        .{ .lat = 0.011, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "TB1", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.006, .lon = 0.0, .name = "LB1", .wptType = "LifeBase", .time = null },
+        .{ .lat = 0.009, .lon = 0.0, .name = "TB2", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.011, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
@@ -296,8 +319,8 @@ test "computeSectionsFromWaypoints: maxCompletionTime computed from timestamps" 
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",       .time = 1_000_000 },
-        .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_007_200 },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = 1_000_000 },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .wptType = "TimeBarrier", .time = 1_007_200 },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
@@ -322,8 +345,8 @@ test "computeSectionsFromWaypoints: maxCompletionTime is null without timestamps
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",   .time = null },
-        .{ .lat = 0.002, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.002, .lon = 0.0, .name = "End", .wptType = "Arrival", .time = null },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints);
@@ -333,4 +356,36 @@ test "computeSectionsFromWaypoints: maxCompletionTime is null without timestamps
     try std.testing.expectEqual(@as(?i64, null), sections.?[0].maxCompletionTime);
     try std.testing.expectEqual(@as(?i64, null), sections.?[0].startTime);
     try std.testing.expectEqual(@as(?i64, null), sections.?[0].endTime);
+}
+
+test "computeFromWaypointsWithPace: slower base pace and higher fatigue increase estimatedDuration" {
+    const allocator = std.testing.allocator;
+    var points = try allocator.alloc([3]f64, 12);
+    defer allocator.free(points);
+    for (0..12) |i| {
+        const t = @as(f64, @floatFromInt(i)) * 0.001;
+        points[i] = [3]f64{ t, 0.0, 100.0 + t * 500.0 };
+    }
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.011, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
+    };
+
+    const fast = try computeFromWaypointsWithPace(&trace, allocator, &waypoints, 300.0, 0.0);
+    defer if (fast) |s| allocator.free(s);
+    const slow = try computeFromWaypointsWithPace(&trace, allocator, &waypoints, 600.0, 0.0);
+    defer if (slow) |s| allocator.free(s);
+    const fatigued = try computeFromWaypointsWithPace(&trace, allocator, &waypoints, 600.0, 0.02);
+    defer if (fatigued) |s| allocator.free(s);
+
+    try std.testing.expect(fast != null and slow != null and fatigued != null);
+    // Doubling the base pace roughly doubles the estimate.
+    try std.testing.expect(slow.?[0].estimatedDuration > fast.?[0].estimatedDuration);
+    // Adding fatigue on top of the same base pace makes it longer still.
+    try std.testing.expect(fatigued.?[0].estimatedDuration > slow.?[0].estimatedDuration);
+    // The pace factor (slope-only) is independent of base pace / fatigue.
+    try std.testing.expectApproxEqAbs(fast.?[0].paceFactor, slow.?[0].paceFactor, 1e-9);
 }

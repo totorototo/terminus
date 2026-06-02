@@ -24,6 +24,7 @@ describe("useGPXWorker", () => {
       setSections: vi.fn(),
       setLegs: vi.fn(),
       flush: vi.fn(),
+      settings: { basePace: 530, kFatigue: 0.0035 },
     };
     useStore.mockImplementation((selector) => selector(mockStore));
     vi.stubGlobal("fetch", vi.fn());

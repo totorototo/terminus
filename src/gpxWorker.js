@@ -2,9 +2,10 @@
 // This runs GPS computations off the main thread to prevent UI freezing
 // All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
 
-import { readGPXComplete } from "../zig/gpx.zig";
+import { readGPXCompleteWithPace } from "../zig/gpx.zig";
 import { generateAudioFrames } from "../zig/soundscape.zig";
 import { __zigar, Trace } from "../zig/trace.zig";
+import { DEFAULT_BASE_PACE_S_PER_KM, DEFAULT_K_FATIGUE } from "./constants.js";
 
 // Initialize Zig/WASM in worker context
 let isInitialized = false;
@@ -107,7 +108,19 @@ self.onmessage = async function (e) {
 
 async function processGPXFile(gpxFileBytes, requestId) {
   markStart("processGPXFile");
-  const gpxData = await readGPXComplete(gpxFileBytes.gpxBytes);
+  const basePace =
+    typeof gpxFileBytes.basePace === "number"
+      ? gpxFileBytes.basePace
+      : DEFAULT_BASE_PACE_S_PER_KM;
+  const kFatigue =
+    typeof gpxFileBytes.kFatigue === "number"
+      ? gpxFileBytes.kFatigue
+      : DEFAULT_K_FATIGUE;
+  const gpxData = await readGPXCompleteWithPace(
+    gpxFileBytes.gpxBytes,
+    basePace,
+    kFatigue,
+  );
 
   // Convert Zigar proxy objects to plain JS before sending
   // Note: Zig string fields ([]const u8) need .string property to convert to JS strings

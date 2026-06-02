@@ -149,8 +149,8 @@ describe("store", () => {
       const { partialize } = useStore.persist.getOptions();
       const persisted = partialize(useStore.getState());
 
-      // Only app and gps should be present
-      expect(Object.keys(persisted).sort()).toEqual(["app", "gps"]);
+      // Only app, gps and settings should be present
+      expect(Object.keys(persisted).sort()).toEqual(["app", "gps", "settings"]);
     });
 
     it("partialize app contains exactly the expected fields", () => {
@@ -180,6 +180,15 @@ describe("store", () => {
 
       expect(Object.keys(gps).sort()).toEqual(
         ["location", "projectedLocation", "savedLocations"].sort(),
+      );
+    });
+
+    it("partialize settings contains exactly the expected fields", () => {
+      const { partialize } = useStore.persist.getOptions();
+      const { settings } = partialize(useStore.getState());
+
+      expect(Object.keys(settings).sort()).toEqual(
+        ["basePace", "kFatigue"].sort(),
       );
     });
 

@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // vi.mock calls are hoisted above all imports by Vitest
-vi.mock("../zig/gpx.zig", () => ({ readGPXComplete: vi.fn() }));
+vi.mock("../zig/gpx.zig", () => ({ readGPXCompleteWithPace: vi.fn() }));
 vi.mock("../zig/trace.zig", () => ({
   __zigar: { init: vi.fn().mockResolvedValue(undefined) },
   Trace: { init: vi.fn() },
 }));
 vi.mock("../zig/soundscape.zig", () => ({ generateAudioFrames: vi.fn() }));
 
-import { readGPXComplete } from "../zig/gpx.zig";
+import { readGPXCompleteWithPace as readGPXComplete } from "../zig/gpx.zig";
 import { generateAudioFrames } from "../zig/soundscape.zig";
 import { Trace } from "../zig/trace.zig";
 

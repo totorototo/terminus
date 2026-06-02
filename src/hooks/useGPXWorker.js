@@ -14,6 +14,8 @@ export function useGPXWorker(raceId) {
     setSections,
     setLegs,
     flush,
+    basePace,
+    kFatigue,
   } = useStore(
     useShallow((state) => ({
       initGPXWorker: state.initGPXWorker,
@@ -23,6 +25,8 @@ export function useGPXWorker(raceId) {
       setSections: state.setSections,
       setLegs: state.setLegs,
       flush: state.flush,
+      basePace: state.settings.basePace,
+      kFatigue: state.settings.kFatigue,
     })),
   );
 
@@ -67,7 +71,16 @@ export function useGPXWorker(raceId) {
     });
 
     return () => controller.abort();
-  }, [isWorkerReady, raceId, processGPXFile, setSections, setLegs, flush]);
+  }, [
+    isWorkerReady,
+    raceId,
+    processGPXFile,
+    setSections,
+    setLegs,
+    flush,
+    basePace,
+    kFatigue,
+  ]);
 
   return { isWorkerReady };
 }

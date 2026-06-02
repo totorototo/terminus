@@ -55,6 +55,10 @@ describe("Worker Slice", () => {
       sections: [],
       stages: [],
       waypoints: [],
+      settings: {
+        basePace: 530,
+        kFatigue: 0.0035,
+      },
       gps: {
         location: { timestamp: 0, coords: [] },
         projectedLocation: { timestamp: 0, coords: [], index: null },

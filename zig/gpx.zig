@@ -10,6 +10,7 @@ const section_mod = @import("section.zig");
 const SectionStats = section_mod.SectionStats;
 const stage_mod = @import("stage.zig");
 const StageStats = stage_mod.StageStats;
+const minetti = @import("minetti.zig");
 const parseIso8601ToEpoch = @import("time.zig").parseIso8601ToEpoch;
 
 pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
@@ -206,7 +207,27 @@ pub fn readMetadata(allocator: std.mem.Allocator, bytes: []const u8) !Metadata {
     return metadata;
 }
 
+/// Parse a complete GPX document using the default base pace and fatigue coefficient
+/// (see zig/minetti.zig). Thin wrapper kept for callers/tests that don't supply
+/// runner-specific values.
 pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData {
+    return readGPXCompleteWithPace(
+        allocator,
+        bytes,
+        minetti.DEFAULT_BASE_PACE_S_PER_KM,
+        minetti.K_FATIGUE,
+    );
+}
+
+/// Parse a complete GPX document, using a runner-specific flat-terrain base pace
+/// (`base_pace_s_per_km`, seconds per km) and fatigue coefficient (`k_fatigue`,
+/// added per 1 000 m of effort-weighted distance) for section/stage estimates.
+pub fn readGPXCompleteWithPace(
+    allocator: std.mem.Allocator,
+    bytes: []const u8,
+    base_pace_s_per_km: f64,
+    k_fatigue: f64,
+) !GPXData {
     var metadata = try readMetadata(allocator, bytes);
     errdefer metadata.deinit(allocator);
 
@@ -233,11 +254,11 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8) !GPXData
     errdefer if (legs) |l| allocator.free(l);
 
     // Sections: computed between consecutive section-boundary waypoints (Start/TimeBarrier/LifeBase/Arrival)
-    const sections: ?[]const SectionStats = try section_mod.computeFromWaypoints(&trace, allocator, waypoints);
+    const sections: ?[]const SectionStats = try section_mod.computeFromWaypointsWithPace(&trace, allocator, waypoints, base_pace_s_per_km, k_fatigue);
     errdefer if (sections) |s| allocator.free(s);
 
     // Stages: computed between consecutive stage-boundary waypoints (Start/LifeBase/Arrival)
-    const stages: ?[]const StageStats = try stage_mod.computeFromWaypoints(&trace, allocator, waypoints);
+    const stages: ?[]const StageStats = try stage_mod.computeFromWaypointsWithPace(&trace, allocator, waypoints, base_pace_s_per_km, k_fatigue);
     errdefer if (stages) |st| allocator.free(st);
 
     return GPXData{
@@ -564,7 +585,6 @@ test "readTracePoints with scientific notation" {
     try testing.expectApproxEqAbs(100.0, points[0][2], 0.01);
 }
 
-
 test "readWaypoints parses waypoints correctly" {
     const allocator = testing.allocator;
     const sample_gpx =
@@ -661,7 +681,6 @@ test "readGPXComplete parses both tracks and waypoints" {
     try testing.expectEqualStrings("Checkpoint 10km", gpx_data.waypoints[0].name);
     try testing.expectEqualStrings("Checkpoint 20km", gpx_data.waypoints[1].name);
 }
-
 
 test "readGPXComplete: legs null when no waypoints" {
     const allocator = testing.allocator;

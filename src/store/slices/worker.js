@@ -259,9 +259,11 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
         }
 
+        const { basePace, kFatigue } = get().settings;
+
         const results = await messenger.send(
           "PROCESS_GPX_FILE",
-          { gpxBytes },
+          { gpxBytes, basePace, kFatigue },
           onProgress,
         );
 
