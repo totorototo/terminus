@@ -12,10 +12,10 @@ import style from "./PaceSettings.style.js";
  * sees and selects.
  */
 export const PACE_OPTIONS = [
-  { label: "Slow", value: 660 },
-  { label: "Moderate", value: 560 },
-  { label: "Quite fast", value: 460 },
-  { label: "Fast", value: 360 },
+  { label: "Slow", value: 600 },
+  { label: "Moderate", value: 500 },
+  { label: "Quite fast", value: 400 },
+  { label: "Fast", value: 300 },
 ];
 
 /**
@@ -43,7 +43,7 @@ const PaceSettings = memo(function PaceSettings({ className }) {
     useStore(
       useShallow((state) => ({
         paceSettings: state.app?.paceSettings ?? {
-          basePaceSPerKm: 560,
+          basePaceSPerKm: 500,
           kFatigue: 0.002,
         },
         setPaceSettings: state.setPaceSettings ?? (() => {}),
