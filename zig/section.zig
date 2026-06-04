@@ -68,6 +68,12 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
     // reflect the physiological cost of prior effort.
     var d_eff: f64 = 0.0;
 
+    // Running clock (Unix epoch seconds) for the circadian model.
+    // Seeded from the race start waypoint's time if present; null otherwise.
+    // Advanced per-segment by estimated travel time so that night sections
+    // are penalised even when the actual waypoint cutoffs aren't used.
+    var clock_s: ?i64 = section_wpts.items[0].time;
+
     for (0..num_sections) |i| {
         if (section_wpts.items[i].isStageBoundary()) {
             if (stage_active) {
@@ -115,7 +121,10 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
             const seg_dist = trace.cumulativeDistances[j + 1] - trace.cumulativeDistances[j];
             const pf = minetti.paceFactor(slope_frac);
             const fatigue_factor = minetti.fatigueFactor(d_eff / 1000.0, k_fatigue);
-            total_time += (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor;
+            const circadian = if (clock_s) |t| minetti.circadianFactor(t) else 1.0;
+            const seg_time = (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor * circadian;
+            total_time += seg_time;
+            if (clock_s) |*t| t.* += @intFromFloat(seg_time);
             total_weighted_dist += seg_dist * pf;
             d_eff += seg_dist * pf;
         }
@@ -383,4 +392,39 @@ test "computeSectionsFromWaypoints: LifeBase recovery reduces fatigue in subsequ
     );
     // Second section is faster with LifeBase recovery
     try std.testing.expect(sections_lb.?[1].estimatedDuration < sections_tb.?[1].estimatedDuration);
+}
+
+test "computeSectionsFromWaypoints: circadian penalty slows night sections" {
+    // Same single-section route run twice: once starting at noon UTC, once at 3:30 UTC.
+    // The night run should have a longer estimated duration.
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 100.0 },
+        [3]f64{ 0.002, 0.0, 100.0 },
+        [3]f64{ 0.003, 0.0, 100.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const noon_utc: i64 = 12 * 3600;
+    const night_utc: i64 = 3 * 3600 + 30 * 60; // 03:30 UTC — circadian peak
+
+    const wpts_day = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",   .time = noon_utc },
+        .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
+    };
+    const wpts_night = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",   .time = night_utc },
+        .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
+    };
+
+    const s_day = try computeFromWaypoints(&trace, allocator, &wpts_day, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    defer if (s_day) |s| allocator.free(s);
+    const s_night = try computeFromWaypoints(&trace, allocator, &wpts_night, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    defer if (s_night) |s| allocator.free(s);
+
+    try std.testing.expect(s_day != null);
+    try std.testing.expect(s_night != null);
+    try std.testing.expect(s_night.?[0].estimatedDuration > s_day.?[0].estimatedDuration);
 }

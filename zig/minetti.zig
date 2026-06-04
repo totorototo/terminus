@@ -56,6 +56,27 @@ pub fn fatigueFactor(d_eff_km: f64, k: f64) f64 {
 /// 0.20 = 20% of d_eff is shed — reflects mandatory rest and resupply at major checkpoints.
 pub const RECOVERY_LIFE_BASE: f64 = 0.20;
 
+/// Circadian rhythm slowdown factor based on UTC time-of-day.
+/// unix_time_s: estimated Unix epoch (seconds) at a point in the race.
+/// Returns a pace multiplier >= 1.0:
+///   - 1.0 during daylight hours
+///   - up to 1.15 around 3-4h UTC (peak sleep-deprivation window)
+/// Model: smooth half-cosine bump centered at 3.5h UTC, +/-2h window.
+/// Note: GPX timestamps are UTC, so the window is UTC-based.
+/// Racers in UTC+2 experience the peak roughly at 5-6h local time.
+pub fn circadianFactor(unix_time_s: i64) f64 {
+    const hours_utc = @mod(@as(f64, @floatFromInt(unix_time_s)) / 3600.0, 24.0);
+    const center: f64 = 3.5;
+    const half_width: f64 = 2.0;
+    const diff = hours_utc - center;
+    if (@abs(diff) < half_width) {
+        const t = diff / half_width; // normalised to [-1, 1]
+        const bump = 0.5 * (1.0 + @cos(std.math.pi * t)); // cosine: 1 at centre, 0 at edges
+        return 1.0 + 0.15 * bump;
+    }
+    return 1.0;
+}
+
 /// Default flat-terrain pace used when no user pace is provided.
 /// 530 s/km = 8:50/km — calibrated for ultra-trail (VMA ~14-15 km/h, races ≥ 100km).
 pub const DEFAULT_BASE_PACE_S_PER_KM: f64 = 530.0;
@@ -121,4 +142,37 @@ test "fatigueFactor: ultra finish ≈ 2.27 at 234km effort" {
 test "RECOVERY_LIFE_BASE: is between 0 and 1" {
     try std.testing.expect(RECOVERY_LIFE_BASE > 0.0);
     try std.testing.expect(RECOVERY_LIFE_BASE < 1.0);
+}
+
+test "circadianFactor: noon UTC returns 1.0 (no penalty)" {
+    const noon_utc: i64 = 12 * 3600; // 12:00 UTC on day 0
+    try std.testing.expectApproxEqAbs(1.0, circadianFactor(noon_utc), 1e-9);
+}
+
+test "circadianFactor: 3:30 UTC returns peak penalty (1.15)" {
+    const peak_utc: i64 = 3 * 3600 + 30 * 60; // 03:30 UTC
+    try std.testing.expectApproxEqAbs(1.15, circadianFactor(peak_utc), 1e-9);
+}
+
+test "circadianFactor: edges of window return 1.0" {
+    // 1.5h and 5.5h UTC are exactly at the window boundary
+    const edge_start: i64 = 1 * 3600 + 30 * 60; // 01:30 UTC
+    const edge_end: i64 = 5 * 3600 + 30 * 60; // 05:30 UTC
+    try std.testing.expectApproxEqAbs(1.0, circadianFactor(edge_start), 1e-6);
+    try std.testing.expectApproxEqAbs(1.0, circadianFactor(edge_end), 1e-6);
+}
+
+test "circadianFactor: multiplier is always >= 1.0" {
+    // Sweep over 24 hours in 10-minute steps
+    var t: i64 = 0;
+    while (t < 24 * 3600) : (t += 600) {
+        try std.testing.expect(circadianFactor(t) >= 1.0);
+    }
+}
+
+test "circadianFactor: wraps correctly across midnight (unix day boundary)" {
+    // Day 2 at 3:30 UTC should give the same factor as day 0 at 3:30 UTC
+    const t0: i64 = 3 * 3600 + 30 * 60;
+    const t2: i64 = 2 * 24 * 3600 + 3 * 3600 + 30 * 60;
+    try std.testing.expectApproxEqAbs(circadianFactor(t0), circadianFactor(t2), 1e-9);
 }
