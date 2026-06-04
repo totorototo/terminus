@@ -13,20 +13,22 @@ import style from "./PaceSettings.style.js";
  */
 export const PACE_OPTIONS = [
   { label: "Slow", value: 660 },
-  { label: "Moderate", value: 490 },
-  { label: "Quite fast", value: 400 },
-  { label: "Fast", value: 330 },
+  { label: "Moderate", value: 560 },
+  { label: "Quite fast", value: 460 },
+  { label: "Fast", value: 360 },
 ];
 
 /**
  * Named fatigue presets. The numeric `value` (cumulative fatigue coefficient)
  * is stored and used under the hood; the label is shown to the user.
+ * Values are calibrated for the exponential fatigue model exp(k·d_eff_km).
+ * Equal k steps give roughly equal proportional slowdown increments per preset.
  */
 export const FATIGUE_OPTIONS = [
-  { label: "Low", value: 0.002 },
-  { label: "Moderate", value: 0.004 },
-  { label: "High", value: 0.008 },
-  { label: "Very high", value: 0.014 },
+  { label: "Low", value: 0.001 },
+  { label: "Moderate", value: 0.002 },
+  { label: "High", value: 0.003 },
+  { label: "Very high", value: 0.004 },
 ];
 
 /** Pick the option whose numeric value is closest to the stored value. */
@@ -41,8 +43,8 @@ const PaceSettings = memo(function PaceSettings({ className }) {
     useStore(
       useShallow((state) => ({
         paceSettings: state.app?.paceSettings ?? {
-          basePaceSPerKm: 490,
-          kFatigue: 0.004,
+          basePaceSPerKm: 560,
+          kFatigue: 0.002,
         },
         setPaceSettings: state.setPaceSettings ?? (() => {}),
         reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),

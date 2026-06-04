@@ -16,8 +16,8 @@ export const createAppSlice = (set, get) => {
       installPromptDismissed: false,
       highlightedClimbIndex: null,
       paceSettings: {
-        basePaceSPerKm: 490, // 8:10/km — ultra-trail default
-        kFatigue: 0.004, // cumulative fatigue coefficient for 200km+ races
+        basePaceSPerKm: 560, // 9:20/km — ultra-trail default (Moderate preset)
+        kFatigue: 0.002, // cumulative fatigue coefficient (Moderate preset, exponential model)
       },
       theme:
         typeof window !== "undefined" &&

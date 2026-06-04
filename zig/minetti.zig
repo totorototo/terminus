@@ -35,12 +35,11 @@ pub fn paceFactor(slope: f64) f64 {
     return cmet(slope) / CMET_FLAT;
 }
 
-/// Fatigue coefficient for the exponential fatigue model.
-/// Calibrated for ultra-trail races (≥ 100km, 6000m+ D+):
-///   d_eff ≈ 234km on a 224km/8000D+/9000D- course
-///   fatigueFactor at finish = exp(0.0035 × 234) ≈ 2.27
-/// Use 0.012 for 50km races, 0.0035 for 200km+.
-pub const K_FATIGUE: f64 = 0.0035;
+/// Default fatigue coefficient for the exponential fatigue model.
+/// Matches the "Moderate" UI preset. On a 224km/8000D+ course (d_eff ≈ 234km):
+///   fatigueFactor at finish = exp(0.002 × 234) ≈ 1.60
+/// Preset scale: Low=0.001, Moderate=0.002, High=0.003, Very high=0.004.
+pub const K_FATIGUE: f64 = 0.002;
 
 /// Non-linear (exponential) fatigue multiplier.
 /// d_eff_km: cumulative effort-weighted distance in km.
@@ -134,9 +133,9 @@ test "fatigueFactor: grows faster than linear model" {
     try std.testing.expect(fatigueFactor(d, K_FATIGUE) > linear);
 }
 
-test "fatigueFactor: ultra finish ≈ 2.27 at 234km effort" {
-    // exp(0.0035 × 234) ≈ 2.27
-    try std.testing.expectApproxEqAbs(2.27, fatigueFactor(234.0, K_FATIGUE), 0.01);
+test "fatigueFactor: ultra finish ≈ 1.60 at 234km effort (Moderate preset)" {
+    // exp(0.002 × 234) ≈ 1.60
+    try std.testing.expectApproxEqAbs(1.60, fatigueFactor(234.0, K_FATIGUE), 0.01);
 }
 
 test "RECOVERY_LIFE_BASE: is between 0 and 1" {
