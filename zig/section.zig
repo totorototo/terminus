@@ -114,10 +114,17 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
             const slope_frac = trace.slopes[j] / 100.0;
             const seg_dist = trace.cumulativeDistances[j + 1] - trace.cumulativeDistances[j];
             const pf = minetti.paceFactor(slope_frac);
-            const fatigue_factor = 1.0 + k_fatigue * (d_eff / 1000.0);
+            const fatigue_factor = minetti.fatigueFactor(d_eff / 1000.0, k_fatigue);
             total_time += (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor;
             total_weighted_dist += seg_dist * pf;
             d_eff += seg_dist * pf;
+        }
+
+        // Partial recovery when the runner reaches a LifeBase checkpoint.
+        if (end_wpt.wptType) |t| {
+            if (std.mem.eql(u8, t, "LifeBase")) {
+                d_eff *= (1.0 - minetti.RECOVERY_LIFE_BASE);
+            }
         }
 
         const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
@@ -335,4 +342,45 @@ test "computeSectionsFromWaypoints: maxCompletionTime is null without timestamps
     try std.testing.expectEqual(@as(?i64, null), sections.?[0].maxCompletionTime);
     try std.testing.expectEqual(@as(?i64, null), sections.?[0].startTime);
     try std.testing.expectEqual(@as(?i64, null), sections.?[0].endTime);
+}
+
+test "computeSectionsFromWaypoints: LifeBase recovery reduces fatigue in subsequent section" {
+    // Two identical legs. In the LifeBase variant the midpoint is a LifeBase (recovery applied);
+    // in the TimeBarrier variant it is not. The second section should be faster with LifeBase.
+    const allocator = std.testing.allocator;
+    var points = try allocator.alloc([3]f64, 9);
+    defer allocator.free(points);
+    for (0..9) |i| {
+        points[i] = [3]f64{ @as(f64, @floatFromInt(i)) * 0.001, 0.0, 100.0 };
+    }
+
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    const wpts_lb = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
+        .{ .lat = 0.004, .lon = 0.0, .name = "LB",      .wptType = "LifeBase",    .time = null },
+        .{ .lat = 0.008, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
+    };
+    const wpts_tb = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
+        .{ .lat = 0.004, .lon = 0.0, .name = "TB",      .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.008, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
+    };
+
+    const sections_lb = try computeFromWaypoints(&trace, allocator, &wpts_lb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    defer if (sections_lb) |s| allocator.free(s);
+    const sections_tb = try computeFromWaypoints(&trace, allocator, &wpts_tb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    defer if (sections_tb) |s| allocator.free(s);
+
+    try std.testing.expect(sections_lb != null);
+    try std.testing.expect(sections_tb != null);
+    // First section is identical (same accumulated fatigue entering it)
+    try std.testing.expectApproxEqAbs(
+        sections_lb.?[0].estimatedDuration,
+        sections_tb.?[0].estimatedDuration,
+        1e-6,
+    );
+    // Second section is faster with LifeBase recovery
+    try std.testing.expect(sections_lb.?[1].estimatedDuration < sections_tb.?[1].estimatedDuration);
 }

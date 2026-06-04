@@ -35,13 +35,26 @@ pub fn paceFactor(slope: f64) f64 {
     return cmet(slope) / CMET_FLAT;
 }
 
-/// Fatigue coefficient (empirical, Minetti-extended model).
-/// Each 1 000 m of effort-weighted distance (d_eff) adds K_FATIGUE to the fatigue factor.
+/// Fatigue coefficient for the exponential fatigue model.
 /// Calibrated for ultra-trail races (≥ 100km, 6000m+ D+):
 ///   d_eff ≈ 234km on a 224km/8000D+/9000D- course
-///   fatigue_factor at finish = 1 + 0.0035 × 234 = 1.82
+///   fatigueFactor at finish = exp(0.0035 × 234) ≈ 2.27
 /// Use 0.012 for 50km races, 0.0035 for 200km+.
 pub const K_FATIGUE: f64 = 0.0035;
+
+/// Non-linear (exponential) fatigue multiplier.
+/// d_eff_km: cumulative effort-weighted distance in km.
+/// k: fatigue coefficient (K_FATIGUE).
+/// Returns a multiplier ≥ 1.0 applied to base pace.
+/// More realistic than the linear model (1 + k·d): late-race slowdown accelerates
+/// rather than growing at a constant rate.
+pub fn fatigueFactor(d_eff_km: f64, k: f64) f64 {
+    return @exp(k * d_eff_km);
+}
+
+/// Fraction of accumulated effort distance recovered when a runner reaches a LifeBase.
+/// 0.20 = 20% of d_eff is shed — reflects mandatory rest and resupply at major checkpoints.
+pub const RECOVERY_LIFE_BASE: f64 = 0.20;
 
 /// Default flat-terrain pace used when no user pace is provided.
 /// 530 s/km = 8:50/km — calibrated for ultra-trail (VMA ~14-15 km/h, races ≥ 100km).
@@ -87,4 +100,25 @@ test "paceFactor: +10% slope ≈ 1.67" {
 
 test "paceFactor: gentle descent < 1.0" {
     try std.testing.expect(paceFactor(-0.10) < 1.0);
+}
+
+test "fatigueFactor: zero effort returns 1.0" {
+    try std.testing.expectApproxEqAbs(1.0, fatigueFactor(0.0, K_FATIGUE), 1e-9);
+}
+
+test "fatigueFactor: grows faster than linear model" {
+    // At d_eff = 100km: exp(0.35) ≈ 1.419 vs linear 1.35
+    const d: f64 = 100.0;
+    const linear = 1.0 + K_FATIGUE * d;
+    try std.testing.expect(fatigueFactor(d, K_FATIGUE) > linear);
+}
+
+test "fatigueFactor: ultra finish ≈ 2.27 at 234km effort" {
+    // exp(0.0035 × 234) ≈ 2.27
+    try std.testing.expectApproxEqAbs(2.27, fatigueFactor(234.0, K_FATIGUE), 0.01);
+}
+
+test "RECOVERY_LIFE_BASE: is between 0 and 1" {
+    try std.testing.expect(RECOVERY_LIFE_BASE > 0.0);
+    try std.testing.expect(RECOVERY_LIFE_BASE < 1.0);
 }
