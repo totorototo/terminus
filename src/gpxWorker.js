@@ -107,11 +107,16 @@ self.onmessage = async function (e) {
 
 async function processGPXFile(gpxFileBytes, requestId) {
   markStart("processGPXFile");
-  const { basePaceSPerKm = 490.0, kFatigue = 0.004 } = gpxFileBytes;
+  const {
+    basePaceSPerKm = 500.0,
+    kFatigue = 0.002,
+    lifeBaseStopS = 3600,
+  } = gpxFileBytes;
   const gpxData = await readGPXComplete(
     gpxFileBytes.gpxBytes,
     basePaceSPerKm,
     kFatigue,
+    lifeBaseStopS,
   );
 
   // Convert Zigar proxy objects to plain JS before sending

@@ -18,6 +18,7 @@ export const createAppSlice = (set, get) => {
       paceSettings: {
         basePaceSPerKm: 500, // 8:20/km — ultra-trail default (Moderate preset)
         kFatigue: 0.002, // cumulative fatigue coefficient (Moderate preset, exponential model)
+        lifeBaseStopS: 3600, // planned stop at each LifeBase in seconds (1 hour default)
       },
       theme:
         typeof window !== "undefined" &&
@@ -142,7 +143,7 @@ export const createAppSlice = (set, get) => {
         "app/setHighlightedClimb",
       ),
 
-    setPaceSettings: ({ basePaceSPerKm, kFatigue }) =>
+    setPaceSettings: ({ basePaceSPerKm, kFatigue, lifeBaseStopS }) =>
       set(
         (state) => ({
           app: {
@@ -151,6 +152,8 @@ export const createAppSlice = (set, get) => {
               basePaceSPerKm:
                 basePaceSPerKm ?? state.app.paceSettings.basePaceSPerKm,
               kFatigue: kFatigue ?? state.app.paceSettings.kFatigue,
+              lifeBaseStopS:
+                lifeBaseStopS ?? state.app.paceSettings.lifeBaseStopS,
             },
           },
         }),

@@ -31,6 +31,17 @@ export const FATIGUE_OPTIONS = [
   { label: "Very high", value: 0.004 },
 ];
 
+/**
+ * Planned stop duration at each LifeBase checkpoint.
+ * The numeric `value` is seconds; the label is shown to the user.
+ */
+export const LIFE_BASE_STOP_OPTIONS = [
+  { label: "None", value: 0 },
+  { label: "30 min", value: 1800 },
+  { label: "1 hour", value: 3600 },
+  { label: "2 hours", value: 7200 },
+];
+
 /** Pick the option whose numeric value is closest to the stored value. */
 export function closestOption(options, value) {
   return options.reduce((best, opt) =>
@@ -45,6 +56,7 @@ const PaceSettings = memo(function PaceSettings({ className }) {
         paceSettings: state.app?.paceSettings ?? {
           basePaceSPerKm: 500,
           kFatigue: 0.002,
+          lifeBaseStopS: 3600,
         },
         setPaceSettings: state.setPaceSettings ?? (() => {}),
         reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
@@ -53,10 +65,14 @@ const PaceSettings = memo(function PaceSettings({ className }) {
       })),
     );
 
-  const { basePaceSPerKm, kFatigue } = paceSettings;
+  const { basePaceSPerKm, kFatigue, lifeBaseStopS } = paceSettings;
 
   const selectedPace = closestOption(PACE_OPTIONS, basePaceSPerKm);
   const selectedFatigue = closestOption(FATIGUE_OPTIONS, kFatigue);
+  const selectedStop = closestOption(
+    LIFE_BASE_STOP_OPTIONS,
+    lifeBaseStopS ?? 3600,
+  );
 
   const handlePaceChange = useCallback(
     (value) => {
@@ -69,6 +85,14 @@ const PaceSettings = memo(function PaceSettings({ className }) {
   const handleFatigueChange = useCallback(
     (value) => {
       setPaceSettings({ kFatigue: value });
+      reprocessGPXFile();
+    },
+    [setPaceSettings, reprocessGPXFile],
+  );
+
+  const handleStopChange = useCallback(
+    (value) => {
+      setPaceSettings({ lifeBaseStopS: value });
       reprocessGPXFile();
     },
     [setPaceSettings, reprocessGPXFile],
@@ -132,6 +156,35 @@ const PaceSettings = memo(function PaceSettings({ className }) {
                     : "segment"
                 }
                 onClick={() => handleFatigueChange(opt.value)}
+                disabled={isFollower}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="setting-row">
+          <div className="setting-label-row">
+            <span className="setting-name">LifeBase stop</span>
+          </div>
+          <div
+            className="segmented"
+            role="radiogroup"
+            aria-label="Planned stop duration at each LifeBase checkpoint"
+          >
+            {LIFE_BASE_STOP_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                type="button"
+                role="radio"
+                aria-checked={opt.value === selectedStop.value}
+                className={
+                  opt.value === selectedStop.value
+                    ? "segment active"
+                    : "segment"
+                }
+                onClick={() => handleStopChange(opt.value)}
                 disabled={isFollower}
               >
                 {opt.label}

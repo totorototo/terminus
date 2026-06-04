@@ -27,17 +27,18 @@ pub const SectionStats = struct {
     endTime: ?i64, // Unix epoch time in seconds
     bearing: f64, // degrees from north
     difficulty: u8, // 1–5 (Minetti pace factor vs flat: <1.1→1, <1.4→2, <1.8→3, <2.5→4, ≥2.5→5)
-    estimatedDuration: f64, // seconds (Minetti model, base pace 5:30/km with cumulative fatigue)
+    estimatedDuration: f64, // seconds — moving time + planned stop at end checkpoint
     paceFactor: f64, // average Minetti pace factor relative to flat (1.0 = flat equivalent)
     maxCompletionTime: ?i64, // seconds allowed (endTime - startTime), null if absent
     cutoffRatio: ?f64, // estimatedDuration / maxCompletionTime; null if no cutoff; >1.0 means cutoff missed
+    stopDuration: ?u32, // planned stop at the end checkpoint in seconds (from <stopDuration> in GPX), null if unset
 };
 
 /// Compute section statistics between consecutive section-boundary waypoints
 /// (Start/TimeBarrier/LifeBase/Arrival). Returns null when fewer than 2 section boundaries.
 /// base_pace_s_per_km: flat-terrain pace in seconds per km (e.g. 490 = 8:10/km).
 /// k_fatigue: cumulative fatigue coefficient (e.g. 0.004 for 200km+ ultra).
-pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint, base_pace_s_per_km: f64, k_fatigue: f64) !?[]SectionStats {
+pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint, base_pace_s_per_km: f64, k_fatigue: f64, life_base_stop_s: u32) !?[]SectionStats {
     // Collect section-boundary waypoints (those with a non-null wptType)
     var section_wpts = std.ArrayList(Waypoint){};
     defer section_wpts.deinit(allocator);
@@ -140,7 +141,14 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
         const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
 
         const avg_pf = if (dist > 0) total_weighted_dist / dist else 1.0;
-        const estimated_duration = total_time;
+        const stop_secs: f64 = blk: {
+            if (end_wpt.stopDuration) |sd| break :blk @as(f64, @floatFromInt(sd));
+            if (end_wpt.wptType) |t| {
+                if (std.mem.eql(u8, t, "LifeBase")) break :blk @as(f64, @floatFromInt(life_base_stop_s));
+            }
+            break :blk 0.0;
+        };
+        const estimated_duration = total_time + stop_secs;
         const difficulty: u8 = if (avg_pf < 1.1) 1 else if (avg_pf < 1.4) 2 else if (avg_pf < 1.8) 3 else if (avg_pf < 2.5) 4 else 5;
 
         const point_count = end_index - start_index + 1;
@@ -178,6 +186,7 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
                 if (mct <= 0) break :blk null;
                 break :blk estimated_duration / @as(f64, @floatFromInt(mct));
             },
+            .stopDuration = end_wpt.stopDuration,
         }) catch |err| return err;
     }
 
@@ -197,7 +206,7 @@ test "computeSectionsFromWaypoints: returns null with no section boundaries" {
         .{ .lat = 0.0, .lon = 0.0, .name = "A", .time = null },
         .{ .lat = 0.001, .lon = 0.0, .name = "B", .time = null },
     };
-    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     try std.testing.expect(result == null);
 }
 
@@ -214,7 +223,7 @@ test "computeSectionsFromWaypoints: returns null with only one section boundary"
         .{ .lat = 0.0, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
         .{ .lat = 0.001, .lon = 0.0, .name = "Plain", .time = null },
     };
-    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     try std.testing.expect(result == null);
 }
 
@@ -234,7 +243,7 @@ test "computeSectionsFromWaypoints: basic two-boundary section" {
         .{ .lat = 0.003, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -266,7 +275,7 @@ test "computeSectionsFromWaypoints: plain (untyped) waypoints are ignored" {
         .{ .lat = 0.005, .lon = 0.0, .name = "End",    .wptType = "Arrival",     .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer if (sections) |s| allocator.free(s);
 
     // 2 sections: Start→TB1 and TB1→Arrival; plain waypoints are skipped
@@ -296,7 +305,7 @@ test "computeSectionsFromWaypoints: stageIdx increments at LifeBase boundary" {
         .{ .lat = 0.011, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -325,7 +334,7 @@ test "computeSectionsFromWaypoints: maxCompletionTime computed from timestamps" 
         .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_007_200 },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -351,7 +360,7 @@ test "computeSectionsFromWaypoints: maxCompletionTime is null without timestamps
         .{ .lat = 0.002, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -378,7 +387,7 @@ test "computeSectionsFromWaypoints: cutoffRatio is estimatedDuration / maxComple
         .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_000_000 + 36_000 },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -418,14 +427,15 @@ test "computeSectionsFromWaypoints: LifeBase recovery reduces fatigue in subsequ
         .{ .lat = 0.008, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
     };
 
-    const sections_lb = try computeFromWaypoints(&trace, allocator, &wpts_lb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    // Pass 0 for life_base_stop_s: this test is about fatigue recovery, not stop time.
+    const sections_lb = try computeFromWaypoints(&trace, allocator, &wpts_lb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0);
     defer if (sections_lb) |s| allocator.free(s);
-    const sections_tb = try computeFromWaypoints(&trace, allocator, &wpts_tb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const sections_tb = try computeFromWaypoints(&trace, allocator, &wpts_tb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0);
     defer if (sections_tb) |s| allocator.free(s);
 
     try std.testing.expect(sections_lb != null);
     try std.testing.expect(sections_tb != null);
-    // First section is identical (same accumulated fatigue entering it)
+    // First section is identical (same accumulated fatigue entering it, no stop time)
     try std.testing.expectApproxEqAbs(
         sections_lb.?[0].estimatedDuration,
         sections_tb.?[0].estimatedDuration,
@@ -460,12 +470,51 @@ test "computeSectionsFromWaypoints: circadian penalty slows night sections" {
         .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
 
-    const s_day = try computeFromWaypoints(&trace, allocator, &wpts_day, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const s_day = try computeFromWaypoints(&trace, allocator, &wpts_day, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer if (s_day) |s| allocator.free(s);
-    const s_night = try computeFromWaypoints(&trace, allocator, &wpts_night, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    const s_night = try computeFromWaypoints(&trace, allocator, &wpts_night, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer if (s_night) |s| allocator.free(s);
 
     try std.testing.expect(s_day != null);
     try std.testing.expect(s_night != null);
     try std.testing.expect(s_night.?[0].estimatedDuration > s_day.?[0].estimatedDuration);
+}
+
+test "computeSectionsFromWaypoints: stopDuration is added to estimatedDuration" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 100.0 },
+        [3]f64{ 0.002, 0.0, 100.0 },
+        [3]f64{ 0.003, 0.0, 100.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const stop_secs: u32 = 3600; // 1 hour stop
+    const wpts_stop = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",    .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "LB",    .wptType = "LifeBase", .time = null, .stopDuration = stop_secs },
+    };
+    const wpts_no_stop = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",    .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "LB",    .wptType = "LifeBase", .time = null },
+    };
+
+    // Explicit stopDuration overrides the default; pass 0 as default for the no-stop baseline.
+    const s_stop = try computeFromWaypoints(&trace, allocator, &wpts_stop, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0);
+    defer if (s_stop) |s| allocator.free(s);
+    const s_no = try computeFromWaypoints(&trace, allocator, &wpts_no_stop, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0);
+    defer if (s_no) |s| allocator.free(s);
+
+    try std.testing.expect(s_stop != null);
+    try std.testing.expect(s_no != null);
+    // wpts_stop has explicit stopDuration=3600; wpts_no_stop has none and default=0
+    try std.testing.expectApproxEqAbs(
+        s_no.?[0].estimatedDuration + @as(f64, @floatFromInt(stop_secs)),
+        s_stop.?[0].estimatedDuration,
+        1e-6,
+    );
+    try std.testing.expectEqual(@as(?u32, stop_secs), s_stop.?[0].stopDuration);
+    try std.testing.expectEqual(@as(?u32, null), s_no.?[0].stopDuration);
 }

@@ -55,6 +55,10 @@ pub fn fatigueFactor(d_eff_km: f64, k: f64) f64 {
 /// 0.20 = 20% of d_eff is shed — reflects mandatory rest and resupply at major checkpoints.
 pub const RECOVERY_LIFE_BASE: f64 = 0.20;
 
+/// Default planned stop time at a LifeBase in seconds.
+/// Used when no per-waypoint <stopDuration> is set in the GPX and no UI override is provided.
+pub const DEFAULT_LIFE_BASE_STOP_S: u32 = 3600; // 1 hour
+
 /// Circadian rhythm slowdown factor based on UTC time-of-day.
 /// unix_time_s: estimated Unix epoch (seconds) at a point in the race.
 /// Returns a pace multiplier >= 1.0:

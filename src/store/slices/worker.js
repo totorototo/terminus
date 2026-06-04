@@ -261,11 +261,14 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         }
 
         rawGpxBytes = gpxBytes;
-        const { basePaceSPerKm = 490, kFatigue = 0.004 } =
-          get().app?.paceSettings ?? {};
+        const {
+          basePaceSPerKm = 500,
+          kFatigue = 0.002,
+          lifeBaseStopS = 3600,
+        } = get().app?.paceSettings ?? {};
         const results = await messenger.send(
           "PROCESS_GPX_FILE",
-          { gpxBytes, basePaceSPerKm, kFatigue },
+          { gpxBytes, basePaceSPerKm, kFatigue, lifeBaseStopS },
           onProgress,
         );
 

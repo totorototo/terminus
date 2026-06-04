@@ -24,6 +24,7 @@ pub const Waypoint = struct {
     sym: ?[]const u8 = null, // symbol from <sym>
     wptType: ?[]const u8 = null, // type from <type>: "Start", "TimeBarrier", "LifeBase", "Arrival", or null
     time: ?i64, // Unix epoch time in seconds (only present for typed waypoints)
+    stopDuration: ?u32 = null, // planned stop time in seconds from <stopDuration> (LifeBase only)
 
     pub fn deinit(self: *Waypoint, allocator: std.mem.Allocator) void {
         allocator.free(self.name);

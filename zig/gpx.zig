@@ -135,6 +135,11 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
         else
             null;
 
+        const stop_duration: ?u32 = if (parseTagContent(bytes, content, content_start, wpt_end, "<stopDuration>", "</stopDuration>")) |s|
+            std.fmt.parseInt(u32, s, 10) catch null
+        else
+            null;
+
         try waypoints.append(allocator, Waypoint{
             .lat = lat,
             .lon = lon,
@@ -145,6 +150,7 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
             .sym = sym,
             .wptType = wpt_type,
             .time = time_epoch,
+            .stopDuration = stop_duration,
         });
     }
 
@@ -207,7 +213,7 @@ pub fn readMetadata(allocator: std.mem.Allocator, bytes: []const u8) !Metadata {
     return metadata;
 }
 
-pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8, base_pace_s_per_km: f64, k_fatigue: f64) !GPXData {
+pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8, base_pace_s_per_km: f64, k_fatigue: f64, life_base_stop_s: u32) !GPXData {
     var metadata = try readMetadata(allocator, bytes);
     errdefer metadata.deinit(allocator);
 
@@ -234,11 +240,11 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8, base_pac
     errdefer if (legs) |l| allocator.free(l);
 
     // Sections: computed between consecutive section-boundary waypoints (Start/TimeBarrier/LifeBase/Arrival)
-    const sections: ?[]const SectionStats = try section_mod.computeFromWaypoints(&trace, allocator, waypoints, base_pace_s_per_km, k_fatigue);
+    const sections: ?[]const SectionStats = try section_mod.computeFromWaypoints(&trace, allocator, waypoints, base_pace_s_per_km, k_fatigue, life_base_stop_s);
     errdefer if (sections) |s| allocator.free(s);
 
     // Stages: computed between consecutive stage-boundary waypoints (Start/LifeBase/Arrival)
-    const stages: ?[]const StageStats = try stage_mod.computeFromWaypoints(&trace, allocator, waypoints, base_pace_s_per_km, k_fatigue);
+    const stages: ?[]const StageStats = try stage_mod.computeFromWaypoints(&trace, allocator, waypoints, base_pace_s_per_km, k_fatigue, life_base_stop_s);
     errdefer if (stages) |st| allocator.free(st);
 
     return GPXData{
@@ -269,7 +275,7 @@ test "readGPXComplete creates valid trace" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 3), gpx_data.trace.points.len);
@@ -650,7 +656,7 @@ test "readGPXComplete parses both tracks and waypoints" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 3), gpx_data.trace.points.len);
@@ -678,7 +684,7 @@ test "readGPXComplete: legs null when no waypoints" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 2), gpx_data.trace.points.len);
@@ -701,7 +707,7 @@ test "readGPXComplete: legs null when single waypoint" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 1), gpx_data.waypoints.len);
@@ -734,7 +740,7 @@ test "readGPXComplete: legs computed with multiple waypoints" {
         \\</gpx>
     ;
 
-    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    var gpx_data = try readGPXComplete(allocator, sample_gpx, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
     defer gpx_data.deinit(allocator);
 
     try testing.expectEqual(@as(usize, 11), gpx_data.trace.points.len);
@@ -932,6 +938,35 @@ test "parseTagContent: content bounded to element (does not bleed into next elem
     try testing.expectEqual(@as(usize, 2), waypoints.len);
     try testing.expect(waypoints[0].desc == null);
     try testing.expectEqualStrings("Only second has this", waypoints[1].desc.?);
+}
+
+test "readWaypoints: parses stopDuration from LifeBase waypoint" {
+    const allocator = testing.allocator;
+    const sample_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat="45.0" lon="7.0">
+        \\  <name>LB1</name>
+        \\  <type>LifeBase</type>
+        \\  <stopDuration>3600</stopDuration>
+        \\ </wpt>
+        \\ <wpt lat="45.1" lon="7.1">
+        \\  <name>TB1</name>
+        \\  <type>TimeBarrier</type>
+        \\ </wpt>
+        \\</gpx>
+    ;
+
+    const waypoints = try readWaypoints(allocator, sample_gpx);
+    defer {
+        for (waypoints) |*wpt| wpt.deinit(allocator);
+        allocator.free(waypoints);
+    }
+
+    try testing.expectEqual(@as(usize, 2), waypoints.len);
+    try testing.expect(waypoints[0].stopDuration != null);
+    try testing.expectEqual(@as(u32, 3600), waypoints[0].stopDuration.?);
+    try testing.expectEqual(@as(?u32, null), waypoints[1].stopDuration);
 }
 
 test "parseTagContent: empty tag content returns empty slice" {
