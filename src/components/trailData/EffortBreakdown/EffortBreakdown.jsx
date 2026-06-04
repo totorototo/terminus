@@ -2,6 +2,11 @@ import { memo, useMemo } from "react";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
+import {
+  closestOption,
+  FATIGUE_OPTIONS,
+  PACE_OPTIONS,
+} from "../PaceSettings/PaceSettings.jsx";
 
 import style from "./EffortBreakdown.style.js";
 
@@ -39,6 +44,15 @@ const EffortBreakdown = memo(function EffortBreakdown({ className }) {
   const sections = useStore((state) => state.sections);
   const projectedLocation = useProjectedLocation();
   const currentIndex = projectedLocation?.index ?? 0;
+
+  const basePaceSPerKm = useStore(
+    (state) => state.app?.paceSettings?.basePaceSPerKm ?? 490,
+  );
+  const kFatigue = useStore(
+    (state) => state.app?.paceSettings?.kFatigue ?? 0.004,
+  );
+  const paceLabel = closestOption(PACE_OPTIONS, basePaceSPerKm).label;
+  const fatigueLabel = closestOption(FATIGUE_OPTIONS, kFatigue).label;
 
   const { totalEstSec, rows } = useMemo(() => {
     if (!sections?.length) return { totalEstSec: 0, rows: [] };
@@ -87,6 +101,20 @@ const EffortBreakdown = memo(function EffortBreakdown({ className }) {
       <div className="eb-header">
         <span className="eb-header-label">Effort Profile</span>
         <span className="eb-total">{formatDuration(totalEstSec)} total</span>
+      </div>
+
+      <div
+        className="eb-settings"
+        title="Estimates are based on your pace & fatigue settings"
+      >
+        <div className="eb-setting">
+          <span className="eb-setting-key">Pace</span>
+          <span className="eb-setting-val">{paceLabel}</span>
+        </div>
+        <div className="eb-setting">
+          <span className="eb-setting-key">Fatigue</span>
+          <span className="eb-setting-val">{fatigueLabel}</span>
+        </div>
       </div>
 
       <div className="eb-list" role="list" tabIndex={0}>

@@ -146,6 +146,64 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.5px;
   }
 
+  .segmented {
+    display: flex;
+    gap: 0.3rem;
+    width: 100%;
+  }
+
+  .segment {
+    flex: 1;
+    padding: 0.4rem 0.25rem;
+    border: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.15,
+        )};
+    border-radius: 6px;
+    background: transparent;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.55,
+      )};
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all ${(props) => props.theme.transitions["--transition-fast"]};
+
+    &:hover:not(:disabled):not(.active) {
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.5,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
+    }
+
+    &.active {
+      border-color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      background: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.15,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
   .settings-hint {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};

@@ -6,19 +6,34 @@ import useStore from "../../../store/store.js";
 
 import style from "./PaceSettings.style.js";
 
-/** Format seconds-per-km as "mm:ss /km" */
-function formatPace(sPerKm) {
-  const m = Math.floor(sPerKm / 60);
-  const s = Math.round(sPerKm % 60);
-  return `${m}:${String(s).padStart(2, "0")} /km`;
-}
+/**
+ * Named pace presets. The numeric `value` (seconds per km on flat terrain) is
+ * what gets stored and used for ETA computation; the label is what the user
+ * sees and selects.
+ */
+export const PACE_OPTIONS = [
+  { label: "Slow", value: 660 },
+  { label: "Moderate", value: 490 },
+  { label: "Quite fast", value: 400 },
+  { label: "Fast", value: 330 },
+];
 
-/** Display k_fatigue as a named profile */
-function fatigueName(k) {
-  if (k <= 0.002) return "Sprint / 50 km";
-  if (k <= 0.006) return "Ultra / 100 km";
-  if (k <= 0.01) return "Ultra / 150 km";
-  return "Ultra / 200 km+";
+/**
+ * Named fatigue presets. The numeric `value` (cumulative fatigue coefficient)
+ * is stored and used under the hood; the label is shown to the user.
+ */
+export const FATIGUE_OPTIONS = [
+  { label: "Low", value: 0.002 },
+  { label: "Moderate", value: 0.004 },
+  { label: "High", value: 0.008 },
+  { label: "Very high", value: 0.014 },
+];
+
+/** Pick the option whose numeric value is closest to the stored value. */
+export function closestOption(options, value) {
+  return options.reduce((best, opt) =>
+    Math.abs(opt.value - value) < Math.abs(best.value - value) ? opt : best,
+  );
 }
 
 const PaceSettings = memo(function PaceSettings({ className }) {
@@ -38,9 +53,11 @@ const PaceSettings = memo(function PaceSettings({ className }) {
 
   const { basePaceSPerKm, kFatigue } = paceSettings;
 
+  const selectedPace = closestOption(PACE_OPTIONS, basePaceSPerKm);
+  const selectedFatigue = closestOption(FATIGUE_OPTIONS, kFatigue);
+
   const handlePaceChange = useCallback(
-    (e) => {
-      const value = Number(e.target.value);
+    (value) => {
       setPaceSettings({ basePaceSPerKm: value });
       reprocessGPXFile();
     },
@@ -48,8 +65,7 @@ const PaceSettings = memo(function PaceSettings({ className }) {
   );
 
   const handleFatigueChange = useCallback(
-    (e) => {
-      const value = Number(e.target.value);
+    (value) => {
       setPaceSettings({ kFatigue: value });
       reprocessGPXFile();
     },
@@ -67,46 +83,58 @@ const PaceSettings = memo(function PaceSettings({ className }) {
         <div className="setting-row">
           <div className="setting-label-row">
             <span className="setting-name">Base pace</span>
-            <span className="setting-value">{formatPace(basePaceSPerKm)}</span>
           </div>
-          <input
-            type="range"
-            className="slider"
-            min={300}
-            max={900}
-            step={5}
-            value={basePaceSPerKm}
-            onChange={handlePaceChange}
-            disabled={isFollower}
+          <div
+            className="segmented"
+            role="radiogroup"
             aria-label="Base flat-terrain pace"
-            aria-readonly={isFollower}
-          />
-          <div className="slider-bounds">
-            <span>5:00</span>
-            <span>15:00</span>
+          >
+            {PACE_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                type="button"
+                role="radio"
+                aria-checked={opt.value === selectedPace.value}
+                className={
+                  opt.value === selectedPace.value
+                    ? "segment active"
+                    : "segment"
+                }
+                onClick={() => handlePaceChange(opt.value)}
+                disabled={isFollower}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="setting-row">
           <div className="setting-label-row">
             <span className="setting-name">Fatigue</span>
-            <span className="setting-value">{fatigueName(kFatigue)}</span>
           </div>
-          <input
-            type="range"
-            className="slider"
-            min={0.001}
-            max={0.02}
-            step={0.001}
-            value={kFatigue}
-            onChange={handleFatigueChange}
-            disabled={isFollower}
+          <div
+            className="segmented"
+            role="radiogroup"
             aria-label="Cumulative fatigue coefficient"
-            aria-readonly={isFollower}
-          />
-          <div className="slider-bounds">
-            <span>Low</span>
-            <span>High</span>
+          >
+            {FATIGUE_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                type="button"
+                role="radio"
+                aria-checked={opt.value === selectedFatigue.value}
+                className={
+                  opt.value === selectedFatigue.value
+                    ? "segment active"
+                    : "segment"
+                }
+                onClick={() => handleFatigueChange(opt.value)}
+                disabled={isFollower}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 

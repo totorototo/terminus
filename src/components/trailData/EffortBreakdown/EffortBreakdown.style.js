@@ -40,6 +40,45 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.5px;
   }
 
+  .eb-settings {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .eb-setting {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    background: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.05)};
+    border: 1px solid
+      ${({ theme }) =>
+        rgba(theme.colors[theme.currentVariant]["--color-text"], 0.08)};
+  }
+
+  .eb-setting-key {
+    font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
+    font-weight: ${({ theme }) => theme.font.weights["--font-weight-bold"]};
+    color: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.4)};
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .eb-setting-val {
+    font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
+    font-weight: ${({ theme }) => theme.font.weights["--font-weight-bold"]};
+    color: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-primary"]};
+    letter-spacing: 0.5px;
+  }
+
   .eb-list {
     display: flex;
     flex-direction: column;

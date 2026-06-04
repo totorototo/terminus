@@ -27,10 +27,10 @@ const PANEL_LABELS = [
   "Stage analytics",
   "Section analytics",
   "Stage ETA",
+  "Pace settings",
   "Effort profile",
   "Pace profile",
   "Peak summary",
-  "Pace settings",
   "Trail actions",
 ];
 
@@ -250,6 +250,9 @@ const TrailData = memo(function TrailData({ className }) {
           <StageETA />
         </div>
         <div className="component-children">
+          <PaceSettings />
+        </div>
+        <div className="component-children">
           <EffortBreakdown />
         </div>
         <div className="component-children">
@@ -257,9 +260,6 @@ const TrailData = memo(function TrailData({ className }) {
         </div>
         <div className="component-children">
           <PeakSummary />
-        </div>
-        <div className="component-children">
-          <PaceSettings />
         </div>
         <div className="component-children">
           <TrailActions />
