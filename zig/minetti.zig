@@ -77,8 +77,8 @@ pub fn circadianFactor(unix_time_s: i64) f64 {
 }
 
 /// Default flat-terrain pace used when no user pace is provided.
-/// 530 s/km = 8:50/km — calibrated for ultra-trail (VMA ~14-15 km/h, races ≥ 100km).
-pub const DEFAULT_BASE_PACE_S_PER_KM: f64 = 530.0;
+/// 560 s/km = 9:20/km — matches the "Moderate" UI preset.
+pub const DEFAULT_BASE_PACE_S_PER_KM: f64 = 560.0;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Tests

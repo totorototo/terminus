@@ -63,6 +63,9 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
     // Accumulates across stages in race order.
     var d_eff: f64 = 0.0;
 
+    // Running clock for the circadian model, seeded from the race start time.
+    var clock_s: ?i64 = stage_wpts.items[0].time;
+
     for (0..num_stages) |i| {
         const start_wpt = stage_wpts.items[i];
         const end_wpt = stage_wpts.items[i + 1];
@@ -102,10 +105,20 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
             const slope_frac = trace.slopes[j] / 100.0;
             const seg_dist = trace.cumulativeDistances[j + 1] - trace.cumulativeDistances[j];
             const pf = minetti.paceFactor(slope_frac);
-            const fatigue_factor = 1.0 + k_fatigue * (d_eff / 1000.0);
-            total_time += (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor;
+            const fatigue_factor = minetti.fatigueFactor(d_eff / 1000.0, k_fatigue);
+            const circadian = if (clock_s) |t| minetti.circadianFactor(t) else 1.0;
+            const seg_time = (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor * circadian;
+            total_time += seg_time;
+            if (clock_s) |*t| t.* += @intFromFloat(seg_time);
             total_weighted_dist += seg_dist * pf;
             d_eff += seg_dist * pf;
+        }
+
+        // LifeBase checkpoints mark a rest/resupply stop — shed 20% of accumulated fatigue.
+        if (end_wpt.wptType) |t| {
+            if (std.mem.eql(u8, t, "LifeBase")) {
+                d_eff *= (1.0 - minetti.RECOVERY_LIFE_BASE);
+            }
         }
 
         const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
