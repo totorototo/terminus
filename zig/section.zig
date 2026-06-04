@@ -30,6 +30,7 @@ pub const SectionStats = struct {
     estimatedDuration: f64, // seconds (Minetti model, base pace 5:30/km with cumulative fatigue)
     paceFactor: f64, // average Minetti pace factor relative to flat (1.0 = flat equivalent)
     maxCompletionTime: ?i64, // seconds allowed (endTime - startTime), null if absent
+    cutoffRatio: ?f64, // estimatedDuration / maxCompletionTime; null if no cutoff; >1.0 means cutoff missed
 };
 
 /// Compute section statistics between consecutive section-boundary waypoints
@@ -171,6 +172,12 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
                 end_wpt.time.? - start_wpt.time.?
             else
                 null,
+            .cutoffRatio = blk: {
+                if (start_wpt.time == null or end_wpt.time == null) break :blk null;
+                const mct = end_wpt.time.? - start_wpt.time.?;
+                if (mct <= 0) break :blk null;
+                break :blk estimated_duration / @as(f64, @floatFromInt(mct));
+            },
         }) catch |err| return err;
     }
 
@@ -351,6 +358,40 @@ test "computeSectionsFromWaypoints: maxCompletionTime is null without timestamps
     try std.testing.expectEqual(@as(?i64, null), sections.?[0].maxCompletionTime);
     try std.testing.expectEqual(@as(?i64, null), sections.?[0].startTime);
     try std.testing.expectEqual(@as(?i64, null), sections.?[0].endTime);
+    try std.testing.expectEqual(@as(?f64, null), sections.?[0].cutoffRatio);
+}
+
+test "computeSectionsFromWaypoints: cutoffRatio is estimatedDuration / maxCompletionTime" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 100.0 },
+        [3]f64{ 0.002, 0.0, 100.0 },
+        [3]f64{ 0.003, 0.0, 100.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    // Give a very generous cutoff (10 hours) so the ratio is clearly < 1.0
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",       .time = 1_000_000 },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_000_000 + 36_000 },
+    };
+
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    defer if (sections) |s| allocator.free(s);
+
+    try std.testing.expect(sections != null);
+    const s = sections.?[0];
+    try std.testing.expect(s.cutoffRatio != null);
+    // ratio = estimatedDuration / 36000
+    try std.testing.expectApproxEqAbs(
+        s.estimatedDuration / 36_000.0,
+        s.cutoffRatio.?,
+        1e-9,
+    );
+    // A few hundred metres at walking pace should be well under a 10-hour cutoff
+    try std.testing.expect(s.cutoffRatio.? < 1.0);
 }
 
 test "computeSectionsFromWaypoints: LifeBase recovery reduces fatigue in subsequent section" {

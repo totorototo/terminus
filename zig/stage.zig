@@ -32,6 +32,7 @@ pub const StageStats = struct {
     estimatedDuration: f64, // seconds (Minetti model, base pace 5:30/km with cumulative fatigue)
     paceFactor: f64, // average Minetti pace factor relative to flat (1.0 = flat equivalent)
     maxCompletionTime: ?i64, // seconds allowed (endTime - startTime), null if absent
+    cutoffRatio: ?f64, // estimatedDuration / maxCompletionTime; null if no cutoff; >1.0 means cutoff missed
 };
 
 /// Compute stage statistics between consecutive stage-boundary waypoints (Start/LifeBase/Arrival).
@@ -155,6 +156,12 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
                 end_wpt.time.? - start_wpt.time.?
             else
                 null,
+            .cutoffRatio = blk: {
+                if (start_wpt.time == null or end_wpt.time == null) break :blk null;
+                const mct = end_wpt.time.? - start_wpt.time.?;
+                if (mct <= 0) break :blk null;
+                break :blk estimated_duration / @as(f64, @floatFromInt(mct));
+            },
         }) catch |err| return err;
     }
 
@@ -300,4 +307,37 @@ test "stage maxCompletionTime is null when stage waypoints have no timestamps" {
     try expect(stages != null);
     try expectEqual(@as(usize, 1), stages.?.len);
     try expectEqual(@as(?i64, null), stages.?[0].maxCompletionTime);
+    try expectEqual(@as(?f64, null), stages.?[0].cutoffRatio);
+}
+
+test "stage cutoffRatio is estimatedDuration / maxCompletionTime" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 100.0 },
+        [3]f64{ 0.002, 0.0, 100.0 },
+        [3]f64{ 0.003, 0.0, 100.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",   .time = 1_000_000 },
+        .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = 1_000_000 + 36_000 },
+    };
+
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE);
+    defer if (stages) |st| allocator.free(st);
+
+    try expect(stages != null);
+    const st = stages.?[0];
+    try expect(st.cutoffRatio != null);
+    try std.testing.expectApproxEqAbs(
+        st.estimatedDuration / 36_000.0,
+        st.cutoffRatio.?,
+        1e-9,
+    );
+    try expect(st.cutoffRatio.? < 1.0);
 }
