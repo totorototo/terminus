@@ -209,6 +209,53 @@ describe("message routing", () => {
     );
   });
 
+  it("forwards a neutral weather lookup when no forecasts are given", async () => {
+    readGPXComplete.mockResolvedValue(makeGpxData());
+    await dispatch("PROCESS_GPX_FILE", { gpxBytes: new ArrayBuffer(0) });
+    const weatherArg = readGPXComplete.mock.calls[0][4];
+    expect(weatherArg).toEqual({ names: [], values: [] });
+  });
+
+  it("converts forecasts to a Zig weather lookup keyed by checkpoint name", async () => {
+    readGPXComplete.mockResolvedValue(makeGpxData());
+    await dispatch("PROCESS_GPX_FILE", {
+      gpxBytes: new ArrayBuffer(0),
+      weatherByCheckpoint: {
+        Summit: { temp: 28, humidity: 80, wind: 35, precipitation: 60 },
+      },
+    });
+    const weatherArg = readGPXComplete.mock.calls[0][4];
+    expect(weatherArg.names).toEqual(["Summit"]);
+    expect(weatherArg.values[0]).toEqual({
+      temperature_c: 28,
+      humidity_pct: 80,
+      wind_kmh: 35,
+      precip_prob_pct: 60,
+    });
+  });
+
+  it("fills neutral defaults for forecast fields that are not finite", async () => {
+    readGPXComplete.mockResolvedValue(makeGpxData());
+    await dispatch("PROCESS_GPX_FILE", {
+      gpxBytes: new ArrayBuffer(0),
+      weatherByCheckpoint: {
+        Col: {
+          temp: null,
+          humidity: undefined,
+          wind: NaN,
+          precipitation: null,
+        },
+      },
+    });
+    const weatherArg = readGPXComplete.mock.calls[0][4];
+    expect(weatherArg.values[0]).toEqual({
+      temperature_c: 12.0,
+      humidity_pct: 50.0,
+      wind_kmh: 0.0,
+      precip_prob_pct: 0.0,
+    });
+  });
+
   it("routes FIND_CLOSEST_LOCATION and posts CLOSEST_POINT_FOUND", async () => {
     Trace.init.mockReturnValue({
       ...makeTrace(),

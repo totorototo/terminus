@@ -23,6 +23,10 @@ pub const SegmentMetrics = struct {
 ///
 /// `clock_start` is the race start epoch (seconds) or null when no start time
 /// is known, in which case the circadian factor is neutral (1.0).
+///
+/// `weather` is the forecast conditions for this segment (constant across the
+/// range — one forecast per checkpoint). Pass `minetti.WEATHER_NEUTRAL` when no
+/// forecast is available, which leaves the estimate unchanged.
 pub fn computeSegmentMetrics(
     trace: *const Trace,
     start_index: usize,
@@ -30,6 +34,7 @@ pub fn computeSegmentMetrics(
     base_pace_s_per_km: f64,
     k_fatigue: f64,
     clock_start: ?i64,
+    weather: minetti.WeatherConditions,
     d_eff_m: *f64,
     elapsed_s: *f64,
 ) SegmentMetrics {
@@ -38,6 +43,9 @@ pub fn computeSegmentMetrics(
     var max_slope: f64 = 0.0;
     var total_time: f64 = 0.0;
     var total_weighted_dist: f64 = 0.0;
+
+    // Weather is constant over the segment, so its multiplier is computed once.
+    const weather_factor = minetti.weatherFactor(weather);
 
     for (start_index..end_index) |j| {
         const ele = trace.points[j][2];
@@ -53,7 +61,7 @@ pub fn computeSegmentMetrics(
             minetti.circadianFactor(t0 + @as(i64, @intFromFloat(elapsed_s.*)))
         else
             1.0;
-        const seg_time = (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor * circadian;
+        const seg_time = (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor * circadian * weather_factor;
 
         total_time += seg_time;
         elapsed_s.* += seg_time;
@@ -85,7 +93,7 @@ test "computeSegmentMetrics: flat range has neutral pace factor and no fatigue g
 
     var d_eff: f64 = 0.0;
     var elapsed: f64 = 0.0;
-    const m = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, minetti.K_FATIGUE, null, &d_eff, &elapsed);
+    const m = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, minetti.K_FATIGUE, null, minetti.WEATHER_NEUTRAL, &d_eff, &elapsed);
 
     try std.testing.expectApproxEqAbs(100.0, m.minElevation, 0.001);
     try std.testing.expectApproxEqAbs(100.0, m.maxElevation, 0.001);
@@ -111,11 +119,48 @@ test "computeSegmentMetrics: state carries across consecutive ranges" {
     const last = trace.points.len - 1;
     const mid = last / 2;
 
-    _ = computeSegmentMetrics(&trace, 0, mid, 500.0, minetti.K_FATIGUE, null, &d_eff, &elapsed);
+    _ = computeSegmentMetrics(&trace, 0, mid, 500.0, minetti.K_FATIGUE, null, minetti.WEATHER_NEUTRAL, &d_eff, &elapsed);
     const d_after_first = d_eff;
-    _ = computeSegmentMetrics(&trace, mid, last, 500.0, minetti.K_FATIGUE, null, &d_eff, &elapsed);
+    _ = computeSegmentMetrics(&trace, mid, last, 500.0, minetti.K_FATIGUE, null, minetti.WEATHER_NEUTRAL, &d_eff, &elapsed);
 
     // Effort distance and elapsed clock are cumulative, never reset between calls.
     try std.testing.expect(d_eff > d_after_first);
     try std.testing.expect(elapsed > 0.0);
+}
+
+test "computeSegmentMetrics: adverse weather increases segment time" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        .{ 0.0, 0.000, 100.0 },
+        .{ 0.0, 0.001, 100.0 },
+        .{ 0.0, 0.002, 100.0 },
+        .{ 0.0, 0.003, 100.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const hot = minetti.WeatherConditions{
+        .temperature_c = 32.0,
+        .humidity_pct = 85.0,
+        .wind_kmh = 35.0,
+        .precip_prob_pct = 80.0,
+    };
+
+    var d_eff_a: f64 = 0.0;
+    var elapsed_a: f64 = 0.0;
+    const neutral = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, minetti.K_FATIGUE, null, minetti.WEATHER_NEUTRAL, &d_eff_a, &elapsed_a);
+
+    var d_eff_b: f64 = 0.0;
+    var elapsed_b: f64 = 0.0;
+    const adverse = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, minetti.K_FATIGUE, null, hot, &d_eff_b, &elapsed_b);
+
+    // Bad weather only slows: time goes up, by exactly the weather factor.
+    try std.testing.expect(adverse.totalTime > neutral.totalTime);
+    try std.testing.expectApproxEqAbs(
+        neutral.totalTime * minetti.weatherFactor(hot),
+        adverse.totalTime,
+        1e-6,
+    );
+    // Effort-weighted distance (terrain only) is unaffected by weather.
+    try std.testing.expectApproxEqAbs(neutral.totalWeightedDist, adverse.totalWeightedDist, 1e-9);
 }
