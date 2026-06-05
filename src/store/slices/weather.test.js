@@ -17,6 +17,7 @@ function makeHourlyResponse(weathercode = 0) {
     hourly: {
       time,
       temperature_2m: time.map((_, i) => 10 + i),
+      relativehumidity_2m: time.map(() => 65),
       precipitation_probability: time.map(() => 20),
       weathercode: time.map(() => weathercode),
       windspeed_10m: time.map(() => 15),
@@ -38,7 +39,7 @@ describe("weatherSlice", () => {
     vi.clearAllMocks();
     vi.setSystemTime(NOW);
     clearWeatherCache();
-    store = create((set) => ({ ...createWeatherSlice(set) }));
+    store = create((set, get) => ({ ...createWeatherSlice(set, get) }));
   });
 
   afterEach(() => {
@@ -111,7 +112,45 @@ describe("weatherSlice", () => {
     const f = store.getState().weather.forecasts["A"];
     expect(f.wind).toBe(15);
     expect(f.precipitation).toBe(20);
+    expect(f.humidity).toBe(65);
     expect(f.weatherCode).toBe(0);
+  });
+
+  it("clearWeatherForecasts resets all stored forecasts", async () => {
+    okFetch(0);
+    await store
+      .getState()
+      .fetchWeatherForCheckpoints([
+        { name: "A", lat: 45.0, lon: 2.0, etaMs: NOW + 3_600_000 },
+      ]);
+    expect(store.getState().weather.forecasts["A"]).toBeDefined();
+
+    store.getState().clearWeatherForecasts();
+    expect(store.getState().weather.forecasts).toEqual({});
+  });
+
+  it("reprocesses the route once when weather conditions change", async () => {
+    const reprocessGPXFile = vi.fn();
+    store = create((set, get) => ({
+      ...createWeatherSlice(set, get),
+      reprocessGPXFile,
+    }));
+
+    okFetch(0);
+    await store
+      .getState()
+      .fetchWeatherForCheckpoints([
+        { name: "A", lat: 45.0, lon: 2.0, etaMs: NOW + 3_600_000 },
+      ]);
+    expect(reprocessGPXFile).toHaveBeenCalledTimes(1);
+
+    // Same conditions on a refetch (cache hit) must not reprocess again.
+    await store
+      .getState()
+      .fetchWeatherForCheckpoints([
+        { name: "A", lat: 45.0, lon: 2.0, etaMs: NOW + 3_600_000 },
+      ]);
+    expect(reprocessGPXFile).toHaveBeenCalledTimes(1);
   });
 
   // ── Error handling ────────────────────────────────────────────────────────

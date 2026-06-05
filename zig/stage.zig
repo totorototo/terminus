@@ -41,7 +41,9 @@ pub const StageStats = struct {
 /// TimeBarrier waypoints are skipped — they only appear in sections, not stages.
 /// base_pace_s_per_km: flat-terrain pace in seconds per km (e.g. 490 = 8:10/km).
 /// k_fatigue: cumulative fatigue coefficient (e.g. 0.004 for 200km+ ultra).
-pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint, base_pace_s_per_km: f64, k_fatigue: f64, life_base_stop_s: u32) !?[]StageStats {
+/// weather: forecast conditions keyed by checkpoint name; pass
+/// `minetti.WeatherLookup.empty` to leave estimates weather-neutral.
+pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint, base_pace_s_per_km: f64, k_fatigue: f64, life_base_stop_s: u32, weather: minetti.WeatherLookup) !?[]StageStats {
     // Collect stage-boundary waypoints (Start/LifeBase/Arrival)
     var stage_wpts = std.ArrayList(Waypoint){};
     defer stage_wpts.deinit(allocator);
@@ -96,7 +98,11 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
         const elevation_gain = trace.cumulativeElevations[end_index] - trace.cumulativeElevations[start_index];
         const elevation_loss = trace.cumulativeElevationLoss[end_index] - trace.cumulativeElevationLoss[start_index];
 
-        const m = segment.computeSegmentMetrics(trace, start_index, end_index, base_pace_s_per_km, k_fatigue, clock_start, &d_eff, &elapsed_s);
+        // Weather for this stage is the forecast at the checkpoint the runner is
+        // heading to (the end waypoint). Unknown checkpoints resolve to neutral.
+        const stage_weather = weather.find(end_wpt.name);
+
+        const m = segment.computeSegmentMetrics(trace, start_index, end_index, base_pace_s_per_km, k_fatigue, clock_start, stage_weather, &d_eff, &elapsed_s);
         const min_elevation = m.minElevation;
         const max_elevation = m.maxElevation;
         const max_slope = m.maxSlope;
@@ -178,14 +184,14 @@ test "computeStagesFromWaypoints: returns null with fewer than 2 stage boundarie
         .{ .lat = 0.0, .lon = 0.0, .name = "A", .time = null },
         .{ .lat = 0.001, .lon = 0.0, .name = "B", .time = null },
     };
-    try expect((try computeFromWaypoints(&trace, allocator, &waypoints_none, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S)) == null);
+    try expect((try computeFromWaypoints(&trace, allocator, &waypoints_none, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty)) == null);
 
     // Only one stage boundary (Start)
     const waypoints_one = [_]Waypoint{
         .{ .lat = 0.0, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
         .{ .lat = 0.001, .lon = 0.0, .name = "Plain", .time = null },
     };
-    try expect((try computeFromWaypoints(&trace, allocator, &waypoints_one, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S)) == null);
+    try expect((try computeFromWaypoints(&trace, allocator, &waypoints_one, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty)) == null);
 }
 
 test "computeStagesFromWaypoints: TimeBarrier waypoints are excluded" {
@@ -209,7 +215,7 @@ test "computeStagesFromWaypoints: TimeBarrier waypoints are excluded" {
         .{ .lat = 0.005, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
     };
 
-    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (stages) |s| allocator.free(s);
 
     try expect(stages != null);
@@ -235,7 +241,7 @@ test "computeStagesFromWaypoints: Start-LifeBase-Arrival produces two stages" {
         .{ .lat = 0.009, .lon = 0.0, .name = "Arrival",  .wptType = "Arrival",  .time = null },
     };
 
-    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (stages) |s| allocator.free(s);
 
     try expect(stages != null);
@@ -268,7 +274,7 @@ test "stage maxCompletionTime is set from waypoint timestamps" {
         .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = 1_003_600 },
     };
 
-    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (stages) |st| allocator.free(st);
 
     try expect(stages != null);
@@ -297,7 +303,7 @@ test "stage maxCompletionTime is null when stage waypoints have no timestamps" {
         .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = null },
     };
 
-    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (stages) |st| allocator.free(st);
 
     try expect(stages != null);
@@ -324,7 +330,7 @@ test "stage cutoffRatio is estimatedDuration / maxCompletionTime" {
         .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = 1_000_000 + 36_000 },
     };
 
-    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (stages) |st| allocator.free(st);
 
     try expect(stages != null);

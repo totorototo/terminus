@@ -52,6 +52,36 @@ function measureMs(label) {
   }
 }
 
+/**
+ * Build a Zig `WeatherLookup` (parallel name/value arrays) from a forecast map
+ * keyed by checkpoint name. The values are converted from the store's forecast
+ * shape ({ temp, humidity, wind, precipitation }) to the Zig field names
+ * ({ temperature_c, humidity_pct, wind_kmh, precip_prob_pct }).
+ *
+ * Returns the neutral (empty) lookup when no forecasts are provided, so the
+ * estimate is unchanged. Entries missing a field fall back to neutral-ish
+ * defaults that contribute no penalty (cool, dry, calm, average humidity).
+ */
+function buildWeatherLookup(weatherByCheckpoint) {
+  const names = [];
+  const values = [];
+  if (weatherByCheckpoint) {
+    for (const [name, f] of Object.entries(weatherByCheckpoint)) {
+      if (!f) continue;
+      names.push(name);
+      values.push({
+        temperature_c: Number.isFinite(f.temp) ? f.temp : 12.0,
+        humidity_pct: Number.isFinite(f.humidity) ? f.humidity : 50.0,
+        wind_kmh: Number.isFinite(f.wind) ? f.wind : 0.0,
+        precip_prob_pct: Number.isFinite(f.precipitation)
+          ? f.precipitation
+          : 0.0,
+      });
+    }
+  }
+  return { names, values };
+}
+
 // Message handler for communication with main thread
 self.onmessage = async function (e) {
   const { type, data, id } = e.data;
@@ -111,12 +141,19 @@ async function processGPXFile(gpxFileBytes, requestId) {
     basePaceSPerKm = 500.0,
     kFatigue = 0.002,
     lifeBaseStopS = 3600,
+    weatherByCheckpoint = null,
   } = gpxFileBytes;
+
+  // Build the Zig WeatherLookup (parallel name/value arrays) from the forecast
+  // map. Keys are checkpoint names; an absent map leaves every section neutral.
+  const weather = buildWeatherLookup(weatherByCheckpoint);
+
   const gpxData = await readGPXComplete(
     gpxFileBytes.gpxBytes,
     basePaceSPerKm,
     kFatigue,
     lifeBaseStopS,
+    weather,
   );
 
   // Convert Zigar proxy objects to plain JS before sending

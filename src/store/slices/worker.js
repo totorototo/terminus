@@ -260,15 +260,32 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
         }
 
+        // A genuinely new route invalidates any previously fetched forecasts so
+        // weather from the prior route cannot leak into the new estimates.
+        const isNewFile = rawGpxBytes !== gpxBytes;
+        if (isNewFile) {
+          get().clearWeatherForecasts?.();
+        }
+
         rawGpxBytes = gpxBytes;
         const {
           basePaceSPerKm = 500,
           kFatigue = 0.002,
           lifeBaseStopS = 3600,
         } = get().app?.paceSettings ?? {};
+        // Forecasts (keyed by checkpoint name) refine per-section estimates in
+        // Zig. Empty/absent on first load → weather-neutral; populated on a later
+        // reprocess once ETAs are known and weather has been fetched.
+        const weatherByCheckpoint = get().weather?.forecasts ?? null;
         const results = await messenger.send(
           "PROCESS_GPX_FILE",
-          { gpxBytes, basePaceSPerKm, kFatigue, lifeBaseStopS },
+          {
+            gpxBytes,
+            basePaceSPerKm,
+            kFatigue,
+            lifeBaseStopS,
+            weatherByCheckpoint,
+          },
           onProgress,
         );
 

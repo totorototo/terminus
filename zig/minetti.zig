@@ -80,6 +80,139 @@ pub fn circadianFactor(unix_time_s: i64) f64 {
     return 1.0;
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Weather model
+// ──────────────────────────────────────────────────────────────────────────────
+//
+// Weather acts as one more multiplicative pace penalty, alongside slope, fatigue
+// and circadian factors. All sub-factors return >= 1.0: bad weather only slows a
+// runner; the neutral baseline (cool, dry, calm) returns exactly 1.0.
+//
+// Inputs match the Open-Meteo fields already fetched on the JS side:
+//   temperature_c   — air temperature (°C, temperature_2m)
+//   humidity_pct    — relative humidity (%, 0–100) — amplifies heat stress
+//   wind_kmh        — wind speed (km/h, windspeed_10m)
+//   precip_prob_pct — precipitation probability (%, 0–100, precipitation_probability)
+
+/// Forecast conditions sampled at a point/time along the route.
+/// Flat struct of f64 so it is Zigar-marshalable from JS.
+pub const WeatherConditions = struct {
+    temperature_c: f64,
+    humidity_pct: f64,
+    wind_kmh: f64,
+    precip_prob_pct: f64,
+};
+
+/// Neutral conditions — cool, dry, calm. weatherFactor(WEATHER_NEUTRAL) == 1.0.
+/// Use this when no forecast is available so estimates are unchanged.
+pub const WEATHER_NEUTRAL = WeatherConditions{
+    .temperature_c = WEATHER_T_OPT,
+    .humidity_pct = 50.0,
+    .wind_kmh = 0.0,
+    .precip_prob_pct = 0.0,
+};
+
+/// Optimal ambient temperature for endurance running (°C) — neutral pace here.
+pub const WEATHER_T_OPT: f64 = 12.0;
+/// Pace penalty per °C of *apparent* temperature above the optimum.
+/// 0.006 ≈ +3% per +5 °C, in line with marathon-vs-WBGT performance studies.
+pub const WEATHER_HEAT_PER_C: f64 = 0.006;
+/// Below this temperature (°C) cold begins to add a (small) penalty.
+pub const WEATHER_COLD_THRESHOLD_C: f64 = 0.0;
+/// Pace penalty per °C below the cold threshold (stiffness, footing, clothing).
+pub const WEATHER_COLD_PER_C: f64 = 0.003;
+/// Wind speed (km/h) below which wind has negligible effect on pace.
+pub const WEATHER_WIND_THRESHOLD_KMH: f64 = 15.0;
+/// Pace penalty per km/h of wind above the threshold.
+pub const WEATHER_WIND_PER_KMH: f64 = 0.004;
+/// Cap on the wind penalty (fraction of pace).
+pub const WEATHER_WIND_MAX: f64 = 0.20;
+/// Pace penalty at 100% precipitation probability (wet, muddy, low-traction trail).
+pub const WEATHER_PRECIP_MAX: f64 = 0.08;
+
+/// Apparent (feels-like) temperature in °C.
+/// Humidity only matters once it is warm: above ~20 °C, sweat evaporates less
+/// readily so high relative humidity inflates the effective heat load. Below
+/// 20 °C the air temperature is returned unchanged.
+pub fn apparentTempC(temp_c: f64, humidity_pct: f64) f64 {
+    if (temp_c <= 20.0) return temp_c;
+    const rh = std.math.clamp(humidity_pct, 0.0, 100.0);
+    const excess_rh = @max(0.0, rh - 40.0) / 10.0; // 10%-RH units above 40%
+    return temp_c + excess_rh * (temp_c - 20.0) * 0.1;
+}
+
+/// Thermal pace multiplier (>= 1.0) from temperature and humidity.
+///   - Apparent temp above WEATHER_T_OPT → heat penalty (humidity-amplified).
+///   - Raw temp below WEATHER_COLD_THRESHOLD_C → cold penalty.
+///   - In between → neutral (1.0).
+pub fn thermalFactor(temp_c: f64, humidity_pct: f64) f64 {
+    const at = apparentTempC(temp_c, humidity_pct);
+    if (at > WEATHER_T_OPT) {
+        return 1.0 + (at - WEATHER_T_OPT) * WEATHER_HEAT_PER_C;
+    }
+    if (temp_c < WEATHER_COLD_THRESHOLD_C) {
+        return 1.0 + (WEATHER_COLD_THRESHOLD_C - temp_c) * WEATHER_COLD_PER_C;
+    }
+    return 1.0;
+}
+
+/// Wind pace multiplier (>= 1.0). Forecast wind is a scalar speed with unknown
+/// bearing relative to the runner, so this models the averaged exposure cost on
+/// an out-and-back/loop course rather than a pure headwind. Capped at WEATHER_WIND_MAX.
+pub fn windFactor(wind_kmh: f64) f64 {
+    if (wind_kmh <= WEATHER_WIND_THRESHOLD_KMH) return 1.0;
+    const penalty = (wind_kmh - WEATHER_WIND_THRESHOLD_KMH) * WEATHER_WIND_PER_KMH;
+    return 1.0 + @min(WEATHER_WIND_MAX, penalty);
+}
+
+/// Precipitation pace multiplier (>= 1.0). Uses precipitation *probability* as a
+/// proxy for the likelihood of wet, muddy, low-traction ground along the segment.
+pub fn precipFactor(precip_prob_pct: f64) f64 {
+    const p = std.math.clamp(precip_prob_pct, 0.0, 100.0) / 100.0;
+    return 1.0 + WEATHER_PRECIP_MAX * p;
+}
+
+/// Combined weather pace multiplier (>= 1.0): thermal × wind × precipitation.
+/// Multiply base pace by this alongside paceFactor, fatigueFactor and circadianFactor.
+pub fn weatherFactor(c: WeatherConditions) f64 {
+    return thermalFactor(c.temperature_c, c.humidity_pct) *
+        windFactor(c.wind_kmh) *
+        precipFactor(c.precip_prob_pct);
+}
+
+/// Name-keyed weather forecast table.
+///
+/// Weather varies by *location and time*, but the forecast a runner will meet on
+/// a section depends on their ETA there — which is itself an output of the pace
+/// model. Keying by checkpoint name (a stable identifier) breaks that circular
+/// dependency: the caller computes ETAs once with neutral weather, fetches a
+/// forecast per checkpoint name, then recomputes with this lookup populated.
+///
+/// `names[i]` is the checkpoint name whose conditions are `values[i]`.
+/// Unknown names resolve to WEATHER_NEUTRAL (factor 1.0), so partial coverage
+/// only adjusts the sections that have a forecast.
+pub const WeatherLookup = struct {
+    names: []const []const u8,
+    values: []const WeatherConditions,
+
+    /// An empty lookup — every query returns neutral conditions.
+    pub const empty = WeatherLookup{ .names = &.{}, .values = &.{} };
+
+    /// Forecast conditions for `name`, or WEATHER_NEUTRAL when not present.
+    pub fn find(self: WeatherLookup, name: []const u8) WeatherConditions {
+        for (self.names, 0..) |n, i| {
+            if (i >= self.values.len) break;
+            if (std.mem.eql(u8, n, name)) return self.values[i];
+        }
+        return WEATHER_NEUTRAL;
+    }
+
+    /// Weather pace multiplier (>= 1.0) for `name`; 1.0 when not present.
+    pub fn factorFor(self: WeatherLookup, name: []const u8) f64 {
+        return weatherFactor(self.find(name));
+    }
+};
+
 /// Default flat-terrain pace used when no user pace is provided.
 /// 500 s/km = 8:20/km — matches the "Moderate" UI preset.
 pub const DEFAULT_BASE_PACE_S_PER_KM: f64 = 500.0;
@@ -178,4 +311,138 @@ test "circadianFactor: wraps correctly across midnight (unix day boundary)" {
     const t0: i64 = 3 * 3600 + 30 * 60;
     const t2: i64 = 2 * 24 * 3600 + 3 * 3600 + 30 * 60;
     try std.testing.expectApproxEqAbs(circadianFactor(t0), circadianFactor(t2), 1e-9);
+}
+
+test "apparentTempC: humidity has no effect when cool" {
+    // At or below 20 °C the raw temperature is returned unchanged.
+    try std.testing.expectApproxEqAbs(10.0, apparentTempC(10.0, 90.0), 1e-9);
+    try std.testing.expectApproxEqAbs(20.0, apparentTempC(20.0, 100.0), 1e-9);
+}
+
+test "apparentTempC: high humidity inflates warm temperatures" {
+    // 30 °C at 90% RH should feel hotter than the dry air temperature.
+    try std.testing.expect(apparentTempC(30.0, 90.0) > 30.0);
+    // 30 °C at 40% RH (threshold) adds nothing.
+    try std.testing.expectApproxEqAbs(30.0, apparentTempC(30.0, 40.0), 1e-9);
+}
+
+test "thermalFactor: optimal temperature is neutral" {
+    try std.testing.expectApproxEqAbs(1.0, thermalFactor(WEATHER_T_OPT, 50.0), 1e-9);
+}
+
+test "thermalFactor: heat slows pace and humidity makes it worse" {
+    const dry = thermalFactor(30.0, 40.0);
+    const humid = thermalFactor(30.0, 90.0);
+    try std.testing.expect(dry > 1.0);
+    try std.testing.expect(humid > dry);
+}
+
+test "thermalFactor: cold adds a small penalty" {
+    // -10 °C → 1 + 10 × 0.003 = 1.03
+    try std.testing.expectApproxEqAbs(1.03, thermalFactor(-10.0, 50.0), 1e-9);
+}
+
+test "thermalFactor: between cold threshold and optimum is neutral" {
+    try std.testing.expectApproxEqAbs(1.0, thermalFactor(5.0, 50.0), 1e-9);
+}
+
+test "windFactor: calm and light wind are neutral" {
+    try std.testing.expectApproxEqAbs(1.0, windFactor(0.0), 1e-9);
+    try std.testing.expectApproxEqAbs(1.0, windFactor(WEATHER_WIND_THRESHOLD_KMH), 1e-9);
+}
+
+test "windFactor: strong wind penalises pace" {
+    // 40 km/h → 1 + (40-15) × 0.004 = 1.10
+    try std.testing.expectApproxEqAbs(1.10, windFactor(40.0), 1e-9);
+}
+
+test "windFactor: penalty is capped" {
+    // Gale-force values clamp at WEATHER_WIND_MAX.
+    try std.testing.expectApproxEqAbs(1.0 + WEATHER_WIND_MAX, windFactor(1000.0), 1e-9);
+}
+
+test "precipFactor: dry is neutral, certain rain is max penalty" {
+    try std.testing.expectApproxEqAbs(1.0, precipFactor(0.0), 1e-9);
+    try std.testing.expectApproxEqAbs(1.0 + WEATHER_PRECIP_MAX, precipFactor(100.0), 1e-9);
+}
+
+test "precipFactor: clamps out-of-range probabilities" {
+    try std.testing.expectApproxEqAbs(1.0, precipFactor(-20.0), 1e-9);
+    try std.testing.expectApproxEqAbs(1.0 + WEATHER_PRECIP_MAX, precipFactor(150.0), 1e-9);
+}
+
+test "weatherFactor: neutral conditions return exactly 1.0" {
+    try std.testing.expectApproxEqAbs(1.0, weatherFactor(WEATHER_NEUTRAL), 1e-9);
+}
+
+test "weatherFactor: combines all sub-factors multiplicatively" {
+    const c = WeatherConditions{
+        .temperature_c = 30.0,
+        .humidity_pct = 90.0,
+        .wind_kmh = 40.0,
+        .precip_prob_pct = 100.0,
+    };
+    const expected = thermalFactor(30.0, 90.0) * windFactor(40.0) * precipFactor(100.0);
+    try std.testing.expectApproxEqAbs(expected, weatherFactor(c), 1e-12);
+}
+
+test "weatherFactor: is always >= 1.0 across a broad sweep" {
+    var temp: f64 = -20.0;
+    while (temp <= 45.0) : (temp += 5.0) {
+        var rh: f64 = 0.0;
+        while (rh <= 100.0) : (rh += 25.0) {
+            var wind: f64 = 0.0;
+            while (wind <= 60.0) : (wind += 20.0) {
+                var precip: f64 = 0.0;
+                while (precip <= 100.0) : (precip += 50.0) {
+                    const c = WeatherConditions{
+                        .temperature_c = temp,
+                        .humidity_pct = rh,
+                        .wind_kmh = wind,
+                        .precip_prob_pct = precip,
+                    };
+                    try std.testing.expect(weatherFactor(c) >= 1.0);
+                }
+            }
+        }
+    }
+}
+
+test "WeatherLookup.empty: every query is neutral" {
+    try std.testing.expectApproxEqAbs(1.0, WeatherLookup.empty.factorFor("anything"), 1e-9);
+    const c = WeatherLookup.empty.find("anything");
+    try std.testing.expectApproxEqAbs(1.0, weatherFactor(c), 1e-9);
+}
+
+test "WeatherLookup.find: returns matching conditions by name" {
+    const names = [_][]const u8{ "Courmayeur", "Champex" };
+    const values = [_]WeatherConditions{
+        .{ .temperature_c = 30.0, .humidity_pct = 90.0, .wind_kmh = 40.0, .precip_prob_pct = 100.0 },
+        WEATHER_NEUTRAL,
+    };
+    const lookup = WeatherLookup{ .names = &names, .values = &values };
+
+    const hot = lookup.find("Courmayeur");
+    try std.testing.expectApproxEqAbs(30.0, hot.temperature_c, 1e-9);
+    try std.testing.expect(lookup.factorFor("Courmayeur") > 1.0);
+    // Known-but-neutral checkpoint resolves to factor 1.0.
+    try std.testing.expectApproxEqAbs(1.0, lookup.factorFor("Champex"), 1e-9);
+}
+
+test "WeatherLookup.find: unknown name resolves to neutral" {
+    const names = [_][]const u8{"Courmayeur"};
+    const values = [_]WeatherConditions{
+        .{ .temperature_c = 30.0, .humidity_pct = 90.0, .wind_kmh = 40.0, .precip_prob_pct = 100.0 },
+    };
+    const lookup = WeatherLookup{ .names = &names, .values = &values };
+    try std.testing.expectApproxEqAbs(1.0, lookup.factorFor("Unknown"), 1e-9);
+}
+
+test "WeatherLookup.find: tolerates names longer than values" {
+    // Defensive: mismatched parallel-array lengths must not read out of bounds.
+    const names = [_][]const u8{ "A", "B", "C" };
+    const values = [_]WeatherConditions{WEATHER_NEUTRAL};
+    const lookup = WeatherLookup{ .names = &names, .values = &values };
+    try std.testing.expectApproxEqAbs(1.0, lookup.factorFor("A"), 1e-9);
+    try std.testing.expectApproxEqAbs(1.0, lookup.factorFor("C"), 1e-9);
 }

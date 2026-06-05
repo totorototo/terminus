@@ -39,7 +39,9 @@ pub const SectionStats = struct {
 /// (Start/TimeBarrier/LifeBase/Arrival). Returns null when fewer than 2 section boundaries.
 /// base_pace_s_per_km: flat-terrain pace in seconds per km (e.g. 490 = 8:10/km).
 /// k_fatigue: cumulative fatigue coefficient (e.g. 0.004 for 200km+ ultra).
-pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint, base_pace_s_per_km: f64, k_fatigue: f64, life_base_stop_s: u32) !?[]SectionStats {
+/// weather: forecast conditions keyed by checkpoint name; pass
+/// `minetti.WeatherLookup.empty` to leave estimates weather-neutral.
+pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint, base_pace_s_per_km: f64, k_fatigue: f64, life_base_stop_s: u32, weather: minetti.WeatherLookup) !?[]SectionStats {
     // Collect section-boundary waypoints (those with a non-null wptType)
     var section_wpts = std.ArrayList(Waypoint){};
     defer section_wpts.deinit(allocator);
@@ -109,7 +111,11 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
         const elevation_gain = trace.cumulativeElevations[end_index] - trace.cumulativeElevations[start_index];
         const elevation_loss = trace.cumulativeElevationLoss[end_index] - trace.cumulativeElevationLoss[start_index];
 
-        const m = segment.computeSegmentMetrics(trace, start_index, end_index, base_pace_s_per_km, k_fatigue, clock_start, &d_eff, &elapsed_s);
+        // Weather for this section is the forecast at the checkpoint the runner is
+        // heading to (the end waypoint). Unknown checkpoints resolve to neutral.
+        const section_weather = weather.find(end_wpt.name);
+
+        const m = segment.computeSegmentMetrics(trace, start_index, end_index, base_pace_s_per_km, k_fatigue, clock_start, section_weather, &d_eff, &elapsed_s);
         const min_elevation = m.minElevation;
         const max_elevation = m.maxElevation;
         const max_slope = m.maxSlope;
@@ -191,7 +197,7 @@ test "computeSectionsFromWaypoints: returns null with no section boundaries" {
         .{ .lat = 0.0, .lon = 0.0, .name = "A", .time = null },
         .{ .lat = 0.001, .lon = 0.0, .name = "B", .time = null },
     };
-    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     try std.testing.expect(result == null);
 }
 
@@ -208,7 +214,7 @@ test "computeSectionsFromWaypoints: returns null with only one section boundary"
         .{ .lat = 0.0, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
         .{ .lat = 0.001, .lon = 0.0, .name = "Plain", .time = null },
     };
-    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const result = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     try std.testing.expect(result == null);
 }
 
@@ -228,7 +234,7 @@ test "computeSectionsFromWaypoints: basic two-boundary section" {
         .{ .lat = 0.003, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -260,7 +266,7 @@ test "computeSectionsFromWaypoints: plain (untyped) waypoints are ignored" {
         .{ .lat = 0.005, .lon = 0.0, .name = "End",    .wptType = "Arrival",     .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (sections) |s| allocator.free(s);
 
     // 2 sections: Start→TB1 and TB1→Arrival; plain waypoints are skipped
@@ -290,7 +296,7 @@ test "computeSectionsFromWaypoints: stageIdx increments at LifeBase boundary" {
         .{ .lat = 0.011, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -319,7 +325,7 @@ test "computeSectionsFromWaypoints: maxCompletionTime computed from timestamps" 
         .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_007_200 },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -345,7 +351,7 @@ test "computeSectionsFromWaypoints: maxCompletionTime is null without timestamps
         .{ .lat = 0.002, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = null },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -372,7 +378,7 @@ test "computeSectionsFromWaypoints: cutoffRatio is estimatedDuration / maxComple
         .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_000_000 + 36_000 },
     };
 
-    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const sections = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (sections) |s| allocator.free(s);
 
     try std.testing.expect(sections != null);
@@ -413,9 +419,9 @@ test "computeSectionsFromWaypoints: LifeBase recovery reduces fatigue in subsequ
     };
 
     // Pass 0 for life_base_stop_s: this test is about fatigue recovery, not stop time.
-    const sections_lb = try computeFromWaypoints(&trace, allocator, &wpts_lb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0);
+    const sections_lb = try computeFromWaypoints(&trace, allocator, &wpts_lb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0, minetti.WeatherLookup.empty);
     defer if (sections_lb) |s| allocator.free(s);
-    const sections_tb = try computeFromWaypoints(&trace, allocator, &wpts_tb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0);
+    const sections_tb = try computeFromWaypoints(&trace, allocator, &wpts_tb, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0, minetti.WeatherLookup.empty);
     defer if (sections_tb) |s| allocator.free(s);
 
     try std.testing.expect(sections_lb != null);
@@ -455,9 +461,9 @@ test "computeSectionsFromWaypoints: circadian penalty slows night sections" {
         .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
 
-    const s_day = try computeFromWaypoints(&trace, allocator, &wpts_day, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const s_day = try computeFromWaypoints(&trace, allocator, &wpts_day, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (s_day) |s| allocator.free(s);
-    const s_night = try computeFromWaypoints(&trace, allocator, &wpts_night, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S);
+    const s_night = try computeFromWaypoints(&trace, allocator, &wpts_night, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, minetti.DEFAULT_LIFE_BASE_STOP_S, minetti.WeatherLookup.empty);
     defer if (s_night) |s| allocator.free(s);
 
     try std.testing.expect(s_day != null);
@@ -487,9 +493,9 @@ test "computeSectionsFromWaypoints: stopDuration is added to estimatedDuration" 
     };
 
     // Explicit stopDuration overrides the default; pass 0 as default for the no-stop baseline.
-    const s_stop = try computeFromWaypoints(&trace, allocator, &wpts_stop, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0);
+    const s_stop = try computeFromWaypoints(&trace, allocator, &wpts_stop, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0, minetti.WeatherLookup.empty);
     defer if (s_stop) |s| allocator.free(s);
-    const s_no = try computeFromWaypoints(&trace, allocator, &wpts_no_stop, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0);
+    const s_no = try computeFromWaypoints(&trace, allocator, &wpts_no_stop, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0, minetti.WeatherLookup.empty);
     defer if (s_no) |s| allocator.free(s);
 
     try std.testing.expect(s_stop != null);
@@ -502,4 +508,44 @@ test "computeSectionsFromWaypoints: stopDuration is added to estimatedDuration" 
     );
     try std.testing.expectEqual(@as(?u32, stop_secs), s_stop.?[0].stopDuration);
     try std.testing.expectEqual(@as(?u32, null), s_no.?[0].stopDuration);
+}
+
+test "computeSectionsFromWaypoints: adverse weather at a checkpoint slows that section" {
+    // Two identical single sections; the weather variant has a hot/wet forecast at
+    // the arrival checkpoint, which must increase that section's estimated duration.
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        [3]f64{ 0.000, 0.0, 100.0 },
+        [3]f64{ 0.001, 0.0, 100.0 },
+        [3]f64{ 0.002, 0.0, 100.0 },
+        [3]f64{ 0.003, 0.0, 100.0 },
+    };
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",   .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
+    };
+
+    const s_calm = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0, minetti.WeatherLookup.empty);
+    defer if (s_calm) |s| allocator.free(s);
+
+    const names = [_][]const u8{"Arrival"};
+    const values = [_]minetti.WeatherConditions{
+        .{ .temperature_c = 32.0, .humidity_pct = 85.0, .wind_kmh = 35.0, .precip_prob_pct = 80.0 },
+    };
+    const lookup = minetti.WeatherLookup{ .names = &names, .values = &values };
+    const s_hot = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0, lookup);
+    defer if (s_hot) |s| allocator.free(s);
+
+    try std.testing.expect(s_calm != null);
+    try std.testing.expect(s_hot != null);
+    try std.testing.expect(s_hot.?[0].estimatedDuration > s_calm.?[0].estimatedDuration);
+    // A forecast keyed to a different checkpoint name must not change anything.
+    const other_names = [_][]const u8{"Nowhere"};
+    const other_lookup = minetti.WeatherLookup{ .names = &other_names, .values = &values };
+    const s_other = try computeFromWaypoints(&trace, allocator, &waypoints, minetti.DEFAULT_BASE_PACE_S_PER_KM, minetti.K_FATIGUE, 0, other_lookup);
+    defer if (s_other) |s| allocator.free(s);
+    try std.testing.expectApproxEqAbs(s_calm.?[0].estimatedDuration, s_other.?[0].estimatedDuration, 1e-6);
 }
