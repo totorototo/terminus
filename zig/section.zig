@@ -3,6 +3,7 @@ const Trace = @import("trace.zig").Trace;
 const Waypoint = @import("gpxdata.zig").Waypoint;
 const bearingTo = @import("gpspoint.zig").bearingTo;
 const minetti = @import("minetti.zig");
+const segment = @import("segment.zig");
 
 /// Interval between two consecutive section-boundary waypoints (Start/TimeBarrier/LifeBase/Arrival).
 /// Has timing info (cutoffs). Belongs to a stage (stageIdx).
@@ -70,11 +71,12 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
     // reflect the physiological cost of prior effort.
     var d_eff: f64 = 0.0;
 
-    // Running clock (Unix epoch seconds) for the circadian model.
-    // Seeded from the race start waypoint's time if present; null otherwise.
-    // Advanced per-segment by estimated travel time so that night sections
-    // are penalised even when the actual waypoint cutoffs aren't used.
-    var clock_s: ?i64 = section_wpts.items[0].time;
+    // Cumulative moving-time clock (s) for the circadian model.
+    // Seeded from the race start waypoint's time (if present) and advanced by
+    // estimated travel time. Kept in f64 and truncated only when read so total
+    // clock drift stays sub-second across the whole race.
+    const clock_start: ?i64 = section_wpts.items[0].time;
+    var elapsed_s: f64 = 0.0;
 
     for (0..num_sections) |i| {
         if (section_wpts.items[i].isStageBoundary()) {
@@ -107,29 +109,12 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
         const elevation_gain = trace.cumulativeElevations[end_index] - trace.cumulativeElevations[start_index];
         const elevation_loss = trace.cumulativeElevationLoss[end_index] - trace.cumulativeElevationLoss[start_index];
 
-        var min_elevation = trace.points[start_index][2];
-        var max_elevation = trace.points[start_index][2];
-        var max_slope: f64 = 0.0;
-        var total_time: f64 = 0.0;
-        var total_weighted_dist: f64 = 0.0;
-
-        for (start_index..end_index) |j| {
-            const ele = trace.points[j][2];
-            min_elevation = @min(min_elevation, ele);
-            max_elevation = @max(max_elevation, ele);
-            max_slope = @max(max_slope, @abs(trace.slopes[j]));
-
-            const slope_frac = trace.slopes[j] / 100.0;
-            const seg_dist = trace.cumulativeDistances[j + 1] - trace.cumulativeDistances[j];
-            const pf = minetti.paceFactor(slope_frac);
-            const fatigue_factor = minetti.fatigueFactor(d_eff / 1000.0, k_fatigue);
-            const circadian = if (clock_s) |t| minetti.circadianFactor(t) else 1.0;
-            const seg_time = (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor * circadian;
-            total_time += seg_time;
-            if (clock_s) |*t| t.* += @intFromFloat(seg_time);
-            total_weighted_dist += seg_dist * pf;
-            d_eff += seg_dist * pf;
-        }
+        const m = segment.computeSegmentMetrics(trace, start_index, end_index, base_pace_s_per_km, k_fatigue, clock_start, &d_eff, &elapsed_s);
+        const min_elevation = m.minElevation;
+        const max_elevation = m.maxElevation;
+        const max_slope = m.maxSlope;
+        const total_time = m.totalTime;
+        const total_weighted_dist = m.totalWeightedDist;
 
         // Partial recovery when the runner reaches a LifeBase checkpoint.
         if (end_wpt.wptType) |t| {

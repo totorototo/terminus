@@ -5,14 +5,19 @@
 ```
 gpx.zig        ── GPX parsing (manual std.mem scanning, no XML lib)
 trace.zig      ── Trace struct: core computation (distances, elevations, slopes, peaks)
-peaks.zig      ── AMPD peak detection algorithm
+extrema.zig    ── AMPD peak & valley detection algorithm
+climbs.zig     ── Climb segment detection (Garmin-style qualification)
 simplify.zig   ── Douglas-Peucker simplification
 elevation.zig  ── Denoised D+/D- (distance-windowed median + hysteresis deadband)
 gpspoint.zig   ── Pure math on [3]f64 (Haversine, bearing, elevation)
 gpxdata.zig    ── Data structs: GPXData, Waypoint, Metadata
+leg.zig        ── LegStats: per-waypoint-pair intervals (Naismith)
 section.zig    ── SectionStats data struct (camelCase fields — maps to JS)
+stage.zig      ── StageStats: LifeBase-to-LifeBase groupings (Minetti)
+segment.zig    ── Shared per-point Minetti metrics for sections & stages
+minetti.zig    ── Metabolic-cost pace/fatigue/circadian model
+soundscape.zig ── Audio frame generation from trace arrays
 time.zig       ── ISO 8601 → epoch parsing
-waypoint.zig   ── Named-field Point struct (legacy, superseded by [3]f64)
 ```
 
 `readGPXComplete` → `GPXData { trace, waypoints, sections, metadata }` is the main WASM entry point.

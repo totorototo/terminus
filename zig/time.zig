@@ -240,31 +240,3 @@ test "parseIso8601ToEpoch: same moment in different timezones" {
     try expectEqual(utc, cet);
     try expectEqual(utc, est);
 }
-
-pub fn main() void {
-    // Test UTC
-    const epoch_utc = parseIso8601ToEpoch("2025-11-20T12:00:00Z") catch {
-        std.debug.print("Invalid date format\n", .{});
-        return;
-    };
-    std.debug.print("UTC:  2025-11-20T12:00:00Z -> {}\n", .{epoch_utc});
-
-    // Test CET (+01:00)
-    const epoch_cet = parseIso8601ToEpoch("2025-11-20T12:00:00+01:00") catch {
-        std.debug.print("Invalid date format\n", .{});
-        return;
-    };
-    std.debug.print("CET:  2025-11-20T12:00:00+01:00 -> {}\n", .{epoch_cet});
-
-    // Test EST (-05:00)
-    const epoch_est = parseIso8601ToEpoch("2025-11-20T12:00:00-05:00") catch {
-        std.debug.print("Invalid date format\n", .{});
-        return;
-    };
-    std.debug.print("EST:  2025-11-20T12:00:00-05:00 -> {}\n", .{epoch_est});
-
-    // Show timezone enum
-    std.debug.print("\nTimezone offsets:\n", .{});
-    std.debug.print("CET offset: {} seconds ({s})\n", .{ Timezone.CET.toOffset(), Timezone.CET.toString() });
-    std.debug.print("EST offset: {} seconds ({s})\n", .{ Timezone.EST.toOffset(), Timezone.EST.toString() });
-}

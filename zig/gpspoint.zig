@@ -51,12 +51,6 @@ pub fn bearingTo(a: [3]f64, b: [3]f64) f64 {
     return bearing;
 }
 
-/// Absolute elevation difference (already present)
-pub fn elevationDeltaAbs(a: [3]f64, b: [3]f64) f64 {
-    const delta = a[IDX_ELEV] - b[IDX_ELEV];
-    return if (delta >= 0) delta else -delta;
-}
-
 /// Signed elevation difference (b - a)
 pub fn elevationDeltaSigned(a: [3]f64, b: [3]f64) f64 {
     return b[IDX_ELEV] - a[IDX_ELEV];
@@ -70,7 +64,7 @@ test "distance: same point returns zero" {
 
 test "distance: equator 1 degree longitude" {
     const a = [3]f64{ 0.0, 0.0, 0.0 };
-    const b = [3]f64{ 1.0, 0.0, 0.0 };
+    const b = [3]f64{ 0.0, 1.0, 0.0 };
     const d = distance(a, b);
     // At equator, 1 degree longitude ≈ 111,320 meters
     try std.testing.expectApproxEqAbs(111320.0, d, 200.0);
@@ -78,7 +72,7 @@ test "distance: equator 1 degree longitude" {
 
 test "distance: equator 1 degree latitude" {
     const a = [3]f64{ 0.0, 0.0, 0.0 };
-    const b = [3]f64{ 0.0, 1.0, 0.0 };
+    const b = [3]f64{ 1.0, 0.0, 0.0 };
     const d = distance(a, b);
     // 1 degree latitude ≈ 111,320 meters
     try std.testing.expectApproxEqAbs(111320.0, d, 200.0);
@@ -155,10 +149,3 @@ test "bearingTo: west" {
     try std.testing.expectApproxEqAbs(270.0, bearing, 1.0);
 }
 
-test "elevationDeltaAbs: matches elevationDelta" {
-    const a = [3]f64{ 0.0, 0.0, 100.0 };
-    const b = [3]f64{ 0.0, 0.0, 50.0 };
-    const delta1 = elevationDelta(a, b);
-    const delta2 = elevationDeltaAbs(a, b);
-    try std.testing.expectEqual(delta1, delta2);
-}

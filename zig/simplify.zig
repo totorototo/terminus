@@ -47,72 +47,124 @@ fn triangleArea(side_a: f64, side_b: f64, side_c: f64) f64 {
     return 0.25 * @sqrt(t);
 }
 
-/// Douglas-Peucker line simplification algorithm
-/// Recursively reduces points in a polyline while preserving shape
+/// Douglas-Peucker line simplification.
+/// Returns the indices (ascending) of the points that survive simplification.
+/// Endpoints are always kept. Caller owns the returned slice.
+///
+/// Uses a keep-mask plus an explicit work stack rather than recursion, so it
+/// has no call-stack depth limit and always produces the exact, complete
+/// simplification regardless of how deeply the polyline subdivides.
+pub fn douglasPeuckerIndices(
+    allocator: std.mem.Allocator,
+    points: []const [3]f64,
+    epsilon: f64,
+) ![]usize {
+    if (points.len <= 2) {
+        const out = try allocator.alloc(usize, points.len);
+        for (0..points.len) |i| out[i] = i;
+        return out;
+    }
+
+    const keep = try allocator.alloc(bool, points.len);
+    defer allocator.free(keep);
+    @memset(keep, false);
+    keep[0] = true;
+    keep[points.len - 1] = true;
+
+    const Segment = struct { lo: usize, hi: usize };
+    var stack = std.ArrayList(Segment){};
+    defer stack.deinit(allocator);
+    try stack.append(allocator, .{ .lo = 0, .hi = points.len - 1 });
+
+    while (stack.items.len > 0) {
+        const seg = stack.items[stack.items.len - 1];
+        stack.items.len -= 1;
+
+        // Find the point of maximum perpendicular distance strictly inside the segment.
+        var max_distance: f64 = 0.0;
+        var max_index: usize = 0;
+        const line_start = points[seg.lo];
+        const line_end = points[seg.hi];
+
+        var i = seg.lo + 1;
+        while (i < seg.hi) : (i += 1) {
+            const dist = perpendicularDistance(points[i], line_start, line_end);
+            if (dist > max_distance) {
+                max_distance = dist;
+                max_index = i;
+            }
+        }
+
+        // If it exceeds epsilon, keep it and recurse into both halves.
+        if (max_distance > epsilon) {
+            keep[max_index] = true;
+            try stack.append(allocator, .{ .lo = seg.lo, .hi = max_index });
+            try stack.append(allocator, .{ .lo = max_index, .hi = seg.hi });
+        }
+    }
+
+    var indices = std.ArrayList(usize){};
+    defer indices.deinit(allocator);
+    for (0..points.len) |idx| {
+        if (keep[idx]) try indices.append(allocator, idx);
+    }
+    return try indices.toOwnedSlice(allocator);
+}
+
+/// Douglas-Peucker line simplification returning the surviving points.
+/// Thin wrapper over `douglasPeuckerIndices`. Caller owns the result.
 pub fn douglasPeuckerSimplify(
     allocator: std.mem.Allocator,
     points: []const [3]f64,
     epsilon: f64,
 ) ![][3]f64 {
-    return douglasPeuckerSimplifyDepth(allocator, points, epsilon, 0);
-}
+    const idx = try douglasPeuckerIndices(allocator, points, epsilon);
+    defer allocator.free(idx);
 
-const MAX_RECURSION_DEPTH = 64;
-
-fn douglasPeuckerSimplifyDepth(
-    allocator: std.mem.Allocator,
-    points: []const [3]f64,
-    epsilon: f64,
-    depth: u32,
-) ![][3]f64 {
-    if (points.len <= 2 or depth >= MAX_RECURSION_DEPTH) {
-        // Can't simplify 2 or fewer points, or depth limit reached — return copy
-        const result = try allocator.alloc([3]f64, points.len);
-        @memcpy(result, points);
-        return result;
-    }
-
-    // Find point with maximum perpendicular distance from line segment
-    var max_distance: f64 = 0.0;
-    var max_index: usize = 0;
-
-    const line_start = points[0];
-    const line_end = points[points.len - 1];
-
-    for (1..points.len - 1) |i| {
-        const dist = perpendicularDistance(points[i], line_start, line_end);
-        if (dist > max_distance) {
-            max_distance = dist;
-            max_index = i;
-        }
-    }
-
-    // If max distance exceeds epsilon, split and recurse
-    if (max_distance > epsilon) {
-        // Recursively simplify left and right segments
-        const left = try douglasPeuckerSimplifyDepth(allocator, points[0 .. max_index + 1], epsilon, depth + 1);
-        errdefer allocator.free(left);
-
-        const right = try douglasPeuckerSimplifyDepth(allocator, points[max_index..], epsilon, depth + 1);
-        defer allocator.free(right);
-
-        // Merge results (right[0] == left[left.len-1], so skip it)
-        const result = try allocator.alloc([3]f64, left.len + right.len - 1);
-        @memcpy(result[0..left.len], left);
-        @memcpy(result[left.len..], right[1..]);
-
-        allocator.free(left);
-        return result;
-    } else {
-        // All points between endpoints can be removed
-        const result = try allocator.alloc([3]f64, 2);
-        result[0] = points[0];
-        result[1] = points[points.len - 1];
-        return result;
-    }
+    const result = try allocator.alloc([3]f64, idx.len);
+    for (idx, 0..) |src, i| result[i] = points[src];
+    return result;
 }
 
 // Tests
+
+test "douglasPeuckerIndices: returns ascending source indices that map back to surviving points" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 1.0, 0.0, 100.0 },
+        [3]f64{ 2.0, 5.0, 110.0 }, // peak — must survive
+        [3]f64{ 3.0, 0.0, 100.0 },
+        [3]f64{ 4.0, 0.0, 100.0 },
+    };
+
+    const idx = try douglasPeuckerIndices(allocator, points[0..], 1.0);
+    defer allocator.free(idx);
+
+    // Indices are strictly ascending and within bounds.
+    try expect(idx.len >= 2);
+    for (1..idx.len) |i| try expect(idx[i] > idx[i - 1]);
+    try expect(idx[idx.len - 1] < points.len);
+
+    // Endpoints and the peak are preserved.
+    try std.testing.expectEqual(@as(usize, 0), idx[0]);
+    try std.testing.expectEqual(@as(usize, points.len - 1), idx[idx.len - 1]);
+    var has_peak = false;
+    for (idx) |s| {
+        if (s == 2) has_peak = true;
+    }
+    try expect(has_peak);
+
+    // Indices select exactly the same points the slice API returns.
+    const pts = try douglasPeuckerSimplify(allocator, points[0..], 1.0);
+    defer allocator.free(pts);
+    try std.testing.expectEqual(pts.len, idx.len);
+    for (idx, 0..) |s, i| {
+        try expectApproxEqAbs(points[s][0], pts[i][0], 1e-9);
+        try expectApproxEqAbs(points[s][1], pts[i][1], 1e-9);
+    }
+}
 
 test "perpendicularDistance: point on line" {
     // Use realistic GPS coordinates (lat, lon, elevation)

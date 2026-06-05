@@ -4,17 +4,12 @@ const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
 const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 const distance = @import("gpspoint.zig").distance;
-const elevationDeltaSigned = @import("gpspoint.zig").elevationDeltaSigned;
 const findPeaks = @import("extrema.zig").findPeaks;
 const findValleys = @import("extrema.zig").findValleys;
 const detectClimbs = @import("climbs.zig").detectClimbs;
 pub const ClimbStats = @import("climbs.zig").ClimbStats;
-const douglasPeuckerSimplify = @import("simplify.zig").douglasPeuckerSimplify;
+const douglasPeuckerIndices = @import("simplify.zig").douglasPeuckerIndices;
 const elevation = @import("elevation.zig");
-
-fn pointsEqual(a: [3]f64, b: [3]f64) bool {
-    return a[0] == b[0] and a[1] == b[1] and a[2] == b[2];
-}
 
 // Structure to return both the closest point and its index
 pub const ClosestPointResult = struct {
@@ -53,17 +48,29 @@ pub const Trace = struct {
             };
         }
 
-        // Apply Douglas-Peucker simplification for large datasets (> 1000 points)
+        // For large datasets, Douglas-Peucker drops points to keep the render and
+        // per-point math cheap. We keep the surviving source indices so the denoised
+        // (full-resolution) elevation totals can be mapped back exactly, with no
+        // fragile float-equality lookups. Small datasets use the identity mapping.
+        var src_indices: []usize = undefined;
         const final_points = if (coordinates.len > 1000) blk: {
-            const simplified = try douglasPeuckerSimplify(allocator, coordinates, 15.0);
-            break :blk simplified; // Transfer ownership, no copy needed
+            const idx = try douglasPeuckerIndices(allocator, coordinates, 15.0);
+            errdefer allocator.free(idx);
+            const pts = try allocator.alloc([3]f64, idx.len);
+            for (idx, 0..) |src, i| pts[i] = coordinates[src];
+            src_indices = idx;
+            break :blk pts;
         } else blk: {
-            // Small dataset: copy to ensure we own the data
-            const copy = try allocator.alloc([3]f64, coordinates.len);
-            @memcpy(copy, coordinates);
-            break :blk copy;
+            const pts = try allocator.alloc([3]f64, coordinates.len);
+            errdefer allocator.free(pts);
+            @memcpy(pts, coordinates);
+            const idx = try allocator.alloc(usize, coordinates.len);
+            for (0..coordinates.len) |i| idx[i] = i;
+            src_indices = idx;
+            break :blk pts;
         };
         errdefer allocator.free(final_points);
+        defer allocator.free(src_indices);
 
         const cumulativeDistances = try allocator.alloc(f64, final_points.len);
         errdefer allocator.free(cumulativeDistances);
@@ -109,20 +116,13 @@ pub const Trace = struct {
         );
         defer gain_loss.deinit(allocator);
 
-        // Map each (possibly simplified) trace point back to its raw index so the
-        // per-point cumulative arrays stay aligned with `final_points` while
-        // reflecting the denoised totals. Douglas-Peucker preserves original point
-        // values verbatim, so exact equality identifies the source sample.
-        {
-            var k: usize = 0;
-            for (final_points, 0..) |fp, fi| {
-                while (k < coordinates.len and !pointsEqual(coordinates[k], fp)) k += 1;
-                std.debug.assert(k < coordinates.len);
-                const src = @min(k, coordinates.len - 1);
-                cumulativeElevations[fi] = gain_loss.cumGain[src];
-                cumulativeElevationLoss[fi] = gain_loss.cumLoss[src];
-                k = src + 1;
-            }
+        // Map each (possibly simplified) trace point back to its raw source index
+        // so the per-point cumulative arrays stay aligned with `final_points` while
+        // reflecting the denoised totals computed on the full-resolution signal.
+        for (0..final_points.len) |fi| {
+            const src = src_indices[fi];
+            cumulativeElevations[fi] = gain_loss.cumGain[src];
+            cumulativeElevationLoss[fi] = gain_loss.cumLoss[src];
         }
 
         // Second pass: calculate smoothed slopes using centered window
@@ -263,6 +263,10 @@ pub const Trace = struct {
     pub fn findClosestPointAfter(self: *const Trace, target: [3]f64, start_from: usize) ?ClosestPointResult {
         if (self.points.len == 0 or start_from >= self.points.len) return null;
 
+        // Only start the early-stop countdown once we've locked onto a genuinely
+        // close candidate; otherwise an early sparse stretch could break the scan
+        // before it ever reaches the relevant area of the trace.
+        const LOCK_IN_DISTANCE: f64 = 1000.0; // meters: "close enough" to commit to this region
         const EARLY_STOP_MARGIN: f64 = 2000.0; // meters past the current best before giving up
 
         var closest_distance: f64 = std.math.inf(f64);
@@ -275,7 +279,7 @@ pub const Trace = struct {
                 closest_distance = dist;
                 closest_index = i;
                 closest_point = point;
-            } else if (dist > closest_distance + EARLY_STOP_MARGIN) {
+            } else if (closest_distance < LOCK_IN_DISTANCE and dist > closest_distance + EARLY_STOP_MARGIN) {
                 break;
             }
         }
