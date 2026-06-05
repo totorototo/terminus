@@ -52,18 +52,23 @@ const style = (Component) => styled(Component)`
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 0.5rem;
   }
 
   .setting-row {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.5rem;
   }
 
   .setting-label-row {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    gap: 0.5rem;
   }
 
   .setting-name {
@@ -73,10 +78,22 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.7,
+        0.9,
       )};
     letter-spacing: 0.3px;
     text-transform: uppercase;
+  }
+
+  .setting-desc {
+    margin: -0.15rem 0 0.1rem;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.5,
+      )};
+    line-height: 1.4;
   }
 
   .setting-value {
@@ -147,33 +164,28 @@ const style = (Component) => styled(Component)`
   }
 
   .segmented {
-    display: flex;
-    gap: 0.3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
     width: 100%;
   }
 
   .segment {
-    flex: 1;
-    padding: 0.4rem 0.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    padding: 0.5rem 0.6rem;
     border: 1px solid
       ${(props) =>
         rgba(
           props.theme.colors[props.theme.currentVariant]["--color-text"],
           0.15,
         )};
-    border-radius: 6px;
+    border-radius: 8px;
     background: transparent;
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.55,
-      )};
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
     cursor: pointer;
+    text-align: left;
     transition: all ${(props) => props.theme.transitions["--transition-fast"]};
 
     &:hover:not(:disabled):not(.active) {
@@ -182,8 +194,11 @@ const style = (Component) => styled(Component)`
           props.theme.colors[props.theme.currentVariant]["--color-primary"],
           0.5,
         )};
-      color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-text"]};
+
+      .segment-label {
+        color: ${(props) =>
+          props.theme.colors[props.theme.currentVariant]["--color-text"]};
+      }
     }
 
     &.active {
@@ -192,10 +207,27 @@ const style = (Component) => styled(Component)`
       background: ${(props) =>
         rgba(
           props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.15,
+          0.18,
         )};
-      color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      box-shadow: 0 0 0 1px
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-primary"],
+            0.4,
+          )};
+
+      .segment-label {
+        color: ${(props) =>
+          props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      }
+
+      .segment-sub {
+        color: ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-primary"],
+            0.75,
+          )};
+      }
     }
 
     &:disabled {
@@ -204,16 +236,40 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  .settings-hint {
+  .segment-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.3,
+        0.8,
+      )};
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  .segment-sub {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.45,
+      )};
+    letter-spacing: 0.2px;
+  }
+
+  .settings-hint {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.45,
       )};
     line-height: 1.5;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.2px;
     margin-top: 0.25rem;
   }
 `;

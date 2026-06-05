@@ -12,10 +12,10 @@ import style from "./PaceSettings.style.js";
  * sees and selects.
  */
 export const PACE_OPTIONS = [
-  { label: "Slow", value: 600 },
-  { label: "Moderate", value: 500 },
-  { label: "Quite fast", value: 400 },
-  { label: "Fast", value: 300 },
+  { label: "Slow", value: 600, sub: "10:00 /km" },
+  { label: "Moderate", value: 500, sub: "8:20 /km" },
+  { label: "Quite fast", value: 400, sub: "6:40 /km" },
+  { label: "Fast", value: 300, sub: "5:00 /km" },
 ];
 
 /**
@@ -25,10 +25,10 @@ export const PACE_OPTIONS = [
  * Equal k steps give roughly equal proportional slowdown increments per preset.
  */
 export const FATIGUE_OPTIONS = [
-  { label: "Low", value: 0.001 },
-  { label: "Moderate", value: 0.002 },
-  { label: "High", value: 0.003 },
-  { label: "Very high", value: 0.004 },
+  { label: "Low", value: 0.001, sub: "Minimal fade" },
+  { label: "Moderate", value: 0.002, sub: "Steady fade" },
+  { label: "High", value: 0.003, sub: "Strong fade" },
+  { label: "Very high", value: 0.004, sub: "Heavy fade" },
 ];
 
 /**
@@ -36,10 +36,10 @@ export const FATIGUE_OPTIONS = [
  * The numeric `value` is seconds; the label is shown to the user.
  */
 export const LIFE_BASE_STOP_OPTIONS = [
-  { label: "None", value: 0 },
-  { label: "30 min", value: 1800 },
-  { label: "1 hour", value: 3600 },
-  { label: "2 hours", value: 7200 },
+  { label: "None", value: 0, sub: "No rest" },
+  { label: "30 min", value: 1800, sub: "Quick stop" },
+  { label: "1 hour", value: 3600, sub: "Full rest" },
+  { label: "2 hours", value: 7200, sub: "Long rest" },
 ];
 
 /** Pick the option whose numeric value is closest to the stored value. */
@@ -109,7 +109,9 @@ const PaceSettings = memo(function PaceSettings({ className }) {
         <div className="setting-row">
           <div className="setting-label-row">
             <span className="setting-name">Base pace</span>
+            <span className="setting-value">{selectedPace.label}</span>
           </div>
+          <p className="setting-desc">Your steady speed on flat terrain.</p>
           <div
             className="segmented"
             role="radiogroup"
@@ -129,7 +131,8 @@ const PaceSettings = memo(function PaceSettings({ className }) {
                 onClick={() => handlePaceChange(opt.value)}
                 disabled={isFollower}
               >
-                {opt.label}
+                <span className="segment-label">{opt.label}</span>
+                <span className="segment-sub">{opt.sub}</span>
               </button>
             ))}
           </div>
@@ -138,7 +141,9 @@ const PaceSettings = memo(function PaceSettings({ className }) {
         <div className="setting-row">
           <div className="setting-label-row">
             <span className="setting-name">Fatigue</span>
+            <span className="setting-value">{selectedFatigue.label}</span>
           </div>
+          <p className="setting-desc">How much you slow down over distance.</p>
           <div
             className="segmented"
             role="radiogroup"
@@ -158,7 +163,8 @@ const PaceSettings = memo(function PaceSettings({ className }) {
                 onClick={() => handleFatigueChange(opt.value)}
                 disabled={isFollower}
               >
-                {opt.label}
+                <span className="segment-label">{opt.label}</span>
+                <span className="segment-sub">{opt.sub}</span>
               </button>
             ))}
           </div>
@@ -167,7 +173,9 @@ const PaceSettings = memo(function PaceSettings({ className }) {
         <div className="setting-row">
           <div className="setting-label-row">
             <span className="setting-name">LifeBase stop</span>
+            <span className="setting-value">{selectedStop.label}</span>
           </div>
+          <p className="setting-desc">Rest time planned at each LifeBase.</p>
           <div
             className="segmented"
             role="radiogroup"
@@ -187,7 +195,8 @@ const PaceSettings = memo(function PaceSettings({ className }) {
                 onClick={() => handleStopChange(opt.value)}
                 disabled={isFollower}
               >
-                {opt.label}
+                <span className="segment-label">{opt.label}</span>
+                <span className="segment-sub">{opt.sub}</span>
               </button>
             ))}
           </div>
