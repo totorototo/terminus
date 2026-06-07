@@ -1,10 +1,10 @@
 const std = @import("std");
 const Trace = @import("trace.zig").Trace;
-const minetti = @import("minetti.zig");
+const paceModel = @import("paceModel.zig");
 
 /// Per-point physiological metrics accumulated over a trace index range.
 /// Shared by section.zig and stage.zig, which differ only in how they group
-/// waypoints — the inner Minetti pace/fatigue/circadian loop is identical.
+/// waypoints — the inner pace/fatigue/circadian/weather loop is identical.
 pub const SegmentMetrics = struct {
     minElevation: f64,
     maxElevation: f64,
@@ -25,7 +25,7 @@ pub const SegmentMetrics = struct {
 /// is known, in which case the circadian factor is neutral (1.0).
 ///
 /// `weather` is the forecast conditions for this segment (constant across the
-/// range — one forecast per checkpoint). Pass `minetti.WEATHER_NEUTRAL` when no
+/// range — one forecast per checkpoint). Pass `paceModel.WEATHER_NEUTRAL` when no
 /// forecast is available, which leaves the estimate unchanged.
 pub fn computeSegmentMetrics(
     trace: *const Trace,
@@ -34,7 +34,7 @@ pub fn computeSegmentMetrics(
     base_pace_s_per_km: f64,
     k_fatigue: f64,
     clock_start: ?i64,
-    weather: minetti.WeatherConditions,
+    weather: paceModel.WeatherConditions,
     d_eff_m: *f64,
     elapsed_s: *f64,
 ) SegmentMetrics {
@@ -45,7 +45,7 @@ pub fn computeSegmentMetrics(
     var total_weighted_dist: f64 = 0.0;
 
     // Weather is constant over the segment, so its multiplier is computed once.
-    const weather_factor = minetti.weatherFactor(weather);
+    const weather_factor = paceModel.weatherFactor(weather);
 
     for (start_index..end_index) |j| {
         const ele = trace.points[j][2];
@@ -55,18 +55,13 @@ pub fn computeSegmentMetrics(
 
         const slope_frac = trace.slopes[j] / 100.0;
         const seg_dist = trace.cumulativeDistances[j + 1] - trace.cumulativeDistances[j];
-        const pf = minetti.paceFactor(slope_frac);
-        const fatigue_factor = minetti.fatigueFactor(d_eff_m.* / 1000.0, k_fatigue);
-        const circadian = if (clock_start) |t0|
-            minetti.circadianFactor(t0 + @as(i64, @intFromFloat(elapsed_s.*)))
-        else
-            1.0;
-        const seg_time = (seg_dist / 1000.0) * base_pace_s_per_km * pf * fatigue_factor * circadian * weather_factor;
+        const factors = paceModel.computeFactors(slope_frac, d_eff_m.* / 1000.0, k_fatigue, clock_start, elapsed_s.*, weather_factor);
+        const seg_time = (seg_dist / 1000.0) * base_pace_s_per_km * factors.combined;
 
         total_time += seg_time;
         elapsed_s.* += seg_time;
-        total_weighted_dist += seg_dist * pf;
-        d_eff_m.* += seg_dist * pf;
+        total_weighted_dist += seg_dist * factors.terrain;
+        d_eff_m.* += seg_dist * factors.terrain;
     }
 
     return .{
@@ -93,7 +88,7 @@ test "computeSegmentMetrics: flat range has neutral pace factor and no fatigue g
 
     var d_eff: f64 = 0.0;
     var elapsed: f64 = 0.0;
-    const m = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, minetti.K_FATIGUE, null, minetti.WEATHER_NEUTRAL, &d_eff, &elapsed);
+    const m = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, paceModel.K_FATIGUE, null, paceModel.WEATHER_NEUTRAL, &d_eff, &elapsed);
 
     try std.testing.expectApproxEqAbs(100.0, m.minElevation, 0.001);
     try std.testing.expectApproxEqAbs(100.0, m.maxElevation, 0.001);
@@ -119,9 +114,9 @@ test "computeSegmentMetrics: state carries across consecutive ranges" {
     const last = trace.points.len - 1;
     const mid = last / 2;
 
-    _ = computeSegmentMetrics(&trace, 0, mid, 500.0, minetti.K_FATIGUE, null, minetti.WEATHER_NEUTRAL, &d_eff, &elapsed);
+    _ = computeSegmentMetrics(&trace, 0, mid, 500.0, paceModel.K_FATIGUE, null, paceModel.WEATHER_NEUTRAL, &d_eff, &elapsed);
     const d_after_first = d_eff;
-    _ = computeSegmentMetrics(&trace, mid, last, 500.0, minetti.K_FATIGUE, null, minetti.WEATHER_NEUTRAL, &d_eff, &elapsed);
+    _ = computeSegmentMetrics(&trace, mid, last, 500.0, paceModel.K_FATIGUE, null, paceModel.WEATHER_NEUTRAL, &d_eff, &elapsed);
 
     // Effort distance and elapsed clock are cumulative, never reset between calls.
     try std.testing.expect(d_eff > d_after_first);
@@ -139,7 +134,7 @@ test "computeSegmentMetrics: adverse weather increases segment time" {
     var trace = try Trace.init(allocator, points[0..]);
     defer trace.deinit(allocator);
 
-    const hot = minetti.WeatherConditions{
+    const hot = paceModel.WeatherConditions{
         .temperature_c = 32.0,
         .humidity_pct = 85.0,
         .wind_kmh = 35.0,
@@ -148,16 +143,16 @@ test "computeSegmentMetrics: adverse weather increases segment time" {
 
     var d_eff_a: f64 = 0.0;
     var elapsed_a: f64 = 0.0;
-    const neutral = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, minetti.K_FATIGUE, null, minetti.WEATHER_NEUTRAL, &d_eff_a, &elapsed_a);
+    const neutral = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, paceModel.K_FATIGUE, null, paceModel.WEATHER_NEUTRAL, &d_eff_a, &elapsed_a);
 
     var d_eff_b: f64 = 0.0;
     var elapsed_b: f64 = 0.0;
-    const adverse = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, minetti.K_FATIGUE, null, hot, &d_eff_b, &elapsed_b);
+    const adverse = computeSegmentMetrics(&trace, 0, trace.points.len - 1, 500.0, paceModel.K_FATIGUE, null, hot, &d_eff_b, &elapsed_b);
 
     // Bad weather only slows: time goes up, by exactly the weather factor.
     try std.testing.expect(adverse.totalTime > neutral.totalTime);
     try std.testing.expectApproxEqAbs(
-        neutral.totalTime * minetti.weatherFactor(hot),
+        neutral.totalTime * paceModel.weatherFactor(hot),
         adverse.totalTime,
         1e-6,
     );
