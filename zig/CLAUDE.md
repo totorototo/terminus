@@ -15,7 +15,10 @@ leg.zig        ── LegStats: per-waypoint-pair intervals (Naismith)
 section.zig    ── SectionStats data struct (camelCase fields — maps to JS)
 stage.zig      ── StageStats: LifeBase-to-LifeBase groupings (Minetti)
 segment.zig    ── Shared per-point Minetti metrics for sections & stages
-minetti.zig    ── Metabolic-cost pace/fatigue/circadian model
+minetti.zig    ── Metabolic-cost slope model (Minetti et al. 2002): cmet, paceFactor
+paceModel.zig  ── Full pace model: folds minetti's slope factor together with
+                  fatigue, circadian and weather into one combined multiplier
+                  (computeFactors)
 soundscape.zig ── Audio frame generation from trace arrays
 time.zig       ── ISO 8601 → epoch parsing
 ```
