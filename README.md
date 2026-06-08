@@ -110,8 +110,9 @@ xcrun simctl location booted clear
 To replay a GPX route as live position updates broadcast to a PartyKit room (useful for testing the follower view without a physical runner):
 
 ```bash
-# Usage
-node scripts/simulate-partykit.js <gpx-file> <room-id> <race-id> [speed_m_per_s] [update_every_m]
+# Usage — the second argument is now a secret write key; the public room id
+# followers use is derived from it (SHA-256) and printed on startup.
+node scripts/simulate-partykit.js <gpx-file> <write-key> <race-id> [speed_m_per_s] [update_every_m]
 
 # Examples
 node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 vvx-xgtv-2026        # 2 m/s, update every 100 m

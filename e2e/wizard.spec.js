@@ -49,13 +49,13 @@ test.describe("Wizard", () => {
     await expect(input).toBeFocused();
     await expect(btn).toBeDisabled();
 
-    // 4 chars: still disabled
+    // Too short: still disabled
     await input.fill("a3k7");
     await expect(btn).toBeDisabled();
 
-    // 6 chars: enabled + auto-uppercased
-    await input.fill("a3k7x2");
-    await expect(input).toHaveValue("A3K7X2");
+    // Full 16-char lowercase hex room id: enabled
+    await input.fill("0a1b2c3d4e5f6a7b");
+    await expect(input).toHaveValue("0a1b2c3d4e5f6a7b");
     await expect(btn).toBeEnabled();
   });
 

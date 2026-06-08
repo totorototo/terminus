@@ -1,6 +1,42 @@
+import { isAuthorizedWriter } from "../src/lib/roomAuth.js";
 import { sendNotification } from "./webpush.js";
 
 const PUSH_RATE_LIMIT_MS = 30_000;
+
+// How long a stored last-known location stays "fresh". Past this, it is not
+// replayed to newly-connecting followers (and is cleared), so a stale position
+// from a finished run does not leak to whoever opens the room later.
+const LAST_LOCATION_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+// Maximum push subscriptions stored per room. Caps storage/abuse; well above
+// the realistic number of followers for a single runner.
+const MAX_PUSH_SUBS = 50;
+
+// Allowlist of trusted Web Push service hosts. Subscriptions whose endpoint
+// does not match one of these (over HTTPS) are rejected — this prevents the
+// server from being coerced into sending requests to attacker-chosen URLs
+// (SSRF) via a forged `push_subscribe` message.
+const ALLOWED_PUSH_HOSTS = [
+  "fcm.googleapis.com", // Chrome / Android (FCM)
+  "android.googleapis.com", // Chrome (legacy GCM/FCM)
+  "updates.push.services.mozilla.com", // Firefox
+  /\.push\.apple\.com$/, // Safari / iOS
+  /\.notify\.windows\.com$/, // Edge / Windows (WNS)
+];
+
+function isAllowedPushEndpoint(endpoint) {
+  if (typeof endpoint !== "string") return false;
+  let url;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "https:") return false;
+  return ALLOWED_PUSH_HOSTS.some((host) =>
+    host instanceof RegExp ? host.test(url.hostname) : host === url.hostname,
+  );
+}
 
 export default class Server {
   constructor(room) {
@@ -14,9 +50,16 @@ export default class Server {
 
   async onConnect(conn) {
     const last = await this.room.storage.get("lastLocation");
-    if (last) {
-      conn.send(last);
+    if (!last) return;
+    // Drop a position that is older than the freshness window so stale data
+    // from a previous run is never replayed.
+    const savedAt = (await this.room.storage.get("lastLocationAt")) ?? 0;
+    if (Date.now() - savedAt > LAST_LOCATION_TTL_MS) {
+      await this.room.storage.delete("lastLocation");
+      await this.room.storage.delete("lastLocationAt");
+      return;
     }
+    conn.send(last);
   }
 
   async onMessage(message, sender) {
@@ -51,16 +94,33 @@ export default class Server {
     )
       return;
 
-    await this.room.storage.put("lastLocation", message);
-    this.room.broadcast(message, [sender.id]);
+    // Authorization: only the holder of this room's secret write key may
+    // broadcast. The room id is SHA-256(writeKey), so followers (who only know
+    // the room id) cannot forge positions. Reject unauthenticated writers.
+    if (!(await isAuthorizedWriter(parsed.writeKey, this.room.id))) return;
+
+    // Strip the secret before persisting/relaying so it never reaches followers.
+    delete parsed.writeKey;
+    const sanitized = JSON.stringify(parsed);
+
+    await this.room.storage.put("lastLocation", sanitized);
+    await this.room.storage.put("lastLocationAt", Date.now());
+    this.room.broadcast(sanitized, [sender.id]);
 
     await this.sendPushNotifications(parsed);
   }
 
   async handlePushSubscribe(subscription) {
-    if (!subscription?.endpoint) return;
+    const endpoint = subscription?.endpoint;
+    // Reject endpoints that are not valid, HTTPS, known push-service URLs.
+    if (!isAllowedPushEndpoint(endpoint)) return;
+
     const subs = (await this.room.storage.get("pushSubs")) ?? {};
-    subs[subscription.endpoint] = subscription;
+    // Cap the number of stored subscriptions per room. Re-subscribing with an
+    // already-known endpoint is always allowed (just refreshes the keys).
+    if (!(endpoint in subs) && Object.keys(subs).length >= MAX_PUSH_SUBS)
+      return;
+    subs[endpoint] = subscription;
     await this.room.storage.put("pushSubs", subs);
   }
 

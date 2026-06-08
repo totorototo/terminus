@@ -43,6 +43,7 @@ const useStore = create(
             profileMode: state.app.profileMode,
             pendingUrl: state.app.pendingUrl,
             liveSessionId: state.app.liveSessionId,
+            liveWriteKey: state.app.liveWriteKey,
             mode: state.app.mode,
             followerRoomId: state.app.followerRoomId,
             raceId: state.app.raceId,

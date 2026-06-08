@@ -104,8 +104,8 @@ function Help({ className }) {
               <h3>Follower</h3>
               <p>
                 You are watching from the sidelines. Enter the runner&apos;s
-                6-character room code to join their session and track them live
-                on the same map.
+                room code to join their session and track them live on the same
+                map.
               </p>
             </div>
           </div>
@@ -617,7 +617,7 @@ function Help({ className }) {
               <tr>
                 <td>Share room code</td>
                 <td>
-                  Display your 6-character code so followers can join your live
+                  Display your room code so followers can join your live
                   session.
                 </td>
               </tr>
@@ -657,8 +657,8 @@ function Help({ className }) {
                 Room code
               </h4>
               <p>
-                The runner shares a 6-character code. Enter it in the Follower
-                flow to connect.
+                The runner shares a room code. Enter it in the Follower flow to
+                connect.
               </p>
             </div>
             <div className="feat">

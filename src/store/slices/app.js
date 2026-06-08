@@ -9,6 +9,7 @@ export const createAppSlice = (set, get) => {
       locations: [],
       pendingUrl: null,
       liveSessionId: null,
+      liveWriteKey: null,
       mode: null,
       followerRoomId: null,
       raceId: null,
@@ -79,6 +80,13 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, liveSessionId: id } }),
         undefined,
         "app/setLiveSessionId",
+      ),
+
+    setLiveWriteKey: (key) =>
+      set(
+        (state) => ({ app: { ...state.app, liveWriteKey: key } }),
+        undefined,
+        "app/setLiveWriteKey",
       ),
 
     setMode: (mode) => {

@@ -5,6 +5,7 @@ import {
   subscribeToPush,
 } from "../../helpers/notify";
 import { track } from "../../lib/analytics.js";
+import { deriveRoomId, generateWriteKey } from "../../lib/roomAuth.js";
 
 let PartySocketModule = null;
 const getPartySocket = async () => {
@@ -16,11 +17,19 @@ const getPartySocket = async () => {
 
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";
 
-const generateSessionId = () =>
-  Array.from(crypto.getRandomValues(new Uint8Array(4)))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("")
-    .toUpperCase();
+// Bounds for pace settings received from a runner over the relay. Generous
+// margins around the UI presets (pace 300–600 s/km, kFatigue 0.001–0.004,
+// stop 0–7200 s) so any sane runner value passes while rejecting non-finite
+// or absurd inputs before they reach the pace model.
+const isFiniteInRange = (v, min, max) =>
+  typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
+
+const isValidPaceSettings = (p) =>
+  p != null &&
+  typeof p === "object" &&
+  isFiniteInRange(p.basePaceSPerKm, 60, 3600) &&
+  isFiniteInRange(p.kFatigue, 0, 0.05) &&
+  (p.lifeBaseStopS == null || isFiniteInRange(p.lifeBaseStopS, 0, 86_400));
 
 export const createGPSSlice = (set, get) => {
   // Create ring buffer for storing last 10 GPS positions
@@ -56,6 +65,10 @@ export const createGPSSlice = (set, get) => {
     raceId,
     paceSettings,
   ) => {
+    // Only the holder of the room's secret write key may broadcast. Without it
+    // the relay rejects the message, so there is nothing to send.
+    const writeKey = get().app.liveWriteKey;
+    if (!writeKey) return;
     await ensureSocket(sessionId);
     const { timestamp, coords, index } = location;
     const message = JSON.stringify({
@@ -65,6 +78,7 @@ export const createGPSSlice = (set, get) => {
       index,
       raceId,
       paceSettings,
+      writeKey,
     });
     if (partySocket.readyState === WebSocket.OPEN) {
       partySocket.send(message);
@@ -269,8 +283,16 @@ export const createGPSSlice = (set, get) => {
       if (!raceId) return;
 
       let sessionId = get().app.liveSessionId;
-      if (!sessionId) {
-        sessionId = generateSessionId();
+      // Regenerate when there is no session yet, or when an older persisted
+      // session predates write keys (sessionId present but no key) — otherwise
+      // broadcasts would be rejected by the relay.
+      if (!sessionId || !get().app.liveWriteKey) {
+        // Generate a secret write key and derive the public room id from it.
+        // Only this device keeps the write key; the shared link carries the
+        // room id alone, so followers can read but never spoof positions.
+        const writeKey = generateWriteKey();
+        sessionId = await deriveRoomId(writeKey);
+        get().setLiveWriteKey(writeKey);
         get().setLiveSessionId(sessionId);
       }
 
@@ -373,8 +395,10 @@ export const createGPSSlice = (set, get) => {
           notifyLocationUpdate(msg);
 
           // Apply runner's pace settings if they differ — triggers re-processing
-          // so followers see the same ETAs as the trailer.
-          if (msg.paceSettings) {
+          // so followers see the same ETAs as the trailer. Validate first: even
+          // though only an authorized runner can broadcast, never feed
+          // out-of-range or non-finite values into the pace model.
+          if (isValidPaceSettings(msg.paceSettings)) {
             const current = get().app.paceSettings;
             if (
               msg.paceSettings.basePaceSPerKm !== current.basePaceSPerKm ||

@@ -58,9 +58,12 @@ function Wizard({ className }) {
     setStep(4);
   };
 
+  // Room ids are 16 lowercase hex chars (first 64 bits of SHA-256(writeKey)).
+  const ROOM_CODE_RE = /^[a-f0-9]{16}$/;
+
   const handleConfirm = () => {
-    const trimmed = code.trim().toUpperCase();
-    if (!followerRaceId || trimmed.length < 6) return;
+    const trimmed = code.trim().toLowerCase();
+    if (!followerRaceId || !ROOM_CODE_RE.test(trimmed)) return;
     track("follower-join");
     navigate(`/follow/${followerRaceId}/${trimmed}`);
   };
@@ -172,19 +175,19 @@ function Wizard({ className }) {
               className="code-input"
               type="text"
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onChange={(e) => setCode(e.target.value.toLowerCase())}
               onKeyDown={handleKeyDown}
-              placeholder="A3K7X2"
-              maxLength={8}
+              placeholder="0a1b2c3d4e5f6a7b"
+              maxLength={16}
               autoFocus
-              autoCapitalize="characters"
+              autoCapitalize="none"
               autoComplete="off"
               spellCheck={false}
             />
             <button
               className="confirm-btn"
               onClick={handleConfirm}
-              disabled={code.trim().length < 6}
+              disabled={!ROOM_CODE_RE.test(code.trim().toLowerCase())}
             >
               <span>Follow</span>
               <ArrowRight size={16} strokeWidth={2.5} />

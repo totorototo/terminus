@@ -47,11 +47,15 @@ describe("GPS Slice", () => {
       findClosestLocation: mockFindClosestLocation,
       app: {
         liveSessionId: null,
+        liveWriteKey: null,
         raceId: null,
         mode: null,
       },
       setLiveSessionId: vi.fn((id) => {
         set({ app: { ...get().app, liveSessionId: id } });
+      }),
+      setLiveWriteKey: vi.fn((key) => {
+        set({ app: { ...get().app, liveWriteKey: key } });
       }),
       setRaceId: vi.fn((id) => {
         set({ app: { ...get().app, raceId: id } });
@@ -392,7 +396,7 @@ describe("GPS Slice", () => {
 
       expect(mockShare).toHaveBeenCalledWith({
         title: "Follow my run",
-        url: expect.stringMatching(/\/follow\/test-race-2026\/[A-F0-9]{8}$/),
+        url: expect.stringMatching(/\/follow\/test-race-2026\/[a-f0-9]{16}$/),
       });
       expect(store.getState().setLiveSessionId).toHaveBeenCalled();
     });
@@ -448,7 +452,7 @@ describe("GPS Slice", () => {
 
       expect(mockShare).toHaveBeenCalledWith({
         title: "Follow my run",
-        url: expect.stringMatching(/\/follow\/test-race-2026\/[A-F0-9]{8}$/),
+        url: expect.stringMatching(/\/follow\/test-race-2026\/[a-f0-9]{16}$/),
       });
     });
 

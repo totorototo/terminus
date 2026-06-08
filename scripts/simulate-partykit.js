@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Replay a GPX route as live location updates sent to a PartyKit room.
-// Usage: node scripts/simulate-partykit.js <gpx-file> <room-id> <race-id> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
+// Usage: node scripts/simulate-partykit.js <gpx-file> <write-key> <race-id> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
 //   gpx-file         - path to the GPX file (absolute or relative to cwd)
-//   room-id          - PartyKit room / session ID (e.g. "ABC123")
+//   write-key        - secret room write key (e.g. "ABC123"); the public room
+//                      id followers use is derived as SHA-256(write-key) and
+//                      printed on startup
 //   race-id          - race identifier sent in each message (e.g. "vvx-xgtv-2026")
 //   speed_m_per_s    - simulated running speed in m/s (default: 2)
 //   update_every_m   - send a position update every N metres travelled (default: 100)
@@ -13,17 +15,34 @@
 //   PARTYKIT_HOST - PartyKit host (default: localhost:1999)
 
 import { readFileSync } from "fs";
+import { webcrypto } from "node:crypto";
 import { resolve } from "path";
 
-const [, , gpxArg, roomId, raceId, speedArg, intervalArg, paceArg, fatigueArg] =
-  process.argv;
+// Web Crypto is a global in browsers and the PartyKit worker; on Node 18 it is
+// not, so expose it before importing the shared room-auth helper.
+globalThis.crypto ??= webcrypto;
+const { deriveRoomId } = await import("../src/lib/roomAuth.js");
 
-if (!gpxArg || !roomId || !raceId) {
+const [
+  ,
+  ,
+  gpxArg,
+  writeKey,
+  raceId,
+  speedArg,
+  intervalArg,
+  paceArg,
+  fatigueArg,
+] = process.argv;
+
+if (!gpxArg || !writeKey || !raceId) {
   console.error(
-    "Usage: node scripts/simulate-partykit.js <gpx-file> <room-id> <race-id> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]",
+    "Usage: node scripts/simulate-partykit.js <gpx-file> <write-key> <race-id> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]",
   );
   process.exit(1);
 }
+
+const roomId = await deriveRoomId(writeKey);
 
 const speed = parseFloat(speedArg ?? 2);
 const updateEvery = parseFloat(intervalArg ?? 100);
@@ -123,6 +142,7 @@ console.log(
 );
 console.log(`Pace: ${formatPace(basePaceSPerKm)}  ·  fatigue k: ${kFatigue}`);
 console.log(`Room: ${roomId}  ·  Race: ${raceId}`);
+console.log(`Follow at: /follow/${raceId}/${roomId}`);
 
 // ── PartyKit WebSocket connection ─────────────────────────────────────────────
 
@@ -173,6 +193,7 @@ function runReplay() {
       index: wp.index,
       raceId,
       paceSettings: { basePaceSPerKm, kFatigue },
+      writeKey,
     });
 
     ws.send(message);

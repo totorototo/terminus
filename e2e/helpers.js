@@ -38,7 +38,7 @@ export async function selectRunnerRole(page) {
  * Call this after page.goto("/").
  *
  * @param {import("@playwright/test").Page} page
- * @param {string} roomCode - 6-character uppercase room code
+ * @param {string} roomCode - room code (16 lowercase hex chars)
  */
 export async function selectFollowerRole(page, roomCode) {
   await page

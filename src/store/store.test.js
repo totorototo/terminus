@@ -164,6 +164,7 @@ describe("store", () => {
           "followerRoomId",
           "installPromptDismissed",
           "liveSessionId",
+          "liveWriteKey",
           "mode",
           "paceSettings",
           "pendingUrl",

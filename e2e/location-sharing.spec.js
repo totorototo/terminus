@@ -7,7 +7,7 @@
  *
  * Flow:
  *   1. Runner goes through the wizard ("I'm running").
- *   2. Runner clicks "Share my room code" — a 6-char code lands in the clipboard.
+ *   2. Runner clicks "Share my room code" — a follow URL lands in the clipboard.
  *   3. Follower goes through the wizard ("I'm following") and enters the code.
  *   4. Runner clicks "Find my current location" — fake GPS at the trail midpoint
  *      triggers spotMe → Zig projection → PartyKit broadcast.
@@ -87,7 +87,7 @@ test.describe("Location Sharing", () => {
         const capturedUrl = await runnerPage.evaluate(
           () => window.__capturedCode,
         );
-        expect(capturedUrl).toMatch(/\/follow\/[^/]+\/[A-F0-9]{8}$/);
+        expect(capturedUrl).toMatch(/\/follow\/[^/]+\/[a-f0-9]{16}$/);
         const roomCode = capturedUrl.split("/").pop();
 
         // ── 3. Follower goes through the wizard with that code ─────────────
