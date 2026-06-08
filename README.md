@@ -30,7 +30,8 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Zig → WebAssembly (zig/)                     │
 │  GPX parsing · Haversine · Douglas-Peucker · AMPD peak          │
-│  detection · Garmin Climb Pro qualification                     │
+│  detection · Garmin Climb Pro qualification · Minetti pace      │
+│  model (slope · fatigue · circadian · weather)                  │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -51,7 +52,7 @@ The Web Worker acts as a hard boundary: the main thread stays at 60 fps while th
 - **Stage Analytics**: Per-stage details including distance, elevation, estimated/max time, cutoff time, difficulty, and slowest required pace
 - **Pace Profile**: Smooth chart of the slowest allowed pace (km/h) over distance, with tightest-cutoff and current-section stats
 - **Live Trail Progression**: Real-time progress bar with cumulative distance percentage, elevation gain and loss based on runner position
-- **ETA Estimation**: Arrival time prediction per section based on difficulty
+- **ETA Estimation**: Per-section arrival prediction driven by a physiological pace model — Minetti et al. (2002) metabolic slope cost combined with exponential fatigue (`exp(k·d_eff)`, selectable Low/Moderate/High presets), a circadian sleep-deprivation slowdown, an optional weather penalty (temperature/humidity/wind/precipitation), and LifeBase recovery plus planned stop durations
 - **Peak Detection**: Automatic identification and visualization of peaks
 - **Climb Pro**: Automatic climb segment detection (AMPD valley detection + Garmin climb qualification) with a carousel card showing distance, elevation gain, and gradient per climb
 - **Checkpoint Markers**: Location labels along the route with distance-based visibility
@@ -175,20 +176,22 @@ party/
   server.js             # PartyKit WebSocket relay server for live location sharing
 
 zig/
-  gpx.zig               # GPX file parsing
+  gpx.zig               # GPX file parsing (readGPXComplete WASM entry point)
   gpxdata.zig           # GPX data structures
   trace.zig             # Core GPS algorithms (distance, elevation)
   simplify.zig          # Douglas-Peucker simplification
-  peaks.zig             # Peak detection algorithms
   climbs.zig            # Climb segment detection (AMPD + Garmin qualification)
   extrema.zig           # AMPD peak/valley detection algorithm
   gpspoint.zig          # Haversine distance calculations
+  elevation.zig         # Denoised elevation gain/loss (median + hysteresis)
   time.zig              # Time/duration calculations
   section.zig           # Section statistics structure
   leg.zig               # Leg data structure (stage sub-segments)
   stage.zig             # Stage data structure and analytics
+  segment.zig           # Shared per-point Minetti metrics for sections & stages
+  minetti.zig           # Minetti (2002) metabolic-cost slope pace model
+  paceModel.zig         # Pace model: fatigue, circadian and weather factors
   soundscape.zig        # Audio frame generation from elevation/slope/pace data
-  main.zig              # WASM entry point and bindings
 ```
 
 ## Contribute
