@@ -13,7 +13,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
-import useStore from "../../../store/store.js";
+import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./StageETA.style.js";
 
@@ -58,6 +58,7 @@ function DifficultyDots({ difficulty }) {
 const StageETA = memo(function StageETA({ className }) {
   const theme = useTheme();
   const { raceStart, checkpointETAs, isPreRace } = useCheckpointETAs();
+  const projectedLocation = useProjectedLocation();
   const { forecasts, fetchWeatherForCheckpoints, sections } = useStore(
     useShallow((state) => ({
       forecasts: state.weather.forecasts,
@@ -130,6 +131,13 @@ const StageETA = memo(function StageETA({ className }) {
     return { totalEstSec, rows };
   }, [checkpointETAs, sections, raceStart, isPreRace, forecasts]);
 
+  const startIsPast = !isPreRace && (projectedLocation?.index || 0) > 0;
+  const startIsCurrent = !isPreRace && (projectedLocation?.index || 0) === 0;
+  const startEtaStr =
+    raceStart && !isPreRace
+      ? format(new Date(raceStart), "EEE HH:mm")
+      : "--:--";
+
   if (!rows.length) {
     return (
       <div className={className}>
@@ -147,6 +155,29 @@ const StageETA = memo(function StageETA({ className }) {
         </span>
       </div>
       <div className="section-list" role="list" tabIndex={0}>
+        {/* Race start */}
+        <div
+          role="listitem"
+          className={`cp-row${startIsPast ? " past" : startIsCurrent ? " current" : ""}`}
+        >
+          <div
+            className={`cp-dot${startIsPast ? " past" : startIsCurrent ? " current" : ""}`}
+          />
+          <div className="cp-body">
+            <div className="cp-line1">
+              <span className="cp-name">
+                {sections?.[0]?.startLocation || "Start"}
+              </span>
+              <div className="cp-right">
+                <span className="cp-eta">{startEtaStr}</span>
+              </div>
+            </div>
+            <div className="cp-line2">
+              <span className="cp-km">0.0 km</span>
+            </div>
+          </div>
+        </div>
+
         {rows.map((row) => {
           const stateClass = `${row.isPast ? " past" : ""}${row.isCurrent ? " current" : ""}`;
           const WeatherIcon = row.weather

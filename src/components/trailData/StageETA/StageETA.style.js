@@ -69,16 +69,16 @@ const style = (Component) => styled(Component)`
     align-items: center;
     gap: 1.2rem;
     padding: 0.75rem 0;
-    opacity: 0.35;
+    opacity: 0.6;
     transition: opacity
       ${(props) => props.theme.transitions["--transition-fast"]};
 
     &.past {
-      opacity: 0.15;
+      opacity: 0.25;
     }
 
     &.current {
-      opacity: 0.65;
+      opacity: 0.85;
     }
   }
 
@@ -113,11 +113,11 @@ const style = (Component) => styled(Component)`
 
   .bc-stat {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.7,
+        0.85,
       )};
     letter-spacing: 0.2px;
     line-height: 1;

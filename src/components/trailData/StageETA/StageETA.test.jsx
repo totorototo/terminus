@@ -52,6 +52,7 @@ const SECTIONS = [
     startTime: START_TIME,
     endTime: START_TIME + 3600,
     maxCompletionTime: 3600,
+    startLocation: "Départ",
     endLocation: "Checkpoint A",
   },
   {
@@ -127,7 +128,8 @@ describe("StageETA", () => {
     render(<StageETA />);
 
     const etaCells = screen.getAllByText("--:--");
-    expect(etaCells).toHaveLength(SECTIONS.length);
+    // +1 for the start row
+    expect(etaCells).toHaveLength(SECTIONS.length + 1);
   });
 
   // ── Past section with recorded checkpoint ────────────────────────────────
@@ -187,7 +189,8 @@ describe("StageETA", () => {
     render(<StageETA />);
 
     const pastRows = document.querySelectorAll(".cp-row.past");
-    expect(pastRows.length).toBe(SECTIONS.length);
+    // +1 for the start row which is also past
+    expect(pastRows.length).toBe(SECTIONS.length + 1);
   });
 
   // ── Difficulty labels ────────────────────────────────────────────────────
@@ -216,9 +219,11 @@ describe("StageETA", () => {
 
     render(<StageETA />);
 
-    // endIndex 100 → cumulativeDistances[100] = 5000m → 5.0 km on cp-km
+    // [0] is the start row (0.0 km); checkpoints begin at [1]
     const kmCells = document.querySelectorAll(".cp-km");
-    expect(kmCells[0].textContent).toBe("5.0 km");
+    expect(kmCells[0].textContent).toBe("0.0 km");
+    // endIndex 100 → cumulativeDistances[100] = 5000m → 5.0 km
+    expect(kmCells[1].textContent).toBe("5.0 km");
     // endIndex 200 → 10000m → 10.0 km
     expect(screen.getByText("10.0 km")).toBeInTheDocument();
   });
@@ -244,7 +249,7 @@ describe("StageETA", () => {
     render(<StageETA />);
 
     // Recorded time should still render (not "--:--")
-    expect(screen.getByText("Sat 10:00")).toBeInTheDocument();
+    expect(screen.getAllByText("Sat 10:00").length).toBeGreaterThanOrEqual(1);
   });
 
   it("caps unrecorded future ETA at section cutoff when estimate exceeds it", () => {
@@ -272,7 +277,7 @@ describe("StageETA", () => {
     render(<StageETA />);
 
     // ETA should be capped at cutoff and rendered via date-fns (mocked as "Sat 10:00")
-    expect(screen.getByText("Sat 10:00")).toBeInTheDocument();
+    expect(screen.getAllByText("Sat 10:00").length).toBeGreaterThanOrEqual(1);
   });
 
   it("adds 'over-cutoff' class only to the first section that exceeds its cutoff", () => {
@@ -328,7 +333,7 @@ describe("StageETA", () => {
     render(<StageETA />);
 
     // Section with no raceStart → isCurrent path with raceStart=null → etaMs = null → "--:--"
-    expect(screen.getByText("--:--")).toBeInTheDocument();
+    expect(screen.getAllByText("--:--").length).toBeGreaterThanOrEqual(1);
   });
 
   it("defaults to speedFactor=1 when at index 0 (no distance covered yet)", () => {
