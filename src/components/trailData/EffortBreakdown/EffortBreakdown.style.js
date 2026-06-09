@@ -40,45 +40,6 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.5px;
   }
 
-  .eb-settings {
-    display: flex;
-    gap: 0.4rem;
-    margin-bottom: 0.6rem;
-    flex-shrink: 0;
-  }
-
-  .eb-setting {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 5px;
-    background: ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.05)};
-    border: 1px solid
-      ${({ theme }) =>
-        rgba(theme.colors[theme.currentVariant]["--color-text"], 0.08)};
-  }
-
-  .eb-setting-key {
-    font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
-    font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
-    font-weight: ${({ theme }) => theme.font.weights["--font-weight-bold"]};
-    color: ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.4)};
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-
-  .eb-setting-val {
-    font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
-    font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
-    font-weight: ${({ theme }) => theme.font.weights["--font-weight-bold"]};
-    color: ${({ theme }) =>
-      theme.colors[theme.currentVariant]["--color-primary"]};
-    letter-spacing: 0.5px;
-  }
-
   .eb-list {
     display: flex;
     flex-direction: column;
@@ -94,7 +55,7 @@ const style = (Component) => styled(Component)`
 
   .eb-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.55rem;
     padding: 0.65rem 0;
     opacity: 0.55;
@@ -109,12 +70,12 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  /* Status dot on the left (past / current / future) */
   .eb-status-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
     flex-shrink: 0;
+    margin-top: 0.35rem;
     background: ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.2)};
 
@@ -132,13 +93,25 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  /* Section name + meta */
-  .eb-info {
+  .eb-content {
     display: flex;
     flex-direction: column;
+    gap: 0.3rem;
     min-width: 0;
-    gap: 3px;
     flex: 1;
+  }
+
+  .eb-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .eb-bottom {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .eb-name {
@@ -151,26 +124,26 @@ const style = (Component) => styled(Component)`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
   }
 
-  .eb-meta {
+  .eb-stat {
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-small"]};
     color: ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.35)};
-    letter-spacing: 0.3px;
+    letter-spacing: 0.2px;
     line-height: 1;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex-shrink: 0;
   }
 
-  /* Difficulty dots */
   .eb-dots {
     display: flex;
     gap: 3px;
     align-items: center;
     flex-shrink: 0;
+    margin-left: auto;
   }
 
   .eb-dot {
@@ -180,13 +153,8 @@ const style = (Component) => styled(Component)`
     background: ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.12)};
     flex-shrink: 0;
-
-    &.filled {
-      /* color is set inline via DIFFICULTY_COLORS */
-    }
   }
 
-  /* Estimated duration on the right */
   .eb-duration {
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-medium"]};

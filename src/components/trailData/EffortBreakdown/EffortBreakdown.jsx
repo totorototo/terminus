@@ -2,11 +2,6 @@ import { memo, useMemo } from "react";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
-import {
-  closestOption,
-  FATIGUE_OPTIONS,
-  PACE_OPTIONS,
-} from "../PaceSettings/PaceSettings.jsx";
 
 import style from "./EffortBreakdown.style.js";
 
@@ -44,15 +39,6 @@ const EffortBreakdown = memo(function EffortBreakdown({ className }) {
   const sections = useStore((state) => state.sections);
   const projectedLocation = useProjectedLocation();
   const currentIndex = projectedLocation?.index ?? 0;
-
-  const basePaceSPerKm = useStore(
-    (state) => state.app?.paceSettings?.basePaceSPerKm ?? 490,
-  );
-  const kFatigue = useStore(
-    (state) => state.app?.paceSettings?.kFatigue ?? 0.004,
-  );
-  const paceLabel = closestOption(PACE_OPTIONS, basePaceSPerKm).label;
-  const fatigueLabel = closestOption(FATIGUE_OPTIONS, kFatigue).label;
 
   const { totalEstSec, rows } = useMemo(() => {
     if (!sections?.length) return { totalEstSec: 0, rows: [] };
@@ -103,20 +89,6 @@ const EffortBreakdown = memo(function EffortBreakdown({ className }) {
         <span className="eb-total">{formatDuration(totalEstSec)} total</span>
       </div>
 
-      <div
-        className="eb-settings"
-        title="Estimates are based on your pace & fatigue settings"
-      >
-        <div className="eb-setting">
-          <span className="eb-setting-key">Pace</span>
-          <span className="eb-setting-val">{paceLabel}</span>
-        </div>
-        <div className="eb-setting">
-          <span className="eb-setting-key">Fatigue</span>
-          <span className="eb-setting-val">{fatigueLabel}</span>
-        </div>
-      </div>
-
       <div className="eb-list" role="list" tabIndex={0}>
         {rows.map((row) => (
           <div
@@ -128,18 +100,24 @@ const EffortBreakdown = memo(function EffortBreakdown({ className }) {
               className={`eb-status-dot${row.isPast ? " past" : row.isCurrent ? " current" : ""}`}
             />
 
-            <div className="eb-info">
-              <span className="eb-name">{row.endLocation}</span>
-              <span className="eb-meta">
-                {row.distKm.toFixed(1)} km
-                {row.gainM > 0 && ` · +${row.gainM}m`}
-                {row.lossM > 0 && ` · −${row.lossM}m`}
-              </span>
+            <div className="eb-content">
+              <div className="eb-top">
+                <span className="eb-name">{row.endLocation}</span>
+                <span className="eb-duration">
+                  {formatDuration(row.estSec)}
+                </span>
+              </div>
+              <div className="eb-bottom">
+                <span className="eb-stat">{row.distKm.toFixed(1)} km</span>
+                {row.gainM > 0 && (
+                  <span className="eb-stat">+{row.gainM}m</span>
+                )}
+                {row.lossM > 0 && (
+                  <span className="eb-stat">−{row.lossM}m</span>
+                )}
+                <DifficultyDots difficulty={row.difficulty} />
+              </div>
             </div>
-
-            <DifficultyDots difficulty={row.difficulty} />
-
-            <span className="eb-duration">{formatDuration(row.estSec)}</span>
           </div>
         ))}
       </div>

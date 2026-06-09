@@ -6,40 +6,55 @@ import useStore from "../../../store/store.js";
 
 import style from "./PaceSettings.style.js";
 
-/**
- * Named pace presets. The numeric `value` (seconds per km on flat terrain) is
- * what gets stored and used for ETA computation; the label is what the user
- * sees and selects.
- */
+/** Kept for EffortBreakdown backward compatibility. */
 export const PACE_OPTIONS = [
-  { label: "Slow", value: 600, sub: "10:00 /km" },
-  { label: "Moderate", value: 500, sub: "8:20 /km" },
-  { label: "Quite fast", value: 400, sub: "6:40 /km" },
-  { label: "Fast", value: 300, sub: "5:00 /km" },
+  { label: "Casual", value: 600 },
+  { label: "Trail", value: 500 },
+  { label: "Athlete", value: 400 },
+  { label: "Elite", value: 300 },
 ];
 
-/**
- * Named fatigue presets. The numeric `value` (cumulative fatigue coefficient)
- * is stored and used under the hood; the label is shown to the user.
- * Values are calibrated for the exponential fatigue model exp(k·d_eff_km).
- * Equal k steps give roughly equal proportional slowdown increments per preset.
- */
+/** Kept for EffortBreakdown backward compatibility. */
 export const FATIGUE_OPTIONS = [
-  { label: "Low", value: 0.001, sub: "Minimal fade" },
-  { label: "Moderate", value: 0.002, sub: "Steady fade" },
-  { label: "High", value: 0.003, sub: "Strong fade" },
-  { label: "Very high", value: 0.004, sub: "Heavy fade" },
+  { label: "Low", value: 0.001 },
+  { label: "Moderate", value: 0.002 },
+  { label: "High", value: 0.003 },
+  { label: "Very high", value: 0.004 },
 ];
 
-/**
- * Planned stop duration at each LifeBase checkpoint.
- * The numeric `value` is seconds; the label is shown to the user.
- */
+/** Runner profiles — each bundles a pace and fatigue value. */
+export const RUNNER_PROFILES = [
+  {
+    label: "Casual",
+    basePaceSPerKm: 600,
+    kFatigue: 0.004,
+    sub: "~10 min/km on flat",
+  },
+  {
+    label: "Trail",
+    basePaceSPerKm: 500,
+    kFatigue: 0.003,
+    sub: "~8 min/km on flat",
+  },
+  {
+    label: "Athlete",
+    basePaceSPerKm: 400,
+    kFatigue: 0.002,
+    sub: "~7 min/km on flat",
+  },
+  {
+    label: "Elite",
+    basePaceSPerKm: 300,
+    kFatigue: 0.001,
+    sub: "~5 min/km on flat",
+  },
+];
+
 export const LIFE_BASE_STOP_OPTIONS = [
-  { label: "None", value: 0, sub: "No rest" },
-  { label: "30 min", value: 1800, sub: "Quick stop" },
-  { label: "1 hour", value: 3600, sub: "Full rest" },
-  { label: "2 hours", value: 7200, sub: "Long rest" },
+  { label: "None", value: 0, sub: "No rest at checkpoints" },
+  { label: "30 min", value: 1800, sub: "Quick stop at each LifeBase" },
+  { label: "1 hour", value: 3600, sub: "Full rest at each LifeBase" },
+  { label: "2 hours", value: 7200, sub: "Long rest at each LifeBase" },
 ];
 
 /** Pick the option whose numeric value is closest to the stored value. */
@@ -49,42 +64,44 @@ export function closestOption(options, value) {
   );
 }
 
+function closestProfile(basePaceSPerKm) {
+  return RUNNER_PROFILES.reduce((best, p) =>
+    Math.abs(p.basePaceSPerKm - basePaceSPerKm) <
+    Math.abs(best.basePaceSPerKm - basePaceSPerKm)
+      ? p
+      : best,
+  );
+}
+
 const PaceSettings = memo(function PaceSettings({ className }) {
   const { paceSettings, setPaceSettings, reprocessGPXFile, isFollower } =
     useStore(
       useShallow((state) => ({
         paceSettings: state.app?.paceSettings ?? {
           basePaceSPerKm: 500,
-          kFatigue: 0.002,
+          kFatigue: 0.003,
           lifeBaseStopS: 3600,
         },
         setPaceSettings: state.setPaceSettings ?? (() => {}),
         reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
-        // Follower mode: connected to a runner's session (not broadcasting)
         isFollower: state.gps?.followerConnectionStatus === "connected",
       })),
     );
 
-  const { basePaceSPerKm, kFatigue, lifeBaseStopS } = paceSettings;
+  const { basePaceSPerKm, lifeBaseStopS } = paceSettings;
 
-  const selectedPace = closestOption(PACE_OPTIONS, basePaceSPerKm);
-  const selectedFatigue = closestOption(FATIGUE_OPTIONS, kFatigue);
+  const selectedProfile = closestProfile(basePaceSPerKm);
   const selectedStop = closestOption(
     LIFE_BASE_STOP_OPTIONS,
     lifeBaseStopS ?? 3600,
   );
 
-  const handlePaceChange = useCallback(
-    (value) => {
-      setPaceSettings({ basePaceSPerKm: value });
-      reprocessGPXFile();
-    },
-    [setPaceSettings, reprocessGPXFile],
-  );
-
-  const handleFatigueChange = useCallback(
-    (value) => {
-      setPaceSettings({ kFatigue: value });
+  const handleProfileChange = useCallback(
+    (profile) => {
+      setPaceSettings({
+        basePaceSPerKm: profile.basePaceSPerKm,
+        kFatigue: profile.kFatigue,
+      });
       reprocessGPXFile();
     },
     [setPaceSettings, reprocessGPXFile],
@@ -107,75 +124,35 @@ const PaceSettings = memo(function PaceSettings({ className }) {
 
       <div className="settings-body">
         <div className="setting-row">
-          <div className="setting-label-row">
-            <span className="setting-name">Base pace</span>
-            <span className="setting-value">{selectedPace.label}</span>
-          </div>
-          <p className="setting-desc">Your steady speed on flat terrain.</p>
+          <span className="setting-name">Runner profile</span>
           <div
             className="segmented"
             role="radiogroup"
-            aria-label="Base flat-terrain pace"
+            aria-label="Runner profile"
           >
-            {PACE_OPTIONS.map((opt) => (
+            {RUNNER_PROFILES.map((profile) => (
               <button
-                key={opt.label}
+                key={profile.label}
                 type="button"
                 role="radio"
-                aria-checked={opt.value === selectedPace.value}
+                aria-checked={profile.label === selectedProfile.label}
                 className={
-                  opt.value === selectedPace.value
+                  profile.label === selectedProfile.label
                     ? "segment active"
                     : "segment"
                 }
-                onClick={() => handlePaceChange(opt.value)}
+                onClick={() => handleProfileChange(profile)}
                 disabled={isFollower}
               >
-                <span className="segment-label">{opt.label}</span>
-                <span className="segment-sub">{opt.sub}</span>
+                <span className="segment-label">{profile.label}</span>
               </button>
             ))}
           </div>
+          <p className="segment-hint">{selectedProfile.sub}</p>
         </div>
 
         <div className="setting-row">
-          <div className="setting-label-row">
-            <span className="setting-name">Fatigue</span>
-            <span className="setting-value">{selectedFatigue.label}</span>
-          </div>
-          <p className="setting-desc">How much you slow down over distance.</p>
-          <div
-            className="segmented"
-            role="radiogroup"
-            aria-label="Cumulative fatigue coefficient"
-          >
-            {FATIGUE_OPTIONS.map((opt) => (
-              <button
-                key={opt.label}
-                type="button"
-                role="radio"
-                aria-checked={opt.value === selectedFatigue.value}
-                className={
-                  opt.value === selectedFatigue.value
-                    ? "segment active"
-                    : "segment"
-                }
-                onClick={() => handleFatigueChange(opt.value)}
-                disabled={isFollower}
-              >
-                <span className="segment-label">{opt.label}</span>
-                <span className="segment-sub">{opt.sub}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="setting-row">
-          <div className="setting-label-row">
-            <span className="setting-name">LifeBase stop</span>
-            <span className="setting-value">{selectedStop.label}</span>
-          </div>
-          <p className="setting-desc">Rest time planned at each LifeBase.</p>
+          <span className="setting-name">LifeBase stop</span>
           <div
             className="segmented"
             role="radiogroup"
@@ -196,10 +173,10 @@ const PaceSettings = memo(function PaceSettings({ className }) {
                 disabled={isFollower}
               >
                 <span className="segment-label">{opt.label}</span>
-                <span className="segment-sub">{opt.sub}</span>
               </button>
             ))}
           </div>
+          <p className="segment-hint">{selectedStop.sub}</p>
         </div>
 
         <p className="settings-hint">

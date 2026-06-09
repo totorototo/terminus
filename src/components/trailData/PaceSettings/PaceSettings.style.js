@@ -165,17 +165,29 @@ const style = (Component) => styled(Component)`
 
   .segmented {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.4rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.25rem;
     width: 100%;
+  }
+
+  .segment-hint {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.7,
+      )};
+    letter-spacing: 0.2px;
+    margin: 0.1rem 0 0;
+    min-height: 1em;
   }
 
   .segment {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
-    padding: 0.5rem 0.6rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.2rem;
     border: 1px solid
       ${(props) =>
         rgba(
@@ -185,7 +197,7 @@ const style = (Component) => styled(Component)`
     border-radius: 8px;
     background: transparent;
     cursor: pointer;
-    text-align: left;
+    text-align: center;
     transition: all ${(props) => props.theme.transitions["--transition-fast"]};
 
     &:hover:not(:disabled):not(.active) {
@@ -246,18 +258,8 @@ const style = (Component) => styled(Component)`
         0.8,
       )};
     letter-spacing: 0.3px;
-    text-transform: uppercase;
-  }
-
-  .segment-sub {
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.45,
-      )};
-    letter-spacing: 0.2px;
+    text-align: center;
+    line-height: 1.3;
   }
 
   .settings-hint {
