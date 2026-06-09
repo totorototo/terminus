@@ -13,8 +13,8 @@ import { BarChart2 } from "@styled-icons/feather/BarChart2";
 import { HelpCircle } from "@styled-icons/feather/HelpCircle";
 import { LogOut } from "@styled-icons/feather/LogOut";
 import { Map } from "@styled-icons/feather/Map";
-import { MapPin } from "@styled-icons/feather/MapPin";
 import { Moon } from "@styled-icons/feather/Moon";
+import { Radio } from "@styled-icons/feather/Radio";
 import { Share2 } from "@styled-icons/feather/Share2";
 import { Sliders } from "@styled-icons/feather/Sliders";
 import { Sun } from "@styled-icons/feather/Sun";
@@ -51,8 +51,9 @@ function getDockButtons({
   navigate,
   close,
   follower,
-  spotMe,
   shareLocation,
+  autoShareEnabled,
+  toggleAutoShare,
 }) {
   return [
     {
@@ -65,16 +66,6 @@ function getDockButtons({
     ...(!follower
       ? [
           {
-            key: "spot",
-            className: "off",
-            onClick: () => {
-              spotMe();
-              close();
-            },
-            label: "Find my current location",
-            icon: <MapPin size={22} />,
-          },
-          {
             key: "share",
             className: "off",
             onClick: () => {
@@ -83,6 +74,19 @@ function getDockButtons({
             },
             label: "Share my room code",
             icon: <Share2 size={22} />,
+          },
+          {
+            key: "autoShare",
+            className: autoShareEnabled ? "on" : "off",
+            ariaPressed: autoShareEnabled,
+            onClick: () => {
+              toggleAutoShare();
+              close();
+            },
+            label: autoShareEnabled
+              ? "Stop auto-sharing location"
+              : "Auto-share location every 30 min",
+            icon: <Radio size={22} />,
           },
         ]
       : []),
@@ -143,6 +147,8 @@ function Commands({ className, follower }) {
     toggleSlopesMode,
     toggleTheme,
     shareLocation,
+    autoShareEnabled,
+    toggleAutoShare,
   } = useStore(
     useShallow((state) => ({
       profileMode: state.app.profileMode,
@@ -152,10 +158,10 @@ function Commands({ className, follower }) {
       toggleSlopesMode: state.toggleSlopesMode,
       toggleTheme: state.toggleTheme,
       shareLocation: state.shareLocation,
+      autoShareEnabled: state.gps.autoShareEnabled,
+      toggleAutoShare: state.toggleAutoShare,
     })),
   );
-
-  const spotMe = useStore((state) => state.spotMe);
 
   useClickAway(dockRef, () => setOpen(false));
 
@@ -173,8 +179,9 @@ function Commands({ className, follower }) {
         navigate,
         close,
         follower,
-        spotMe,
         shareLocation,
+        autoShareEnabled,
+        toggleAutoShare,
       }),
     [
       toggleSlopesMode,
@@ -186,8 +193,9 @@ function Commands({ className, follower }) {
       navigate,
       close,
       follower,
-      spotMe,
       shareLocation,
+      autoShareEnabled,
+      toggleAutoShare,
     ],
   );
   const buttonIndex = useMemo(
@@ -280,15 +288,6 @@ function Commands({ className, follower }) {
 
   return (
     <div className={className}>
-      {!follower && (
-        <button
-          className={"off"}
-          onClick={spotMe}
-          aria-label="Find my current location"
-        >
-          <MapPin size={24} />
-        </button>
-      )}
       <button
         className={displaySlopes ? "on" : "off"}
         onClick={toggleSlopesMode}
@@ -312,6 +311,20 @@ function Commands({ className, follower }) {
           aria-label="Share my room code"
         >
           <Share2 size={24} />
+        </button>
+      )}
+      {!follower && (
+        <button
+          className={autoShareEnabled ? "on" : "off"}
+          onClick={toggleAutoShare}
+          aria-label={
+            autoShareEnabled
+              ? "Stop auto-sharing location"
+              : "Auto-share location every 30 min"
+          }
+          aria-pressed={autoShareEnabled}
+        >
+          <Radio size={24} />
         </button>
       )}
       <button

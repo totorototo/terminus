@@ -12,8 +12,8 @@ vi.mock("../../store/store.js", () => ({
 }));
 
 // Mock styled icons
-vi.mock("@styled-icons/feather/MapPin", () => ({
-  MapPin: ({ size: _size, ...props }) => <div data-icon="map-pin" {...props} />,
+vi.mock("@styled-icons/feather/Radio", () => ({
+  Radio: ({ size: _size, ...props }) => <div data-icon="radio" {...props} />,
 }));
 
 vi.mock("@styled-icons/feather/Video", () => ({
@@ -48,14 +48,14 @@ describe("Commands Component", () => {
   let mockToggleSlopesMode;
   let mockShareLocation;
   let mockFindClosestLocation;
-  let mockSpotMe;
+  let mockToggleAutoShare;
 
   beforeEach(() => {
     mockToggleProfileMode = vi.fn();
     mockToggleSlopesMode = vi.fn();
     mockShareLocation = vi.fn();
     mockFindClosestLocation = vi.fn();
-    mockSpotMe = vi.fn();
+    mockToggleAutoShare = vi.fn();
 
     useStore.mockImplementation((selector) =>
       selector({
@@ -65,15 +65,14 @@ describe("Commands Component", () => {
           displaySlopes: false,
         },
         gps: {
-          projectedLocation: {
-            timestamp: 1,
-          },
+          projectedLocation: { timestamp: 1 },
+          autoShareEnabled: false,
         },
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
         findClosestLocation: mockFindClosestLocation,
-        spotMe: mockSpotMe,
+        toggleAutoShare: mockToggleAutoShare,
       }),
     );
   });
@@ -82,20 +81,22 @@ describe("Commands Component", () => {
     render(<Commands />);
 
     expect(
-      screen.getByLabelText("Find my current location"),
+      screen.getByLabelText("Auto-share location every 30 min"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Toggle slope colors")).toBeInTheDocument();
     expect(screen.getByLabelText("Toggle 2D profile view")).toBeInTheDocument();
     expect(screen.getByLabelText("Share my room code")).toBeInTheDocument();
   });
 
-  it("should call spotMe when location button is clicked", () => {
+  it("should call toggleAutoShare when auto-share button is clicked", () => {
     render(<Commands />);
-    const locationButton = screen.getByLabelText("Find my current location");
+    const autoShareButton = screen.getByLabelText(
+      "Auto-share location every 30 min",
+    );
 
-    fireEvent.click(locationButton);
+    fireEvent.click(autoShareButton);
 
-    expect(mockSpotMe).toHaveBeenCalledTimes(1);
+    expect(mockToggleAutoShare).toHaveBeenCalledTimes(1);
   });
 
   it("should call toggleSlopesMode when slopes button is clicked", () => {
@@ -134,15 +135,14 @@ describe("Commands Component", () => {
           displaySlopes: true,
         },
         gps: {
-          projectedLocation: {
-            timestamp: 1,
-          },
+          projectedLocation: { timestamp: 1 },
+          autoShareEnabled: false,
         },
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
         findClosestLocation: mockFindClosestLocation,
-        spotMe: mockSpotMe,
+        toggleAutoShare: mockToggleAutoShare,
       }),
     );
 
@@ -160,14 +160,39 @@ describe("Commands Component", () => {
 
     const slopesButton = screen.getByLabelText("Toggle slope colors");
     const profileButton = screen.getByLabelText("Toggle 2D profile view");
-    const locationButton = screen.getByLabelText("Find my current location");
+    const autoShareButton = screen.getByLabelText(
+      "Auto-share location every 30 min",
+    );
     const shareButton = screen.getByLabelText("Share my room code");
 
     expect(slopesButton).toHaveClass("off");
     // Profile button has inverted logic - when profileMode is false, it shows "on"
     expect(profileButton).toHaveClass("on");
-    expect(locationButton).toHaveClass("off");
+    expect(autoShareButton).toHaveClass("off");
     expect(shareButton).toHaveClass("off");
+  });
+
+  it("should apply 'on' class to auto-share button when enabled", () => {
+    useStore.mockImplementation((selector) =>
+      selector({
+        app: { trackingMode: false, profileMode: false, displaySlopes: false },
+        gps: {
+          projectedLocation: { timestamp: 1 },
+          autoShareEnabled: true,
+        },
+        toggleProfileMode: mockToggleProfileMode,
+        toggleSlopesMode: mockToggleSlopesMode,
+        shareLocation: mockShareLocation,
+        findClosestLocation: mockFindClosestLocation,
+        toggleAutoShare: mockToggleAutoShare,
+      }),
+    );
+
+    render(<Commands />);
+
+    const autoShareButton = screen.getByLabelText("Stop auto-sharing location");
+    expect(autoShareButton).toHaveClass("on");
+    expect(autoShareButton).toHaveAttribute("aria-pressed", "true");
   });
 
   it("should set correct aria-pressed attributes", () => {
@@ -179,15 +204,14 @@ describe("Commands Component", () => {
           displaySlopes: true,
         },
         gps: {
-          projectedLocation: {
-            timestamp: 1,
-          },
+          projectedLocation: { timestamp: 1 },
+          autoShareEnabled: false,
         },
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
         findClosestLocation: mockFindClosestLocation,
-        spotMe: mockSpotMe,
+        toggleAutoShare: mockToggleAutoShare,
       }),
     );
 
@@ -210,15 +234,14 @@ describe("Commands Component", () => {
           liveSessionId: "ABC123",
         },
         gps: {
-          projectedLocation: {
-            timestamp: 123,
-          },
+          projectedLocation: { timestamp: 123 },
+          autoShareEnabled: false,
         },
         toggleProfileMode: mockToggleProfileMode,
         toggleSlopesMode: mockToggleSlopesMode,
         shareLocation: mockShareLocation,
         findClosestLocation: mockFindClosestLocation,
-        spotMe: mockSpotMe,
+        toggleAutoShare: mockToggleAutoShare,
       }),
     );
 

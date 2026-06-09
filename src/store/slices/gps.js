@@ -38,6 +38,10 @@ export const createGPSSlice = (set, get) => {
   let partySocket = null;
   let followerSocket = null;
   let pendingMessage = null;
+  let autoShareIntervalId = null;
+  let isTogglingAutoShare = false;
+
+  const AUTO_SHARE_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
   const ensureSocket = async (sessionId) => {
     const isUnusable =
@@ -117,6 +121,7 @@ export const createGPSSlice = (set, get) => {
             : Notification.permission
           : null,
       followerConnectionStatus: "idle", // "idle" | "connecting" | "connected" | "disconnected"
+      autoShareEnabled: false,
     },
 
     // Initialize/sync buffer from persisted state (called after rehydration)
@@ -452,12 +457,68 @@ export const createGPSSlice = (set, get) => {
       );
     },
 
+    toggleAutoShare: async () => {
+      if (isTogglingAutoShare) return;
+      const enabled = get().gps.autoShareEnabled;
+
+      if (enabled) {
+        clearInterval(autoShareIntervalId);
+        autoShareIntervalId = null;
+        set(
+          (state) => ({ gps: { ...state.gps, autoShareEnabled: false } }),
+          undefined,
+          "gps/autoShareDisabled",
+        );
+      } else {
+        isTogglingAutoShare = true;
+        try {
+          // Ensure a session exists so spotMe() can broadcast
+          if (!get().app.liveSessionId || !get().app.liveWriteKey) {
+            await get().shareLocation();
+          }
+          // Immediate broadcast, then repeat every 30 min
+          await get().spotMe();
+          autoShareIntervalId = setInterval(() => {
+            get().spotMe();
+          }, AUTO_SHARE_INTERVAL_MS);
+          set(
+            (state) => ({ gps: { ...state.gps, autoShareEnabled: true } }),
+            undefined,
+            "gps/autoShareEnabled",
+          );
+        } catch (error) {
+          if (error?.name !== "AbortError") {
+            set(
+              (state) => ({
+                ...state,
+                worker: {
+                  ...(state.worker || {}),
+                  errorMessage: error?.message || "Failed to start auto-share",
+                },
+              }),
+              undefined,
+              "gps/autoShareError",
+            );
+          }
+        } finally {
+          isTogglingAutoShare = false;
+        }
+      }
+    },
+
     disconnectTrailerSession: () => {
+      clearInterval(autoShareIntervalId);
+      autoShareIntervalId = null;
       if (partySocket) {
         partySocket.close();
         partySocket = null;
       }
       pendingMessage = null;
+      set(
+        (state) => ({ gps: { ...state.gps, autoShareEnabled: false } }),
+        undefined,
+        "gps/disconnectTrailerSession",
+      );
     },
   };
 };

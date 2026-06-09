@@ -11,7 +11,7 @@
 import { expect, test } from "@playwright/test";
 
 import THEME from "../src/theme/Theme.js";
-import { MID_TRAIL, selectRunnerRole } from "./helpers.js";
+import { MID_TRAIL, mockClipboard, selectRunnerRole } from "./helpers.js";
 
 const DARK_BG = THEME.colors.dark["--color-background"].toLowerCase();
 const LIGHT_BG = THEME.colors.light["--color-background"].toLowerCase();
@@ -89,6 +89,7 @@ test("GPS position is preserved after theme switch", async ({ browser }) => {
   });
   try {
     const page = await ctx.newPage();
+    await mockClipboard(page);
     await page.goto("/");
     await selectRunnerRole(page);
     await expect(page.locator("canvas").first()).toBeVisible({
@@ -101,9 +102,7 @@ test("GPS position is preserved after theme switch", async ({ browser }) => {
     await expect(kmLeft).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
 
     // Project location onto trail (~50% point)
-    await page
-      .getByRole("button", { name: /find my current location/i })
-      .click();
+    await page.getByRole("button", { name: /auto-share location/i }).click();
 
     // Wait for animated counter to settle
     let settled = 0;

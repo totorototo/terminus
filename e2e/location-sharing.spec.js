@@ -112,9 +112,9 @@ test.describe("Location Sharing", () => {
         await expect(elevationGain(followerPage)).toHaveText("0 m");
         await expect(elevationLoss(followerPage)).toHaveText("0 m");
 
-        // ── 4. Runner shares their location ───────────────────────────────
+        // ── 4. Runner broadcasts their location via auto-share ────────────
         await runnerPage
-          .getByRole("button", { name: "Find my current location" })
+          .getByRole("button", { name: /auto-share location/i })
           .click();
 
         // ── 5. Assertions on the follower page (TrailProgression) ─────────

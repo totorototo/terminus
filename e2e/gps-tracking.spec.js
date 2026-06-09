@@ -9,10 +9,14 @@ import { expect, test } from "@playwright/test";
 
 import {
   MID_TRAIL,
+  mockClipboard,
   NEAR_START,
   OFF_TRAIL,
   selectRunnerRole,
 } from "./helpers.js";
+
+const autoShareBtn = (page) =>
+  page.getByRole("button", { name: /auto-share location/i });
 
 const kmLeft = (page) =>
   page
@@ -27,15 +31,14 @@ test.describe("Live GPS Tracking", () => {
     });
     try {
       const page = await ctx.newPage();
+      await mockClipboard(page);
       await page.goto("/");
       await selectRunnerRole(page);
 
       await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
       const before = parseFloat(await kmLeft(page).textContent());
 
-      await page
-        .getByRole("button", { name: /find my current location/i })
-        .click();
+      await autoShareBtn(page).click();
 
       // Value must change — not just be non-zero (which it already was)
       await expect
@@ -56,15 +59,14 @@ test.describe("Live GPS Tracking", () => {
     });
     try {
       const page = await ctx.newPage();
+      await mockClipboard(page);
       await page.goto("/");
       await selectRunnerRole(page);
 
       await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
 
-      // First fix at mid-trail
-      await page
-        .getByRole("button", { name: /find my current location/i })
-        .click();
+      // First fix at mid-trail — enables auto-share and does an immediate spotMe
+      await autoShareBtn(page).click();
       const initialKm = parseFloat(await kmLeft(page).textContent());
       await expect
         .poll(async () => parseFloat(await kmLeft(page).textContent()), {
@@ -73,11 +75,12 @@ test.describe("Live GPS Tracking", () => {
         .not.toBe(initialKm);
       const kmAfterFirst = parseFloat(await kmLeft(page).textContent());
 
-      // Move GPS to near start (more trail remaining ahead)
+      // Move GPS to near start, disable then re-enable to trigger a new fix
       await ctx.setGeolocation(NEAR_START);
       await page
-        .getByRole("button", { name: /find my current location/i })
+        .getByRole("button", { name: /stop auto-sharing location/i })
         .click();
+      await autoShareBtn(page).click();
 
       await expect
         .poll(async () => parseFloat(await kmLeft(page).textContent()), {
@@ -97,6 +100,7 @@ test.describe("Live GPS Tracking", () => {
     });
     try {
       const page = await ctx.newPage();
+      await mockClipboard(page);
       const errors = [];
       page.on("pageerror", (err) => errors.push(err.message));
 
@@ -105,9 +109,7 @@ test.describe("Live GPS Tracking", () => {
 
       await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
 
-      await page
-        .getByRole("button", { name: /find my current location/i })
-        .click();
+      await autoShareBtn(page).click();
 
       // Poll until the stat stabilises rather than sleeping
       await expect

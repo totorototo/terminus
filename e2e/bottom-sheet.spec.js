@@ -16,7 +16,7 @@
 
 import { expect, test } from "@playwright/test";
 
-import { MID_TRAIL, selectRunnerRole } from "./helpers.js";
+import { MID_TRAIL, mockClipboard, selectRunnerRole } from "./helpers.js";
 
 /** Wait for the GPX route to finish loading (km-left stat populated). */
 async function waitForGpx(page) {
@@ -151,13 +151,12 @@ test("TrailProgression: updates after GPS fix", async ({ browser }) => {
   });
   try {
     const page = await ctx.newPage();
+    await mockClipboard(page);
     await page.goto("/");
     await selectRunnerRole(page);
     await waitForGpx(page);
 
-    await page
-      .getByRole("button", { name: /find my current location/i })
-      .click();
+    await page.getByRole("button", { name: /auto-share location/i }).click();
 
     await expect(page.locator(".progression-value").first()).not.toHaveText(
       "0%",

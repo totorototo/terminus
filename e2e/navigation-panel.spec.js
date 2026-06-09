@@ -8,7 +8,7 @@
 
 import { expect, test } from "@playwright/test";
 
-import { MID_TRAIL, selectRunnerRole } from "./helpers.js";
+import { MID_TRAIL, mockClipboard, selectRunnerRole } from "./helpers.js";
 
 const kmLeft = (page) =>
   page
@@ -50,6 +50,7 @@ test.describe("Navigation Panel", () => {
     });
     try {
       const page = await ctx.newPage();
+      await mockClipboard(page);
       await page.goto("/");
       await selectRunnerRole(page);
 
@@ -66,9 +67,7 @@ test.describe("Navigation Panel", () => {
         .locator(".section.current .distance-value")
         .textContent();
 
-      await page
-        .getByRole("button", { name: /find my current location/i })
-        .click();
+      await page.getByRole("button", { name: /auto-share location/i }).click();
 
       // Poll until the distance value changes — no arbitrary sleep
       await expect
