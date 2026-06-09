@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo } from "react";
+import { Fragment, memo, useEffect, useMemo } from "react";
 
 import { Cloud } from "@styled-icons/feather/Cloud";
 import { CloudDrizzle } from "@styled-icons/feather/CloudDrizzle";
@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
+import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import useStore from "../../../store/store.js";
 
@@ -26,20 +27,47 @@ const WEATHER_ICONS = {
   Wind,
 };
 
+function formatDuration(sec) {
+  if (!sec || !Number.isFinite(sec) || sec <= 0) return "--";
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+}
+
+function DifficultyDots({ difficulty }) {
+  const color = difficulty > 0 ? DIFFICULTY_COLORS[difficulty - 1] : null;
+  return (
+    <div
+      className="bc-dots"
+      role="img"
+      aria-label={DIFFICULTY_LABELS[difficulty - 1] ?? ""}
+    >
+      {[1, 2, 3, 4, 5].map((d) => (
+        <span
+          key={d}
+          className={`bc-dot${d <= difficulty ? " filled" : ""}`}
+          style={d <= difficulty ? { background: color } : undefined}
+        />
+      ))}
+    </div>
+  );
+}
+
 const StageETA = memo(function StageETA({ className }) {
   const theme = useTheme();
   const { raceStart, checkpointETAs, isPreRace } = useCheckpointETAs();
-  const { forecasts, fetchWeatherForCheckpoints } = useStore(
+  const { forecasts, fetchWeatherForCheckpoints, sections } = useStore(
     useShallow((state) => ({
       forecasts: state.weather.forecasts,
       fetchWeatherForCheckpoints: state.fetchWeatherForCheckpoints,
+      sections: state.sections,
     })),
   );
 
   const mutedColor = theme.colors[theme.currentVariant]["--color-text"] + "99";
 
-  // Compute both the fetch key (30-min buckets) and the payload together so the
-  // effect always uses ETAs that are in sync with the key that triggered it.
   const { etaFetchKey, fetchCheckpoints } = useMemo(() => {
     if (!raceStart || isPreRace)
       return { etaFetchKey: null, fetchCheckpoints: [] };
@@ -63,14 +91,23 @@ const StageETA = memo(function StageETA({ className }) {
   useEffect(() => {
     if (!etaFetchKey || !fetchCheckpoints.length) return;
     fetchWeatherForCheckpoints(fetchCheckpoints);
-    // fetchCheckpoints intentionally omitted: it's always in sync with etaFetchKey
-    // (same useMemo), so including it would re-fetch on every GPS tick.
+    // fetchCheckpoints intentionally omitted: always in sync with etaFetchKey
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [etaFetchKey, fetchWeatherForCheckpoints]);
 
-  const sectionRows = useMemo(
-    () =>
-      checkpointETAs.map((cp) => ({
+  const { totalEstSec, rows } = useMemo(() => {
+    if (!checkpointETAs.length) return { totalEstSec: 0, rows: [] };
+
+    let totalEstSec = 0;
+    const rows = checkpointETAs.map((cp, i) => {
+      const section = sections?.[i];
+      const distKm = (section?.totalDistance || 0) / 1000;
+      const gainM = Math.round(section?.totalElevation || 0);
+      const lossM = Math.round(section?.totalElevationLoss || 0);
+      const estSec = section?.estimatedDuration || 0;
+      totalEstSec += estSec;
+
+      return {
         id: cp.sectionId,
         endLocation: cp.endLocation,
         endKm: cp.endKm,
@@ -83,11 +120,17 @@ const StageETA = memo(function StageETA({ className }) {
             : "--:--",
         difficulty: cp.difficulty,
         weather: forecasts[cp.endLocation] ?? null,
-      })),
-    [checkpointETAs, raceStart, isPreRace, forecasts],
-  );
+        distKm,
+        gainM,
+        lossM,
+        estSec,
+      };
+    });
 
-  if (!sectionRows.length) {
+    return { totalEstSec, rows };
+  }, [checkpointETAs, sections, raceStart, isPreRace, forecasts]);
+
+  if (!rows.length) {
     return (
       <div className={className}>
         <div className="empty-state">No sections</div>
@@ -98,46 +141,67 @@ const StageETA = memo(function StageETA({ className }) {
   return (
     <div className={className}>
       <div className="list-header">
-        <span className="header-label">Checkpoint</span>
-        <span className="header-label">ETA</span>
+        <span className="header-label">Checkpoints</span>
+        <span className="header-total">
+          {formatDuration(totalEstSec)} total
+        </span>
       </div>
       <div className="section-list" role="list" tabIndex={0}>
-        {sectionRows.map((section) => {
-          const WeatherIcon = section.weather
-            ? (WEATHER_ICONS[section.weather.icon] ?? Cloud)
+        {rows.map((row) => {
+          const stateClass = `${row.isPast ? " past" : ""}${row.isCurrent ? " current" : ""}`;
+          const WeatherIcon = row.weather
+            ? (WEATHER_ICONS[row.weather.icon] ?? Cloud)
             : null;
 
           return (
-            <div
-              key={section.id}
-              role="listitem"
-              className={`section-row${section.isPast ? " past" : ""}${section.isCurrent ? " current" : ""}${section.isOverCutoff ? " over-cutoff" : ""}`}
-            >
-              <div className="section-left">
-                <div
-                  className={`section-dot${section.isPast ? " past" : section.isCurrent ? " current" : ""}`}
-                />
-                <div className="section-info">
-                  <span className="section-name">{section.endLocation}</span>
-                  <div className="section-meta">
-                    <span className="section-km">
-                      {Number.isFinite(section.endKm)
-                        ? `${section.endKm.toFixed(1)} km`
-                        : ""}
-                    </span>
-                    {WeatherIcon && (
-                      <div className="section-weather">
-                        <WeatherIcon size={15} color={mutedColor} />
-                        <span className="section-weather-temp">
-                          {section.weather.temp}°C
-                        </span>
-                      </div>
-                    )}
-                  </div>
+            <Fragment key={row.id}>
+              {/* Segment breadcrumb */}
+              <div className={`bc-row${stateClass}`}>
+                <div className="bc-connector" />
+                <div className="bc-stats">
+                  <span className="bc-stat">{row.distKm.toFixed(1)} km</span>
+                  {row.gainM > 0 && (
+                    <span className="bc-stat">+{row.gainM}m</span>
+                  )}
+                  {row.lossM > 0 && (
+                    <span className="bc-stat">−{row.lossM}m</span>
+                  )}
+                  <span className="bc-stat">{formatDuration(row.estSec)}</span>
+                  <DifficultyDots difficulty={row.difficulty} />
                 </div>
               </div>
-              <span className="section-eta">{section.etaStr}</span>
-            </div>
+
+              {/* Checkpoint line */}
+              <div
+                role="listitem"
+                className={`cp-row${stateClass}${row.isOverCutoff ? " over-cutoff" : ""}`}
+              >
+                <div
+                  className={`cp-dot${row.isPast ? " past" : row.isCurrent ? " current" : ""}`}
+                />
+                <div className="cp-body">
+                  <div className="cp-line1">
+                    <span className="cp-name">{row.endLocation}</span>
+                    <div className="cp-right">
+                      {WeatherIcon && (
+                        <div className="cp-weather">
+                          <WeatherIcon size={13} color={mutedColor} />
+                          <span className="cp-weather-temp">
+                            {row.weather.temp}°C
+                          </span>
+                        </div>
+                      )}
+                      <span className="cp-eta">{row.etaStr}</span>
+                    </div>
+                  </div>
+                  {Number.isFinite(row.endKm) && (
+                    <div className="cp-line2">
+                      <span className="cp-km">{row.endKm.toFixed(1)} km</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Fragment>
           );
         })}
       </div>

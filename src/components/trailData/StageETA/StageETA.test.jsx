@@ -158,7 +158,7 @@ describe("StageETA", () => {
     render(<StageETA />);
 
     // Should render one row marked as current
-    const currentRow = document.querySelector(".section-row.current");
+    const currentRow = document.querySelector(".cp-row.current");
     expect(currentRow).not.toBeNull();
   });
 
@@ -186,7 +186,7 @@ describe("StageETA", () => {
 
     render(<StageETA />);
 
-    const pastRows = document.querySelectorAll(".section-row.past");
+    const pastRows = document.querySelectorAll(".cp-row.past");
     expect(pastRows.length).toBe(SECTIONS.length);
   });
 
@@ -216,8 +216,9 @@ describe("StageETA", () => {
 
     render(<StageETA />);
 
-    // endIndex 100 → cumulativeDistances[100] = 5000m → 5.0 km
-    expect(screen.getByText("5.0 km")).toBeInTheDocument();
+    // endIndex 100 → cumulativeDistances[100] = 5000m → 5.0 km on cp-km
+    const kmCells = document.querySelectorAll(".cp-km");
+    expect(kmCells[0].textContent).toBe("5.0 km");
     // endIndex 200 → 10000m → 10.0 km
     expect(screen.getByText("10.0 km")).toBeInTheDocument();
   });
@@ -309,9 +310,7 @@ describe("StageETA", () => {
 
     render(<StageETA />);
 
-    const overCutoffRows = document.querySelectorAll(
-      ".section-row.over-cutoff",
-    );
+    const overCutoffRows = document.querySelectorAll(".cp-row.over-cutoff");
     expect(overCutoffRows.length).toBe(1);
   });
 
@@ -354,7 +353,6 @@ describe("StageETA", () => {
 
     render(<StageETA />);
 
-    expect(screen.getByText("Checkpoint")).toBeInTheDocument();
-    expect(screen.getByText("ETA")).toBeInTheDocument();
+    expect(screen.getByText("Checkpoints")).toBeInTheDocument();
   });
 });

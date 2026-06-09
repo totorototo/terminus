@@ -8,7 +8,6 @@ import {
 import { format } from "date-fns";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
-import EffortBreakdown from "./EffortBreakdown/EffortBreakdown.jsx";
 import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PaceSettings from "./PaceSettings/PaceSettings.jsx";
 import PeakSummary from "./PeakSummary/PeakSummary.jsx";
@@ -24,8 +23,7 @@ import style from "./TrailData.style.js";
 const PANEL_LABELS = [
   "Trail overview",
   "Trail progression",
-  "Stage ETA",
-  "Effort profile",
+  "Checkpoints",
   "Pace profile",
   "Stage analytics",
   "Section analytics",
@@ -242,9 +240,6 @@ const TrailData = memo(function TrailData({ className }) {
         </div>
         <div className="component-children">
           <StageETA />
-        </div>
-        <div className="component-children">
-          <EffortBreakdown />
         </div>
         <div className="component-children">
           <PaceProfile />
