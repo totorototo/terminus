@@ -156,7 +156,7 @@ const StageETA = memo(function StageETA({ className }) {
           return (
             <Fragment key={row.id}>
               {/* Segment breadcrumb */}
-              <div className={`bc-row${stateClass}`}>
+              <div className={`bc-row${stateClass}`} aria-hidden="true">
                 <div className="bc-connector" />
                 <div className="bc-stats">
                   <span className="bc-stat">{row.distKm.toFixed(1)} km</span>
