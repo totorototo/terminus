@@ -24,13 +24,13 @@ import style from "./TrailData.style.js";
 const PANEL_LABELS = [
   "Trail overview",
   "Trail progression",
-  "Stage analytics",
-  "Section analytics",
   "Stage ETA",
-  "Pace settings",
   "Effort profile",
   "Pace profile",
+  "Stage analytics",
+  "Section analytics",
   "Peak summary",
+  "Pace settings",
   "Trail actions",
 ];
 
@@ -241,16 +241,7 @@ const TrailData = memo(function TrailData({ className }) {
           <TrailProgression />
         </div>
         <div className="component-children">
-          <StageAnalytics />
-        </div>
-        <div className="component-children">
-          <SectionAnalytics />
-        </div>
-        <div className="component-children">
           <StageETA />
-        </div>
-        <div className="component-children">
-          <PaceSettings />
         </div>
         <div className="component-children">
           <EffortBreakdown />
@@ -259,7 +250,16 @@ const TrailData = memo(function TrailData({ className }) {
           <PaceProfile />
         </div>
         <div className="component-children">
+          <StageAnalytics />
+        </div>
+        <div className="component-children">
+          <SectionAnalytics />
+        </div>
+        <div className="component-children">
           <PeakSummary />
+        </div>
+        <div className="component-children">
+          <PaceSettings />
         </div>
         <div className="component-children">
           <TrailActions />
