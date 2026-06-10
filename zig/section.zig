@@ -4,6 +4,7 @@ const Waypoint = @import("gpxdata.zig").Waypoint;
 const bearingTo = @import("gpspoint.zig").bearingTo;
 const paceModel = @import("paceModel.zig");
 const segment = @import("segment.zig");
+const calibration = @import("calibration.zig");
 
 /// Interval between two consecutive section-boundary waypoints (Start/TimeBarrier/LifeBase/Arrival).
 /// Has timing info (cutoffs). Belongs to a stage (stageIdx).
@@ -184,6 +185,32 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
     return try sections.toOwnedSlice(allocator);
 }
 
+// Live section recalibration lives in `calibration.zig`, shared with stages.
+// `recalibrateFromCurrent` here is a thin section-granularity wrapper over it.
+
+pub const Recalibration = calibration.Recalibration;
+pub const RecalibratedSectionETA = calibration.RecalibratedETA;
+pub const MIN_CALIBRATION_PREDICTION_S = calibration.MIN_CALIBRATION_PREDICTION_S;
+pub const CALIBRATION_MIN = calibration.CALIBRATION_MIN;
+pub const CALIBRATION_MAX = calibration.CALIBRATION_MAX;
+
+/// Recalibrate remaining-section ETAs from the runner's live progress, splitting
+/// on section boundaries (Start/TimeBarrier/LifeBase/Arrival).
+/// See `calibration.recalibrateFromCurrent` for the full contract.
+pub fn recalibrateFromCurrent(
+    trace: *const Trace,
+    allocator: std.mem.Allocator,
+    waypoints: []const Waypoint,
+    current_index: usize,
+    actual_elapsed_s: f64,
+    base_pace_s_per_km: f64,
+    k_fatigue: f64,
+    life_base_stop_s: u32,
+    weather: paceModel.WeatherLookup,
+) !?Recalibration {
+    return calibration.recalibrateFromCurrent(trace, allocator, waypoints, .section, current_index, actual_elapsed_s, base_pace_s_per_km, k_fatigue, life_base_stop_s, weather);
+}
+
 test "computeSectionsFromWaypoints: returns null with no section boundaries" {
     const allocator = std.testing.allocator;
     const points = [_][3]f64{
@@ -230,8 +257,8 @@ test "computeSectionsFromWaypoints: basic two-boundary section" {
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
-        .{ .lat = 0.003, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "TB1", .wptType = "TimeBarrier", .time = null },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -259,11 +286,11 @@ test "computeSectionsFromWaypoints: plain (untyped) waypoints are ignored" {
 
     // 3 section boundaries with plain waypoints interspersed
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",  .wptType = "Start",       .time = null },
-        .{ .lat = 0.001, .lon = 0.0, .name = "Plain1", .wptType = null,           .time = null },
-        .{ .lat = 0.002, .lon = 0.0, .name = "TB1",    .wptType = "TimeBarrier", .time = null },
-        .{ .lat = 0.003, .lon = 0.0, .name = "Plain2", .wptType = null,           .time = null },
-        .{ .lat = 0.005, .lon = 0.0, .name = "End",    .wptType = "Arrival",     .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.001, .lon = 0.0, .name = "Plain1", .wptType = null, .time = null },
+        .{ .lat = 0.002, .lon = 0.0, .name = "TB1", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "Plain2", .wptType = null, .time = null },
+        .{ .lat = 0.005, .lon = 0.0, .name = "End", .wptType = "Arrival", .time = null },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -289,11 +316,11 @@ test "computeSectionsFromWaypoints: stageIdx increments at LifeBase boundary" {
     // Stage 0: Start→TB1, TB1→LifeBase  (sections 0 and 1)
     // Stage 1: LifeBase→TB2, TB2→Arrival (sections 2 and 3)
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
-        .{ .lat = 0.003, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
-        .{ .lat = 0.006, .lon = 0.0, .name = "LB1",     .wptType = "LifeBase",    .time = null },
-        .{ .lat = 0.009, .lon = 0.0, .name = "TB2",     .wptType = "TimeBarrier", .time = null },
-        .{ .lat = 0.011, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "TB1", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.006, .lon = 0.0, .name = "LB1", .wptType = "LifeBase", .time = null },
+        .{ .lat = 0.009, .lon = 0.0, .name = "TB2", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.011, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -321,8 +348,8 @@ test "computeSectionsFromWaypoints: maxCompletionTime computed from timestamps" 
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",       .time = 1_000_000 },
-        .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_007_200 },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = 1_000_000 },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .wptType = "TimeBarrier", .time = 1_007_200 },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -347,8 +374,8 @@ test "computeSectionsFromWaypoints: maxCompletionTime is null without timestamps
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",   .time = null },
-        .{ .lat = 0.002, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.002, .lon = 0.0, .name = "End", .wptType = "Arrival", .time = null },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -374,8 +401,8 @@ test "computeSectionsFromWaypoints: cutoffRatio is estimatedDuration / maxComple
 
     // Give a very generous cutoff (10 hours) so the ratio is clearly < 1.0
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",       .time = 1_000_000 },
-        .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "TimeBarrier", .time = 1_000_000 + 36_000 },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = 1_000_000 },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .wptType = "TimeBarrier", .time = 1_000_000 + 36_000 },
     };
 
     const sections = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -408,14 +435,14 @@ test "computeSectionsFromWaypoints: LifeBase recovery reduces fatigue in subsequ
     defer trace.deinit(allocator);
 
     const wpts_lb = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
-        .{ .lat = 0.004, .lon = 0.0, .name = "LB",      .wptType = "LifeBase",    .time = null },
-        .{ .lat = 0.008, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.004, .lon = 0.0, .name = "LB", .wptType = "LifeBase", .time = null },
+        .{ .lat = 0.008, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
     const wpts_tb = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
-        .{ .lat = 0.004, .lon = 0.0, .name = "TB",      .wptType = "TimeBarrier", .time = null },
-        .{ .lat = 0.008, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.004, .lon = 0.0, .name = "TB", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.008, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
 
     // Pass 0 for life_base_stop_s: this test is about fatigue recovery, not stop time.
@@ -453,11 +480,11 @@ test "computeSectionsFromWaypoints: circadian penalty slows night sections" {
     const night_utc: i64 = 3 * 3600 + 30 * 60; // 03:30 UTC — circadian peak
 
     const wpts_day = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",   .time = noon_utc },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = noon_utc },
         .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
     const wpts_night = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",   .time = night_utc },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = night_utc },
         .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
 
@@ -484,12 +511,12 @@ test "computeSectionsFromWaypoints: stopDuration is added to estimatedDuration" 
 
     const stop_secs: u32 = 3600; // 1 hour stop
     const wpts_stop = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",    .time = null },
-        .{ .lat = 0.003, .lon = 0.0, .name = "LB",    .wptType = "LifeBase", .time = null, .stopDuration = stop_secs },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "LB", .wptType = "LifeBase", .time = null, .stopDuration = stop_secs },
     };
     const wpts_no_stop = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",    .time = null },
-        .{ .lat = 0.003, .lon = 0.0, .name = "LB",    .wptType = "LifeBase", .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "LB", .wptType = "LifeBase", .time = null },
     };
 
     // Explicit stopDuration overrides the default; pass 0 as default for the no-stop baseline.
@@ -524,7 +551,7 @@ test "computeSectionsFromWaypoints: adverse weather at a checkpoint slows that s
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",   .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
         .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
 
@@ -548,4 +575,45 @@ test "computeSectionsFromWaypoints: adverse weather at a checkpoint slows that s
     const s_other = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, 0, other_lookup);
     defer if (s_other) |s| allocator.free(s);
     try std.testing.expectApproxEqAbs(s_calm.?[0].estimatedDuration, s_other.?[0].estimatedDuration, 1e-6);
+}
+
+// ── recalibrateFromCurrent (section wrapper) ─────────────────────────────────
+// The calibration physics are covered in calibration.zig. This integration test
+// only verifies the section-granularity wrapper agrees with the a-priori model.
+
+test "recalibrateFromCurrent: at the start reproduces the a-priori section total at factor 1.0" {
+    const allocator = std.testing.allocator;
+    var points = try allocator.alloc([3]f64, 30);
+    defer allocator.free(points);
+    for (0..30) |i| {
+        points[i] = [3]f64{ @as(f64, @floatFromInt(i)) * 0.001, 0.0, 100.0 };
+    }
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    // Start(idx0) / TB1(idx10) / TB2(idx20) / Arrival(idx29) — three sections.
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.010, .lon = 0.0, .name = "TB1", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.020, .lon = 0.0, .name = "TB2", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.029, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
+    };
+
+    const a_priori = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, 0, paceModel.WeatherLookup.empty);
+    defer if (a_priori) |s| allocator.free(s);
+    try std.testing.expect(a_priori != null);
+    var a_total: f64 = 0.0;
+    for (a_priori.?) |s| a_total += s.estimatedDuration;
+
+    var result = try recalibrateFromCurrent(&trace, allocator, &waypoints, 0, 0.0, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, 0, paceModel.WeatherLookup.empty);
+    defer if (result) |*r| r.deinit(allocator);
+    try std.testing.expect(result != null);
+    const r = result.?;
+
+    try std.testing.expectEqual(@as(f64, 1.0), r.calibrationFactor);
+    try std.testing.expectEqual(@as(usize, 3), r.etas.len);
+    for (r.etas, 0..) |eta, i| {
+        try std.testing.expectApproxEqAbs(a_priori.?[i].estimatedDuration, eta.remainingDurationS, 1e-6);
+    }
+    try std.testing.expectApproxEqAbs(a_total, r.etas[r.etas.len - 1].cumulativeRemainingS, 1e-6);
 }

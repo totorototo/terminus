@@ -5,42 +5,43 @@ import { useShallow } from "zustand/react/shallow";
 import useStore, { useProjectedLocation } from "../store/store.js";
 
 /**
- * Returns per-section ETA timestamps, coordinates, and display state.
- * Shared between StageETA (display) and CheckpointPin (scene).
+ * Returns per-stage ETA timestamps and display state. The stage counterpart of
+ * `useCheckpointETAs`: stages are the coarser life-base intervals
+ * (Start/LifeBase/Arrival), sections the finer checkpoint intervals.
  *
  * Returns:
  *   raceStart: number | null  — ms timestamp of race start
  *   isPreRace: boolean
- *   checkpointETAs: Array of {
- *     sectionId, endLocation, endKm,
+ *   stageETAs: Array of {
+ *     stageId, endLocation, endKm,
  *     etaMs: number | null,
- *     isPast, isCurrent,
+ *     isPast, isCurrent, isOverCutoff,
  *     difficulty,
  *     lat, lon,
  *   }
  */
-export function useCheckpointETAs() {
+export function useStageETAs() {
   const projectedLocation = useProjectedLocation();
-  const { sections, cumulativeDistances, coordinates, recalSection } = useStore(
+  const { stages, cumulativeDistances, coordinates, recalStage } = useStore(
     useShallow((state) => ({
-      sections: state.sections,
+      stages: state.stages,
       cumulativeDistances: state.gpx.cumulativeDistances || [],
       coordinates: state.gpx.data,
-      recalSection: state.recalibration?.section ?? null,
+      recalStage: state.recalibration?.stage ?? null,
     })),
   );
 
   const raceStart = useMemo(() => {
-    if (!sections?.length || sections[0].startTime == null) return null;
-    return sections[0].startTime * 1000;
-  }, [sections]);
+    if (!stages?.length || stages[0].startTime == null) return null;
+    return stages[0].startTime * 1000;
+  }, [stages]);
 
   const [currentTime] = useState(() => Date.now());
 
   // Pace ratio: actual elapsed / Minetti estimate for distance covered so far.
-  // ratio > 1 = slower than model, < 1 = faster.
+  // Used as the pre-GPS-lock fallback, mirroring useCheckpointETAs.
   const paceRatio = useMemo(() => {
-    if (!raceStart || !sections?.length || !cumulativeDistances?.length)
+    if (!raceStart || !stages?.length || !cumulativeDistances?.length)
       return 1.0;
     const currentIndex = projectedLocation?.index || 0;
     const now = projectedLocation?.timestamp || currentTime;
@@ -48,16 +49,16 @@ export function useCheckpointETAs() {
     if (actualElapsedSec <= 0) return 1.0;
 
     let minettiSoFar = 0;
-    for (const section of sections) {
-      if (currentIndex >= section.endIndex) {
-        minettiSoFar += section.estimatedDuration;
-      } else if (currentIndex >= section.startIndex) {
+    for (const stage of stages) {
+      if (currentIndex >= stage.endIndex) {
+        minettiSoFar += stage.estimatedDuration;
+      } else if (currentIndex >= stage.startIndex) {
         const distDone =
           (cumulativeDistances[currentIndex] || 0) -
-          (cumulativeDistances[section.startIndex] || 0);
+          (cumulativeDistances[stage.startIndex] || 0);
         const fractionDone =
-          section.totalDistance > 0 ? distDone / section.totalDistance : 0;
-        minettiSoFar += section.estimatedDuration * fractionDone;
+          stage.totalDistance > 0 ? distDone / stage.totalDistance : 0;
+        minettiSoFar += stage.estimatedDuration * fractionDone;
         break;
       }
     }
@@ -65,15 +66,15 @@ export function useCheckpointETAs() {
     return minettiSoFar > 0 ? actualElapsedSec / minettiSoFar : 1.0;
   }, [
     raceStart,
-    sections,
+    stages,
     cumulativeDistances,
     projectedLocation?.index,
     projectedLocation?.timestamp,
     currentTime,
   ]);
 
-  const checkpointETAs = useMemo(() => {
-    if (!sections?.length || !cumulativeDistances?.length) return [];
+  const stageETAs = useMemo(() => {
+    if (!stages?.length || !cumulativeDistances?.length) return [];
 
     const currentIndex = projectedLocation?.index || 0;
     const now = projectedLocation?.timestamp || currentTime;
@@ -81,69 +82,58 @@ export function useCheckpointETAs() {
     const hasGPSLock = (projectedLocation?.timestamp ?? 0) > 0;
 
     // Prefer the Zig live recalibration for forward (current + future) ETAs once
-    // the runner has a GPS lock and the race is underway. It solves the base pace
-    // from real observations instead of applying a single JS scalar; we fall back
-    // to the a-priori + paceRatio path below for past checkpoints and whenever no
-    // recalibration is available (e.g. before the first fix). Matched on endIndex
-    // because the sanitized sectionId is a string while the Zig eta carries the
-    // trace index of the interval's end.
+    // the runner has a GPS lock and the race is underway; fall back to the
+    // a-priori + paceRatio path otherwise. Matched on endIndex.
     const useRecal =
-      hasGPSLock && !raceNotStarted && recalSection?.etas?.length > 0;
+      hasGPSLock && !raceNotStarted && recalStage?.etas?.length > 0;
     const remainingByEndIndex = useRecal
       ? new Map(
-          recalSection.etas.map((e) => [e.endIndex, e.cumulativeRemainingS]),
+          recalStage.etas.map((e) => [e.endIndex, e.cumulativeRemainingS]),
         )
       : null;
 
     let runningEtaMs = raceStart || now;
     let cutoffBreached = false;
 
-    return sections.map((section) => {
-      const isPast = currentIndex >= section.endIndex;
+    return stages.map((stage) => {
+      const isPast = currentIndex >= stage.endIndex;
       const isCurrent =
         !isPast &&
-        currentIndex >= section.startIndex &&
-        currentIndex < section.endIndex;
+        currentIndex >= stage.startIndex &&
+        currentIndex < stage.endIndex;
 
       let etaMs = null;
 
-      const zigCumulativeRemainingS = remainingByEndIndex?.get(
-        section.endIndex,
-      );
+      const zigCumulativeRemainingS = remainingByEndIndex?.get(stage.endIndex);
 
       if (useRecal && !isPast && zigCumulativeRemainingS != null) {
-        // Zig recalibrated forward ETA: time of the fix + remaining seconds to
-        // the end of this interval (running sum already baked into the Zig value).
         etaMs = now + zigCumulativeRemainingS * 1000;
         runningEtaMs = etaMs;
       } else if (raceNotStarted) {
-        // Pre-race: pure Minetti estimate, paceRatio = 1
-        runningEtaMs += section.estimatedDuration * 1000;
+        runningEtaMs += stage.estimatedDuration * 1000;
         etaMs = runningEtaMs;
       } else if (isPast) {
-        runningEtaMs += section.estimatedDuration * 1000 * paceRatio;
+        runningEtaMs += stage.estimatedDuration * 1000 * paceRatio;
         etaMs = runningEtaMs;
       } else if (isCurrent && raceStart) {
         const remainingDist =
-          (cumulativeDistances[section.endIndex] || 0) -
+          (cumulativeDistances[stage.endIndex] || 0) -
           (cumulativeDistances[currentIndex] || 0);
         const fractionRemaining =
-          section.totalDistance > 0 ? remainingDist / section.totalDistance : 0;
-        // Without a GPS lock (timestamp=0) use runningEtaMs (raceStart) as base
-        // so the initial display matches Minetti estimates from race start.
+          stage.totalDistance > 0 ? remainingDist / stage.totalDistance : 0;
         const etaBase = hasGPSLock ? now : runningEtaMs;
         etaMs =
           etaBase +
-          section.estimatedDuration * 1000 * fractionRemaining * paceRatio;
+          stage.estimatedDuration * 1000 * fractionRemaining * paceRatio;
         runningEtaMs = etaMs;
       } else if (raceStart) {
-        runningEtaMs += section.estimatedDuration * 1000 * paceRatio;
+        runningEtaMs += stage.estimatedDuration * 1000 * paceRatio;
         etaMs = runningEtaMs;
       }
 
       const cutoffMs =
-        section.startTime != null && section.maxCompletionTime != null
-          ? (section.startTime + section.maxCompletionTime) * 1000
+        stage.startTime != null && stage.maxCompletionTime != null
+          ? (stage.startTime + stage.maxCompletionTime) * 1000
           : null;
       const isOverCutoff =
         !cutoffBreached &&
@@ -157,23 +147,23 @@ export function useCheckpointETAs() {
         runningEtaMs = cutoffMs;
       }
 
-      const coord = coordinates?.[section.endIndex];
+      const coord = coordinates?.[stage.endIndex];
 
       return {
-        sectionId: section.sectionId,
-        endLocation: section.endLocation,
-        endKm: cumulativeDistances[section.endIndex] / 1000,
+        stageId: stage.stageId,
+        endLocation: stage.endLocation,
+        endKm: cumulativeDistances[stage.endIndex] / 1000,
         etaMs,
         isPast,
         isCurrent,
         isOverCutoff,
-        difficulty: section.difficulty || 0,
+        difficulty: stage.difficulty || 0,
         lat: coord ? coord[0] : null,
         lon: coord ? coord[1] : null,
       };
     });
   }, [
-    sections,
+    stages,
     cumulativeDistances,
     coordinates,
     projectedLocation?.index,
@@ -181,7 +171,7 @@ export function useCheckpointETAs() {
     raceStart,
     paceRatio,
     currentTime,
-    recalSection,
+    recalStage,
   ]);
 
   const isPreRace = useMemo(() => {
@@ -190,5 +180,5 @@ export function useCheckpointETAs() {
     return now < raceStart;
   }, [raceStart, projectedLocation?.timestamp, currentTime]);
 
-  return { raceStart, checkpointETAs, isPreRace };
+  return { raceStart, stageETAs, isPreRace };
 }

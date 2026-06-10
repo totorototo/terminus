@@ -6,6 +6,7 @@ import { createAppSlice } from "./slices/app";
 import { createGPSSlice } from "./slices/gps";
 import { createGpxSlice } from "./slices/gpx";
 import { createLegsSlice } from "./slices/legs";
+import { createRecalibrationSlice } from "./slices/recalibration";
 import { createSectionsSlice } from "./slices/sections";
 import { createStagesSlice } from "./slices/stages";
 import { createStatsSlice } from "./slices/stats";
@@ -25,6 +26,7 @@ const useStore = create(
         ...createLegsSlice(...a),
         ...createSectionsSlice(...a),
         ...createStagesSlice(...a),
+        ...createRecalibrationSlice(...a),
         ...createGPSSlice(...a),
         ...createWeatherSlice(...a),
       })),

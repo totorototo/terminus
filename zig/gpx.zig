@@ -12,6 +12,7 @@ const stage_mod = @import("stage.zig");
 const StageStats = stage_mod.StageStats;
 const parseIso8601ToEpoch = @import("time.zig").parseIso8601ToEpoch;
 const paceModel = @import("paceModel.zig");
+const calibration = @import("calibration.zig");
 
 pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
     var points = std.ArrayList([3]f64){};
@@ -255,6 +256,54 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8, base_pac
         .stages = stages,
         .metadata = metadata,
     };
+}
+
+/// Live-recalibration entry point for the worker. Re-parses the GPX bytes,
+/// rebuilds the trace and waypoints, then recalibrates the section or stage ETAs
+/// against the runner's current trace index and actual elapsed seconds.
+///
+/// `is_stage` selects which boundary set to recalibrate against: false walks the
+/// section boundaries (Start/TimeBarrier/LifeBase/Arrival), true walks the stage
+/// boundaries (Start/LifeBase/Arrival). Legs are intentionally unsupported — they
+/// have no cutoff anchor to calibrate against. Returns null when the route has
+/// fewer than two boundaries of the requested kind. Caller owns the result and
+/// must call `.deinit()`.
+pub fn recalibrateGPX(
+    allocator: std.mem.Allocator,
+    bytes: []const u8,
+    is_stage: bool,
+    current_index: usize,
+    actual_elapsed_s: f64,
+    base_pace_s_per_km: f64,
+    k_fatigue: f64,
+    life_base_stop_s: u32,
+    weather: paceModel.WeatherLookup,
+) !?calibration.Recalibration {
+    const trace_points = try readTracePoints(allocator, bytes);
+    defer allocator.free(trace_points);
+
+    const waypoints = try readWaypoints(allocator, bytes);
+    defer {
+        for (waypoints) |*wpt| wpt.deinit(allocator);
+        allocator.free(waypoints);
+    }
+
+    var trace = try Trace.init(allocator, trace_points);
+    defer trace.deinit(allocator);
+
+    const kind: calibration.BoundaryKind = if (is_stage) .stage else .section;
+    return calibration.recalibrateFromCurrent(
+        &trace,
+        allocator,
+        waypoints,
+        kind,
+        current_index,
+        actual_elapsed_s,
+        base_pace_s_per_km,
+        k_fatigue,
+        life_base_stop_s,
+        weather,
+    );
 }
 
 // Tests
@@ -990,4 +1039,91 @@ test "parseTagContent: empty tag content returns empty slice" {
     try testing.expectEqual(@as(usize, 1), waypoints.len);
     try testing.expectEqualStrings("", waypoints[0].name);
     try testing.expectEqualStrings("", waypoints[0].desc.?);
+}
+
+// A small route with explicit Start/TimeBarrier/LifeBase/Arrival waypoints whose
+// coordinates coincide with track points, so boundaries resolve onto clean trace
+// index ranges. Used by the recalibrateGPX entry-point tests below.
+const recal_gpx =
+    \\<?xml version="1.0" encoding="UTF-8"?>
+    \\<gpx version="1.1">
+    \\ <trk><trkseg>
+    \\  <trkpt lat="45.000" lon="7.000"><ele>100</ele></trkpt>
+    \\  <trkpt lat="45.005" lon="7.005"><ele>105</ele></trkpt>
+    \\  <trkpt lat="45.010" lon="7.010"><ele>110</ele></trkpt>
+    \\  <trkpt lat="45.015" lon="7.015"><ele>115</ele></trkpt>
+    \\  <trkpt lat="45.020" lon="7.020"><ele>120</ele></trkpt>
+    \\  <trkpt lat="45.030" lon="7.030"><ele>130</ele></trkpt>
+    \\  <trkpt lat="45.040" lon="7.040"><ele>140</ele></trkpt>
+    \\ </trkseg></trk>
+    \\ <wpt lat="45.000" lon="7.000"><name>Start</name><type>Start</type></wpt>
+    \\ <wpt lat="45.010" lon="7.010"><name>TB1</name><type>TimeBarrier</type></wpt>
+    \\ <wpt lat="45.020" lon="7.020"><name>LB1</name><type>LifeBase</type></wpt>
+    \\ <wpt lat="45.040" lon="7.040"><name>Finish</name><type>Arrival</type></wpt>
+    \\</gpx>
+;
+
+test "recalibrateGPX: section kind returns one eta per section interval at factor 1.0" {
+    const allocator = testing.allocator;
+    var recal = (try recalibrateGPX(
+        allocator,
+        recal_gpx,
+        false, // is_stage
+        0, // current_index
+        0.0, // actual_elapsed_s (untrusted -> factor 1.0)
+        paceModel.DEFAULT_BASE_PACE_S_PER_KM,
+        paceModel.K_FATIGUE,
+        paceModel.DEFAULT_LIFE_BASE_STOP_S,
+        paceModel.WeatherLookup.empty,
+    )).?;
+    defer recal.deinit(allocator);
+
+    // Start/TimeBarrier/LifeBase/Arrival -> 3 section intervals.
+    try testing.expectEqual(@as(usize, 3), recal.etas.len);
+    try testing.expectEqual(@as(f64, 1.0), recal.calibrationFactor);
+}
+
+test "recalibrateGPX: stage kind ignores the TimeBarrier boundary" {
+    const allocator = testing.allocator;
+    var recal = (try recalibrateGPX(
+        allocator,
+        recal_gpx,
+        true, // is_stage
+        0,
+        0.0,
+        paceModel.DEFAULT_BASE_PACE_S_PER_KM,
+        paceModel.K_FATIGUE,
+        paceModel.DEFAULT_LIFE_BASE_STOP_S,
+        paceModel.WeatherLookup.empty,
+    )).?;
+    defer recal.deinit(allocator);
+
+    // Start/LifeBase/Arrival -> 2 stage intervals (TimeBarrier is not a stage boundary).
+    try testing.expectEqual(@as(usize, 2), recal.etas.len);
+}
+
+test "recalibrateGPX: returns null when fewer than two boundaries" {
+    const allocator = testing.allocator;
+    const single_boundary_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <trk><trkseg>
+        \\  <trkpt lat="45.000" lon="7.000"><ele>100</ele></trkpt>
+        \\  <trkpt lat="45.010" lon="7.010"><ele>110</ele></trkpt>
+        \\ </trkseg></trk>
+        \\ <wpt lat="45.000" lon="7.000"><name>Start</name><type>Start</type></wpt>
+        \\</gpx>
+    ;
+    const recal = try recalibrateGPX(
+        allocator,
+        single_boundary_gpx,
+        false,
+        0,
+        0.0,
+        paceModel.DEFAULT_BASE_PACE_S_PER_KM,
+        paceModel.K_FATIGUE,
+        paceModel.DEFAULT_LIFE_BASE_STOP_S,
+        paceModel.WeatherLookup.empty,
+    );
+    try testing.expect(recal == null);
 }
