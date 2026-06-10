@@ -232,6 +232,9 @@ export const createGPSSlice = (set, get) => {
           "gps/setProjectedLocation",
         );
 
+        // Refine section/stage ETAs against the new fix (best-effort, non-blocking).
+        get().recalibrate?.();
+
         // Broadcast to followers if in trailer mode
         const sessionId = get().app.liveSessionId;
         if (get().app.mode === "trailer" && sessionId) {
@@ -398,6 +401,9 @@ export const createGPSSlice = (set, get) => {
             index: msg.index,
           });
           notifyLocationUpdate(msg);
+
+          // Refine ETAs against the runner's broadcast fix (best-effort).
+          get().recalibrate?.();
 
           // Apply runner's pace settings if they differ — triggers re-processing
           // so followers see the same ETAs as the trailer. Validate first: even

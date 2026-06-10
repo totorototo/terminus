@@ -2,7 +2,7 @@
 // This runs GPS computations off the main thread to prevent UI freezing
 // All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
 
-import { readGPXComplete } from "../zig/gpx.zig";
+import { readGPXComplete, recalibrateGPX } from "../zig/gpx.zig";
 import { generateAudioFrames } from "../zig/soundscape.zig";
 import { __zigar, Trace } from "../zig/trace.zig";
 
@@ -116,6 +116,10 @@ self.onmessage = async function (e) {
 
       case "FIND_CLOSEST_LOCATION":
         await findClosestLocation(data, id);
+        break;
+
+      case "RECALIBRATE":
+        await recalibrate(data, id);
         break;
 
       case "GENERATE_AUDIO_FRAMES":
@@ -576,6 +580,78 @@ async function generateSoundscapeFrames(data, requestId) {
     id: requestId,
     results: { frames },
     timingMs: { audioFrames: measureMs("generateAudioFrames") },
+  });
+}
+
+// Live recalibration: re-parse the retained GPX bytes, rebuild the trace and
+// waypoints in Zig, and recalibrate the section or stage ETAs against the
+// runner's current trace index and actual elapsed time. `kind` selects the
+// boundary set ("stage" walks Start/LifeBase/Arrival; anything else walks the
+// section boundaries). Returns a neutral (null) result when the route has fewer
+// than two boundaries of the requested kind.
+async function recalibrate(data, requestId) {
+  markStart("recalibrate");
+  const {
+    gpxBytes,
+    kind = "section",
+    currentIndex = 0,
+    actualElapsedS = 0,
+    basePaceSPerKm = 500.0,
+    kFatigue = 0.002,
+    lifeBaseStopS = 3600,
+    weatherByCheckpoint = null,
+  } = data;
+
+  const weather = buildWeatherLookup(weatherByCheckpoint);
+
+  const result = await recalibrateGPX(
+    gpxBytes,
+    kind === "stage",
+    currentIndex,
+    actualElapsedS,
+    basePaceSPerKm,
+    kFatigue,
+    lifeBaseStopS,
+    weather,
+  );
+
+  // Convert the Zigar proxy to plain JS before sending. `result` is null when
+  // the route lacks two boundaries of the requested kind. i64/usize fields come
+  // back as BigInt and need explicit Number() conversion.
+  let sanitized = null;
+  if (result) {
+    const etas = [];
+    const zigEtas = result.etas;
+    for (let i = 0; i < zigEtas.length; i++) {
+      const e = zigEtas[i].valueOf();
+      etas.push({
+        id: Number(e.id),
+        endIndex: Number(e.endIndex),
+        remainingDurationS: e.remainingDurationS,
+        cumulativeRemainingS: e.cumulativeRemainingS,
+      });
+    }
+    sanitized = {
+      kind,
+      calibrationFactor: result.calibrationFactor,
+      calibratedBasePaceSPerKm: result.calibratedBasePaceSPerKm,
+      predictedSoFarS: result.predictedSoFarS,
+      actualElapsedS: result.actualElapsedS,
+      etas,
+    };
+    result.deinit();
+  }
+
+  markEnd("recalibrate");
+
+  // Wrap the (possibly null) payload so the messenger always resolves with a
+  // truthy `results` object — it falls back to the raw message when `results`
+  // is null/undefined, which would otherwise leak the envelope to callers.
+  self.postMessage({
+    type: "RECALIBRATED",
+    id: requestId,
+    results: { recalibration: sanitized },
+    timingMs: { recalibrate: measureMs("recalibrate") },
   });
 }
 

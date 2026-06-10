@@ -1,14 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // vi.mock calls are hoisted above all imports by Vitest
-vi.mock("../zig/gpx.zig", () => ({ readGPXComplete: vi.fn() }));
+vi.mock("../zig/gpx.zig", () => ({
+  readGPXComplete: vi.fn(),
+  recalibrateGPX: vi.fn(),
+}));
 vi.mock("../zig/trace.zig", () => ({
   __zigar: { init: vi.fn().mockResolvedValue(undefined) },
   Trace: { init: vi.fn() },
 }));
 vi.mock("../zig/soundscape.zig", () => ({ generateAudioFrames: vi.fn() }));
 
-import { readGPXComplete } from "../zig/gpx.zig";
+import { readGPXComplete, recalibrateGPX } from "../zig/gpx.zig";
 import { generateAudioFrames } from "../zig/soundscape.zig";
 import { Trace } from "../zig/trace.zig";
 
@@ -285,6 +288,98 @@ describe("message routing", () => {
     });
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({ type: "AUDIO_FRAMES_READY" }),
+    );
+  });
+
+  it("routes RECALIBRATE and posts a sanitized RECALIBRATED payload", async () => {
+    const deinit = vi.fn();
+    recalibrateGPX.mockResolvedValue({
+      calibrationFactor: 1.25,
+      calibratedBasePaceSPerKm: 625,
+      predictedSoFarS: 800,
+      actualElapsedS: 1000,
+      etas: [
+        {
+          valueOf: () => ({
+            id: 0n,
+            endIndex: 10n,
+            remainingDurationS: 1200,
+            cumulativeRemainingS: 1200,
+          }),
+        },
+        {
+          valueOf: () => ({
+            id: 1n,
+            endIndex: 20n,
+            remainingDurationS: 1500,
+            cumulativeRemainingS: 2700,
+          }),
+        },
+      ],
+      deinit,
+    });
+
+    await dispatch("RECALIBRATE", {
+      gpxBytes: new ArrayBuffer(0),
+      kind: "section",
+      currentIndex: 5,
+      actualElapsedS: 1000,
+    });
+
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "RECALIBRATED",
+        id: "req-1",
+        results: {
+          recalibration: {
+            kind: "section",
+            calibrationFactor: 1.25,
+            calibratedBasePaceSPerKm: 625,
+            predictedSoFarS: 800,
+            actualElapsedS: 1000,
+            etas: [
+              {
+                id: 0,
+                endIndex: 10,
+                remainingDurationS: 1200,
+                cumulativeRemainingS: 1200,
+              },
+              {
+                id: 1,
+                endIndex: 20,
+                remainingDurationS: 1500,
+                cumulativeRemainingS: 2700,
+              },
+            ],
+          },
+        },
+      }),
+    );
+    expect(deinit).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes is_stage=true to recalibrateGPX for the stage kind", async () => {
+    recalibrateGPX.mockResolvedValue(null);
+    await dispatch("RECALIBRATE", {
+      gpxBytes: new ArrayBuffer(0),
+      kind: "stage",
+      currentIndex: 0,
+      actualElapsedS: 0,
+    });
+    expect(recalibrateGPX.mock.calls[0][1]).toBe(true);
+  });
+
+  it("posts a null recalibration when the route lacks two boundaries", async () => {
+    recalibrateGPX.mockResolvedValue(null);
+    await dispatch("RECALIBRATE", {
+      gpxBytes: new ArrayBuffer(0),
+      kind: "section",
+    });
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "RECALIBRATED",
+        results: { recalibration: null },
+      }),
     );
   });
 });

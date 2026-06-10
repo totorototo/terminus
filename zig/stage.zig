@@ -4,6 +4,7 @@ const Waypoint = @import("gpxdata.zig").Waypoint;
 const bearingTo = @import("gpspoint.zig").bearingTo;
 const paceModel = @import("paceModel.zig");
 const segment = @import("segment.zig");
+const calibration = @import("calibration.zig");
 
 const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
@@ -170,6 +171,30 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
     return try stages.toOwnedSlice(allocator);
 }
 
+// Live stage recalibration lives in `calibration.zig`, shared with sections.
+// `recalibrateFromCurrent` here is a thin stage-granularity wrapper over it.
+
+pub const Recalibration = calibration.Recalibration;
+pub const RecalibratedStageETA = calibration.RecalibratedETA;
+
+/// Recalibrate remaining-stage ETAs from the runner's live progress, splitting on
+/// stage boundaries (Start/LifeBase/Arrival). TimeBarriers are ignored — they
+/// only split sections. See `calibration.recalibrateFromCurrent` for the full
+/// contract.
+pub fn recalibrateFromCurrent(
+    trace: *const Trace,
+    allocator: std.mem.Allocator,
+    waypoints: []const Waypoint,
+    current_index: usize,
+    actual_elapsed_s: f64,
+    base_pace_s_per_km: f64,
+    k_fatigue: f64,
+    life_base_stop_s: u32,
+    weather: paceModel.WeatherLookup,
+) !?Recalibration {
+    return calibration.recalibrateFromCurrent(trace, allocator, waypoints, .stage, current_index, actual_elapsed_s, base_pace_s_per_km, k_fatigue, life_base_stop_s, weather);
+}
+
 test "computeStagesFromWaypoints: returns null with fewer than 2 stage boundaries" {
     const allocator = std.testing.allocator;
     const points = [_][3]f64{
@@ -210,9 +235,9 @@ test "computeStagesFromWaypoints: TimeBarrier waypoints are excluded" {
     // TimeBarrier at 0.002 is a section boundary but NOT a stage boundary — should be skipped.
     // Result: 1 stage (Start→Arrival), not 2.
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",       .time = null },
-        .{ .lat = 0.002, .lon = 0.0, .name = "TB1",     .wptType = "TimeBarrier", .time = null },
-        .{ .lat = 0.005, .lon = 0.0, .name = "Arrival", .wptType = "Arrival",     .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.002, .lon = 0.0, .name = "TB1", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.005, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
 
     const stages = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -236,9 +261,9 @@ test "computeStagesFromWaypoints: Start-LifeBase-Arrival produces two stages" {
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",    .wptType = "Start",    .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
         .{ .lat = 0.005, .lon = 0.0, .name = "LifeBase", .wptType = "LifeBase", .time = null },
-        .{ .lat = 0.009, .lon = 0.0, .name = "Arrival",  .wptType = "Arrival",  .time = null },
+        .{ .lat = 0.009, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
     };
 
     const stages = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -270,8 +295,8 @@ test "stage maxCompletionTime is set from waypoint timestamps" {
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",   .time = 1_000_000 },
-        .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = 1_003_600 },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = 1_000_000 },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .wptType = "Arrival", .time = 1_003_600 },
     };
 
     const stages = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -299,8 +324,8 @@ test "stage maxCompletionTime is null when stage waypoints have no timestamps" {
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start",   .time = null },
-        .{ .lat = 0.003, .lon = 0.0, .name = "End",   .wptType = "Arrival", .time = null },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.003, .lon = 0.0, .name = "End", .wptType = "Arrival", .time = null },
     };
 
     const stages = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
@@ -326,7 +351,7 @@ test "stage cutoffRatio is estimatedDuration / maxCompletionTime" {
     defer trace.deinit(allocator);
 
     const waypoints = [_]Waypoint{
-        .{ .lat = 0.000, .lon = 0.0, .name = "Start",   .wptType = "Start",   .time = 1_000_000 },
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = 1_000_000 },
         .{ .lat = 0.003, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = 1_000_000 + 36_000 },
     };
 
@@ -342,4 +367,79 @@ test "stage cutoffRatio is estimatedDuration / maxCompletionTime" {
         1e-9,
     );
     try expect(st.cutoffRatio.? < 1.0);
+}
+
+// ── recalibrateFromCurrent (stage wrapper) ───────────────────────────────────
+// The calibration physics are covered in calibration.zig. These integration
+// tests verify the stage-granularity wrapper: it splits on Start/LifeBase/Arrival
+// (ignoring TimeBarriers) and agrees with the a-priori stage model.
+
+test "recalibrateFromCurrent: stage wrapper at the start reproduces the a-priori stage total" {
+    const allocator = std.testing.allocator;
+    var points = try allocator.alloc([3]f64, 30);
+    defer allocator.free(points);
+    for (0..30) |i| {
+        points[i] = [3]f64{ @as(f64, @floatFromInt(i)) * 0.001, 0.0, 100.0 };
+    }
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    // Start(idx0) / TB1(idx5) / LB1(idx10) / LB2(idx20) / Arrival(idx29).
+    // As stages the TimeBarrier is ignored -> 3 stages.
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.005, .lon = 0.0, .name = "TB1", .wptType = "TimeBarrier", .time = null },
+        .{ .lat = 0.010, .lon = 0.0, .name = "LB1", .wptType = "LifeBase", .time = null },
+        .{ .lat = 0.020, .lon = 0.0, .name = "LB2", .wptType = "LifeBase", .time = null },
+        .{ .lat = 0.029, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
+    };
+
+    const a_priori = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, 0, paceModel.WeatherLookup.empty);
+    defer if (a_priori) |s| allocator.free(s);
+    try expect(a_priori != null);
+    try expectEqual(@as(usize, 3), a_priori.?.len);
+    var a_total: f64 = 0.0;
+    for (a_priori.?) |s| a_total += s.estimatedDuration;
+
+    var result = try recalibrateFromCurrent(&trace, allocator, &waypoints, 0, 0.0, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, 0, paceModel.WeatherLookup.empty);
+    defer if (result) |*r| r.deinit(allocator);
+    try expect(result != null);
+    const r = result.?;
+
+    try expectEqual(@as(f64, 1.0), r.calibrationFactor);
+    try expectEqual(@as(usize, 3), r.etas.len); // TimeBarrier ignored
+    for (r.etas, 0..) |eta, i| {
+        try std.testing.expectApproxEqAbs(a_priori.?[i].estimatedDuration, eta.remainingDurationS, 1e-6);
+    }
+    try std.testing.expectApproxEqAbs(a_total, r.etas[r.etas.len - 1].cumulativeRemainingS, 1e-6);
+}
+
+test "recalibrateFromCurrent: stage wrapper solves a factor and zeroes completed stages" {
+    const allocator = std.testing.allocator;
+    var points = try allocator.alloc([3]f64, 30);
+    defer allocator.free(points);
+    for (0..30) |i| {
+        points[i] = [3]f64{ @as(f64, @floatFromInt(i)) * 0.001, 0.0, 100.0 };
+    }
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.010, .lon = 0.0, .name = "LB1", .wptType = "LifeBase", .time = null },
+        .{ .lat = 0.020, .lon = 0.0, .name = "LB2", .wptType = "LifeBase", .time = null },
+        .{ .lat = 0.029, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
+    };
+
+    // Runner reached LB1 (idx 10, end of stage 0) slower than predicted.
+    var result = try recalibrateFromCurrent(&trace, allocator, &waypoints, 10, 900.0, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, 0, paceModel.WeatherLookup.empty);
+    defer if (result) |*r| r.deinit(allocator);
+    try expect(result != null);
+    const r = result.?;
+
+    try expectEqual(@as(usize, 3), r.etas.len);
+    try expect(r.calibrationFactor > 1.0);
+    try expectEqual(@as(f64, 0.0), r.etas[0].remainingDurationS);
+    try expect(r.etas[1].remainingDurationS > 0.0);
+    try expect(r.etas[2].cumulativeRemainingS > r.etas[1].cumulativeRemainingS);
 }

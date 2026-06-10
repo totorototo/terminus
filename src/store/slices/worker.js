@@ -327,6 +327,59 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       await get().processGPXFile(rawGpxBytes);
     },
 
+    // Live recalibration: re-parse the retained GPX bytes in the worker and
+    // recalibrate both section and stage ETAs against the runner's current trace
+    // index and actual elapsed time. Best-effort — failures never block the UI,
+    // and absence of a GPS fix / race start simply leaves the a-priori model in
+    // place (results stay null, hooks fall back).
+    recalibrate: async () => {
+      if (!rawGpxBytes || !messenger) return;
+
+      const { gps, sections } = get();
+      const currentIndex = gps?.projectedLocation?.index;
+      // Without a fix snapped onto the trace there is nothing to calibrate from.
+      if (currentIndex == null) return;
+
+      // Race start anchors elapsed time; the first section carries it.
+      const startTime = sections?.[0]?.startTime;
+      if (startTime == null) return;
+
+      const raceStartMs = startTime * 1000;
+      const nowMs = gps.projectedLocation.timestamp || Date.now();
+      const actualElapsedS = (nowMs - raceStartMs) / 1000;
+      // Before the gun there is nothing to calibrate; keep the a-priori model.
+      if (actualElapsedS <= 0) return;
+
+      const {
+        basePaceSPerKm = 500,
+        kFatigue = 0.002,
+        lifeBaseStopS = 3600,
+      } = get().app?.paceSettings ?? {};
+      const weatherByCheckpoint = get().weather?.forecasts ?? null;
+
+      const payload = {
+        gpxBytes: rawGpxBytes,
+        currentIndex,
+        actualElapsedS,
+        basePaceSPerKm,
+        kFatigue,
+        lifeBaseStopS,
+        weatherByCheckpoint,
+      };
+
+      try {
+        const [section, stage] = await Promise.all([
+          messenger.send("RECALIBRATE", { ...payload, kind: "section" }),
+          messenger.send("RECALIBRATE", { ...payload, kind: "stage" }),
+        ]);
+        get().setRecalibration("section", section?.recalibration ?? null);
+        get().setRecalibration("stage", stage?.recalibration ?? null);
+      } catch (error) {
+        // Recalibration is a refinement, not a hard dependency — log and move on.
+        console.error("Recalibration failed:", error.message);
+      }
+    },
+
     processGPSData: async (coordinates, onProgress) => {
       try {
         if (!messenger) {
