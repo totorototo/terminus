@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 
 import { useShallow } from "zustand/react/shallow";
 
+import { recalLookup } from "../helpers/recalLookup.js";
 import useStore, { useProjectedLocation } from "../store/store.js";
 
 /**
@@ -81,16 +82,12 @@ export function useStageETAs() {
     const raceNotStarted = raceStart && now < raceStart;
     const hasGPSLock = (projectedLocation?.timestamp ?? 0) > 0;
 
-    // Prefer the Zig live recalibration for forward (current + future) ETAs once
-    // the runner has a GPS lock and the race is underway; fall back to the
-    // a-priori + paceRatio path otherwise. Matched on endIndex.
-    const useRecal =
-      hasGPSLock && !raceNotStarted && recalStage?.etas?.length > 0;
-    const remainingByEndIndex = useRecal
-      ? new Map(
-          recalStage.etas.map((e) => [e.endIndex, e.cumulativeRemainingS]),
-        )
-      : null;
+    // Prefer the Zig live recalibration for forward ETAs when available; fall back
+    // to the a-priori + paceRatio path below otherwise. Null map => no recal.
+    const remainingByEndIndex = recalLookup(recalStage, {
+      hasGPSLock,
+      raceNotStarted,
+    });
 
     let runningEtaMs = raceStart || now;
     let cutoffBreached = false;
@@ -106,7 +103,7 @@ export function useStageETAs() {
 
       const zigCumulativeRemainingS = remainingByEndIndex?.get(stage.endIndex);
 
-      if (useRecal && !isPast && zigCumulativeRemainingS != null) {
+      if (!isPast && zigCumulativeRemainingS != null) {
         etaMs = now + zigCumulativeRemainingS * 1000;
         runningEtaMs = etaMs;
       } else if (raceNotStarted) {

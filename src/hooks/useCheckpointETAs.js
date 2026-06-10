@@ -2,11 +2,12 @@ import { useMemo, useState } from "react";
 
 import { useShallow } from "zustand/react/shallow";
 
+import { recalLookup } from "../helpers/recalLookup.js";
 import useStore, { useProjectedLocation } from "../store/store.js";
 
 /**
  * Returns per-section ETA timestamps, coordinates, and display state.
- * Shared between StageETA (display) and CheckpointPin (scene).
+ * Shared between SectionETA (display) and CheckpointPin (scene).
  *
  * Returns:
  *   raceStart: number | null  — ms timestamp of race start
@@ -80,20 +81,12 @@ export function useCheckpointETAs() {
     const raceNotStarted = raceStart && now < raceStart;
     const hasGPSLock = (projectedLocation?.timestamp ?? 0) > 0;
 
-    // Prefer the Zig live recalibration for forward (current + future) ETAs once
-    // the runner has a GPS lock and the race is underway. It solves the base pace
-    // from real observations instead of applying a single JS scalar; we fall back
-    // to the a-priori + paceRatio path below for past checkpoints and whenever no
-    // recalibration is available (e.g. before the first fix). Matched on endIndex
-    // because the sanitized sectionId is a string while the Zig eta carries the
-    // trace index of the interval's end.
-    const useRecal =
-      hasGPSLock && !raceNotStarted && recalSection?.etas?.length > 0;
-    const remainingByEndIndex = useRecal
-      ? new Map(
-          recalSection.etas.map((e) => [e.endIndex, e.cumulativeRemainingS]),
-        )
-      : null;
+    // Prefer the Zig live recalibration for forward ETAs when available; fall back
+    // to the a-priori + paceRatio path below otherwise. Null map => no recal.
+    const remainingByEndIndex = recalLookup(recalSection, {
+      hasGPSLock,
+      raceNotStarted,
+    });
 
     let runningEtaMs = raceStart || now;
     let cutoffBreached = false;
@@ -111,9 +104,8 @@ export function useCheckpointETAs() {
         section.endIndex,
       );
 
-      if (useRecal && !isPast && zigCumulativeRemainingS != null) {
-        // Zig recalibrated forward ETA: time of the fix + remaining seconds to
-        // the end of this interval (running sum already baked into the Zig value).
+      if (!isPast && zigCumulativeRemainingS != null) {
+        // Fix time + Zig's cumulative remaining (running sum already baked in).
         etaMs = now + zigCumulativeRemainingS * 1000;
         runningEtaMs = etaMs;
       } else if (raceNotStarted) {

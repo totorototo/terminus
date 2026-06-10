@@ -44,7 +44,7 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  /* Right sidebar: StageETA + PeakSummary, anchored top-right */
+  /* Right sidebar: SectionETA + PeakSummary, anchored top-right */
   .panel-right {
     flex-direction: column;
     gap: 1rem;

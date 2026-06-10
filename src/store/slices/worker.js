@@ -327,11 +327,9 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       await get().processGPXFile(rawGpxBytes);
     },
 
-    // Live recalibration: re-parse the retained GPX bytes in the worker and
-    // recalibrate both section and stage ETAs against the runner's current trace
-    // index and actual elapsed time. Best-effort — failures never block the UI,
-    // and absence of a GPS fix / race start simply leaves the a-priori model in
-    // place (results stay null, hooks fall back).
+    // Recalibrate section and stage ETAs against the runner's current trace index
+    // and elapsed time. Best-effort: without a fix or race start the result stays
+    // null and the hooks fall back to the a-priori model.
     recalibrate: async () => {
       if (!rawGpxBytes || !messenger) return;
 
@@ -347,8 +345,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       const raceStartMs = startTime * 1000;
       const nowMs = gps.projectedLocation.timestamp || Date.now();
       const actualElapsedS = (nowMs - raceStartMs) / 1000;
-      // Before the gun there is nothing to calibrate; keep the a-priori model.
-      if (actualElapsedS <= 0) return;
+      if (actualElapsedS <= 0) return; // before the gun, nothing to calibrate
 
       const {
         basePaceSPerKm = 500,

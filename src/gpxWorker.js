@@ -583,12 +583,9 @@ async function generateSoundscapeFrames(data, requestId) {
   });
 }
 
-// Live recalibration: re-parse the retained GPX bytes, rebuild the trace and
-// waypoints in Zig, and recalibrate the section or stage ETAs against the
-// runner's current trace index and actual elapsed time. `kind` selects the
-// boundary set ("stage" walks Start/LifeBase/Arrival; anything else walks the
-// section boundaries). Returns a neutral (null) result when the route has fewer
-// than two boundaries of the requested kind.
+// Recalibrate the section or stage ETAs (per `kind`) against the runner's current
+// trace index and elapsed time. Returns null when the route has fewer than two
+// boundaries of the requested kind.
 async function recalibrate(data, requestId) {
   markStart("recalibrate");
   const {
@@ -615,9 +612,8 @@ async function recalibrate(data, requestId) {
     weather,
   );
 
-  // Convert the Zigar proxy to plain JS before sending. `result` is null when
-  // the route lacks two boundaries of the requested kind. i64/usize fields come
-  // back as BigInt and need explicit Number() conversion.
+  // Copy the Zigar proxy to plain JS before posting; usize fields come back as
+  // BigInt and need Number(). `result` is null below the two-boundary minimum.
   let sanitized = null;
   if (result) {
     const etas = [];
@@ -644,9 +640,8 @@ async function recalibrate(data, requestId) {
 
   markEnd("recalibrate");
 
-  // Wrap the (possibly null) payload so the messenger always resolves with a
-  // truthy `results` object — it falls back to the raw message when `results`
-  // is null/undefined, which would otherwise leak the envelope to callers.
+  // Wrap in a truthy `results` even when null — the messenger leaks the raw
+  // envelope to callers if `results` is null/undefined.
   self.postMessage({
     type: "RECALIBRATED",
     id: requestId,
