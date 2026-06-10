@@ -1,15 +1,31 @@
-import { Fragment, memo, useMemo } from "react";
+import { Fragment, memo, useEffect, useMemo } from "react";
 
+import { Cloud } from "@styled-icons/feather/Cloud";
+import { CloudDrizzle } from "@styled-icons/feather/CloudDrizzle";
+import { CloudLightning } from "@styled-icons/feather/CloudLightning";
+import { CloudRain } from "@styled-icons/feather/CloudRain";
+import { CloudSnow } from "@styled-icons/feather/CloudSnow";
+import { Sun } from "@styled-icons/feather/Sun";
+import { Wind } from "@styled-icons/feather/Wind";
 import { format } from "date-fns";
+import { useTheme } from "styled-components";
+import { useShallow } from "zustand/react/shallow";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
-import { useStageETAs } from "../../../hooks/useStageETAs.js";
+import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 
-// Stages are the coarser life-base intervals (Start/LifeBase/Arrival); this is
-// the stage-granularity twin of SectionETA (which renders the finer checkpoints).
-// The breadcrumb timeline markup and classNames are shared, so reuse its style.
-import style from "../SectionETA/SectionETA.style.js";
+import style from "./SectionETA.style.js";
+
+const WEATHER_ICONS = {
+  Sun,
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  CloudDrizzle,
+  CloudLightning,
+  Wind,
+};
 
 function formatDuration(sec) {
   if (!sec || !Number.isFinite(sec) || sec <= 0) return "--";
@@ -39,35 +55,72 @@ function DifficultyDots({ difficulty }) {
   );
 }
 
-const StageETA = memo(function StageETA({ className }) {
-  const { raceStart, stageETAs, isPreRace } = useStageETAs();
+const SectionETA = memo(function SectionETA({ className }) {
+  const theme = useTheme();
+  const { raceStart, checkpointETAs, isPreRace } = useCheckpointETAs();
   const projectedLocation = useProjectedLocation();
-  const stages = useStore((state) => state.stages);
+  const { forecasts, fetchWeatherForCheckpoints, sections } = useStore(
+    useShallow((state) => ({
+      forecasts: state.weather.forecasts,
+      fetchWeatherForCheckpoints: state.fetchWeatherForCheckpoints,
+      sections: state.sections,
+    })),
+  );
+
+  const mutedColor = theme.colors[theme.currentVariant]["--color-text"] + "99";
+
+  const { etaFetchKey, fetchCheckpoints } = useMemo(() => {
+    if (!raceStart || isPreRace)
+      return { etaFetchKey: null, fetchCheckpoints: [] };
+
+    const eligible = checkpointETAs.filter(
+      (cp) => cp.lat != null && cp.lon != null && cp.etaMs != null,
+    );
+    const key = eligible
+      .map((cp) => Math.round(cp.etaMs / (30 * 60 * 1000)))
+      .join(",");
+    const checkpoints = eligible.map((cp) => ({
+      name: cp.endLocation,
+      lat: cp.lat,
+      lon: cp.lon,
+      etaMs: cp.etaMs,
+    }));
+
+    return { etaFetchKey: key, fetchCheckpoints: checkpoints };
+  }, [checkpointETAs, raceStart, isPreRace]);
+
+  useEffect(() => {
+    if (!etaFetchKey || !fetchCheckpoints.length) return;
+    fetchWeatherForCheckpoints(fetchCheckpoints);
+    // fetchCheckpoints intentionally omitted: always in sync with etaFetchKey
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [etaFetchKey, fetchWeatherForCheckpoints]);
 
   const { totalEstSec, rows } = useMemo(() => {
-    if (!stageETAs.length) return { totalEstSec: 0, rows: [] };
+    if (!checkpointETAs.length) return { totalEstSec: 0, rows: [] };
 
     let totalEstSec = 0;
-    const rows = stageETAs.map((st, i) => {
-      const stage = stages?.[i];
-      const distKm = (stage?.totalDistance || 0) / 1000;
-      const gainM = Math.round(stage?.totalElevation || 0);
-      const lossM = Math.round(stage?.totalElevationLoss || 0);
-      const estSec = stage?.estimatedDuration || 0;
+    const rows = checkpointETAs.map((cp, i) => {
+      const section = sections?.[i];
+      const distKm = (section?.totalDistance || 0) / 1000;
+      const gainM = Math.round(section?.totalElevation || 0);
+      const lossM = Math.round(section?.totalElevationLoss || 0);
+      const estSec = section?.estimatedDuration || 0;
       totalEstSec += estSec;
 
       return {
-        id: st.stageId,
-        endLocation: st.endLocation,
-        endKm: st.endKm,
-        isPast: st.isPast,
-        isCurrent: st.isCurrent,
-        isOverCutoff: st.isOverCutoff,
+        id: cp.sectionId,
+        endLocation: cp.endLocation,
+        endKm: cp.endKm,
+        isPast: cp.isPast,
+        isCurrent: cp.isCurrent,
+        isOverCutoff: cp.isOverCutoff,
         etaStr:
-          raceStart && st.etaMs && !isPreRace
-            ? format(new Date(st.etaMs), "EEE HH:mm")
+          raceStart && cp.etaMs && !isPreRace
+            ? format(new Date(cp.etaMs), "EEE HH:mm")
             : "--:--",
-        difficulty: st.difficulty,
+        difficulty: cp.difficulty,
+        weather: forecasts[cp.endLocation] ?? null,
         distKm,
         gainM,
         lossM,
@@ -76,7 +129,7 @@ const StageETA = memo(function StageETA({ className }) {
     });
 
     return { totalEstSec, rows };
-  }, [stageETAs, stages, raceStart, isPreRace]);
+  }, [checkpointETAs, sections, raceStart, isPreRace, forecasts]);
 
   const startIsPast = !isPreRace && (projectedLocation?.index || 0) > 0;
   const startIsCurrent = !isPreRace && (projectedLocation?.index || 0) === 0;
@@ -88,7 +141,7 @@ const StageETA = memo(function StageETA({ className }) {
   if (!rows.length) {
     return (
       <div className={className}>
-        <div className="empty-state">No stages</div>
+        <div className="empty-state">No sections</div>
       </div>
     );
   }
@@ -96,7 +149,7 @@ const StageETA = memo(function StageETA({ className }) {
   return (
     <div className={className}>
       <div className="list-header">
-        <span className="header-label">Life bases</span>
+        <span className="header-label">Checkpoints</span>
         <span className="header-total">
           {formatDuration(totalEstSec)} total
         </span>
@@ -113,7 +166,7 @@ const StageETA = memo(function StageETA({ className }) {
           <div className="cp-body">
             <div className="cp-line1">
               <span className="cp-name">
-                {stages?.[0]?.startLocation || "Start"}
+                {sections?.[0]?.startLocation || "Start"}
               </span>
               <div className="cp-right">
                 <span className="cp-eta">{startEtaStr}</span>
@@ -127,6 +180,9 @@ const StageETA = memo(function StageETA({ className }) {
 
         {rows.map((row) => {
           const stateClass = `${row.isPast ? " past" : ""}${row.isCurrent ? " current" : ""}`;
+          const WeatherIcon = row.weather
+            ? (WEATHER_ICONS[row.weather.icon] ?? Cloud)
+            : null;
 
           return (
             <Fragment key={row.id}>
@@ -146,7 +202,7 @@ const StageETA = memo(function StageETA({ className }) {
                 </div>
               </div>
 
-              {/* Life base line */}
+              {/* Checkpoint line */}
               <div
                 role="listitem"
                 className={`cp-row${stateClass}${row.isOverCutoff ? " over-cutoff" : ""}`}
@@ -158,6 +214,14 @@ const StageETA = memo(function StageETA({ className }) {
                   <div className="cp-line1">
                     <span className="cp-name">{row.endLocation}</span>
                     <div className="cp-right">
+                      {WeatherIcon && (
+                        <div className="cp-weather">
+                          <WeatherIcon size={13} color={mutedColor} />
+                          <span className="cp-weather-temp">
+                            {row.weather.temp}°C
+                          </span>
+                        </div>
+                      )}
                       <span className="cp-eta">{row.etaStr}</span>
                     </div>
                   </div>
@@ -176,4 +240,4 @@ const StageETA = memo(function StageETA({ className }) {
   );
 });
 
-export default style(StageETA);
+export default style(SectionETA);

@@ -3,8 +3,8 @@ import { memo } from "react";
 import PaceProfile from "../trailData/PaceProfile/PaceProfile.jsx";
 import PeakSummary from "../trailData/PeakSummary/PeakSummary.jsx";
 import SectionAnalytics from "../trailData/SectionAnalytics/SectionAnalytics.jsx";
+import SectionETA from "../trailData/SectionETA/SectionETA.jsx";
 import StageAnalytics from "../trailData/StageAnalytics/StageAnalytics.jsx";
-import StageETA from "../trailData/StageETA/StageETA.jsx";
 import TrailOverview from "../trailData/TrailOverview/TrailOverview.jsx";
 import TrailProgression from "../trailData/TrailProgression/TrailProgression.jsx";
 
@@ -32,7 +32,7 @@ const DesktopLayout = memo(function DesktopLayout({ className }) {
       </div>
       <div className="panel panel-right">
         <div className="tile tile-scrollable">
-          <StageETA />
+          <SectionETA />
         </div>
         <div className="tile tile-scrollable">
           <PeakSummary />

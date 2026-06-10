@@ -12,6 +12,7 @@ import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PaceSettings from "./PaceSettings/PaceSettings.jsx";
 import PeakSummary from "./PeakSummary/PeakSummary.jsx";
 import SectionAnalytics from "./SectionAnalytics/SectionAnalytics.jsx";
+import SectionETA from "./SectionETA/SectionETA.jsx";
 import StageAnalytics from "./StageAnalytics/StageAnalytics.jsx";
 import StageETA from "./StageETA/StageETA.jsx";
 import TrailActions from "./TrailActions/TrailActions.jsx";
@@ -24,6 +25,7 @@ const PANEL_LABELS = [
   "Trail overview",
   "Trail progression",
   "Checkpoints",
+  "Life bases",
   "Pace profile",
   "Stage analytics",
   "Section analytics",
@@ -237,6 +239,9 @@ const TrailData = memo(function TrailData({ className }) {
         </div>
         <div className="component-children">
           <TrailProgression />
+        </div>
+        <div className="component-children">
+          <SectionETA />
         </div>
         <div className="component-children">
           <StageETA />

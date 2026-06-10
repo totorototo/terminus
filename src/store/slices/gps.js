@@ -232,7 +232,7 @@ export const createGPSSlice = (set, get) => {
           "gps/setProjectedLocation",
         );
 
-        // Refine section/stage ETAs against the new fix (best-effort, non-blocking).
+        // Refine ETAs against the new fix (best-effort, non-blocking).
         get().recalibrate?.();
 
         // Broadcast to followers if in trailer mode

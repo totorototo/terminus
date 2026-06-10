@@ -8,25 +8,16 @@ const segment = @import("segment.zig");
 // Live recalibration (shared by section.zig and stage.zig)
 // ──────────────────────────────────────────────────────────────────────────────
 //
-// `section.computeFromWaypoints` / `stage.computeFromWaypoints` are the a-priori
-// models: they predict times from an assumed base pace, once, at file load.
-// During a race we periodically (~every 30 min, on GPS refresh) observe the
-// runner's real position and elapsed time. `recalibrateFromCurrent` consumes
-// those raw observations — NOT a derived ratio — solves for the base pace that
-// reproduces the runner's actual elapsed time, and forward-predicts the
-// remaining intervals with it.
+// Where computeFromWaypoints predicts once at file load, `recalibrateFromCurrent`
+// solves the base pace that reproduces the runner's real elapsed time mid-race,
+// then forward-predicts the remaining intervals with it. Only the flat-pace anchor
+// moves; slope/fatigue/weather structure and per-range physics are reused from
+// `segment.computeSegmentMetrics`, and the circadian clock is re-seeded from real
+// elapsed time so the night-time slowdown lands at the right wall-clock hours.
 //
-// The boundary-walking is identical for sections and stages; only WHICH
-// waypoints count as boundaries differs (TimeBarriers split sections but not
-// stages). That single difference is captured by `BoundaryKind`, so the
-// calibration physics live here once. The per-range physics themselves are
-// reused from `segment.computeSegmentMetrics` — this module orchestrates, it does
-// not re-derive. Legs are deliberately excluded: they have no boundary type and
-// therefore no cutoff anchor to calibrate against.
-//
-// Only the flat-pace anchor moves; slope/fatigue/circadian/weather structure is
-// preserved, and the circadian clock is re-seeded from real elapsed time so the
-// night-time slowdown lands at the correct wall-clock hours for what remains.
+// Sections and stages differ only in WHICH waypoints are boundaries (TimeBarriers
+// split sections, not stages) — captured by `BoundaryKind`, so the physics live
+// here once. Legs are excluded: no boundary type, no cutoff anchor.
 
 /// Calibration is ignored until the model predicts at least this many seconds of
 /// covered effort — below it the actual/predicted ratio is GPS-noise dominated.
@@ -194,6 +185,10 @@ pub fn recalibrateFromCurrent(
     var d_eff: f64 = 0.0;
     var elapsed_s: f64 = 0.0;
     var predicted_so_far: f64 = 0.0;
+    // Planned stops at the life bases the runner has already passed. These are
+    // part of `actual_elapsed_s` but not of the moving-time `predicted_so_far`, so
+    // they are subtracted before solving the factor — rest must not move the pace.
+    var predicted_stops_so_far: f64 = 0.0;
     var stop_scratch: f64 = 0.0;
     var current_range: usize = resolved.items.len; // default: past the end
     var found_current = false;
@@ -201,6 +196,7 @@ pub fn recalibrateFromCurrent(
     for (resolved.items, 0..) |rs, idx| {
         if (current_index >= rs.end_index) {
             predicted_so_far += advanceRange(trace, rs, rs.start_index, rs.end_index, base_pace_s_per_km, k_fatigue, clock_start, life_base_stop_s, weather, true, &d_eff, &elapsed_s, &stop_scratch);
+            predicted_stops_so_far += stop_scratch;
         } else {
             current_range = idx;
             found_current = true;
@@ -212,9 +208,14 @@ pub fn recalibrateFromCurrent(
     }
 
     // ── Solve calibration ──────────────────────────────────────────────────────
+    // Compare moving time to moving time: strip the planned stops already incurred
+    // from the runner's elapsed so the factor reflects pace, not rest. (Resting
+    // longer than planned still leaks into the factor — unavoidable without
+    // separate stop tracking — but the planned portion is removed cleanly.)
     var calibration: f64 = 1.0;
-    if (actual_elapsed_s > 0 and predicted_so_far >= MIN_CALIBRATION_PREDICTION_S) {
-        calibration = std.math.clamp(actual_elapsed_s / predicted_so_far, CALIBRATION_MIN, CALIBRATION_MAX);
+    const moving_elapsed_s = actual_elapsed_s - predicted_stops_so_far;
+    if (moving_elapsed_s > 0 and predicted_so_far >= MIN_CALIBRATION_PREDICTION_S) {
+        calibration = std.math.clamp(moving_elapsed_s / predicted_so_far, CALIBRATION_MIN, CALIBRATION_MAX);
     }
     const calibrated_pace = base_pace_s_per_km * calibration;
 
@@ -390,6 +391,33 @@ test "recalibrateFromCurrent: a partly run interval costs less than running it f
     // Section index 2 is the one containing idx 10..20.
     try std.testing.expect(mid.?.etas[2].remainingDurationS < at_start.?.etas[2].remainingDurationS);
     try std.testing.expect(mid.?.etas[2].remainingDurationS > 0.0);
+}
+
+test "recalibrateFromCurrent: a planned stop at a passed life base does not move the calibration factor" {
+    const allocator = std.testing.allocator;
+    var trace = try buildRecalRoute(allocator);
+    defer trace.deinit(allocator);
+
+    // Runner is mid section 2 (idx 15): section 1 ends at LB1, so its planned stop
+    // is part of elapsed once a stop is configured. The factor must reflect pace
+    // only, so adding the stop to both the model AND the elapsed time it accounts
+    // for must leave the factor unchanged.
+    const stop_s: u32 = 1800;
+    const moving_elapsed: f64 = 1500.0;
+
+    // No planned stop: elapsed is pure moving time.
+    var no_stop = try recalibrateFromCurrent(&trace, allocator, &recal_waypoints, .section, 15, moving_elapsed, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, 0, paceModel.WeatherLookup.empty);
+    defer if (no_stop) |*r| r.deinit(allocator);
+    // 30-min stop at LB1, and the runner spent it: elapsed = moving + stop.
+    var with_stop = try recalibrateFromCurrent(&trace, allocator, &recal_waypoints, .section, 15, moving_elapsed + @as(f64, @floatFromInt(stop_s)), paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, stop_s, paceModel.WeatherLookup.empty);
+    defer if (with_stop) |*r| r.deinit(allocator);
+
+    try std.testing.expect(no_stop != null and with_stop != null);
+    // Calibration actually engaged (not a trivial 1.0), so the equality is meaningful.
+    try std.testing.expect(no_stop.?.calibrationFactor > 1.0);
+    try std.testing.expect(no_stop.?.calibrationFactor < CALIBRATION_MAX);
+    // The planned rest is stripped before solving -> identical pace factor.
+    try std.testing.expectApproxEqAbs(no_stop.?.calibrationFactor, with_stop.?.calibrationFactor, 1e-9);
 }
 
 test "recalibrateFromCurrent: deinit is leak-clean" {
