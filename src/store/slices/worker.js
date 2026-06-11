@@ -365,12 +365,9 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       };
 
       try {
-        const [section, stage] = await Promise.all([
-          messenger.send("RECALIBRATE", { ...payload, kind: "section" }),
-          messenger.send("RECALIBRATE", { ...payload, kind: "stage" }),
-        ]);
-        get().setRecalibration("section", section?.recalibration ?? null);
-        get().setRecalibration("stage", stage?.recalibration ?? null);
+        const { recalibration } = await messenger.send("RECALIBRATE", payload);
+        get().setRecalibration("section", recalibration?.section ?? null);
+        get().setRecalibration("stage", recalibration?.stage ?? null);
       } catch (error) {
         // Recalibration is a refinement, not a hard dependency — log and move on.
         console.error("Recalibration failed:", error.message);

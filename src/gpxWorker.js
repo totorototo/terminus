@@ -2,7 +2,7 @@
 // This runs GPS computations off the main thread to prevent UI freezing
 // All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
 
-import { readGPXComplete, recalibrateGPX } from "../zig/gpx.zig";
+import { readGPXComplete, recalibrateGPXBoth } from "../zig/gpx.zig";
 import { generateAudioFrames } from "../zig/soundscape.zig";
 import { __zigar, Trace } from "../zig/trace.zig";
 
@@ -583,14 +583,12 @@ async function generateSoundscapeFrames(data, requestId) {
   });
 }
 
-// Recalibrate the section or stage ETAs (per `kind`) against the runner's current
-// trace index and elapsed time. Returns null when the route has fewer than two
-// boundaries of the requested kind.
+// Recalibrate section and stage ETAs in a single GPX parse. Either kind is null
+// when the route has fewer than two boundaries of that kind.
 async function recalibrate(data, requestId) {
   markStart("recalibrate");
   const {
     gpxBytes,
-    kind = "section",
     currentIndex = 0,
     actualElapsedS = 0,
     basePaceSPerKm = 500.0,
@@ -601,9 +599,8 @@ async function recalibrate(data, requestId) {
 
   const weather = buildWeatherLookup(weatherByCheckpoint);
 
-  const result = await recalibrateGPX(
+  const result = await recalibrateGPXBoth(
     gpxBytes,
-    kind === "stage",
     currentIndex,
     actualElapsedS,
     basePaceSPerKm,
@@ -612,36 +609,38 @@ async function recalibrate(data, requestId) {
     weather,
   );
 
-  // Copy the Zigar proxy to plain JS before posting; usize fields come back as
-  // BigInt and need Number(). `result` is null below the two-boundary minimum.
-  let sanitized = null;
-  if (result) {
+  // Copy the Zigar proxy to plain JS; usize fields come back as BigInt.
+  const sanitizeKind = (recalibration, kind) => {
+    if (!recalibration) return null;
     const etas = [];
-    const zigEtas = result.etas;
-    for (let i = 0; i < zigEtas.length; i++) {
-      const e = zigEtas[i].valueOf();
+    for (let index = 0; index < recalibration.etas.length; index++) {
+      const eta = recalibration.etas[index].valueOf();
       etas.push({
-        id: Number(e.id),
-        endIndex: Number(e.endIndex),
-        remainingDurationS: e.remainingDurationS,
-        cumulativeRemainingS: e.cumulativeRemainingS,
+        id: Number(eta.id),
+        endIndex: Number(eta.endIndex),
+        remainingDurationS: eta.remainingDurationS,
+        cumulativeRemainingS: eta.cumulativeRemainingS,
       });
     }
-    sanitized = {
+    return {
       kind,
-      calibrationFactor: result.calibrationFactor,
-      calibratedBasePaceSPerKm: result.calibratedBasePaceSPerKm,
-      predictedSoFarS: result.predictedSoFarS,
-      actualElapsedS: result.actualElapsedS,
+      calibrationFactor: recalibration.calibrationFactor,
+      calibratedBasePaceSPerKm: recalibration.calibratedBasePaceSPerKm,
+      predictedSoFarS: recalibration.predictedSoFarS,
+      actualElapsedS: recalibration.actualElapsedS,
       etas,
     };
-    result.deinit();
-  }
+  };
+
+  const sanitized = {
+    section: sanitizeKind(result.section, "section"),
+    stage: sanitizeKind(result.stage, "stage"),
+  };
+  result.deinit();
 
   markEnd("recalibrate");
 
-  // Wrap in a truthy `results` even when null — the messenger leaks the raw
-  // envelope to callers if `results` is null/undefined.
+  // The messenger leaks the raw envelope to callers when `results` is null.
   self.postMessage({
     type: "RECALIBRATED",
     id: requestId,

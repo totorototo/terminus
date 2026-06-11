@@ -268,35 +268,45 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8, base_pac
 /// have no cutoff anchor to calibrate against. Returns null when the route has
 /// fewer than two boundaries of the requested kind. Caller owns the result and
 /// must call `.deinit()`.
-pub fn recalibrateGPX(
+/// Section and stage recalibration sharing one GPX parse. Either field is null
+/// when the route lacks two boundaries of that kind. Caller owns both.
+pub const RecalibrationPair = struct {
+    section: ?calibration.Recalibration,
+    stage: ?calibration.Recalibration,
+
+    pub fn deinit(self: *RecalibrationPair, allocator: std.mem.Allocator) void {
+        if (self.section) |*section| section.deinit(allocator);
+        if (self.stage) |*stage| stage.deinit(allocator);
+    }
+};
+
+pub fn recalibrateGPXBoth(
     allocator: std.mem.Allocator,
     bytes: []const u8,
-    is_stage: bool,
     current_index: usize,
     actual_elapsed_s: f64,
     base_pace_s_per_km: f64,
     k_fatigue: f64,
     life_base_stop_s: u32,
     weather: paceModel.WeatherLookup,
-) !?calibration.Recalibration {
+) !RecalibrationPair {
     const trace_points = try readTracePoints(allocator, bytes);
     defer allocator.free(trace_points);
 
     const waypoints = try readWaypoints(allocator, bytes);
     defer {
-        for (waypoints) |*wpt| wpt.deinit(allocator);
+        for (waypoints) |*waypoint| waypoint.deinit(allocator);
         allocator.free(waypoints);
     }
 
     var trace = try Trace.init(allocator, trace_points);
     defer trace.deinit(allocator);
 
-    const kind: calibration.BoundaryKind = if (is_stage) .stage else .section;
-    return calibration.recalibrateFromCurrent(
+    var section = try calibration.recalibrateFromCurrent(
         &trace,
         allocator,
         waypoints,
-        kind,
+        .section,
         current_index,
         actual_elapsed_s,
         base_pace_s_per_km,
@@ -304,6 +314,22 @@ pub fn recalibrateGPX(
         life_base_stop_s,
         weather,
     );
+    errdefer if (section) |*result| result.deinit(allocator);
+
+    const stage = try calibration.recalibrateFromCurrent(
+        &trace,
+        allocator,
+        waypoints,
+        .stage,
+        current_index,
+        actual_elapsed_s,
+        base_pace_s_per_km,
+        k_fatigue,
+        life_base_stop_s,
+        weather,
+    );
+
+    return .{ .section = section, .stage = stage };
 }
 
 // Tests
@@ -620,7 +646,6 @@ test "readTracePoints with scientific notation" {
     try testing.expectApproxEqAbs(100.0, points[0][2], 0.01);
 }
 
-
 test "readWaypoints parses waypoints correctly" {
     const allocator = testing.allocator;
     const sample_gpx =
@@ -717,7 +742,6 @@ test "readGPXComplete parses both tracks and waypoints" {
     try testing.expectEqualStrings("Checkpoint 10km", gpx_data.waypoints[0].name);
     try testing.expectEqualStrings("Checkpoint 20km", gpx_data.waypoints[1].name);
 }
-
 
 test "readGPXComplete: legs null when no waypoints" {
     const allocator = testing.allocator;
@@ -1043,7 +1067,7 @@ test "parseTagContent: empty tag content returns empty slice" {
 
 // A small route with explicit Start/TimeBarrier/LifeBase/Arrival waypoints whose
 // coordinates coincide with track points, so boundaries resolve onto clean trace
-// index ranges. Used by the recalibrateGPX entry-point tests below.
+// index ranges. Used by the recalibrateGPXBoth entry-point tests below.
 const recal_gpx =
     \\<?xml version="1.0" encoding="UTF-8"?>
     \\<gpx version="1.1">
@@ -1063,46 +1087,31 @@ const recal_gpx =
     \\</gpx>
 ;
 
-test "recalibrateGPX: section kind returns one eta per section interval at factor 1.0" {
+test "recalibrateGPXBoth: section and stage from one parse have the right interval counts" {
     const allocator = testing.allocator;
-    var recal = (try recalibrateGPX(
+    var pair = try recalibrateGPXBoth(
         allocator,
         recal_gpx,
-        false, // is_stage
         0, // current_index
         0.0, // actual_elapsed_s (untrusted -> factor 1.0)
         paceModel.DEFAULT_BASE_PACE_S_PER_KM,
         paceModel.K_FATIGUE,
         paceModel.DEFAULT_LIFE_BASE_STOP_S,
         paceModel.WeatherLookup.empty,
-    )).?;
-    defer recal.deinit(allocator);
+    );
+    defer pair.deinit(allocator);
 
     // Start/TimeBarrier/LifeBase/Arrival -> 3 section intervals.
-    try testing.expectEqual(@as(usize, 3), recal.etas.len);
-    try testing.expectEqual(@as(f64, 1.0), recal.calibrationFactor);
-}
-
-test "recalibrateGPX: stage kind ignores the TimeBarrier boundary" {
-    const allocator = testing.allocator;
-    var recal = (try recalibrateGPX(
-        allocator,
-        recal_gpx,
-        true, // is_stage
-        0,
-        0.0,
-        paceModel.DEFAULT_BASE_PACE_S_PER_KM,
-        paceModel.K_FATIGUE,
-        paceModel.DEFAULT_LIFE_BASE_STOP_S,
-        paceModel.WeatherLookup.empty,
-    )).?;
-    defer recal.deinit(allocator);
+    try testing.expect(pair.section != null);
+    try testing.expectEqual(@as(usize, 3), pair.section.?.etas.len);
+    try testing.expectEqual(@as(f64, 1.0), pair.section.?.calibrationFactor);
 
     // Start/LifeBase/Arrival -> 2 stage intervals (TimeBarrier is not a stage boundary).
-    try testing.expectEqual(@as(usize, 2), recal.etas.len);
+    try testing.expect(pair.stage != null);
+    try testing.expectEqual(@as(usize, 2), pair.stage.?.etas.len);
 }
 
-test "recalibrateGPX: returns null when fewer than two boundaries" {
+test "recalibrateGPXBoth: returns null fields when fewer than two boundaries" {
     const allocator = testing.allocator;
     const single_boundary_gpx =
         \\<?xml version="1.0" encoding="UTF-8"?>
@@ -1114,10 +1123,9 @@ test "recalibrateGPX: returns null when fewer than two boundaries" {
         \\ <wpt lat="45.000" lon="7.000"><name>Start</name><type>Start</type></wpt>
         \\</gpx>
     ;
-    const recal = try recalibrateGPX(
+    var pair = try recalibrateGPXBoth(
         allocator,
         single_boundary_gpx,
-        false,
         0,
         0.0,
         paceModel.DEFAULT_BASE_PACE_S_PER_KM,
@@ -1125,5 +1133,7 @@ test "recalibrateGPX: returns null when fewer than two boundaries" {
         paceModel.DEFAULT_LIFE_BASE_STOP_S,
         paceModel.WeatherLookup.empty,
     );
-    try testing.expect(recal == null);
+    defer pair.deinit(allocator);
+    try testing.expect(pair.section == null);
+    try testing.expect(pair.stage == null);
 }
