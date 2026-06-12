@@ -23,6 +23,39 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
+
+  .runner-marker {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--runner-color);
+    border: 2px solid
+      ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-background"]};
+    box-shadow: 0 0 0 2px var(--runner-color);
+  }
+
+  .runner-marker::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: var(--runner-color);
+    opacity: 0.4;
+    animation: runner-pulse 1.8s ease-out infinite;
+  }
+
+  @keyframes runner-pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.4;
+    }
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
 `;
 
 export default style;

@@ -1,9 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 
-import Map, { Layer, Source } from "react-map-gl/mapbox";
+import Map, { Layer, Marker, Source } from "react-map-gl/mapbox";
 import { useTheme } from "styled-components";
 
-import useStore from "../../../store/store.js";
+import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./Map.style.js";
 
@@ -32,10 +32,21 @@ const parseRoute = (rawGpx) => {
 
 const TrailMap = memo(function TrailMap({ className }) {
   const rawGpx = useStore((state) => state.gpx.rawGpx);
+  const projectedLocation = useProjectedLocation();
   const theme = useTheme();
   const mapRef = useRef(null);
 
   const coordinates = useMemo(() => parseRoute(rawGpx), [rawGpx]);
+
+  // projectedLocation.coords is [lat, lng, ele] (Zig GPS format); Mapbox needs
+  // [lng, lat]. A pristine fix has empty coords, so guard before rendering.
+  const runnerPosition = useMemo(() => {
+    const coords = projectedLocation?.coords;
+    if (!coords || coords.length < 2) return null;
+    const [lat, lng] = coords;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { longitude: lng, latitude: lat };
+  }, [projectedLocation?.coords]);
 
   const routeGeoJSON = useMemo(() => {
     if (!coordinates) return null;
@@ -76,6 +87,7 @@ const TrailMap = memo(function TrailMap({ className }) {
   }, [fitToBounds]);
 
   const routeColor = theme.colors[theme.currentVariant]["--color-primary"];
+  const runnerColor = theme.colors[theme.currentVariant]["--color-accent"];
 
   if (!MAPBOX_TOKEN) {
     return (
@@ -107,6 +119,18 @@ const TrailMap = memo(function TrailMap({ className }) {
               paint={{ "line-color": routeColor, "line-width": 3 }}
             />
           </Source>
+        )}
+        {runnerPosition && (
+          <Marker
+            longitude={runnerPosition.longitude}
+            latitude={runnerPosition.latitude}
+            anchor="center"
+          >
+            <div
+              className="runner-marker"
+              style={{ "--runner-color": runnerColor }}
+            />
+          </Marker>
         )}
       </Map>
     </div>
