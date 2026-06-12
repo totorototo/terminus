@@ -6,14 +6,16 @@ const style = (Component) => styled(Component)`
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: 0 1rem;
+  padding: 0.75rem 1rem;
   overflow: hidden;
-  border-left: 1px solid transparent;
 
   &.current {
-    border-left-color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
-    padding-left: calc(1rem - 1px);
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.06,
+      )};
   }
 
   .empty-state {

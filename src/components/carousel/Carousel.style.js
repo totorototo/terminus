@@ -12,6 +12,7 @@ const style = (Component) => styled(Component)`
     flex: 1;
     width: 100%;
     height: 100%;
+    gap: ${(props) => props.gap || "0px"};
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
 

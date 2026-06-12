@@ -207,6 +207,7 @@ const TrailData = memo(function TrailData({ className }) {
         className="trail-data-carousel"
         labels={PANEL_LABELS}
         ariaLabel="Data panels"
+        gap="1.5rem"
       >
         <TrailOverview />
         <TrailProgression />

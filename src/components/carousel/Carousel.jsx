@@ -22,20 +22,32 @@ function Carousel({
   const handleScroll = useCallback(() => {
     const el = trackRef.current;
     if (!el) return;
-    const index = isVertical
-      ? Math.round(el.scrollTop / el.clientHeight)
-      : Math.round(el.scrollLeft / el.clientWidth);
-    setActivePanel(index);
+    const items = el.children;
+    if (!items.length) return;
+    const scrollPos = isVertical ? el.scrollTop : el.scrollLeft;
+    let nearest = 0;
+    let nearestDistance = Infinity;
+    for (let i = 0; i < items.length; i += 1) {
+      const offset = isVertical ? items[i].offsetTop : items[i].offsetLeft;
+      const distance = Math.abs(offset - scrollPos);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = i;
+      }
+    }
+    setActivePanel(nearest);
   }, [isVertical]);
 
   const scrollToPanel = useCallback(
     (index, behavior = "smooth") => {
       const el = trackRef.current;
       if (!el) return;
+      const item = el.children[index];
+      if (!item) return;
       if (isVertical) {
-        el.scrollTo({ top: index * el.clientHeight, behavior });
+        el.scrollTo({ top: item.offsetTop, behavior });
       } else {
-        el.scrollTo({ left: index * el.clientWidth, behavior });
+        el.scrollTo({ left: item.offsetLeft, behavior });
       }
     },
     [isVertical],

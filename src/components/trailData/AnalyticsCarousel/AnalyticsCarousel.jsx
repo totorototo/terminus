@@ -24,6 +24,7 @@ export default function AnalyticsCarousel({ items, label }) {
     <Carousel
       direction="vertical"
       showNav={false}
+      gap="0.75rem"
       initialIndex={currentIndex}
       ariaLabel={`${label} analytics`}
     >
