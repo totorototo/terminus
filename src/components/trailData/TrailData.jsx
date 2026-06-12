@@ -5,6 +5,7 @@ import { format } from "date-fns";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import Carousel from "../carousel/Carousel.jsx";
+import TrailMap from "./Map/Map.jsx";
 import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PaceSettings from "./PaceSettings/PaceSettings.jsx";
 import PeakSummary from "./PeakSummary/PeakSummary.jsx";
@@ -20,6 +21,7 @@ import style from "./TrailData.style.js";
 
 const PANEL_LABELS = [
   "Trail overview",
+  "Map",
   "Trail progression",
   "Checkpoints",
   "Life bases",
@@ -210,6 +212,7 @@ const TrailData = memo(function TrailData({ className }) {
         gap="1.5rem"
       >
         <TrailOverview />
+        <TrailMap />
         <TrailProgression />
         <SectionETA />
         <StageETA />

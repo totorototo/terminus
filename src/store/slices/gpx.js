@@ -1,6 +1,7 @@
 export const createGpxSlice = (set) => ({
   gpx: {
     data: [],
+    rawGpx: null,
     slopes: [],
     peaks: [],
     valleys: [],
@@ -144,5 +145,17 @@ export const createGpxSlice = (set) => ({
       }),
       undefined,
       "gpx/setCumulativeElevationLosses",
+    ),
+
+  setRawGpx: (rawGpx) =>
+    set(
+      (state) => ({
+        gpx: {
+          ...state.gpx,
+          rawGpx,
+        },
+      }),
+      undefined,
+      "gpx/setRawGpx",
     ),
 });

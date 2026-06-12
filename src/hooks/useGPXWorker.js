@@ -13,6 +13,7 @@ export function useGPXWorker(raceId) {
     processGPXFile,
     setSections,
     setLegs,
+    setRawGpx,
     flush,
   } = useStore(
     useShallow((state) => ({
@@ -22,6 +23,7 @@ export function useGPXWorker(raceId) {
       processGPXFile: state.processGPXFile,
       setSections: state.setSections,
       setLegs: state.setLegs,
+      setRawGpx: state.setRawGpx,
       flush: state.flush,
     })),
   );
@@ -59,6 +61,9 @@ export function useGPXWorker(raceId) {
       if (gpxArrayBuffer.byteLength > 50 * 1024 * 1024)
         throw new Error("GPX file too large");
       if (controller.signal.aborted) return;
+      // Keep the unmodified file text so views (e.g. the map) can render the
+      // original trackpoints rather than the simplified trace.
+      setRawGpx(new TextDecoder().decode(gpxArrayBuffer));
       await processGPXFile(gpxArrayBuffer);
     }
 
@@ -67,7 +72,15 @@ export function useGPXWorker(raceId) {
     });
 
     return () => controller.abort();
-  }, [isWorkerReady, raceId, processGPXFile, setSections, setLegs, flush]);
+  }, [
+    isWorkerReady,
+    raceId,
+    processGPXFile,
+    setSections,
+    setLegs,
+    setRawGpx,
+    flush,
+  ]);
 
   return { isWorkerReady };
 }
