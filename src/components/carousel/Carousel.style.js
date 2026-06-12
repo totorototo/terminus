@@ -19,6 +19,13 @@ const style = (Component) => styled(Component)`
       display: none; /* Safari and Chrome */
     }
 
+    &:focus-visible {
+      outline: 2px solid
+        ${(props) =>
+          props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      outline-offset: -2px;
+    }
+
     ${(props) =>
       props.direction === "vertical"
         ? `

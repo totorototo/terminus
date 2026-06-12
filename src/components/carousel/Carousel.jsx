@@ -56,7 +56,14 @@ function Carousel({
 
   return (
     <div className={className}>
-      <div className="carousel-track" ref={trackRef} onScroll={handleScroll}>
+      <div
+        className="carousel-track"
+        ref={trackRef}
+        onScroll={handleScroll}
+        tabIndex={0}
+        role="group"
+        aria-label={ariaLabel}
+      >
         {panels.map((child, i) => (
           <div className="carousel-item" key={i}>
             {child}
