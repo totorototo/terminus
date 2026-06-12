@@ -1,4 +1,4 @@
-import { Children, useCallback, useRef, useState } from "react";
+import { Children, useCallback, useEffect, useRef, useState } from "react";
 
 import { animated, useTransition } from "@react-spring/web";
 
@@ -11,9 +11,10 @@ function Carousel({
   labels,
   ariaLabel = "Panels",
   showNav = true,
+  initialIndex = 0,
 }) {
   const trackRef = useRef(null);
-  const [activePanel, setActivePanel] = useState(0);
+  const [activePanel, setActivePanel] = useState(initialIndex);
 
   const isVertical = direction === "vertical";
   const panels = Children.toArray(children);
@@ -28,17 +29,23 @@ function Carousel({
   }, [isVertical]);
 
   const scrollToPanel = useCallback(
-    (index) => {
+    (index, behavior = "smooth") => {
       const el = trackRef.current;
       if (!el) return;
       if (isVertical) {
-        el.scrollTo({ top: index * el.clientHeight, behavior: "smooth" });
+        el.scrollTo({ top: index * el.clientHeight, behavior });
       } else {
-        el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
+        el.scrollTo({ left: index * el.clientWidth, behavior });
       }
     },
     [isVertical],
   );
+
+  useEffect(() => {
+    if (initialIndex > 0) scrollToPanel(initialIndex, "auto");
+    // Only jump to the initial panel on mount / when it changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialIndex]);
 
   const labelTransitions = useTransition(activePanel, {
     from: { opacity: 0, transform: "translateY(-5px)" },

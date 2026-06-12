@@ -60,9 +60,9 @@ test.describe("A11y — Runner app", () => {
 
   test("canvas has an accessible aria-label", async ({ page }) => {
     const canvas = page.locator("canvas").first();
-    const label = await canvas.getAttribute("aria-label");
-    expect(label).toBeTruthy();
-    expect(label.trim().length).toBeGreaterThan(0);
+    // aria-label is set in R3F's onCreated, which may fire after the canvas
+    // becomes visible — use the auto-retrying matcher to avoid a race.
+    await expect(canvas).toHaveAttribute("aria-label", /\S/);
   });
 
   test("key landmark regions have accessible names", async ({ page }) => {

@@ -3,7 +3,6 @@ import { memo, useMemo } from "react";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
-import { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./AnalyticsPanel.style.js";
 
@@ -40,54 +39,45 @@ function formatCutoff(ms) {
 
 const AnalyticsPanel = memo(function AnalyticsPanel({
   className,
-  items,
+  item,
   label,
+  isCurrent = false,
 }) {
-  const projectedLocation = useProjectedLocation();
-
-  const current = useMemo(() => {
-    if (!items?.length) return null;
-    const idx = projectedLocation?.index || 0;
-    const found = items.find((s) => idx >= s.startIndex && idx < s.endIndex);
-    if (found) return found;
-    return items.find((s) => idx < s.endIndex) ?? items[items.length - 1];
-  }, [items, projectedLocation?.index]);
-
   const analytics = useMemo(() => {
-    if (!current) return null;
+    if (!item) return null;
 
-    const distanceKm = (current.totalDistance || 0) / 1000;
+    const distanceKm = (item.totalDistance || 0) / 1000;
 
     const cutoffMs =
-      current.startTime != null && current.maxCompletionTime != null
-        ? (current.startTime + current.maxCompletionTime) * 1000
+      item.startTime != null && item.maxCompletionTime != null
+        ? (item.startTime + item.maxCompletionTime) * 1000
         : null;
 
     const estimatedDurationSec =
-      current.maxCompletionTime != null
-        ? Math.min(current.estimatedDuration || 0, current.maxCompletionTime)
-        : current.estimatedDuration || 0;
+      item.maxCompletionTime != null
+        ? Math.min(item.estimatedDuration || 0, item.maxCompletionTime)
+        : item.estimatedDuration || 0;
 
-    const maxTimeSec = current.maxCompletionTime ?? null;
+    const maxTimeSec = item.maxCompletionTime ?? null;
 
     const slowestPaceSecPerKm =
-      maxTimeSec != null && current.totalDistance > 0
-        ? (maxTimeSec / current.totalDistance) * 1000
+      maxTimeSec != null && item.totalDistance > 0
+        ? (maxTimeSec / item.totalDistance) * 1000
         : null;
 
     return {
-      startLocation: current.startLocation || "--",
-      endLocation: current.endLocation || "--",
+      startLocation: item.startLocation || "--",
+      endLocation: item.endLocation || "--",
       distanceKm,
       cutoffMs,
       estimatedDurationSec,
       maxTimeSec,
-      elevationGain: current.totalElevation || 0,
-      elevationLoss: current.totalElevationLoss || 0,
-      difficulty: current.difficulty || 0,
+      elevationGain: item.totalElevation || 0,
+      elevationLoss: item.totalElevationLoss || 0,
+      difficulty: item.difficulty || 0,
       slowestPaceSecPerKm,
     };
-  }, [current]);
+  }, [item]);
 
   const difficultyLabel =
     analytics?.difficulty > 0
@@ -99,7 +89,7 @@ const AnalyticsPanel = memo(function AnalyticsPanel({
       : null;
 
   return (
-    <div className={className}>
+    <div className={`${className}${isCurrent ? " current" : ""}`}>
       <div className="analytics-header">
         <span className="header-label">{label}</span>
         <span className="header-route">

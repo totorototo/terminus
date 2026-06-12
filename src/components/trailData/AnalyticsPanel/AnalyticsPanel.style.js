@@ -8,6 +8,13 @@ const style = (Component) => styled(Component)`
   height: 100%;
   padding: 0 1rem;
   overflow: hidden;
+  border-left: 1px solid transparent;
+
+  &.current {
+    border-left-color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    padding-left: calc(1rem - 1px);
+  }
 
   .empty-state {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};

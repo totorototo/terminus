@@ -1,7 +1,7 @@
 import useStore from "../../../store/store.js";
-import AnalyticsPanel from "../AnalyticsPanel/AnalyticsPanel.jsx";
+import AnalyticsCarousel from "../AnalyticsCarousel/AnalyticsCarousel.jsx";
 
 export default function StageAnalytics() {
   const stages = useStore((state) => state.stages);
-  return <AnalyticsPanel items={stages} label="Stage" />;
+  return <AnalyticsCarousel items={stages} label="Stage" />;
 }
