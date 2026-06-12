@@ -9,7 +9,7 @@ const style = (Component) => styled(Component)`
   opacity: 0.9;
   overflow: hidden;
   border-radius: ${({ theme }) => theme.borderRadius["--border-radius-lg"]};
-  touch-action: pan-x;
+  touch-action: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -63,8 +63,18 @@ const style = (Component) => styled(Component)`
     z-index: 1;
   }
 
-  /* Add padding to accommodate drag handle */
-  // padding-top: 12px;
+  /* Grab area: covers the handle + stats header (the peek region). The body
+     below stays free so the map and analytics own their own gestures. */
+  .drag-zone {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    z-index: 20;
+    touch-action: none;
+    cursor: grab;
+  }
 `;
 
 export default style;

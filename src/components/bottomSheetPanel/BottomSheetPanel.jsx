@@ -89,8 +89,7 @@ function BottomSheetPanel(
     <a.div
       className={className}
       role="region"
-      aria-label="Trail data panel. Drag to open or close."
-      {...bind()}
+      aria-label="Trail data panel."
       style={{
         bottom: PANEL_HEIGHT - containerHeight,
         width: "96vw",
@@ -101,6 +100,12 @@ function BottomSheetPanel(
         transform: "translateX(-50%)",
       }}
     >
+      <div
+        className="drag-zone"
+        role="button"
+        aria-label="Drag to open or close the trail data panel."
+        {...bind()}
+      />
       {children}
     </a.div>
   );

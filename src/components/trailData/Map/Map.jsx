@@ -95,6 +95,7 @@ const TrailMap = memo(function TrailMap({ className }) {
         initialViewState={{ longitude: 0, latitude: 0, zoom: 1 }}
         mapStyle="mapbox://styles/mapbox/outdoors-v12"
         style={{ width: "100%", height: "100%" }}
+        cooperativeGestures
         onLoad={fitToBounds}
       >
         {routeGeoJSON && (
