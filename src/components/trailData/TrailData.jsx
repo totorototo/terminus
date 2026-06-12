@@ -1,13 +1,10 @@
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useMemo } from "react";
 
-import {
-  animated,
-  useSpring as useSpringWeb,
-  useTransition,
-} from "@react-spring/web";
+import { animated, useSpring as useSpringWeb } from "@react-spring/web";
 import { format } from "date-fns";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
+import Carousel from "../carousel/Carousel.jsx";
 import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PaceSettings from "./PaceSettings/PaceSettings.jsx";
 import PeakSummary from "./PeakSummary/PeakSummary.jsx";
@@ -100,22 +97,6 @@ export const calculateTimeMetrics = (
 };
 
 const TrailData = memo(function TrailData({ className }) {
-  const containerRef = useRef(null);
-  const [activePanel, setActivePanel] = useState(0);
-
-  const handleScroll = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const index = Math.round(el.scrollLeft / el.clientWidth);
-    setActivePanel(index);
-  }, []);
-
-  const scrollToPanel = useCallback((index) => {
-    const el = containerRef.current;
-    if (!el) return;
-    el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
-  }, []);
-
   // Use optimized selectors for better performance
   const projectedLocation = useProjectedLocation();
   useStats();
@@ -173,13 +154,6 @@ const TrailData = memo(function TrailData({ className }) {
     };
   }, [projectedLocation?.index, cumulativeDistances]);
 
-  const labelTransitions = useTransition(activePanel, {
-    from: { opacity: 0, transform: "translateY(-5px)" },
-    enter: { opacity: 1, transform: "translateY(0px)" },
-    leave: { opacity: 0, transform: "translateY(5px)" },
-    config: { tension: 300, friction: 24 },
-  });
-
   const { remainingKm } = useSpringWeb({
     ...remainingValues,
     config: { tension: 170, friction: 26 },
@@ -228,66 +202,23 @@ const TrailData = memo(function TrailData({ className }) {
       {/* Divider line */}
       <div className="content-divider" />
 
-      {/* Components container */}
-      <div
-        className="component-container"
-        ref={containerRef}
-        onScroll={handleScroll}
+      {/* Components carousel */}
+      <Carousel
+        className="trail-data-carousel"
+        labels={PANEL_LABELS}
+        ariaLabel="Data panels"
       >
-        <div className="component-children">
-          <TrailOverview />
-        </div>
-        <div className="component-children">
-          <TrailProgression />
-        </div>
-        <div className="component-children">
-          <SectionETA />
-        </div>
-        <div className="component-children">
-          <StageETA />
-        </div>
-        <div className="component-children">
-          <PaceProfile />
-        </div>
-        <div className="component-children">
-          <StageAnalytics />
-        </div>
-        <div className="component-children">
-          <SectionAnalytics />
-        </div>
-        <div className="component-children">
-          <PeakSummary />
-        </div>
-        <div className="component-children">
-          <PaceSettings />
-        </div>
-        <div className="component-children">
-          <TrailActions />
-        </div>
-      </div>
-
-      {/* Pagination dots */}
-      <div className="panel-nav">
-        <div className="panel-name" aria-live="polite">
-          {labelTransitions((springStyle, index) => (
-            <animated.span style={springStyle}>
-              {PANEL_LABELS[index]}
-            </animated.span>
-          ))}
-        </div>
-        <div className="panel-dots" role="tablist" aria-label="Data panels">
-          {PANEL_LABELS.map((label, i) => (
-            <button
-              key={i}
-              role="tab"
-              aria-selected={i === activePanel}
-              aria-label={label}
-              className={`panel-dot${i === activePanel ? " active" : ""}`}
-              onClick={() => scrollToPanel(i)}
-            />
-          ))}
-        </div>
-      </div>
+        <TrailOverview />
+        <TrailProgression />
+        <SectionETA />
+        <StageETA />
+        <PaceProfile />
+        <StageAnalytics />
+        <SectionAnalytics />
+        <PeakSummary />
+        <PaceSettings />
+        <TrailActions />
+      </Carousel>
     </div>
   );
 });

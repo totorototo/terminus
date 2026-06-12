@@ -101,96 +101,9 @@ const style = (Component) => styled(Component)`
     margin-bottom: 1rem;
   }
 
-  .component-container {
-    display: flex;
-    width: 100%;
-    scrollbar-width: none;
-    ::-webkit-scrollbar {
-      display: none; /* Safari and Chrome */
-    }
-    scroll-snap-type: x mandatory;
-    overflow-x: auto;
-    overflow-y: hidden;
+  .trail-data-carousel {
     flex: 1;
-    flex-flow: row nowrap;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 0.75rem;
-  }
-
-  .panel-nav {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding-bottom: 0.75rem;
-    flex-shrink: 0;
-  }
-
-  .panel-name {
-    position: relative;
-    height: 1em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    span {
-      position: absolute;
-      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-      color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.4,
-        )};
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      line-height: 1;
-      white-space: nowrap;
-    }
-  }
-
-  .panel-dots {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .panel-dot {
-    width: 1px;
-    height: 1px;
-    border-radius: 50%;
-    border: none;
-    padding: 5px;
-    box-sizing: content-box;
-    cursor: pointer;
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.2,
-      )};
-    transition:
-      background ${(props) => props.theme.transitions["--transition-fast"]},
-      transform ${(props) => props.theme.transitions["--transition-fast"]};
-
-    &.active {
-      background: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-text"]};
-      transform: scale(1.2);
-    }
-  }
-
-  .component-children {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-    scroll-snap-align: center;
-    flex-shrink: 0;
-    padding-left: 0.2rem;
-    padding-right: 0.2rem;
+    min-height: 0;
   }
 `;
 

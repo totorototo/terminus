@@ -44,6 +44,13 @@ vi.mock("./TrailData.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
 
+// Mock Carousel component
+vi.mock("../carousel/Carousel.jsx", () => ({
+  default: ({ children, className }) => (
+    <div className={`component-container ${className || ""}`}>{children}</div>
+  ),
+}));
+
 // Mock TrailActions component
 vi.mock("./TrailActions/TrailActions.jsx", () => ({
   default: () => <div data-testid="trail-actions">TrailActions</div>,
