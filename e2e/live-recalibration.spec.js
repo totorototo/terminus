@@ -38,7 +38,7 @@ const kmLeft = (page) =>
 // the panel by its header text — the Life bases panel reuses the same .cp-eta class.
 const finishEta = (page) =>
   page
-    .locator(".component-children", {
+    .locator(".carousel-item", {
       has: page.getByText("Checkpoints", { exact: true }),
     })
     .locator(".cp-eta")
