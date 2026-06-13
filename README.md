@@ -60,7 +60,7 @@ The Web Worker acts as a hard boundary: the main thread stays at 60 fps while th
 - **Runner / Follower Modes**: First-run wizard for role selection — runners broadcast their position, followers track it on the 3D trail
 - **Live GPS Tracking**: Real-time position updates on the 3D trail
 - **Live Location Sharing**: Broadcast your position to followers in real time
-- **PWA**: Installable as a Progressive Web App with offline support and home screen shortcut
+- **PWA**: Installable as a Progressive Web App with offline support (cached routes, 3D analysis, and a basemap-free route preview when map tiles are unavailable) and home screen shortcut
 - **Dark/Light Theme**: Toggle between dark and light modes
 
 ## Tech Stack

@@ -3,7 +3,9 @@ import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import Map, { Layer, Marker, Source } from "react-map-gl/mapbox";
 import { useTheme } from "styled-components";
 
+import { useIsOnline } from "../../../hooks/useIsOnline.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
+import OfflineRoutePreview from "./OfflineRoutePreview.jsx";
 
 import style from "./Map.style.js";
 
@@ -34,6 +36,7 @@ const TrailMap = memo(function TrailMap({ className }) {
   const rawGpx = useStore((state) => state.gpx.rawGpx);
   const projectedLocation = useProjectedLocation();
   const theme = useTheme();
+  const isOnline = useIsOnline();
   const mapRef = useRef(null);
 
   const coordinates = useMemo(() => parseRoute(rawGpx), [rawGpx]);
@@ -96,6 +99,20 @@ const TrailMap = memo(function TrailMap({ className }) {
           Set VITE_MAPBOX_KEY to display the map.
         </div>
       </div>
+    );
+  }
+
+  // Mapbox fetches tiles, style JSON, and glyphs at runtime, none of which are
+  // cached for offline use. Fall back to a basemap-free SVG route preview.
+  if (!isOnline && coordinates) {
+    return (
+      <OfflineRoutePreview
+        className={className}
+        coordinates={coordinates}
+        runnerPosition={runnerPosition}
+        routeColor={routeColor}
+        runnerColor={runnerColor}
+      />
     );
   }
 
