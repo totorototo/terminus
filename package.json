@@ -52,7 +52,9 @@
     "zustand": "5.0.9"
   },
   "overrides": {
-    "serialize-javascript": "7.0.5"
+    "serialize-javascript": "7.0.5",
+    "esbuild": "^0.28.1",
+    "undici": "^6.23.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
@@ -85,6 +87,6 @@
     "vite-plugin-arraybuffer": "0.1.1",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-pwa": "1.2.0",
-    "vitest": "4.0.15"
+    "vitest": "4.1.8"
   }
 }
