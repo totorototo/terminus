@@ -27,6 +27,15 @@ const WEATHER_ICONS = {
   Wind,
 };
 
+// Distance-scaled connector rail: each segment's height grows with its real
+// distance (px), floored so the caption stays legible and capped so a single
+// long segment can't dominate the scroll.
+const RAIL_MIN_PX = 46;
+const RAIL_PER_KM = 7;
+const RAIL_MAX_PX = 220;
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
 function formatDuration(sec) {
   if (!sec || !Number.isFinite(sec) || sec <= 0) return "--";
   const h = Math.floor(sec / 3600);
@@ -59,11 +68,17 @@ const SectionETA = memo(function SectionETA({ className }) {
   const theme = useTheme();
   const { raceStart, checkpointETAs, isPreRace } = useCheckpointETAs();
   const projectedLocation = useProjectedLocation();
-  const { forecasts, fetchWeatherForCheckpoints, sections } = useStore(
+  const {
+    forecasts,
+    fetchWeatherForCheckpoints,
+    sections,
+    cumulativeDistances,
+  } = useStore(
     useShallow((state) => ({
       forecasts: state.weather.forecasts,
       fetchWeatherForCheckpoints: state.fetchWeatherForCheckpoints,
       sections: state.sections,
+      cumulativeDistances: state.gpx.cumulativeDistances || [],
     })),
   );
 
@@ -99,6 +114,8 @@ const SectionETA = memo(function SectionETA({ className }) {
   const { totalEstSec, rows } = useMemo(() => {
     if (!checkpointETAs.length) return { totalEstSec: 0, rows: [] };
 
+    const projIndex = projectedLocation?.index || 0;
+
     let totalEstSec = 0;
     const rows = checkpointETAs.map((cp, i) => {
       const section = sections?.[i];
@@ -107,6 +124,27 @@ const SectionETA = memo(function SectionETA({ className }) {
       const lossM = Math.round(section?.totalElevationLoss || 0);
       const estSec = section?.estimatedDuration || 0;
       totalEstSec += estSec;
+
+      // Connector height scales with real segment distance (non-linear list).
+      const railPx = Math.round(
+        clamp(RAIL_MIN_PX + distKm * RAIL_PER_KM, RAIL_MIN_PX, RAIL_MAX_PX),
+      );
+
+      // Progress within this segment: full when passed, fractional when current,
+      // empty ahead. Drives both the rail fill and the runner bead position.
+      let fillPct = 0;
+      let beadPct = null;
+      if (cp.isPast) {
+        fillPct = 100;
+      } else if (cp.isCurrent && section && cumulativeDistances.length) {
+        const segStart = cumulativeDistances[section.startIndex] || 0;
+        const segEnd = cumulativeDistances[section.endIndex] || 0;
+        const here = cumulativeDistances[projIndex] || 0;
+        const span = segEnd - segStart;
+        const f = span > 0 ? clamp((here - segStart) / span, 0, 1) : 0;
+        fillPct = f * 100;
+        beadPct = f * 100;
+      }
 
       return {
         id: cp.sectionId,
@@ -125,11 +163,22 @@ const SectionETA = memo(function SectionETA({ className }) {
         gainM,
         lossM,
         estSec,
+        railPx,
+        fillPct,
+        beadPct,
       };
     });
 
     return { totalEstSec, rows };
-  }, [checkpointETAs, sections, raceStart, isPreRace, forecasts]);
+  }, [
+    checkpointETAs,
+    sections,
+    cumulativeDistances,
+    projectedLocation?.index,
+    raceStart,
+    isPreRace,
+    forecasts,
+  ]);
 
   const startIsPast = !isPreRace && (projectedLocation?.index || 0) > 0;
   const startIsCurrent = !isPreRace && (projectedLocation?.index || 0) === 0;
@@ -186,10 +235,25 @@ const SectionETA = memo(function SectionETA({ className }) {
 
           return (
             <Fragment key={row.id}>
-              {/* Segment breadcrumb */}
-              <div className={`bc-row${stateClass}`} aria-hidden="true">
-                <div className="bc-connector" />
-                <div className="bc-stats">
+              {/* Distance-scaled segment rail */}
+              <div
+                className={`bc-row${stateClass}`}
+                style={{ minHeight: row.railPx }}
+                aria-hidden="true"
+              >
+                <div className="bc-rail">
+                  <div
+                    className="bc-rail-fill"
+                    style={{ height: `${row.fillPct}%` }}
+                  />
+                  {row.beadPct != null && !isPreRace && (
+                    <div
+                      className="bc-bead"
+                      style={{ top: `${row.beadPct}%` }}
+                    />
+                  )}
+                </div>
+                <div className="bc-caption">
                   <span className="bc-stat">{row.distKm.toFixed(1)} km</span>
                   {row.gainM > 0 && (
                     <span className="bc-stat">+{row.gainM}m</span>

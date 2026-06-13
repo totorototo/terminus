@@ -1,6 +1,7 @@
 import { Fragment, memo, useMemo } from "react";
 
 import { format } from "date-fns";
+import { useShallow } from "zustand/react/shallow";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useStageETAs } from "../../../hooks/useStageETAs.js";
@@ -10,6 +11,15 @@ import useStore, { useProjectedLocation } from "../../../store/store.js";
 // the stage-granularity twin of SectionETA (which renders the finer checkpoints).
 // The breadcrumb timeline markup and classNames are shared, so reuse its style.
 import style from "../SectionETA/SectionETA.style.js";
+
+// Distance-scaled connector rail: each segment's height grows with its real
+// distance (px), floored so the caption stays legible and capped so a single
+// long stage can't dominate the scroll.
+const RAIL_MIN_PX = 46;
+const RAIL_PER_KM = 7;
+const RAIL_MAX_PX = 220;
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 function formatDuration(sec) {
   if (!sec || !Number.isFinite(sec) || sec <= 0) return "--";
@@ -42,10 +52,17 @@ function DifficultyDots({ difficulty }) {
 const StageETA = memo(function StageETA({ className }) {
   const { raceStart, stageETAs, isPreRace } = useStageETAs();
   const projectedLocation = useProjectedLocation();
-  const stages = useStore((state) => state.stages);
+  const { stages, cumulativeDistances } = useStore(
+    useShallow((state) => ({
+      stages: state.stages,
+      cumulativeDistances: state.gpx.cumulativeDistances || [],
+    })),
+  );
 
   const { totalEstSec, rows } = useMemo(() => {
     if (!stageETAs.length) return { totalEstSec: 0, rows: [] };
+
+    const projIndex = projectedLocation?.index || 0;
 
     let totalEstSec = 0;
     const rows = stageETAs.map((st, i) => {
@@ -55,6 +72,27 @@ const StageETA = memo(function StageETA({ className }) {
       const lossM = Math.round(stage?.totalElevationLoss || 0);
       const estSec = stage?.estimatedDuration || 0;
       totalEstSec += estSec;
+
+      // Connector height scales with real stage distance (non-linear list).
+      const railPx = Math.round(
+        clamp(RAIL_MIN_PX + distKm * RAIL_PER_KM, RAIL_MIN_PX, RAIL_MAX_PX),
+      );
+
+      // Progress within this stage: full when passed, fractional when current,
+      // empty ahead. Drives both the rail fill and the runner bead position.
+      let fillPct = 0;
+      let beadPct = null;
+      if (st.isPast) {
+        fillPct = 100;
+      } else if (st.isCurrent && stage && cumulativeDistances.length) {
+        const segStart = cumulativeDistances[stage.startIndex] || 0;
+        const segEnd = cumulativeDistances[stage.endIndex] || 0;
+        const here = cumulativeDistances[projIndex] || 0;
+        const span = segEnd - segStart;
+        const f = span > 0 ? clamp((here - segStart) / span, 0, 1) : 0;
+        fillPct = f * 100;
+        beadPct = f * 100;
+      }
 
       return {
         id: st.stageId,
@@ -72,11 +110,21 @@ const StageETA = memo(function StageETA({ className }) {
         gainM,
         lossM,
         estSec,
+        railPx,
+        fillPct,
+        beadPct,
       };
     });
 
     return { totalEstSec, rows };
-  }, [stageETAs, stages, raceStart, isPreRace]);
+  }, [
+    stageETAs,
+    stages,
+    cumulativeDistances,
+    projectedLocation?.index,
+    raceStart,
+    isPreRace,
+  ]);
 
   const startIsPast = !isPreRace && (projectedLocation?.index || 0) > 0;
   const startIsCurrent = !isPreRace && (projectedLocation?.index || 0) === 0;
@@ -130,10 +178,25 @@ const StageETA = memo(function StageETA({ className }) {
 
           return (
             <Fragment key={row.id}>
-              {/* Segment breadcrumb */}
-              <div className={`bc-row${stateClass}`} aria-hidden="true">
-                <div className="bc-connector" />
-                <div className="bc-stats">
+              {/* Distance-scaled segment rail */}
+              <div
+                className={`bc-row${stateClass}`}
+                style={{ minHeight: row.railPx }}
+                aria-hidden="true"
+              >
+                <div className="bc-rail">
+                  <div
+                    className="bc-rail-fill"
+                    style={{ height: `${row.fillPct}%` }}
+                  />
+                  {row.beadPct != null && !isPreRace && (
+                    <div
+                      className="bc-bead"
+                      style={{ top: `${row.beadPct}%` }}
+                    />
+                  )}
+                </div>
+                <div className="bc-caption">
                   <span className="bc-stat">{row.distKm.toFixed(1)} km</span>
                   {row.gainM > 0 && (
                     <span className="bc-stat">+{row.gainM}m</span>

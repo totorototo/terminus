@@ -62,38 +62,40 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  /* ── Segment breadcrumb ─────────────────────────────── */
+  /* ── Distance-scaled segment rail ───────────────────── */
 
   .bc-row {
     display: flex;
     align-items: center;
     gap: 1.2rem;
-    padding: 0.75rem 0;
     opacity: 0.6;
     transition: opacity
       ${(props) => props.theme.transitions["--transition-fast"]};
 
     &.past {
-      opacity: 0.25;
+      opacity: 0.35;
     }
 
     &.current {
-      opacity: 0.85;
+      opacity: 1;
     }
   }
 
-  .bc-connector {
+  .bc-rail {
+    position: relative;
     width: 7px;
     flex-shrink: 0;
     align-self: stretch;
-    display: flex;
-    justify-content: center;
 
+    /* base track — full segment height, faint */
     &::before {
       content: "";
-      display: block;
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
       width: 1px;
-      height: 100%;
+      transform: translateX(-50%);
       background: ${(props) =>
         rgba(
           props.theme.colors[props.theme.currentVariant]["--color-text"],
@@ -102,22 +104,57 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  .bc-stats {
+  /* covered portion of the segment */
+  .bc-rail-fill {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    transform: translateX(-50%);
+    border-radius: 1px;
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.7,
+      )};
+  }
+
+  /* runner's projected location */
+  .bc-bead {
+    position: absolute;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    background: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    box-shadow: 0 0 7px
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.6,
+        )};
+  }
+
+  .bc-caption {
     display: flex;
     align-items: center;
     gap: 0.45rem;
     flex-wrap: wrap;
     flex: 1;
     min-width: 0;
+    padding: 0.4rem 0;
   }
 
   .bc-stat {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.85,
+        0.6,
       )};
     letter-spacing: 0.2px;
     line-height: 1;
