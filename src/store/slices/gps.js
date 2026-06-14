@@ -512,6 +512,40 @@ export const createGPSSlice = (set, get) => {
       }
     },
 
+    // Re-arm the broadcast loop after a reload when auto-share was persisted as
+    // enabled. Called by the trailer screen once it mounts (geolocation, worker
+    // and raceId are ready by then). It restores the interval AND re-asserts the
+    // flag, so it self-heals if StrictMode's mount/unmount cycle cleared it via
+    // disconnectTrailerSession.
+    resumeAutoShare: async () => {
+      if (autoShareIntervalId || isTogglingAutoShare) return;
+      isTogglingAutoShare = true;
+      try {
+        if (!get().app.liveSessionId || !get().app.liveWriteKey) {
+          await get().shareLocation();
+        }
+        await get().spotMe();
+        autoShareIntervalId = setInterval(() => {
+          get().spotMe();
+        }, AUTO_SHARE_INTERVAL_MS);
+        set(
+          (state) => ({ gps: { ...state.gps, autoShareEnabled: true } }),
+          undefined,
+          "gps/resumeAutoShare",
+        );
+      } catch (error) {
+        if (error?.name !== "AbortError") {
+          set(
+            (state) => ({ gps: { ...state.gps, autoShareEnabled: false } }),
+            undefined,
+            "gps/resumeAutoShareError",
+          );
+        }
+      } finally {
+        isTogglingAutoShare = false;
+      }
+    },
+
     disconnectTrailerSession: () => {
       clearInterval(autoShareIntervalId);
       autoShareIntervalId = null;

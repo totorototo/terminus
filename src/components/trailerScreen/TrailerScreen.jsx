@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 
 import AutoSizer from "react-virtualized-auto-sizer";
 import { useParams } from "wouter";
@@ -23,13 +23,19 @@ function TrailerScreen({ className }) {
   const { raceId } = useParams();
   const { isWorkerReady } = useGPXWorker(raceId);
   const isDesktop = useIsDesktop();
-  const { disconnectTrailerSession, setMode, setRaceId } = useStore(
-    useShallow((state) => ({
-      disconnectTrailerSession: state.disconnectTrailerSession,
-      setMode: state.setMode,
-      setRaceId: state.setRaceId,
-    })),
-  );
+  const { disconnectTrailerSession, setMode, setRaceId, resumeAutoShare } =
+    useStore(
+      useShallow((state) => ({
+        disconnectTrailerSession: state.disconnectTrailerSession,
+        setMode: state.setMode,
+        setRaceId: state.setRaceId,
+        resumeAutoShare: state.resumeAutoShare,
+      })),
+    );
+
+  // Capture the persisted auto-share intent once, before any effect (notably
+  // disconnectTrailerSession on StrictMode unmount) can flip the live flag.
+  const wasAutoSharing = useRef(useStore.getState().gps.autoShareEnabled);
 
   useEffect(() => {
     setMode("trailer");
@@ -42,6 +48,14 @@ function TrailerScreen({ className }) {
   useEffect(() => {
     if (raceId) setRaceId(raceId);
   }, [raceId, setRaceId]);
+
+  // Resume broadcasting once the worker (and thus GPX/raceId) is ready, if the
+  // user had auto-share enabled before reload. resumeAutoShare is idempotent.
+  useEffect(() => {
+    if (wasAutoSharing.current && isWorkerReady) {
+      resumeAutoShare();
+    }
+  }, [isWorkerReady, resumeAutoShare]);
 
   return (
     <div className={className}>

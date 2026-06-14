@@ -181,7 +181,12 @@ describe("store", () => {
       const { gps } = partialize(useStore.getState());
 
       expect(Object.keys(gps).sort()).toEqual(
-        ["location", "projectedLocation", "savedLocations"].sort(),
+        [
+          "location",
+          "projectedLocation",
+          "savedLocations",
+          "autoShareEnabled",
+        ].sort(),
       );
     });
 

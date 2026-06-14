@@ -58,6 +58,7 @@ const useStore = create(
             location: state.gps.location,
             projectedLocation: state.gps.projectedLocation,
             savedLocations: state.gps.savedLocations,
+            autoShareEnabled: state.gps.autoShareEnabled,
           },
         }),
         onRehydrateStorage: () => (state) => {
@@ -65,6 +66,9 @@ const useStore = create(
           if (state?.initLocationBuffer) {
             state.initLocationBuffer();
           }
+          // Note: auto-share is resumed by TrailerScreen on mount (not here),
+          // where geolocation/worker/raceId are ready and the StrictMode
+          // mount/unmount cycle won't tear down the interval we'd create.
           // Re-sync notificationPermission lost by shallow merge during rehydration
           if (
             state?.gps &&
