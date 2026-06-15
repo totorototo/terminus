@@ -5,6 +5,7 @@ import { format } from "date-fns";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import Carousel from "../carousel/Carousel.jsx";
+import GpsView from "./GpsView/GpsView.jsx";
 import TrailMap from "./Map/Map.jsx";
 import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PaceSettings from "./PaceSettings/PaceSettings.jsx";
@@ -22,6 +23,7 @@ import style from "./TrailData.style.js";
 const PANEL_LABELS = [
   "Trail overview",
   "Map",
+  "GPS view",
   "Trail progression",
   "Checkpoints",
   "Life bases",
@@ -213,6 +215,7 @@ const TrailData = memo(function TrailData({ className }) {
       >
         <TrailOverview />
         <TrailMap />
+        <GpsView />
         <TrailProgression />
         <SectionETA />
         <StageETA />

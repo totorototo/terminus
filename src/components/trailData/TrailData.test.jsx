@@ -93,6 +93,11 @@ vi.mock("./Map/Map.jsx", () => ({
   default: () => <div data-testid="trail-map">TrailMap</div>,
 }));
 
+// Mock GpsView component
+vi.mock("./GpsView/GpsView.jsx", () => ({
+  default: () => <div data-testid="gps-view">GpsView</div>,
+}));
+
 // Mock PeakSummary component
 vi.mock("./PeakSummary/PeakSummary.jsx", () => ({
   default: () => <div data-testid="peak-summary">PeakSummary</div>,
