@@ -64,7 +64,7 @@ const MIN_DENOMINATOR_METERS = 8;
 // ahead rear up and descents fall away. A real grade is tiny next to its
 // horizontal run, so the lift is exaggerated to read in perspective — this is a
 // deliberate vertical stretch, not a true-scale 3D camera.
-const VERTICAL_EXAGGERATION = 2.5;
+const VERTICAL_EXAGGERATION = 1.2;
 
 // The heading is the direction from the current position to a point this far
 // ahead along the path. A single look-ahead chord rotates continuously through
@@ -403,7 +403,9 @@ const GpsView = memo(function GpsView({ className }) {
       isSyncingScrollRef.current = false;
       return;
     }
-    const next = event.currentTarget.scrollTop * METERS_PER_SCROLL_PIXEL;
+    const element = event.currentTarget;
+    const maxScroll = element.scrollHeight - element.clientHeight;
+    const next = (maxScroll - element.scrollTop) * METERS_PER_SCROLL_PIXEL;
     setPreviewMeters(Math.min(Math.max(next, 0), totalDistance));
   };
 
@@ -461,7 +463,10 @@ const GpsView = memo(function GpsView({ className }) {
     // no-op that fires no scroll event, which would leave the sync flag armed
     // and swallow the next genuine swipe.
     const maxScroll = element.scrollHeight - element.clientHeight;
-    const target = Math.min(liveDistance / METERS_PER_SCROLL_PIXEL, maxScroll);
+    const target = Math.max(
+      maxScroll - liveDistance / METERS_PER_SCROLL_PIXEL,
+      0,
+    );
     if (Math.abs(element.scrollTop - target) > 0.5) {
       isSyncingScrollRef.current = true;
       element.scrollTop = target;
