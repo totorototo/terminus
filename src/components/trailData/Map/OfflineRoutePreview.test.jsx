@@ -1,10 +1,8 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import OfflineRoutePreview, {
-  projectPoints,
-  VIEW,
-} from "./OfflineRoutePreview.jsx";
+import OfflineRoutePreview from "./OfflineRoutePreview.jsx";
+import { projectPoints, VIEW } from "./offlineRouteProjection.js";
 
 // A short, axis-aligned-ish route in [lng, lat] order.
 const ROUTE = [

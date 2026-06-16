@@ -99,4 +99,6 @@ const PeakSummary = memo(function PeakSummary({ className }) {
   );
 });
 
-export default style(PeakSummary);
+const StyledPeakSummary = style(PeakSummary);
+
+export default StyledPeakSummary;

@@ -207,4 +207,6 @@ function Navigation({ className, singleSection }) {
   );
 }
 
-export default style(Navigation);
+const StyledNavigation = style(Navigation);
+
+export default StyledNavigation;

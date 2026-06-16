@@ -96,4 +96,6 @@ function FollowerScreen({ className }) {
   );
 }
 
-export default style(FollowerScreen);
+const StyledFollowerScreen = style(FollowerScreen);
+
+export default StyledFollowerScreen;

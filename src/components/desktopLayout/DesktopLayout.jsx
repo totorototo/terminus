@@ -42,4 +42,6 @@ const DesktopLayout = memo(function DesktopLayout({ className }) {
   );
 });
 
-export default style(DesktopLayout);
+const StyledDesktopLayout = style(DesktopLayout);
+
+export default StyledDesktopLayout;

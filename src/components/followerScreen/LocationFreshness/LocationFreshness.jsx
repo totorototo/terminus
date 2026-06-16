@@ -112,4 +112,6 @@ const LocationFreshness = memo(function LocationFreshness({
   );
 });
 
-export default style(LocationFreshness);
+const StyledLocationFreshness = style(LocationFreshness);
+
+export default StyledLocationFreshness;

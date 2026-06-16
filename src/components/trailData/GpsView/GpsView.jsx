@@ -623,4 +623,6 @@ const GpsView = memo(function GpsView({ className }) {
   );
 });
 
-export default style(GpsView);
+const StyledGpsView = style(GpsView);
+
+export default StyledGpsView;

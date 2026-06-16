@@ -86,4 +86,6 @@ function TrailerScreen({ className }) {
   );
 }
 
-export default style(TrailerScreen);
+const StyledTrailerScreen = style(TrailerScreen);
+
+export default StyledTrailerScreen;

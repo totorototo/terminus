@@ -750,4 +750,6 @@ function Help({ className }) {
   );
 }
 
-export default style(Help);
+const StyledHelp = style(Help);
+
+export default StyledHelp;

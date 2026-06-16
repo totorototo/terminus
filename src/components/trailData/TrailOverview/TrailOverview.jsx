@@ -130,4 +130,6 @@ const TrailOverview = memo(function TrailOverview({ className }) {
   );
 });
 
-export default style(TrailOverview);
+const StyledTrailOverview = style(TrailOverview);
+
+export default StyledTrailOverview;

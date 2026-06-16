@@ -360,4 +360,6 @@ const PaceProfile = memo(function PaceProfile({ className }) {
   );
 });
 
-export default style(PaceProfile);
+const StyledPaceProfile = style(PaceProfile);
+
+export default StyledPaceProfile;

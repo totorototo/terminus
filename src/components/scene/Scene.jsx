@@ -111,4 +111,6 @@ function Scene({ width, height, className }) {
   );
 }
 
-export default style(Scene);
+const StyledScene = style(Scene);
+
+export default StyledScene;

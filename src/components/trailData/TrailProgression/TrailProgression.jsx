@@ -81,4 +81,6 @@ const TrailProgression = memo(function TrailProgression({ className }) {
   );
 });
 
-export default style(TrailProgression);
+const StyledTrailProgression = style(TrailProgression);
+
+export default StyledTrailProgression;

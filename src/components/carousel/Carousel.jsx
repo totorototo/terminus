@@ -112,4 +112,6 @@ function Carousel({
   );
 }
 
-export default style(Carousel);
+const StyledCarousel = style(Carousel);
+
+export default StyledCarousel;

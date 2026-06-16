@@ -39,4 +39,6 @@ function EnhancedProfile({ coordinateScales }) {
   );
 }
 
-export default memo(style(EnhancedProfile));
+const MemoizedEnhancedProfile = memo(style(EnhancedProfile));
+
+export default MemoizedEnhancedProfile;

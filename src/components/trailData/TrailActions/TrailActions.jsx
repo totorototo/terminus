@@ -166,4 +166,6 @@ const TrailActions = memo(function TrailActions({ className }) {
   );
 });
 
-export default style(TrailActions);
+const StyledTrailActions = style(TrailActions);
+
+export default StyledTrailActions;

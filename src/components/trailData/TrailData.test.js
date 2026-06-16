@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { calculateTimeMetrics } from "./TrailData.jsx";
+import { calculateTimeMetrics } from "./trailDataHelpers.js";
 
 // Minimal sections fixture: one section covering the full distance.
 // estimatedDuration matches actual elapsed so paceRatio = 1.0 in most tests.

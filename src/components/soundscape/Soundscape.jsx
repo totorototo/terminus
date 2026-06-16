@@ -297,4 +297,6 @@ Soundscape.propTypes = {
   className: PropTypes.string,
 };
 
-export default style(Soundscape);
+const StyledSoundscape = style(Soundscape);
+
+export default StyledSoundscape;

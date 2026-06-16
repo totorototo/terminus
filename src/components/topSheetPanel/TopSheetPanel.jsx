@@ -99,4 +99,6 @@ function ExpandablePanel({
   );
 }
 
-export default style(ExpandablePanel);
+const StyledExpandablePanel = style(ExpandablePanel);
+
+export default StyledExpandablePanel;

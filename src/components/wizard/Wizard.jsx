@@ -214,4 +214,6 @@ function Wizard({ className }) {
   );
 }
 
-export default style(Wizard);
+const StyledWizard = style(Wizard);
+
+export default StyledWizard;

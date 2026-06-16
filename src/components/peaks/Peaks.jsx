@@ -55,4 +55,6 @@ function Peaks({ coordinateScales }) {
   ));
 }
 
-export default memo(Peaks);
+const MemoizedPeaks = memo(Peaks);
+
+export default MemoizedPeaks;

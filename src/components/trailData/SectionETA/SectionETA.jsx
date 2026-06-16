@@ -304,4 +304,6 @@ const SectionETA = memo(function SectionETA({ className }) {
   );
 });
 
-export default style(SectionETA);
+const StyledSectionETA = style(SectionETA);
+
+export default StyledSectionETA;

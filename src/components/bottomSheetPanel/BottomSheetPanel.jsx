@@ -111,4 +111,6 @@ function BottomSheetPanel(
   );
 }
 
-export default style(forwardRef(BottomSheetPanel));
+const StyledBottomSheetPanel = style(forwardRef(BottomSheetPanel));
+
+export default StyledBottomSheetPanel;

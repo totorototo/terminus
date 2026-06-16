@@ -48,4 +48,6 @@ function App({ className }) {
   );
 }
 
-export default style(App);
+const StyledApp = style(App);
+
+export default StyledApp;

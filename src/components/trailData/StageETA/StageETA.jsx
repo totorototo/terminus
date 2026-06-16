@@ -239,4 +239,6 @@ const StageETA = memo(function StageETA({ className }) {
   );
 });
 
-export default style(StageETA);
+const StyledStageETA = style(StageETA);
+
+export default StyledStageETA;

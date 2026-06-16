@@ -154,4 +154,6 @@ const TrailMap = memo(function TrailMap({ className }) {
   );
 });
 
-export default style(TrailMap);
+const StyledTrailMap = style(TrailMap);
+
+export default StyledTrailMap;

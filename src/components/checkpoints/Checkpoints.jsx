@@ -31,4 +31,6 @@ function Checkpoints({ checkpointsPoints3D }) {
   });
 }
 
-export default memo(Checkpoints);
+const MemoizedCheckpoints = memo(Checkpoints);
+
+export default MemoizedCheckpoints;

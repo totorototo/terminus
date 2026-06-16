@@ -167,4 +167,6 @@ const AnalyticsPanel = memo(function AnalyticsPanel({
   );
 });
 
-export default style(AnalyticsPanel);
+const StyledAnalyticsPanel = style(AnalyticsPanel);
+
+export default StyledAnalyticsPanel;

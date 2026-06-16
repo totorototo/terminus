@@ -338,4 +338,6 @@ function Commands({ className, follower }) {
   );
 }
 
-export default style(Commands);
+const StyledCommands = style(Commands);
+
+export default StyledCommands;

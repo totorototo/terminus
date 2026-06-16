@@ -9,4 +9,6 @@ function LoadingSpinner({ className }) {
   );
 }
 
-export default style(LoadingSpinner);
+const StyledLoadingSpinner = style(LoadingSpinner);
+
+export default StyledLoadingSpinner;

@@ -120,4 +120,6 @@ function Climbs({ coordinateScales }) {
   });
 }
 
-export default memo(Climbs);
+const MemoizedClimbs = memo(Climbs);
+
+export default MemoizedClimbs;

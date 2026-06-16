@@ -219,4 +219,6 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
   );
 });
 
-export default style(ElevationProfile);
+const StyledElevationProfile = style(ElevationProfile);
+
+export default StyledElevationProfile;
