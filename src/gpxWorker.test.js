@@ -162,6 +162,11 @@ function makeGpxData(overrides = {}) {
     legs: null,
     sections: null,
     stages: null,
+    fullResPoints: [
+      [0.0, 0.0, 100],
+      [0.001, 0.002, 120],
+      [0.003, 0.004, 160],
+    ],
     deinit: vi.fn(),
     ...overrides,
   };
@@ -209,7 +214,20 @@ describe("message routing", () => {
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new ArrayBuffer(0) });
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({ type: "GPX_FILE_PROCESSED", id: "req-1" }),
+      expect.arrayContaining([expect.any(ArrayBuffer)]),
     );
+  });
+
+  it("transfers full-resolution route coordinates as flat [lat, lon, ele]", async () => {
+    readGPXComplete.mockResolvedValue(makeGpxData());
+    await dispatch("PROCESS_GPX_FILE", { gpxBytes: new ArrayBuffer(0) });
+    const [message, transfer] = postMessage.mock.calls[0];
+    const { routeLatLonEle } = message.results;
+    // Kept in Zig's native [lat, lon, ele] order; the map swaps to [lng, lat].
+    expect(Array.from(routeLatLonEle)).toEqual([
+      0.0, 0.0, 100, 0.001, 0.002, 120, 0.003, 0.004, 160,
+    ]);
+    expect(transfer).toEqual([routeLatLonEle.buffer]);
   });
 
   it("forwards a neutral weather lookup when no forecasts are given", async () => {

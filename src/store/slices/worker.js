@@ -303,6 +303,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         get().setPeaks(results.trace.peaks);
         get().setValleys(results.trace.valleys);
         get().setClimbs(results.climbs ?? []);
+        get().setRouteLatLonEle(results.routeLatLonEle ?? null);
 
         get().updateStats({
           distance: results.trace.totalDistance ?? 0,

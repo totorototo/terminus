@@ -13,18 +13,17 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_KEY;
 
-// Parse the raw GPX XML into a [lng, lat] coordinate list. Track points carry
-// their coordinates as attributes (<trkpt lat="" lon="">), which already match
-// the order GeoJSON/Mapbox expect once swapped to [lng, lat].
-const parseRoute = (rawGpx) => {
-  if (!rawGpx) return null;
-  const doc = new DOMParser().parseFromString(rawGpx, "application/xml");
-  if (doc.querySelector("parsererror")) return null;
-
+// Convert the worker's flat full-resolution route buffer into the [lng, lat]
+// pair list that Mapbox/GeoJSON and the offline preview consume. The buffer is
+// stride-3 [lat, lon, ele] in Zig's native order, so we swap to [lng, lat] and
+// skip the elevation here. The worker already parsed the GPX in Zig, so there's
+// no XML to re-parse.
+const toCoordinatePairs = (routeLatLonEle) => {
+  if (!routeLatLonEle || routeLatLonEle.length < 6) return null;
   const coordinates = [];
-  for (const point of doc.getElementsByTagName("trkpt")) {
-    const lat = Number(point.getAttribute("lat"));
-    const lng = Number(point.getAttribute("lon"));
+  for (let i = 0; i + 2 < routeLatLonEle.length; i += 3) {
+    const lat = routeLatLonEle[i];
+    const lng = routeLatLonEle[i + 1];
     if (Number.isFinite(lat) && Number.isFinite(lng)) {
       coordinates.push([lng, lat]);
     }
@@ -33,13 +32,16 @@ const parseRoute = (rawGpx) => {
 };
 
 const TrailMap = memo(function TrailMap({ className }) {
-  const rawGpx = useStore((state) => state.gpx.rawGpx);
+  const routeLatLonEle = useStore((state) => state.gpx.routeLatLonEle);
   const projectedLocation = useProjectedLocation();
   const theme = useTheme();
   const isOnline = useIsOnline();
   const mapRef = useRef(null);
 
-  const coordinates = useMemo(() => parseRoute(rawGpx), [rawGpx]);
+  const coordinates = useMemo(
+    () => toCoordinatePairs(routeLatLonEle),
+    [routeLatLonEle],
+  );
 
   // projectedLocation.coords is [lat, lng, ele] (Zig GPS format); Mapbox needs
   // [lng, lat]. A pristine fix has empty coords, so guard before rendering.

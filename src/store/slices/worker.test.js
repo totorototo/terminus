@@ -123,6 +123,15 @@ describe("Worker Slice", () => {
           undefined,
           "gpx/setClimbs",
         ),
+      setRouteLatLonEle: (routeLatLonEle) =>
+        set(
+          (state) => ({
+            ...state,
+            gpx: { ...state.gpx, routeLatLonEle },
+          }),
+          undefined,
+          "gpx/setRouteLatLonEle",
+        ),
       updateStats: (updates) =>
         set(
           (state) => ({
@@ -319,6 +328,15 @@ describe("Worker Slice", () => {
             }),
             undefined,
             "gpx/setClimbs",
+          ),
+        setRouteLatLonEle: (routeLatLonEle) =>
+          set(
+            (state) => ({
+              ...state,
+              gpx: { ...state.gpx, routeLatLonEle },
+            }),
+            undefined,
+            "gpx/setRouteLatLonEle",
           ),
         updateStats: (updates) =>
           set(

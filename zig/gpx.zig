@@ -230,7 +230,9 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8, base_pac
     }
 
     var trace = try Trace.init(allocator, trace_points);
-    defer allocator.free(trace_points); // Trace owns its own copy
+    // GPXData takes ownership of trace_points (full-resolution trackpoints) for
+    // the map's full-detail rendering. Trace.init made its own copy, so these are
+    // independent allocations. The errdefer above frees them on later failures.
     errdefer trace.deinit(allocator);
 
     // Legs: computed between every consecutive pair of waypoints
@@ -255,6 +257,7 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8, base_pac
         .sections = sections,
         .stages = stages,
         .metadata = metadata,
+        .fullResPoints = trace_points,
     };
 }
 

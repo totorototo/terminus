@@ -125,10 +125,12 @@ pub const GPXData = struct {
     sections: ?[]const SectionStats, // TimeBarrier-to-TimeBarrier sections with timing (available when >= 2 section boundaries)
     stages: ?[]const StageStats, // LifeBase-to-LifeBase stages (available when >= 2 stage boundaries)
     metadata: Metadata,
+    fullResPoints: [][3]f64, // Unsimplified [lat, lon, ele] trackpoints for full-resolution rendering (map)
 
     pub fn deinit(self: *GPXData, allocator: std.mem.Allocator) void {
         self.metadata.deinit(allocator);
         self.trace.deinit(allocator);
+        allocator.free(self.fullResPoints);
         for (self.waypoints) |*wpt| {
             wpt.deinit(allocator);
         }

@@ -254,6 +254,25 @@ async function processGPXFile(gpxFileBytes, requestId) {
       : null,
   };
 
+  // Full-resolution route coordinates for the map. Kept in Zig's native
+  // [lat, lon, ele] order (stride 3) so the worker just flattens with no
+  // per-point swap; the map swaps to [lng, lat] at read time. A flat
+  // Float64Array is compact and transferable, so the store never holds the raw
+  // XML string and the main thread skips a DOMParser pass.
+  // valueOf() deep-copies the whole Zigar proxy once instead of paying a proxy
+  // trap per point, which matters for large full-resolution traces.
+  const fullResPoints = gpxData.fullResPoints
+    ? gpxData.fullResPoints.valueOf()
+    : [];
+  const pointCount = fullResPoints.length;
+  const routeLatLonEle = new Float64Array(pointCount * 3);
+  for (let i = 0; i < pointCount; i++) {
+    const p = fullResPoints[i];
+    routeLatLonEle[i * 3] = p[0]; // lat
+    routeLatLonEle[i * 3 + 1] = p[1]; // lon
+    routeLatLonEle[i * 3 + 2] = p[2]; // ele
+  }
+
   // Sanitize climb segments — all fields are numeric (usize/f64), no strings or i64
   const sanitizedClimbs = [];
   const traceClimbs = gpxData.trace.climbs;
@@ -280,16 +299,20 @@ async function processGPXFile(gpxFileBytes, requestId) {
     sections: sanitizedSections,
     stages: sanitizedStages,
     climbs: sanitizedClimbs,
+    routeLatLonEle,
   };
 
   markEnd("processGPXFile");
 
-  self.postMessage({
-    type: "GPX_FILE_PROCESSED",
-    id: requestId,
-    results,
-    timingMs: { gpxProcess: measureMs("processGPXFile") },
-  });
+  self.postMessage(
+    {
+      type: "GPX_FILE_PROCESSED",
+      id: requestId,
+      results,
+      timingMs: { gpxProcess: measureMs("processGPXFile") },
+    },
+    [routeLatLonEle.buffer],
+  );
 
   // gpxData.deinit() will now clean up the trace as well
   gpxData.deinit();
