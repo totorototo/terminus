@@ -29,7 +29,7 @@ export const Title = styled.p`
 export const Instructions = styled.p`
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-medium);
-  opacity: 0.8;
+  opacity: 0.9;
   margin: 0;
   max-width: 260px;
   line-height: 1.6;
@@ -44,7 +44,7 @@ export const DismissButton = styled.button`
   font-size: var(--font-size-small);
   padding: 0.5rem 1.5rem;
   cursor: pointer;
-  opacity: 0.6;
+  opacity: 0.9;
   transition: opacity var(--transition-fast);
 
   &:active {
