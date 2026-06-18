@@ -1,11 +1,11 @@
-import { memo, useMemo } from "react";
+import { lazy, memo, useMemo } from "react";
 
 import { animated, useSpring as useSpringWeb } from "@react-spring/web";
 
 import useStore, { useProjectedLocation, useStats } from "../../store/store.js";
 import Carousel from "../carousel/Carousel.jsx";
+import LazyPanel from "../lazyPanel/LazyPanel.jsx";
 import GpsView from "./GpsView/GpsView.jsx";
-import TrailMap from "./Map/Map.jsx";
 import PaceProfile from "./PaceProfile/PaceProfile.jsx";
 import PaceSettings from "./PaceSettings/PaceSettings.jsx";
 import PeakSummary from "./PeakSummary/PeakSummary.jsx";
@@ -19,6 +19,11 @@ import TrailOverview from "./TrailOverview/TrailOverview.jsx";
 import TrailProgression from "./TrailProgression/TrailProgression.jsx";
 
 import style from "./TrailData.style.js";
+
+// mapbox-gl (~452 KB) is the heaviest dependency in the trailer view and the
+// map sits off-screen on carousel panel 2. Lazy-import it so its chunk stays
+// out of the initial bundle; LazyPanel mounts it on demand as the slide nears.
+const TrailMap = lazy(() => import("./Map/Map.jsx"));
 
 const PANEL_LABELS = [
   "Trail overview",
@@ -149,7 +154,9 @@ const TrailData = memo(function TrailData({ className }) {
         gap="1.5rem"
       >
         <TrailOverview />
-        <TrailMap />
+        <LazyPanel>
+          <TrailMap />
+        </LazyPanel>
         <GpsView />
         <TrailProgression />
         <SectionETA />
