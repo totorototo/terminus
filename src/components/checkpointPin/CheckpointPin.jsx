@@ -1,6 +1,7 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 
 import { Html } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import { CheckCircle } from "@styled-icons/feather/CheckCircle";
 import { Clock } from "@styled-icons/feather/Clock";
 import { Flag } from "@styled-icons/feather/Flag";
@@ -103,10 +104,30 @@ const CheckpointPin = memo(function CheckpointPin({ checkpoint, level = 0 }) {
 });
 
 function CheckpointPins({ checkpointsPoints3D }) {
+  const invalidate = useThree((state) => state.invalidate);
+
   const levelByIndex = useMemo(
     () => computeLabelLevels(checkpointsPoints3D ?? []),
     [checkpointsPoints3D],
   );
+
+  // The scene renders on demand, and drei's <Html> applies its distanceFactor
+  // scale from inside useFrame — only on rendered frames, and only after its
+  // label content has mounted into a separate (async) React root. The single
+  // on-demand frame triggered when these pins first mount can run before that
+  // transform is in place, leaving the labels at their unscaled (oversized)
+  // size with no further frame to correct them until the user scrolls. Nudge a
+  // couple of renders after mount so the labels recompute their scale once the
+  // <Html> instances are fully set up.
+  useEffect(() => {
+    if (!checkpointsPoints3D?.length) return undefined;
+    const raf = requestAnimationFrame(() => invalidate());
+    const timeout = setTimeout(() => invalidate(), 200);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timeout);
+    };
+  }, [checkpointsPoints3D, invalidate]);
 
   return checkpointsPoints3D?.map((checkpoint, index) => (
     <CheckpointPin
