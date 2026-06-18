@@ -5,6 +5,11 @@ pub const ELEV_NOISE_THRESHOLD_M: f64 = 3.0;
 pub const ELEV_MEDIAN_RADIUS_M: f64 = 15.0;
 const MAX_WINDOW_SAMPLES: usize = 256;
 
+// Half-width of the centered window used for slope estimation. The full 10m
+// window (5m behind + 5m ahead) gives a second-order accurate gradient that is
+// far more stable than a raw point-to-point difference.
+pub const SLOPE_HALF_WINDOW_M: f64 = 5.0;
+
 pub const GainLoss = struct {
     cumGain: []f64,
     cumLoss: []f64,
@@ -110,6 +115,60 @@ pub fn accumulate(
     return GainLoss{ .cumGain = cum_gain, .cumLoss = cum_loss, .totalGain = gain, .totalLoss = loss };
 }
 
+// Smoothed slope (percent grade) at each point, estimated over a centered
+// distance window. For each point we binary-search the nearest points at least
+// `SLOPE_HALF_WINDOW_M` behind and ahead, then take the elevation change over
+// the spanned distance. `cum_dist` must be the monotonic cumulative horizontal
+// distance aligned with `points` (same length).
+pub fn computeSlopes(
+    allocator: std.mem.Allocator,
+    points: []const [3]f64,
+    cum_dist: []const f64,
+) ![]f64 {
+    std.debug.assert(points.len == cum_dist.len);
+
+    const slopes = try allocator.alloc(f64, points.len);
+    errdefer allocator.free(slopes);
+    if (points.len == 0) return slopes;
+
+    slopes[0] = 0.0;
+
+    for (0..points.len) |i| {
+        const current_dist = cum_dist[i];
+
+        // Binary search backward: largest j in [0,i) where dist[j] <= current_dist - half_window
+        const behind_idx: usize = blk: {
+            if (i == 0) break :blk 0;
+            const target = current_dist - SLOPE_HALF_WINDOW_M;
+            var lo: usize = 0;
+            var hi: usize = i;
+            while (lo < hi) {
+                const mid = lo + (hi - lo) / 2;
+                if (cum_dist[mid] <= target) lo = mid + 1 else hi = mid;
+            }
+            break :blk if (lo > 0) lo - 1 else 0;
+        };
+
+        // Binary search forward: smallest j in (i,len) where dist[j] >= current_dist + half_window
+        const ahead_idx: usize = blk: {
+            const target = current_dist + SLOPE_HALF_WINDOW_M;
+            var lo: usize = i + 1;
+            var hi: usize = points.len;
+            while (lo < hi) {
+                const mid = lo + (hi - lo) / 2;
+                if (cum_dist[mid] < target) lo = mid + 1 else hi = mid;
+            }
+            break :blk if (lo < points.len) lo else points.len - 1;
+        };
+
+        const segment_dist = cum_dist[ahead_idx] - cum_dist[behind_idx];
+        const segment_elev = points[ahead_idx][2] - points[behind_idx][2];
+        slopes[i] = if (segment_dist > 0.0) (segment_elev / segment_dist) * 100.0 else 0.0;
+    }
+
+    return slopes;
+}
+
 pub fn computeGainLoss(
     allocator: std.mem.Allocator,
     points: []const [3]f64,
@@ -199,6 +258,46 @@ test "computeGainLoss: spike does not inflate gain or loss" {
     defer gl.deinit(allocator);
     try std.testing.expectApproxEqAbs(0.0, gl.totalGain, 0.001);
     try std.testing.expectApproxEqAbs(0.0, gl.totalLoss, 0.001);
+}
+
+test "computeSlopes: steady climb yields consistent positive grade" {
+    const allocator = std.testing.allocator;
+    // ~111m horizontal per point at the equator, +10m elevation each: ~9% grade.
+    const points = [_][3]f64{
+        .{ 0.0, 0.000, 0.0 },
+        .{ 0.0, 0.001, 10.0 },
+        .{ 0.0, 0.002, 20.0 },
+        .{ 0.0, 0.003, 30.0 },
+        .{ 0.0, 0.004, 40.0 },
+    };
+    const cum = try cumulativeHorizontalDistance(allocator, &points);
+    defer allocator.free(cum);
+    const slopes = try computeSlopes(allocator, &points, cum);
+    defer allocator.free(slopes);
+
+    try std.testing.expectEqual(@as(usize, 5), slopes.len);
+    for (slopes) |s| try std.testing.expect(s > 0.0);
+}
+
+test "computeSlopes: flat profile is zero grade" {
+    const allocator = std.testing.allocator;
+    const points = [_][3]f64{
+        .{ 0.0, 0.000, 100.0 },
+        .{ 0.0, 0.001, 100.0 },
+        .{ 0.0, 0.002, 100.0 },
+    };
+    const cum = try cumulativeHorizontalDistance(allocator, &points);
+    defer allocator.free(cum);
+    const slopes = try computeSlopes(allocator, &points, cum);
+    defer allocator.free(slopes);
+    for (slopes) |s| try std.testing.expectApproxEqAbs(0.0, s, 0.001);
+}
+
+test "computeSlopes: empty input" {
+    const allocator = std.testing.allocator;
+    const slopes = try computeSlopes(allocator, &.{}, &.{});
+    defer allocator.free(slopes);
+    try std.testing.expectEqual(@as(usize, 0), slopes.len);
 }
 
 test "computeGainLoss: empty input" {

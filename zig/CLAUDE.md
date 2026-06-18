@@ -8,7 +8,7 @@ trace.zig      ── Trace struct: core computation (distances, elevations, slo
 extrema.zig    ── AMPD peak & valley detection algorithm
 climbs.zig     ── Climb segment detection (Garmin-style qualification)
 simplify.zig   ── Douglas-Peucker simplification
-elevation.zig  ── Denoised D+/D- (distance-windowed median + hysteresis deadband)
+elevation.zig  ── Denoised D+/D- (distance-windowed median + hysteresis deadband) + windowed slope
 gpspoint.zig   ── Pure math on [3]f64 (Haversine, bearing, elevation)
 gpxdata.zig    ── Data structs: GPXData, Waypoint, Metadata
 leg.zig        ── LegStats: per-waypoint-pair intervals (Naismith)

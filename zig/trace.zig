@@ -81,15 +81,11 @@ pub const Trace = struct {
         const cumulativeElevationLoss = try allocator.alloc(f64, final_points.len);
         errdefer allocator.free(cumulativeElevationLoss);
 
-        const slopes = try allocator.alloc(f64, final_points.len);
-        errdefer allocator.free(slopes);
-
         const elevations = try allocator.alloc(f32, final_points.len);
         defer allocator.free(elevations);
 
         // Initialize arrays
         cumulativeDistances[0] = 0.0;
-        slopes[0] = 0.0;
 
         var cum_dist: f64 = 0.0;
 
@@ -125,41 +121,9 @@ pub const Trace = struct {
             cumulativeElevationLoss[fi] = gain_loss.cumLoss[src];
         }
 
-        // Second pass: calculate smoothed slopes using centered window
-        // Use 10m window (5m behind + 5m ahead) for second-order accurate slope estimation
-        const half_window: f64 = 5.0;
-        for (0..final_points.len) |i| {
-            const current_dist = cumulativeDistances[i];
-
-            // Binary search backward: largest j in [0,i) where dist[j] <= current_dist - half_window
-            const behind_idx: usize = blk: {
-                if (i == 0) break :blk 0;
-                const target = current_dist - half_window;
-                var lo: usize = 0;
-                var hi: usize = i;
-                while (lo < hi) {
-                    const mid = lo + (hi - lo) / 2;
-                    if (cumulativeDistances[mid] <= target) lo = mid + 1 else hi = mid;
-                }
-                break :blk if (lo > 0) lo - 1 else 0;
-            };
-
-            // Binary search forward: smallest j in (i,len) where dist[j] >= current_dist + half_window
-            const ahead_idx: usize = blk: {
-                const target = current_dist + half_window;
-                var lo: usize = i + 1;
-                var hi: usize = final_points.len;
-                while (lo < hi) {
-                    const mid = lo + (hi - lo) / 2;
-                    if (cumulativeDistances[mid] < target) lo = mid + 1 else hi = mid;
-                }
-                break :blk if (lo < final_points.len) lo else final_points.len - 1;
-            };
-
-            const segment_dist = cumulativeDistances[ahead_idx] - cumulativeDistances[behind_idx];
-            const segment_elev = final_points[ahead_idx][2] - final_points[behind_idx][2];
-            slopes[i] = if (segment_dist > 0.0) (segment_elev / segment_dist) * 100.0 else 0.0;
-        }
+        // Smoothed slopes over a centered distance window (see elevation.computeSlopes).
+        const slopes = try elevation.computeSlopes(allocator, final_points, cumulativeDistances);
+        errdefer allocator.free(slopes);
 
         // Find peaks
         const peaks = if (final_points.len >= 3)
