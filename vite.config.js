@@ -19,9 +19,7 @@ import { VitePWA } from "vite-plugin-pwa";
 const BUNDLE_BUDGETS = {
   "three-core": 900 * 1024, // Three.js 0.181 minified ≈ 580 KB
   "react-three-fiber": 450 * 1024, // R3F         minified ≈ 250 KB
-  // Under Vite 8 / Rolldown, three-core, react-three-fiber and react-spring-three
-  // are merged into this lazy-loaded chunk (they are only reached via the 3D route).
-  "react-three-drei": 1500 * 1024, // Drei + Three + R3F + Spring (Rolldown-merged)
+  "react-three-drei": 700 * 1024, // Drei        minified ≈ 450 KB
   "react-spring-three": 250 * 1024, // Spring/3    minified ≈ 100 KB
   "react-vendor": 350 * 1024, // React 19    minified ≈ 200 KB
   "d3-vendor": 200 * 1024, // d3-*        minified ≈ 100 KB
@@ -100,28 +98,52 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         output: {
-          manualChunks: (id) => {
-            if (!id.includes("node_modules")) return undefined;
-            // Split Three.js core
-            if (/[\\/]node_modules[\\/]three[\\/]/.test(id))
-              return "three-core";
-            // Split React Three Fiber separately
-            if (id.includes("@react-three/fiber")) return "react-three-fiber";
-            // Split Drei helpers separately
-            if (id.includes("@react-three/drei")) return "react-three-drei";
-            // Split React Spring Three
-            if (id.includes("@react-spring/three")) return "react-spring-three";
-            // Split D3 libraries into separate chunk
-            if (/[\\/]node_modules[\\/]d3-(array|scale|shape)[\\/]/.test(id))
-              return "d3-vendor";
-            // Split React and core dependencies
-            if (/[\\/]node_modules[\\/]react(-dom)?[\\/]/.test(id))
-              return "react-vendor";
-            // Split Zustand separately for better caching
-            if (/[\\/]node_modules[\\/]zustand[\\/]/.test(id)) return "zustand";
-            // Satori is only loaded on-demand (trail card share) — keep it isolated
-            if (/[\\/]node_modules[\\/]satori[\\/]/.test(id)) return "satori";
-            return undefined;
+          // Rolldown's advanced chunking. Unlike a manualChunks function,
+          // these groups are authoritative and are not folded back into their
+          // sole importer, so the 3D vendor libs stay split for better caching.
+          advancedChunks: {
+            groups: [
+              // Split Three.js core
+              {
+                name: "three-core",
+                test: /[\\/]node_modules[\\/]three[\\/]/,
+              },
+              // Split React Three Fiber separately
+              {
+                name: "react-three-fiber",
+                test: /[\\/]node_modules[\\/]@react-three[\\/]fiber[\\/]/,
+              },
+              // Split Drei helpers separately
+              {
+                name: "react-three-drei",
+                test: /[\\/]node_modules[\\/]@react-three[\\/]drei[\\/]/,
+              },
+              // Split React Spring Three
+              {
+                name: "react-spring-three",
+                test: /[\\/]node_modules[\\/]@react-spring[\\/]three[\\/]/,
+              },
+              // Split D3 libraries into separate chunk
+              {
+                name: "d3-vendor",
+                test: /[\\/]node_modules[\\/]d3-(array|scale|shape)[\\/]/,
+              },
+              // Split React and core dependencies
+              {
+                name: "react-vendor",
+                test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+              },
+              // Split Zustand separately for better caching
+              {
+                name: "zustand",
+                test: /[\\/]node_modules[\\/]zustand[\\/]/,
+              },
+              // Satori is only loaded on-demand (trail card share) — keep it isolated
+              {
+                name: "satori",
+                test: /[\\/]node_modules[\\/]satori[\\/]/,
+              },
+            ],
           },
         },
       },
