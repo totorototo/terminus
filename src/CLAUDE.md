@@ -15,21 +15,20 @@
 
 - Singleton — never create new instances, reuse the one from startup
 - Messages use `{ type, data, id }` format for request/response tracking
-- Never `postMessage` Zigar proxy objects — use `valueOf()` to copy to plain JS first
-- Convert Zig strings via `.string`, Zig `i64` via `Number()` (no BigInt in state)
+- navigo's `Trace` lives in WASM memory — always call `.free()` when done with one
+- navigo's JSON output is snake_case and uses kilometers for distances; the rest of the app expects camelCase and meters — convert at the worker boundary, not downstream
 
-Example sanitization:
+Example sanitization (section stats):
 
 ```javascript
-const sanitizedData = [];
-for (let i = 0; i < zigData.items.length; i++) {
-  const item = zigData.items[i];
-  sanitizedData.push({
-    value: item.value,
-    name: item.name.string, // Zig string → JS string
-    time: item.time ? Number(item.time) : null, // BigInt → Number
-  });
-}
+const sanitizedSections = sections.map((s) => ({
+  sectionId: s.id,
+  startLocation: s.start_location,
+  endLocation: s.end_location,
+  totalDistance: s.total_distance_km * 1000, // km → m
+  totalElevation: s.total_elevation_gain_m,
+  paceFactor: s.pace_factor,
+}));
 ```
 
 ## Code Conventions

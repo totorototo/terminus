@@ -1,16 +1,8 @@
 import react from "@vitejs/plugin-react";
-import zigar from "rollup-plugin-zigar";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    zigar({
-      optimize: "ReleaseSmall",
-      embedWASM: true,
-      topLevelAwait: false,
-    }),
-  ],
+  plugins: [react()],
   test: {
     environment: "jsdom",
     globals: true,

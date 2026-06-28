@@ -1,6 +1,5 @@
 import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
-import zigar from "rollup-plugin-zigar";
 import { defineConfig, loadEnv } from "vite";
 import arraybuffer from "vite-plugin-arraybuffer";
 import compression from "vite-plugin-compression";
@@ -124,11 +123,11 @@ export default defineConfig(({ mode }) => {
       // Disable compression for faster builds in CI
       sourcemap: !process.env.GITHUB_ACTIONS,
     },
-    ssr: {
-      noExternal: ["zigar-runtime"],
-    },
     optimizeDeps: {
-      exclude: ["zigar-runtime"],
+      // navigo's web target resolves its .wasm via `new URL(..., import.meta.url)`;
+      // esbuild's dep pre-bundling rewrites that URL and breaks it in dev, so this
+      // package is served as-is instead of being pre-bundled.
+      exclude: ["@totorototo/navigo"],
     },
     plugins: [
       react(),
@@ -213,22 +212,10 @@ export default defineConfig(({ mode }) => {
           ],
         },
       }),
-      zigar({
-        optimize: "ReleaseSmall",
-        embedWASM: true,
-        topLevelAwait: false,
-      }),
       bundleSizePlugin(),
     ].filter(Boolean),
     worker: {
       format: "es", // Enable ES modules in workers
-      plugins: () => [
-        zigar({
-          optimize: "ReleaseSmall",
-          embedWASM: true,
-          topLevelAwait: false,
-        }),
-      ],
     },
     preview: {
       headers: {

@@ -1,21 +1,20 @@
 // GPS Processing Web Worker
 // This runs GPS computations off the main thread to prevent UI freezing
-// All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
+// All Trace handles must be manually freed with .free() to prevent memory leaks
 
-import { readGPXComplete, recalibrateGPXBoth } from "../zig/gpx.zig";
-import { generateAudioFrames } from "../zig/soundscape.zig";
-import { __zigar, Trace } from "../zig/trace.zig";
+import init, { buildTrace, parseGpx } from "@totorototo/navigo/web";
 
-// Initialize Zig/WASM in worker context
+// Initialize navigo/WASM in worker context
 let isInitialized = false;
 
-async function initializeZig() {
+async function initializeNavigo() {
   if (!isInitialized) {
-    const { init } = __zigar;
     await init();
     isInitialized = true;
   }
 }
+
+const M_PER_KM = 1000;
 
 // ── Performance timing helpers ────────────────────────────────────────────────
 // Wrap each WASM call with performance.mark/measure so the timings are visible
@@ -53,33 +52,294 @@ function measureMs(label) {
 }
 
 /**
- * Build a Zig `WeatherLookup` (parallel name/value arrays) from a forecast map
- * keyed by checkpoint name. The values are converted from the store's forecast
- * shape ({ temp, humidity, wind, precipitation }) to the Zig field names
- * ({ temperature_c, humidity_pct, wind_kmh, precip_prob_pct }).
+ * Build navigo's weather option array from a forecast map keyed by checkpoint
+ * name. The values are converted from the store's forecast shape
+ * ({ temp, humidity, wind, precipitation }) to navigo's `analyze()` option
+ * shape ({ name, temperatureC, humidityPct, windKmh, precipProbPct }).
  *
- * Returns the neutral (empty) lookup when no forecasts are provided, so the
- * estimate is unchanged. Entries missing a field fall back to neutral-ish
- * defaults that contribute no penalty (cool, dry, calm, average humidity).
+ * Returns an empty array when no forecasts are provided, so the estimate is
+ * unchanged. Entries missing a field fall back to neutral-ish defaults that
+ * contribute no penalty (cool, dry, calm, average humidity).
  */
-function buildWeatherLookup(weatherByCheckpoint) {
-  const names = [];
-  const values = [];
-  if (weatherByCheckpoint) {
-    for (const [name, f] of Object.entries(weatherByCheckpoint)) {
-      if (!f) continue;
-      names.push(name);
-      values.push({
-        temperature_c: Number.isFinite(f.temp) ? f.temp : 12.0,
-        humidity_pct: Number.isFinite(f.humidity) ? f.humidity : 50.0,
-        wind_kmh: Number.isFinite(f.wind) ? f.wind : 0.0,
-        precip_prob_pct: Number.isFinite(f.precipitation)
-          ? f.precipitation
-          : 0.0,
-      });
-    }
+function buildWeatherOptions(weatherByCheckpoint) {
+  if (!weatherByCheckpoint) return [];
+  const entries = [];
+  for (const [name, f] of Object.entries(weatherByCheckpoint)) {
+    if (!f) continue;
+    entries.push({
+      name,
+      temperatureC: Number.isFinite(f.temp) ? f.temp : 12.0,
+      humidityPct: Number.isFinite(f.humidity) ? f.humidity : 50.0,
+      windKmh: Number.isFinite(f.wind) ? f.wind : 0.0,
+      precipProbPct: Number.isFinite(f.precipitation) ? f.precipitation : 0.0,
+    });
   }
-  return { names, values };
+  return entries;
+}
+
+// ── navigo Trace adapter ───────────────────────────────────────────────────────
+// navigo's Trace returns snake_case fields in kilometers; the rest of this
+// worker (and the store/hooks/components downstream) expects the camelCase,
+// meter-based shape Zig used to produce. These helpers translate at this one
+// boundary so nothing downstream needs to change.
+
+function toLatLonEle(navPoint) {
+  return [navPoint.latitude, navPoint.longitude, navPoint.altitude];
+}
+
+// navigo arrays are flat [lon, lat, alt, ...]; this app's convention is
+// [lat, lon, ele] triples.
+function flatLonLatAltToPoints(flat) {
+  const count = flat.length / 3;
+  const points = new Array(count);
+  for (let i = 0; i < count; i++) {
+    points[i] = [flat[i * 3 + 1], flat[i * 3], flat[i * 3 + 2]];
+  }
+  return points;
+}
+
+function emptyTraceAdapter() {
+  return {
+    points: [],
+    cumulativeDistances: [],
+    cumulativeElevations: [],
+    cumulativeElevationLoss: [],
+    slopes: [],
+    peaks: [],
+    valleys: [],
+    totalDistance: 0,
+    totalElevation: 0,
+    totalElevationLoss: 0,
+    findIndexAtDistance: () => 0,
+    pointAtDistance: () => null,
+    sliceBetweenDistances: () => null,
+    findClosestPoint: () => null,
+    deinit: () => {},
+  };
+}
+
+// Wraps a navigo Trace built from raw [lat, lon, ele] coordinates (no GPX
+// waypoints) behind the camelCase/meter API this file used with Zig's Trace.
+function wrapCoordinatesTrace(coordinatesLatLonEle) {
+  const n = coordinatesLatLonEle.length;
+  const flat = new Float64Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const [lat, lon, ele] = coordinatesLatLonEle[i];
+    flat[i * 3] = lon;
+    flat[i * 3 + 1] = lat;
+    flat[i * 3 + 2] = ele;
+  }
+
+  const navTrace = buildTrace(flat);
+  if (!navTrace) return emptyTraceAdapter();
+
+  let cachedPoints = null;
+
+  return {
+    get points() {
+      if (!cachedPoints) {
+        cachedPoints = flatLonLatAltToPoints(navTrace.locations_flat);
+      }
+      return cachedPoints;
+    },
+    get cumulativeDistances() {
+      return Array.from(navTrace.cumulative_distances, (km) => km * M_PER_KM);
+    },
+    get cumulativeElevations() {
+      return Array.from(navTrace.cumulative_elevation_gains);
+    },
+    get cumulativeElevationLoss() {
+      return Array.from(navTrace.cumulative_elevation_losses);
+    },
+    get slopes() {
+      return Array.from(navTrace.slopes);
+    },
+    get peaks() {
+      return Array.from(navTrace.peaks);
+    },
+    get valleys() {
+      return Array.from(navTrace.valleys);
+    },
+    get totalDistance() {
+      return navTrace.total_distance * M_PER_KM;
+    },
+    get totalElevation() {
+      return navTrace.total_elevation_gain;
+    },
+    get totalElevationLoss() {
+      return navTrace.total_elevation_loss;
+    },
+    findIndexAtDistance(meters) {
+      return navTrace.index_at_distance(meters / M_PER_KM);
+    },
+    pointAtDistance(meters) {
+      const p = navTrace.point_at_distance(meters / M_PER_KM);
+      return p ? toLatLonEle(p) : null;
+    },
+    sliceBetweenDistances(startMeters, endMeters) {
+      const flatSlice = navTrace.slice_between_distances(
+        startMeters / M_PER_KM,
+        endMeters / M_PER_KM,
+      );
+      return flatSlice ? flatLonLatAltToPoints(flatSlice) : null;
+    },
+    findClosestPoint(targetLatLonEle) {
+      const [lat, lon, ele] = targetLatLonEle;
+      const result = navTrace.find_closest_point(lon, lat, ele);
+      if (!result) return null;
+      return {
+        point: toLatLonEle(result.location),
+        index: result.index,
+        distance: result.distance * M_PER_KM,
+      };
+    },
+    deinit() {
+      navTrace.free();
+    },
+  };
+}
+
+// ── Leg/section/stage/climb/waypoint sanitizers ───────────────────────────────
+// navigo's analyze() output is snake_case/km; map each to the exact
+// camelCase/meter shape the store and hooks already consume.
+
+function toLeg(l, points) {
+  const startLocation = l.start_location;
+  const endLocation = l.end_location;
+  return {
+    legId: l.leg_id,
+    sectionIdx: l.section_idx,
+    startIndex: l.start_index,
+    endIndex: l.end_index,
+    pointCount: l.end_index - l.start_index + 1,
+    startPoint: points[l.start_index] ?? null,
+    endPoint: points[l.end_index] ?? null,
+    startLocation,
+    endLocation,
+    totalDistance: l.total_distance_km * M_PER_KM,
+    totalElevation: l.total_elevation_gain_m,
+    totalElevationLoss: l.total_elevation_loss_m,
+    avgSlope: l.avg_slope,
+    maxSlope: l.max_slope,
+    minElevation: l.min_elevation,
+    maxElevation: l.max_elevation,
+    bearing: l.bearing,
+    difficulty: l.difficulty,
+    estimatedDuration: l.estimated_duration_s,
+    segmentId: `leg-${l.section_idx}-${startLocation}-${endLocation}`,
+  };
+}
+
+function toSection(s, points) {
+  const startLocation = s.start_location;
+  const endLocation = s.end_location;
+  return {
+    sectionId: `section-${s.stage_idx}-${startLocation}-${endLocation}`,
+    stageIdx: s.stage_idx,
+    startIndex: s.start_index,
+    endIndex: s.end_index,
+    pointCount: s.end_index - s.start_index + 1,
+    startPoint: points[s.start_index] ?? null,
+    endPoint: points[s.end_index] ?? null,
+    startLocation,
+    endLocation,
+    totalDistance: s.total_distance_km * M_PER_KM,
+    totalElevation: s.total_elevation_gain_m,
+    totalElevationLoss: s.total_elevation_loss_m,
+    avgSlope: s.avg_slope,
+    maxSlope: s.max_slope,
+    minElevation: s.min_elevation,
+    maxElevation: s.max_elevation,
+    startTime: s.start_time != null ? Number(s.start_time) : null,
+    endTime: s.end_time != null ? Number(s.end_time) : null,
+    bearing: s.bearing,
+    difficulty: s.difficulty,
+    estimatedDuration: s.estimated_duration_s,
+    paceFactor: s.pace_factor,
+    maxCompletionTime:
+      s.max_completion_time != null ? Number(s.max_completion_time) : null,
+    cutoffRatio: s.cutoff_ratio ?? null,
+    stopDuration: s.stop_duration ?? null,
+  };
+}
+
+function toStage(s, points) {
+  const startLocation = s.start_location;
+  const endLocation = s.end_location;
+  return {
+    stageId: `stage-${startLocation}-${endLocation}`,
+    startIndex: s.start_index,
+    endIndex: s.end_index,
+    pointCount: s.end_index - s.start_index + 1,
+    startPoint: points[s.start_index] ?? null,
+    endPoint: points[s.end_index] ?? null,
+    startLocation,
+    endLocation,
+    totalDistance: s.total_distance_km * M_PER_KM,
+    totalElevation: s.total_elevation_gain_m,
+    totalElevationLoss: s.total_elevation_loss_m,
+    avgSlope: s.avg_slope,
+    maxSlope: s.max_slope,
+    minElevation: s.min_elevation,
+    maxElevation: s.max_elevation,
+    startTime: s.start_time != null ? Number(s.start_time) : null,
+    endTime: s.end_time != null ? Number(s.end_time) : null,
+    bearing: s.bearing,
+    difficulty: s.difficulty,
+    estimatedDuration: s.estimated_duration_s,
+    paceFactor: s.pace_factor,
+    maxCompletionTime:
+      s.max_completion_time != null ? Number(s.max_completion_time) : null,
+    cutoffRatio: s.cutoff_ratio ?? null,
+    stopDuration: s.stop_duration ?? null,
+  };
+}
+
+// navigo's waypoint DTO doesn't expose description/comment/symbol — only
+// `name` and `wptType` are read downstream (see utils/coordinateTransforms.js),
+// so desc/cmt/sym stay null until navigo's WASM bindings add them.
+function toWaypoint(w) {
+  return {
+    lat: w.latitude,
+    lon: w.longitude,
+    ele: w.elevation ?? null,
+    name: w.name,
+    desc: null,
+    cmt: null,
+    sym: null,
+    wptType: w.wpt_type ?? null,
+    time: w.time != null ? Number(w.time) : null,
+  };
+}
+
+function toClimb(c) {
+  return {
+    startIndex: Number(c.start_index),
+    endIndex: Number(c.end_index),
+    startDistM: c.start_dist_km * M_PER_KM,
+    climbDistM: c.climb_dist_km * M_PER_KM,
+    elevationGain: c.elevation_gain,
+    summitElev: c.summit_elev,
+    avgGradient: c.avg_gradient,
+  };
+}
+
+// `null` when the route has fewer than two boundaries of that kind — the
+// hooks downstream already treat null as "fall back to the a-priori model."
+function toRecalibration(r) {
+  if (!r) return null;
+  return {
+    calibrationFactor: r.calibration_factor,
+    calibratedBasePaceSPerKm: r.calibrated_base_pace_s_per_km,
+    predictedSoFarS: r.predicted_so_far_s,
+    actualElapsedS: r.actual_elapsed_s,
+    etas: r.etas.map((e) => ({
+      id: e.id,
+      endIndex: e.end_index,
+      remainingDurationS: e.remaining_duration_s,
+      cumulativeRemainingS: e.cumulative_remaining_s,
+    })),
+  };
 }
 
 // Message handler for communication with main thread
@@ -87,7 +347,7 @@ self.onmessage = async function (e) {
   const { type, data, id } = e.data;
 
   try {
-    await initializeZig();
+    await initializeNavigo();
 
     switch (type) {
       case "PROCESS_GPX_FILE":
@@ -122,10 +382,6 @@ self.onmessage = async function (e) {
         await recalibrate(data, id);
         break;
 
-      case "GENERATE_AUDIO_FRAMES":
-        await generateSoundscapeFrames(data, id);
-        break;
-
       default:
         throw new Error(`Unknown message type: ${type}`);
     }
@@ -148,152 +404,72 @@ async function processGPXFile(gpxFileBytes, requestId) {
     weatherByCheckpoint = null,
   } = gpxFileBytes;
 
-  // Build the Zig WeatherLookup (parallel name/value arrays) from the forecast
-  // map. Keys are checkpoint names; an absent map leaves every section neutral.
-  const weather = buildWeatherLookup(weatherByCheckpoint);
-
-  const gpxData = await readGPXComplete(
-    gpxFileBytes.gpxBytes,
+  const options = {
     basePaceSPerKm,
     kFatigue,
     lifeBaseStopS,
-    weather,
-  );
-
-  // Convert Zigar proxy objects to plain JS before sending
-  // Note: Zig string fields ([]const u8) need .string property to convert to JS strings
-  // Note: Zig i64 fields need explicit Number() conversion (they become BigInt in JS)
-
-  // Legs: wpt-to-wpt, no timing info
-  let sanitizedLegs = [];
-  if (gpxData.legs) {
-    for (let i = 0; i < gpxData.legs.length; i++) {
-      const leg = gpxData.legs[i];
-      const legData = leg.valueOf();
-      const startLocation = leg.startLocation.string;
-      const endLocation = leg.endLocation.string;
-      sanitizedLegs.push({
-        ...legData,
-        segmentId: `leg-${legData.sectionIdx}-${startLocation}-${endLocation}`,
-        startLocation,
-        endLocation,
-      });
-    }
-  }
-
-  // Sections: section-boundary-to-section-boundary, includes timing info
-  let sanitizedSections = [];
-  if (gpxData.sections) {
-    for (let i = 0; i < gpxData.sections.length; i++) {
-      const section = gpxData.sections[i];
-      const sectionData = section.valueOf();
-      const startLocation = section.startLocation.string;
-      const endLocation = section.endLocation.string;
-      sanitizedSections.push({
-        ...sectionData,
-        sectionId: `section-${sectionData.stageIdx}-${startLocation}-${endLocation}`,
-        startLocation,
-        endLocation,
-        startTime:
-          sectionData.startTime !== null ? Number(sectionData.startTime) : null,
-        endTime:
-          sectionData.endTime !== null ? Number(sectionData.endTime) : null,
-        maxCompletionTime:
-          sectionData.maxCompletionTime !== null
-            ? Number(sectionData.maxCompletionTime)
-            : null,
-      });
-    }
-  }
-
-  // Stages: stage-boundary-to-stage-boundary (Start/LifeBase/Arrival), includes timing info
-  let sanitizedStages = [];
-  if (gpxData.stages) {
-    for (let i = 0; i < gpxData.stages.length; i++) {
-      const stage = gpxData.stages[i];
-      const stageData = stage.valueOf();
-      const startLocation = stage.startLocation.string;
-      const endLocation = stage.endLocation.string;
-      sanitizedStages.push({
-        ...stageData,
-        stageId: `stage-${startLocation}-${endLocation}`,
-        startLocation,
-        endLocation,
-        startTime:
-          stageData.startTime !== null ? Number(stageData.startTime) : null,
-        endTime: stageData.endTime !== null ? Number(stageData.endTime) : null,
-        maxCompletionTime:
-          stageData.maxCompletionTime !== null
-            ? Number(stageData.maxCompletionTime)
-            : null,
-      });
-    }
-  }
-
-  // Sanitize waypoints - include new fields, convert BigInt time to Number
-  const sanitizedWaypoints = [];
-  for (let i = 0; i < gpxData.waypoints.length; i++) {
-    const wpt = gpxData.waypoints[i];
-    sanitizedWaypoints.push({
-      lat: wpt.lat,
-      lon: wpt.lon,
-      ele: wpt.ele !== null ? wpt.ele : null,
-      name: wpt.name.string,
-      desc: wpt.desc ? wpt.desc.string : null,
-      cmt: wpt.cmt ? wpt.cmt.string : null,
-      sym: wpt.sym ? wpt.sym.string : null,
-      wptType: wpt.wptType ? wpt.wptType.string : null,
-      time: wpt.time ? Number(wpt.time) : null,
-    });
-  }
-
-  const metadata = {
-    name: gpxData.metadata.name ? gpxData.metadata.name.string : null,
-    description: gpxData.metadata.description
-      ? gpxData.metadata.description.string
-      : null,
+    weather: buildWeatherOptions(weatherByCheckpoint),
   };
 
-  // Full-resolution route coordinates for the map. Kept in Zig's native
-  // [lat, lon, ele] order (stride 3) so the worker just flattens with no
-  // per-point swap; the map swaps to [lng, lat] at read time. A flat
-  // Float64Array is compact and transferable, so the store never holds the raw
-  // XML string and the main thread skips a DOMParser pass.
-  // valueOf() deep-copies the whole Zigar proxy once instead of paying a proxy
-  // trap per point, which matters for large full-resolution traces.
-  const fullResPoints = gpxData.fullResPoints
-    ? gpxData.fullResPoints.valueOf()
-    : [];
-  const pointCount = fullResPoints.length;
+  const trace = parseGpx(new Uint8Array(gpxFileBytes.gpxBytes));
+  if (!trace) {
+    throw new Error("GPX file contains no valid track points");
+  }
+
+  const analysis = trace.analyze(options) ?? {};
+
+  // Full-resolution route coordinates, [lat, lon, ele] triples — used both for
+  // the map (flattened below) and to derive leg/section/stage start/end points.
+  const points = flatLonLatAltToPoints(trace.locations_flat);
+
+  const sanitizedLegs = (analysis.legs ?? []).map((l) => toLeg(l, points));
+  const sanitizedSections = (analysis.sections ?? []).map((s) =>
+    toSection(s, points),
+  );
+  const sanitizedStages = (analysis.stages ?? []).map((s) =>
+    toStage(s, points),
+  );
+  const sanitizedWaypoints = (analysis.waypoints ?? []).map(toWaypoint);
+
+  const metadata = {
+    name: analysis.metadata?.name ?? null,
+    description: analysis.metadata?.description ?? null,
+  };
+
+  // Full-resolution route coordinates for the map, kept in [lat, lon, ele]
+  // order (stride 3) so the worker just flattens with no per-point swap; the
+  // map swaps to [lng, lat] at read time. A flat Float64Array is compact and
+  // transferable, so the store never holds the raw XML string.
+  const pointCount = points.length;
   const routeLatLonEle = new Float64Array(pointCount * 3);
   for (let i = 0; i < pointCount; i++) {
-    const p = fullResPoints[i];
+    const p = points[i];
     routeLatLonEle[i * 3] = p[0]; // lat
     routeLatLonEle[i * 3 + 1] = p[1]; // lon
     routeLatLonEle[i * 3 + 2] = p[2]; // ele
   }
 
-  // Sanitize climb segments — all fields are numeric (usize/f64), no strings or i64
-  const sanitizedClimbs = [];
-  const traceClimbs = gpxData.trace.climbs;
-  if (traceClimbs) {
-    for (let i = 0; i < traceClimbs.length; i++) {
-      const c = traceClimbs[i].valueOf();
-      sanitizedClimbs.push({
-        startIndex: Number(c.startIndex),
-        endIndex: Number(c.endIndex),
-        startDistM: c.startDistM,
-        climbDistM: c.climbDistM,
-        elevationGain: c.elevationGain,
-        summitElev: c.summitElev,
-        avgGradient: c.avgGradient,
-      });
-    }
-  }
+  const sanitizedClimbs = (trace.climbs() ?? []).map(toClimb);
+
+  const traceResult = {
+    points,
+    slopes: Array.from(trace.slopes),
+    cumulativeDistances: Array.from(
+      trace.cumulative_distances,
+      (km) => km * M_PER_KM,
+    ),
+    cumulativeElevations: Array.from(trace.cumulative_elevation_gains),
+    cumulativeElevationLoss: Array.from(trace.cumulative_elevation_losses),
+    peaks: Array.from(trace.peaks),
+    valleys: Array.from(trace.valleys),
+    totalDistance: trace.total_distance * M_PER_KM,
+    totalElevation: trace.total_elevation_gain,
+    totalElevationLoss: trace.total_elevation_loss,
+  };
 
   const results = {
     metadata,
-    trace: gpxData.trace.valueOf(),
+    trace: traceResult,
     waypoints: sanitizedWaypoints,
     legs: sanitizedLegs,
     sections: sanitizedSections,
@@ -314,13 +490,12 @@ async function processGPXFile(gpxFileBytes, requestId) {
     [routeLatLonEle.buffer],
   );
 
-  // gpxData.deinit() will now clean up the trace as well
-  gpxData.deinit();
+  trace.free();
 }
 
 async function processGPSData(gpsData, requestId) {
   markStart("processGPSData");
-  const trace = Trace.init(gpsData.coordinates);
+  const trace = wrapCoordinatesTrace(gpsData.coordinates);
 
   self.postMessage({
     type: "PROGRESS",
@@ -336,8 +511,18 @@ async function processGPSData(gpsData, requestId) {
     message: "Calculating statistics...",
   });
 
-  // Convert to plain JS object before deinit
-  const results = trace.valueOf();
+  const results = {
+    points: trace.points,
+    slopes: trace.slopes,
+    cumulativeDistances: trace.cumulativeDistances,
+    cumulativeElevations: trace.cumulativeElevations,
+    cumulativeElevationLoss: trace.cumulativeElevationLoss,
+    peaks: trace.peaks,
+    valleys: trace.valleys,
+    totalDistance: trace.totalDistance,
+    totalElevation: trace.totalElevation,
+    totalElevationLoss: trace.totalElevationLoss,
+  };
 
   markEnd("processGPSData");
 
@@ -360,7 +545,7 @@ async function processSections(data, requestId) {
     throw new Error("Invalid coordinates data");
   }
 
-  const trace = Trace.init(coordinates);
+  const trace = wrapCoordinatesTrace(coordinates);
 
   // Send progress updates during processing
   self.postMessage({
@@ -400,7 +585,6 @@ async function processSections(data, requestId) {
         trace.cumulativeElevationLoss[startIndex];
 
       // Only extract points if needed (causes WASM → JS copy)
-      // Better: keep points in WASM and only copy when necessary
       for (let i = startIndex; i <= endIndex; i++) {
         sectionPoints.push([
           trace.points[i][0],
@@ -413,7 +597,6 @@ async function processSections(data, requestId) {
     const startPoint = trace.pointAtDistance(startKm * 1000);
     const endPoint = trace.pointAtDistance(endKm * 1000);
 
-    // Extract data before cleanup - convert Zigar proxies to plain JS
     const result = {
       segmentId: section.id,
       pointCount: sectionPoints.length,
@@ -466,7 +649,7 @@ async function processSections(data, requestId) {
 // Calculate route statistics (moderate computation)
 async function calculateRouteStats(data, requestId) {
   const { coordinates, segments } = data;
-  const trace = Trace.init(coordinates);
+  const trace = wrapCoordinatesTrace(coordinates);
   const maxDistance = trace.totalDistance;
 
   const stats = segments.map((segment) => {
@@ -482,7 +665,6 @@ async function calculateRouteStats(data, requestId) {
       segmentId: segment.id,
       distance: endDist - startDist,
       pointCount: sectionPoints?.length ?? 0,
-      // Read directly from WASM instead of calling .valueOf()
       startPoint: startPoint
         ? [startPoint[0], startPoint[1], startPoint[2]]
         : null,
@@ -502,14 +684,13 @@ async function calculateRouteStats(data, requestId) {
 // Find multiple points at specified distances (light computation)
 async function findPointsAtDistances(data, requestId) {
   const { coordinates, distances } = data;
-  const trace = Trace.init(coordinates);
+  const trace = wrapCoordinatesTrace(coordinates);
 
   const points = distances
     .map((distance) => {
       const point = trace.pointAtDistance(distance);
       return {
         distance,
-        // Read directly from WASM instead of calling .valueOf()
         point: point ? [point[0], point[1], point[2]] : null,
       };
     })
@@ -537,7 +718,7 @@ async function getRouteSection(data, requestId) {
     throw new Error("Invalid section range");
   const section = coordinates.slice(start, end); // Copy to avoid modifying original
 
-  const trace = Trace.init(section);
+  const trace = wrapCoordinatesTrace(section);
 
   self.postMessage({
     type: "ROUTE_SECTION_READY",
@@ -552,122 +733,54 @@ async function getRouteSection(data, requestId) {
   trace.deinit();
 }
 
-// Generate soundscape AudioFrame[] from pre-computed trace arrays
-async function generateSoundscapeFrames(data, requestId) {
-  markStart("generateAudioFrames");
-  const { elevations, distances, slopes, sections = [] } = data;
-  const n = elevations.length;
-
-  // Build per-point bearing and pace arrays from section data.
-  // Each point gets the bearing/pace of the section it falls in.
-  // Points not covered by any section default to 0 (handled gracefully in Zig).
-  const bearings = new Float64Array(n);
-  const paces = new Float64Array(n);
-  for (const section of sections) {
-    const { startIndex, endIndex, bearing, estimatedDuration, totalDistance } =
-      section;
-    const pace = totalDistance > 0 ? estimatedDuration / totalDistance : 0;
-    for (let i = startIndex; i <= endIndex && i < n; i++) {
-      bearings[i] = bearing;
-      paces[i] = pace;
-    }
-  }
-
-  const zigFrames = await generateAudioFrames(
-    elevations,
-    distances,
-    slopes,
-    bearings,
-    paces,
-  );
-
-  // Copy Zigar proxy structs to plain JS before postMessage
-  const frames = [];
-  for (let i = 0; i < zigFrames.length; i++) {
-    const f = zigFrames[i].valueOf();
-    frames.push({
-      t: f.t,
-      distance: f.distance,
-      pitch: f.pitch,
-      intensity: f.intensity,
-      timbre: f.timbre,
-      bearing: f.bearing,
-      pace: f.pace,
-    });
-  }
-
-  markEnd("generateAudioFrames");
-
-  self.postMessage({
-    type: "AUDIO_FRAMES_READY",
-    id: requestId,
-    results: { frames },
-    timingMs: { audioFrames: measureMs("generateAudioFrames") },
-  });
-}
-
-// Recalibrate section and stage ETAs in a single GPX parse. Either kind is null
-// when the route has fewer than two boundaries of that kind.
+// Recalibrate section and stage ETAs against the runner's current position.
+// Re-parses the GPX bytes (already in hand from the initial load) to get a
+// fresh Trace with waypoints, then asks navigo to solve a calibration factor
+// from real vs. predicted elapsed time and re-predict the remaining
+// section/stage intervals. Downstream (recalLookup.js, useCheckpointETAs,
+// useStageETAs) already treats a null section/stage as "fall back to the
+// a-priori pace model" — that path still applies whenever navigo returns
+// null (fewer than two boundaries of that kind).
 async function recalibrate(data, requestId) {
   markStart("recalibrate");
+
   const {
     gpxBytes,
-    currentIndex = 0,
-    actualElapsedS = 0,
+    currentIndex,
+    actualElapsedS,
     basePaceSPerKm = 500.0,
     kFatigue = 0.002,
     lifeBaseStopS = 3600,
     weatherByCheckpoint = null,
   } = data;
 
-  const weather = buildWeatherLookup(weatherByCheckpoint);
-
-  const result = await recalibrateGPXBoth(
-    gpxBytes,
-    currentIndex,
-    actualElapsedS,
+  const options = {
     basePaceSPerKm,
     kFatigue,
     lifeBaseStopS,
-    weather,
-  );
+    currentIndex,
+    actualElapsedS,
+    weather: buildWeatherOptions(weatherByCheckpoint),
+  };
 
-  // Copy the Zigar proxy to plain JS; usize fields come back as BigInt.
-  const sanitizeKind = (recalibration, kind) => {
-    if (!recalibration) return null;
-    const etas = [];
-    for (let index = 0; index < recalibration.etas.length; index++) {
-      const eta = recalibration.etas[index].valueOf();
-      etas.push({
-        id: Number(eta.id),
-        endIndex: Number(eta.endIndex),
-        remainingDurationS: eta.remainingDurationS,
-        cumulativeRemainingS: eta.cumulativeRemainingS,
-      });
-    }
-    return {
-      kind,
-      calibrationFactor: recalibration.calibrationFactor,
-      calibratedBasePaceSPerKm: recalibration.calibratedBasePaceSPerKm,
-      predictedSoFarS: recalibration.predictedSoFarS,
-      actualElapsedS: recalibration.actualElapsedS,
-      etas,
+  const trace = parseGpx(new Uint8Array(gpxBytes));
+  let recalibration = { section: null, stage: null };
+
+  if (trace) {
+    const result = trace.recalibrate(options);
+    recalibration = {
+      section: toRecalibration(result?.sections ?? null),
+      stage: toRecalibration(result?.stages ?? null),
     };
-  };
-
-  const sanitized = {
-    section: sanitizeKind(result.section, "section"),
-    stage: sanitizeKind(result.stage, "stage"),
-  };
-  result.deinit();
+    trace.free();
+  }
 
   markEnd("recalibrate");
 
-  // The messenger leaks the raw envelope to callers when `results` is null.
   self.postMessage({
     type: "RECALIBRATED",
     id: requestId,
-    results: { recalibration: sanitized },
+    results: { recalibration },
     timingMs: { recalibrate: measureMs("recalibrate") },
   });
 }
@@ -675,7 +788,7 @@ async function recalibrate(data, requestId) {
 // Find closest point to target location
 async function findClosestLocation(data, requestId) {
   const { coordinates, target } = data;
-  const trace = Trace.init(coordinates);
+  const trace = wrapCoordinatesTrace(coordinates);
 
   const closest = trace.findClosestPoint(target);
 
@@ -684,7 +797,6 @@ async function findClosestLocation(data, requestId) {
   self.postMessage({
     type: "CLOSEST_POINT_FOUND",
     id: requestId,
-    // Read directly from WASM instead of calling .valueOf()
     closestLocation: closest.point
       ? [closest.point[0], closest.point[1], closest.point[2]]
       : null,

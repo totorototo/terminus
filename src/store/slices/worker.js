@@ -1,5 +1,4 @@
 import { createWorkerMessenger } from "./workerMessenger.js";
-import { MESSAGE_TYPES } from "./workerTypes.js";
 import {
   validateGPSDataResults,
   validateGPXResults,
@@ -25,7 +24,6 @@ const ERROR_MESSAGES = {
   POINTS_AT_DISTANCES: "Failed to find points at distances",
   ROUTE_SECTION: "Failed to get route section",
   CLOSEST_LOCATION: "Failed to find closest point",
-  AUDIO_FRAMES: "Failed to generate audio frames",
   NOT_INITIALIZED: "Worker not initialized",
   NO_LOCATION: "No location or GPS data available",
 };
@@ -531,34 +529,6 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         return results;
       } catch (error) {
         handleWorkerError(error, ERROR_MESSAGES.ROUTE_SECTION);
-      }
-    },
-
-    workerGenerateAudioFrames: async (
-      elevations,
-      distances,
-      slopes,
-      sections,
-    ) => {
-      try {
-        if (!messenger) {
-          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
-        }
-
-        const response = await messenger.send(
-          MESSAGE_TYPES.REQUEST.GENERATE_AUDIO_FRAMES,
-          {
-            elevations,
-            distances,
-            slopes,
-            sections,
-          },
-        );
-
-        return response.frames;
-      } catch (error) {
-        handleWorkerError(error, ERROR_MESSAGES.AUDIO_FRAMES);
-        throw error;
       }
     },
 

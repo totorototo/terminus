@@ -103,11 +103,6 @@ vi.mock("./PeakSummary/PeakSummary.jsx", () => ({
   default: () => <div data-testid="peak-summary">PeakSummary</div>,
 }));
 
-// Mock Soundscape component
-vi.mock("../soundscape/Soundscape.jsx", () => ({
-  default: () => <div data-testid="soundscape">Soundscape</div>,
-}));
-
 // Mock ElevationProfile component
 vi.mock("./ElevationProfile/ElevationProfile.jsx", () => ({
   default: () => <div data-testid="elevation-profile">ElevationProfile</div>,

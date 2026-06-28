@@ -6,58 +6,56 @@
 
 ## Project Overview
 
-Terminus is a high-performance GPS trail visualization web application combining React for UI and Zig compiled to WebAssembly for computational performance.
+Terminus is a high-performance GPS trail visualization web application combining React for UI with `@totorototo/navigo` (Rust compiled to WebAssembly) for computational performance.
 
 **Tech Stack**:
 
 - Frontend: React 19 + Vite
-- Performance: Zig 0.15.2 → WebAssembly
+- Performance: `@totorototo/navigo` (Rust → WebAssembly), published from https://github.com/totorototo/navigo
 - 3D: Three.js + React Three Fiber
 - State: Zustand
-- Build: Vite + rollup-plugin-zigar
+- Build: Vite
 
-**Requires**: Node.js 18+, Zig 0.15.2 in PATH
+**Requires**: Node.js 18+
 
 ## Core Principles
 
 ### Performance First
 
-- Heavy computation (GPS, algorithms) → Zig/WASM
+- Heavy computation (GPS, algorithms) → navigo (WASM)
 - UI rendering and interaction → React
 - Background processing → Web Workers
 - Target 60fps for all interactions
 
 ### Memory Management
 
-- **Zig/WASM**: Manual cleanup required — always call `.deinit()` or `.deinit(allocator)`
-- **Web Workers**: Never send Zigar proxy objects through `postMessage` — copy to plain JS with `valueOf()` first
-- **Zig → JS types**: Convert strings via `.string`, `i64` via `Number()` (no BigInt in React state)
-- Test for leaks using `std.testing.allocator` in Zig
+- **navigo `Trace`**: Manual cleanup required — always call `.free()` when done with a `Trace` handle (it lives in WASM linear memory; JS GC cannot reclaim it)
+- **Web Workers**: Convert navigo's snake_case/km field names to the app's existing camelCase/meter contract in `gpxWorker.js` before posting results — that worker is the only place that should know navigo's shape
 
 ## Commands
 
 ```bash
 npm run dev              # Dev server (port 5173)
-npm run build            # Production build (includes Zig→WASM)
+npm run build            # Production build
 npm run lint             # ESLint
 npm test                 # Vitest (watch mode, co-located *.test.js)
-npm run test:zig         # All Zig tests
-npm run test:all         # Zig tests then JS tests
+npm run test:all         # Alias for npm test
 ```
-
-Single Zig test: `cd zig && zig test <file>.zig`
 
 ## Architecture
 
-**React UI** → **Web Worker** (`src/gpxWorker.js`) → **Zig WASM** (`zig/`) → results sanitized to plain JS → **Zustand store** → re-render
+**React UI** → **Web Worker** (`src/gpxWorker.js`) → **navigo WASM** (`@totorototo/navigo/web`) → results sanitized to plain JS → **Zustand store** → re-render
 
 - `src/components/` — React components (scene, profile, peaks, markers, panels)
-- `src/store/` — Zustand store with slice pattern (7 slices in `slices/`)
+- `src/store/` — Zustand store with slice pattern (slices in `slices/`)
 - `src/helpers/` — Pure utilities (colors, geometry, throttle)
 - `src/utils/` — Coordinate transforms (geo → 3D scene space)
-- `zig/` — GPX parsing, route calculations, peak detection, simplification, Haversine
 
-See `src/CLAUDE.md` for frontend conventions and `zig/CLAUDE.md` for Zig/WASM conventions.
+GPX parsing, route calculations, peak detection, simplification, and pace modeling all live in the separate [navigo](https://github.com/totorototo/navigo) repo — trail-math changes happen there, then get released as a new `@totorototo/navigo` version and bumped here.
+
+Live recalibration (mid-race ETA recalculation) is driven by navigo's `Trace.recalibrate()` (added in navigo v0.6.0), called from `gpxWorker.js`'s `recalibrate()` handler. It still degrades gracefully to non-recalibrated pace estimates whenever navigo returns `null` for a boundary kind (fewer than two boundaries of that kind, or no GPS fix yet).
+
+See `src/CLAUDE.md` for frontend conventions.
 
 ## Git Workflow
 
