@@ -2,7 +2,7 @@
 // This runs GPS computations off the main thread to prevent UI freezing
 // All Trace handles must be manually freed with .free() to prevent memory leaks
 
-import init, { buildTrace, parseGpx } from "@totorototo/navigo/web";
+import init, { buildTrace, parseGpxAll } from "@totorototo/navigo/web";
 
 // Initialize navigo/WASM in worker context
 let isInitialized = false;
@@ -78,10 +78,10 @@ function buildWeatherOptions(weatherByCheckpoint) {
 }
 
 // ── navigo Trace adapter ───────────────────────────────────────────────────────
-// navigo's Trace returns snake_case fields in kilometers; the rest of this
-// worker (and the store/hooks/components downstream) expects the camelCase,
-// meter-based shape Zig used to produce. These helpers translate at this one
-// boundary so nothing downstream needs to change.
+// navigo's Trace reports distances in kilometers; the rest of this worker
+// (and the store/hooks/components downstream) expects meters, the unit Zig
+// used to produce. These helpers translate at this one boundary so nothing
+// downstream needs to change.
 
 function toLatLonEle(navPoint) {
   return [navPoint.latitude, navPoint.longitude, navPoint.altitude];
@@ -138,46 +138,49 @@ function wrapCoordinatesTrace(coordinatesLatLonEle) {
   return {
     get points() {
       if (!cachedPoints) {
-        cachedPoints = flatLonLatAltToPoints(navTrace.locations_flat);
+        cachedPoints = flatLonLatAltToPoints(navTrace.getLocationsFlat());
       }
       return cachedPoints;
     },
     get cumulativeDistances() {
-      return Array.from(navTrace.cumulative_distances, (km) => km * M_PER_KM);
+      return Array.from(
+        navTrace.getCumulativeDistances(),
+        (km) => km * M_PER_KM,
+      );
     },
     get cumulativeElevations() {
-      return Array.from(navTrace.cumulative_elevation_gains);
+      return Array.from(navTrace.getCumulativeElevationGains());
     },
     get cumulativeElevationLoss() {
-      return Array.from(navTrace.cumulative_elevation_losses);
+      return Array.from(navTrace.getCumulativeElevationLosses());
     },
     get slopes() {
-      return Array.from(navTrace.slopes);
+      return Array.from(navTrace.getSlopes());
     },
     get peaks() {
-      return Array.from(navTrace.peaks);
+      return Array.from(navTrace.getPeaks());
     },
     get valleys() {
-      return Array.from(navTrace.valleys);
+      return Array.from(navTrace.getValleys());
     },
     get totalDistance() {
-      return navTrace.total_distance * M_PER_KM;
+      return navTrace.totalDistance * M_PER_KM;
     },
     get totalElevation() {
-      return navTrace.total_elevation_gain;
+      return navTrace.totalElevationGain;
     },
     get totalElevationLoss() {
-      return navTrace.total_elevation_loss;
+      return navTrace.totalElevationLoss;
     },
     findIndexAtDistance(meters) {
-      return navTrace.index_at_distance(meters / M_PER_KM);
+      return navTrace.indexAtDistance(meters / M_PER_KM);
     },
     pointAtDistance(meters) {
-      const p = navTrace.point_at_distance(meters / M_PER_KM);
+      const p = navTrace.pointAtDistance(meters / M_PER_KM);
       return p ? toLatLonEle(p) : null;
     },
     sliceBetweenDistances(startMeters, endMeters) {
-      const flatSlice = navTrace.slice_between_distances(
+      const flatSlice = navTrace.sliceBetweenDistances(
         startMeters / M_PER_KM,
         endMeters / M_PER_KM,
       );
@@ -185,7 +188,7 @@ function wrapCoordinatesTrace(coordinatesLatLonEle) {
     },
     findClosestPoint(targetLatLonEle) {
       const [lat, lon, ele] = targetLatLonEle;
-      const result = navTrace.find_closest_point(lon, lat, ele);
+      const result = navTrace.findClosestPoint(lon, lat, ele);
       if (!result) return null;
       return {
         point: toLatLonEle(result.location),
@@ -200,98 +203,98 @@ function wrapCoordinatesTrace(coordinatesLatLonEle) {
 }
 
 // ── Leg/section/stage/climb/waypoint sanitizers ───────────────────────────────
-// navigo's analyze() output is snake_case/km; map each to the exact
+// navigo's analyze() output is camelCase/km; map each to the exact
 // camelCase/meter shape the store and hooks already consume.
 
 function toLeg(l, points) {
-  const startLocation = l.start_location;
-  const endLocation = l.end_location;
+  const startLocation = l.startLocation;
+  const endLocation = l.endLocation;
   return {
-    legId: l.leg_id,
-    sectionIdx: l.section_idx,
-    startIndex: l.start_index,
-    endIndex: l.end_index,
-    pointCount: l.end_index - l.start_index + 1,
-    startPoint: points[l.start_index] ?? null,
-    endPoint: points[l.end_index] ?? null,
+    legId: l.legId,
+    sectionIdx: l.sectionIdx,
+    startIndex: l.startIndex,
+    endIndex: l.endIndex,
+    pointCount: l.endIndex - l.startIndex + 1,
+    startPoint: points[l.startIndex] ?? null,
+    endPoint: points[l.endIndex] ?? null,
     startLocation,
     endLocation,
-    totalDistance: l.total_distance_km * M_PER_KM,
-    totalElevation: l.total_elevation_gain_m,
-    totalElevationLoss: l.total_elevation_loss_m,
-    avgSlope: l.avg_slope,
-    maxSlope: l.max_slope,
-    minElevation: l.min_elevation,
-    maxElevation: l.max_elevation,
+    totalDistance: l.totalDistanceKm * M_PER_KM,
+    totalElevation: l.totalElevationGainM,
+    totalElevationLoss: l.totalElevationLossM,
+    avgSlope: l.avgSlope,
+    maxSlope: l.maxSlope,
+    minElevation: l.minElevation,
+    maxElevation: l.maxElevation,
     bearing: l.bearing,
     difficulty: l.difficulty,
-    estimatedDuration: l.estimated_duration_s,
-    segmentId: `leg-${l.section_idx}-${startLocation}-${endLocation}`,
+    estimatedDuration: l.estimatedDurationS,
+    segmentId: `leg-${l.sectionIdx}-${startLocation}-${endLocation}`,
   };
 }
 
 function toSection(s, points) {
-  const startLocation = s.start_location;
-  const endLocation = s.end_location;
+  const startLocation = s.startLocation;
+  const endLocation = s.endLocation;
   return {
-    sectionId: `section-${s.stage_idx}-${startLocation}-${endLocation}`,
-    stageIdx: s.stage_idx,
-    startIndex: s.start_index,
-    endIndex: s.end_index,
-    pointCount: s.end_index - s.start_index + 1,
-    startPoint: points[s.start_index] ?? null,
-    endPoint: points[s.end_index] ?? null,
+    sectionId: `section-${s.stageIdx}-${startLocation}-${endLocation}`,
+    stageIdx: s.stageIdx,
+    startIndex: s.startIndex,
+    endIndex: s.endIndex,
+    pointCount: s.endIndex - s.startIndex + 1,
+    startPoint: points[s.startIndex] ?? null,
+    endPoint: points[s.endIndex] ?? null,
     startLocation,
     endLocation,
-    totalDistance: s.total_distance_km * M_PER_KM,
-    totalElevation: s.total_elevation_gain_m,
-    totalElevationLoss: s.total_elevation_loss_m,
-    avgSlope: s.avg_slope,
-    maxSlope: s.max_slope,
-    minElevation: s.min_elevation,
-    maxElevation: s.max_elevation,
-    startTime: s.start_time != null ? Number(s.start_time) : null,
-    endTime: s.end_time != null ? Number(s.end_time) : null,
+    totalDistance: s.totalDistanceKm * M_PER_KM,
+    totalElevation: s.totalElevationGainM,
+    totalElevationLoss: s.totalElevationLossM,
+    avgSlope: s.avgSlope,
+    maxSlope: s.maxSlope,
+    minElevation: s.minElevation,
+    maxElevation: s.maxElevation,
+    startTime: s.startTime != null ? Number(s.startTime) : null,
+    endTime: s.endTime != null ? Number(s.endTime) : null,
     bearing: s.bearing,
     difficulty: s.difficulty,
-    estimatedDuration: s.estimated_duration_s,
-    paceFactor: s.pace_factor,
+    estimatedDuration: s.estimatedDurationS,
+    paceFactor: s.paceFactor,
     maxCompletionTime:
-      s.max_completion_time != null ? Number(s.max_completion_time) : null,
-    cutoffRatio: s.cutoff_ratio ?? null,
-    stopDuration: s.stop_duration ?? null,
+      s.maxCompletionTime != null ? Number(s.maxCompletionTime) : null,
+    cutoffRatio: s.cutoffRatio ?? null,
+    stopDuration: s.stopDuration ?? null,
   };
 }
 
 function toStage(s, points) {
-  const startLocation = s.start_location;
-  const endLocation = s.end_location;
+  const startLocation = s.startLocation;
+  const endLocation = s.endLocation;
   return {
     stageId: `stage-${startLocation}-${endLocation}`,
-    startIndex: s.start_index,
-    endIndex: s.end_index,
-    pointCount: s.end_index - s.start_index + 1,
-    startPoint: points[s.start_index] ?? null,
-    endPoint: points[s.end_index] ?? null,
+    startIndex: s.startIndex,
+    endIndex: s.endIndex,
+    pointCount: s.endIndex - s.startIndex + 1,
+    startPoint: points[s.startIndex] ?? null,
+    endPoint: points[s.endIndex] ?? null,
     startLocation,
     endLocation,
-    totalDistance: s.total_distance_km * M_PER_KM,
-    totalElevation: s.total_elevation_gain_m,
-    totalElevationLoss: s.total_elevation_loss_m,
-    avgSlope: s.avg_slope,
-    maxSlope: s.max_slope,
-    minElevation: s.min_elevation,
-    maxElevation: s.max_elevation,
-    startTime: s.start_time != null ? Number(s.start_time) : null,
-    endTime: s.end_time != null ? Number(s.end_time) : null,
+    totalDistance: s.totalDistanceKm * M_PER_KM,
+    totalElevation: s.totalElevationGainM,
+    totalElevationLoss: s.totalElevationLossM,
+    avgSlope: s.avgSlope,
+    maxSlope: s.maxSlope,
+    minElevation: s.minElevation,
+    maxElevation: s.maxElevation,
+    startTime: s.startTime != null ? Number(s.startTime) : null,
+    endTime: s.endTime != null ? Number(s.endTime) : null,
     bearing: s.bearing,
     difficulty: s.difficulty,
-    estimatedDuration: s.estimated_duration_s,
-    paceFactor: s.pace_factor,
+    estimatedDuration: s.estimatedDurationS,
+    paceFactor: s.paceFactor,
     maxCompletionTime:
-      s.max_completion_time != null ? Number(s.max_completion_time) : null,
-    cutoffRatio: s.cutoff_ratio ?? null,
-    stopDuration: s.stop_duration ?? null,
+      s.maxCompletionTime != null ? Number(s.maxCompletionTime) : null,
+    cutoffRatio: s.cutoffRatio ?? null,
+    stopDuration: s.stopDuration ?? null,
   };
 }
 
@@ -307,20 +310,20 @@ function toWaypoint(w) {
     desc: null,
     cmt: null,
     sym: null,
-    wptType: w.wpt_type ?? null,
+    wptType: w.wptType ?? null,
     time: w.time != null ? Number(w.time) : null,
   };
 }
 
 function toClimb(c) {
   return {
-    startIndex: Number(c.start_index),
-    endIndex: Number(c.end_index),
-    startDistM: c.start_dist_km * M_PER_KM,
-    climbDistM: c.climb_dist_km * M_PER_KM,
-    elevationGain: c.elevation_gain,
-    summitElev: c.summit_elev,
-    avgGradient: c.avg_gradient,
+    startIndex: Number(c.startIndex),
+    endIndex: Number(c.endIndex),
+    startDistM: c.startDistKm * M_PER_KM,
+    climbDistM: c.climbDistKm * M_PER_KM,
+    elevationGain: c.elevationGain,
+    summitElev: c.summitElev,
+    avgGradient: c.avgGradient,
   };
 }
 
@@ -329,15 +332,15 @@ function toClimb(c) {
 function toRecalibration(r) {
   if (!r) return null;
   return {
-    calibrationFactor: r.calibration_factor,
-    calibratedBasePaceSPerKm: r.calibrated_base_pace_s_per_km,
-    predictedSoFarS: r.predicted_so_far_s,
-    actualElapsedS: r.actual_elapsed_s,
+    calibrationFactor: r.calibrationFactor,
+    calibratedBasePaceSPerKm: r.calibratedBasePaceSPerKm,
+    predictedSoFarS: r.predictedSoFarS,
+    actualElapsedS: r.actualElapsedS,
     etas: r.etas.map((e) => ({
       id: e.id,
-      endIndex: e.end_index,
-      remainingDurationS: e.remaining_duration_s,
-      cumulativeRemainingS: e.cumulative_remaining_s,
+      endIndex: e.endIndex,
+      remainingDurationS: e.remainingDurationS,
+      cumulativeRemainingS: e.cumulativeRemainingS,
     })),
   };
 }
@@ -411,7 +414,7 @@ async function processGPXFile(gpxFileBytes, requestId) {
     weather: buildWeatherOptions(weatherByCheckpoint),
   };
 
-  const trace = parseGpx(new Uint8Array(gpxFileBytes.gpxBytes));
+  const trace = parseGpxAll(new Uint8Array(gpxFileBytes.gpxBytes));
   if (!trace) {
     throw new Error("GPX file contains no valid track points");
   }
@@ -420,7 +423,7 @@ async function processGPXFile(gpxFileBytes, requestId) {
 
   // Full-resolution route coordinates, [lat, lon, ele] triples — used both for
   // the map (flattened below) and to derive leg/section/stage start/end points.
-  const points = flatLonLatAltToPoints(trace.locations_flat);
+  const points = flatLonLatAltToPoints(trace.getLocationsFlat());
 
   const sanitizedLegs = (analysis.legs ?? []).map((l) => toLeg(l, points));
   const sanitizedSections = (analysis.sections ?? []).map((s) =>
@@ -453,18 +456,18 @@ async function processGPXFile(gpxFileBytes, requestId) {
 
   const traceResult = {
     points,
-    slopes: Array.from(trace.slopes),
+    slopes: Array.from(trace.getSlopes()),
     cumulativeDistances: Array.from(
-      trace.cumulative_distances,
+      trace.getCumulativeDistances(),
       (km) => km * M_PER_KM,
     ),
-    cumulativeElevations: Array.from(trace.cumulative_elevation_gains),
-    cumulativeElevationLoss: Array.from(trace.cumulative_elevation_losses),
-    peaks: Array.from(trace.peaks),
-    valleys: Array.from(trace.valleys),
-    totalDistance: trace.total_distance * M_PER_KM,
-    totalElevation: trace.total_elevation_gain,
-    totalElevationLoss: trace.total_elevation_loss,
+    cumulativeElevations: Array.from(trace.getCumulativeElevationGains()),
+    cumulativeElevationLoss: Array.from(trace.getCumulativeElevationLosses()),
+    peaks: Array.from(trace.getPeaks()),
+    valleys: Array.from(trace.getValleys()),
+    totalDistance: trace.totalDistance * M_PER_KM,
+    totalElevation: trace.totalElevationGain,
+    totalElevationLoss: trace.totalElevationLoss,
   };
 
   const results = {
@@ -763,7 +766,7 @@ async function recalibrate(data, requestId) {
     weather: buildWeatherOptions(weatherByCheckpoint),
   };
 
-  const trace = parseGpx(new Uint8Array(gpxBytes));
+  const trace = parseGpxAll(new Uint8Array(gpxBytes));
   let recalibration = { section: null, stage: null };
 
   if (trace) {

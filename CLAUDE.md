@@ -30,7 +30,7 @@ Terminus is a high-performance GPS trail visualization web application combining
 ### Memory Management
 
 - **navigo `Trace`**: Manual cleanup required — always call `.free()` when done with a `Trace` handle (it lives in WASM linear memory; JS GC cannot reclaim it)
-- **Web Workers**: Convert navigo's snake_case/km field names to the app's existing camelCase/meter contract in `gpxWorker.js` before posting results — that worker is the only place that should know navigo's shape
+- **Web Workers**: Convert navigo's km-based distances to the app's existing meter contract in `gpxWorker.js` before posting results — that worker is the only place that should know navigo's shape
 
 ## Commands
 
@@ -53,7 +53,7 @@ npm run test:all         # Alias for npm test
 
 GPX parsing, route calculations, peak detection, simplification, and pace modeling all live in the separate [navigo](https://github.com/totorototo/navigo) repo — trail-math changes happen there, then get released as a new `@totorototo/navigo` version and bumped here.
 
-Live recalibration (mid-race ETA recalculation) is driven by navigo's `Trace.recalibrate()` (added in navigo v0.6.0), called from `gpxWorker.js`'s `recalibrate()` handler. It still degrades gracefully to non-recalibrated pace estimates whenever navigo returns `null` for a boundary kind (fewer than two boundaries of that kind, or no GPS fix yet).
+Live recalibration (mid-race ETA recalculation) is driven by navigo's `Trace.recalibrate()` (added in navigo v0.6.0), called from `gpxWorker.js`'s `recalibrate()` handler. It still degrades gracefully to non-recalibrated pace estimates whenever navigo returns `null` for a boundary kind (fewer than two boundaries of that kind, or no GPS fix yet). The `Trace` it's called on must come from `parseGpxAll` (v0.9.0+), not plain `parseGpx` — the latter carries no waypoints, so `.recalibrate()` would always return `null` for both boundary kinds.
 
 See `src/CLAUDE.md` for frontend conventions.
 

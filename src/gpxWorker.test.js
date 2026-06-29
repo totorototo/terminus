@@ -3,38 +3,41 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // vi.mock calls are hoisted above all imports by Vitest
 vi.mock("@totorototo/navigo/web", () => ({
   default: vi.fn().mockResolvedValue(undefined),
-  parseGpx: vi.fn(),
+  parseGpxAll: vi.fn(),
   buildTrace: vi.fn(),
 }));
 
-import { buildTrace, parseGpx } from "@totorototo/navigo/web";
+import { buildTrace, parseGpxAll } from "@totorototo/navigo/web";
 
 // Import worker — executes self.onmessage = async function(e){...}
 import "./gpxWorker.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-// navigo returns snake_case fields in kilometers; these fixtures mirror its
+// navigo returns camelCase fields in kilometers; these fixtures mirror its
 // real WASM shape so the worker's sanitization layer is what's under test.
 
 function makeNavTrace(overrides = {}) {
   return {
-    total_distance: 5, // km
-    total_elevation_gain: 200,
-    total_elevation_loss: 50,
-    cumulative_distances: [0, 1, 2, 3, 4, 5], // km
-    cumulative_elevation_gains: [0, 20, 60, 100, 150, 200],
-    cumulative_elevation_losses: [0, 0, 10, 20, 35, 50],
-    slopes: [0, 4, 4, 4, 5, 0],
-    peaks: [3],
-    valleys: [1],
-    locations_flat: new Float64Array([
-      0.0, 0.0, 100, 0.0, 0.001, 120, 0.0, 0.002, 160, 0.0, 0.003, 200, 0.0,
-      0.004, 250, 0.0, 0.005, 300,
-    ]),
-    index_at_distance: vi.fn(() => 0),
-    point_at_distance: vi.fn(() => undefined),
-    slice_between_distances: vi.fn(() => undefined),
-    find_closest_point: vi.fn(() => undefined),
+    totalDistance: 5, // km
+    totalElevationGain: 200,
+    totalElevationLoss: 50,
+    getCumulativeDistances: vi.fn(() => [0, 1, 2, 3, 4, 5]), // km
+    getCumulativeElevationGains: vi.fn(() => [0, 20, 60, 100, 150, 200]),
+    getCumulativeElevationLosses: vi.fn(() => [0, 0, 10, 20, 35, 50]),
+    getSlopes: vi.fn(() => [0, 4, 4, 4, 5, 0]),
+    getPeaks: vi.fn(() => [3]),
+    getValleys: vi.fn(() => [1]),
+    getLocationsFlat: vi.fn(
+      () =>
+        new Float64Array([
+          0.0, 0.0, 100, 0.0, 0.001, 120, 0.0, 0.002, 160, 0.0, 0.003, 200, 0.0,
+          0.004, 250, 0.0, 0.005, 300,
+        ]),
+    ),
+    indexAtDistance: vi.fn(() => 0),
+    pointAtDistance: vi.fn(() => undefined),
+    sliceBetweenDistances: vi.fn(() => undefined),
+    findClosestPoint: vi.fn(() => undefined),
     free: vi.fn(),
     ...overrides,
   };
@@ -42,18 +45,18 @@ function makeNavTrace(overrides = {}) {
 
 function makeGpxTrace(overrides = {}) {
   return {
-    locations_flat: new Float64Array([
-      0, 0, 100, 0.002, 0.001, 120, 0.004, 0.003, 160,
-    ]),
-    slopes: [],
-    cumulative_distances: [],
-    cumulative_elevation_gains: [],
-    cumulative_elevation_losses: [],
-    peaks: [],
-    valleys: [],
-    total_distance: 0,
-    total_elevation_gain: 0,
-    total_elevation_loss: 0,
+    getLocationsFlat: vi.fn(
+      () => new Float64Array([0, 0, 100, 0.002, 0.001, 120, 0.004, 0.003, 160]),
+    ),
+    getSlopes: vi.fn(() => []),
+    getCumulativeDistances: vi.fn(() => []),
+    getCumulativeElevationGains: vi.fn(() => []),
+    getCumulativeElevationLosses: vi.fn(() => []),
+    getPeaks: vi.fn(() => []),
+    getValleys: vi.fn(() => []),
+    totalDistance: 0,
+    totalElevationGain: 0,
+    totalElevationLoss: 0,
     climbs: vi.fn(() => []),
     analyze: vi.fn(() => ({
       waypoints: [],
@@ -70,16 +73,16 @@ function makeGpxTrace(overrides = {}) {
 
 function makeRecalibration(overrides = {}) {
   return {
-    calibration_factor: 1.1,
-    calibrated_base_pace_s_per_km: 550,
-    predicted_so_far_s: 1000,
-    actual_elapsed_s: 1100,
+    calibrationFactor: 1.1,
+    calibratedBasePaceSPerKm: 550,
+    predictedSoFarS: 1000,
+    actualElapsedS: 1100,
     etas: [
       {
         id: 0,
-        end_index: 5,
-        remaining_duration_s: 300,
-        cumulative_remaining_s: 300,
+        endIndex: 5,
+        remainingDurationS: 300,
+        cumulativeRemainingS: 300,
       },
     ],
     ...overrides,
@@ -103,9 +106,9 @@ function makeAnalysisWaypoint(overrides = {}) {
     longitude: 2.35,
     elevation: 100,
     name: "Col du Bonhomme",
-    wpt_type: "TimeBarrier",
+    wptType: "TimeBarrier",
     time: null,
-    stop_duration: null,
+    stopDuration: null,
     ...overrides,
   };
 }
@@ -116,22 +119,22 @@ function makeAnalysisLeg(
   overrides = {},
 ) {
   return {
-    leg_id: 0,
-    section_idx: 0,
-    start_index: 0,
-    end_index: 5,
-    start_location: startLocation,
-    end_location: endLocation,
-    total_distance_km: 1,
-    total_elevation_gain_m: 50,
-    total_elevation_loss_m: 10,
-    avg_slope: 5,
-    max_slope: 15,
-    min_elevation: 100,
-    max_elevation: 150,
+    legId: 0,
+    sectionIdx: 0,
+    startIndex: 0,
+    endIndex: 5,
+    startLocation,
+    endLocation,
+    totalDistanceKm: 1,
+    totalElevationGainM: 50,
+    totalElevationLossM: 10,
+    avgSlope: 5,
+    maxSlope: 15,
+    minElevation: 100,
+    maxElevation: 150,
     bearing: 45,
     difficulty: 2,
-    estimated_duration_s: 1200,
+    estimatedDurationS: 1200,
     ...overrides,
   };
 }
@@ -143,27 +146,27 @@ function makeAnalysisSection(
 ) {
   return {
     id: 0,
-    stage_idx: 0,
-    start_index: 0,
-    end_index: 5,
-    start_location: startLocation,
-    end_location: endLocation,
-    total_distance_km: 1,
-    total_elevation_gain_m: 50,
-    total_elevation_loss_m: 10,
-    avg_slope: 5,
-    max_slope: 15,
-    min_elevation: 100,
-    max_elevation: 150,
+    stageIdx: 0,
+    startIndex: 0,
+    endIndex: 5,
+    startLocation,
+    endLocation,
+    totalDistanceKm: 1,
+    totalElevationGainM: 50,
+    totalElevationLossM: 10,
+    avgSlope: 5,
+    maxSlope: 15,
+    minElevation: 100,
+    maxElevation: 150,
     bearing: 90,
     difficulty: 2,
-    estimated_duration_s: 1200,
-    pace_factor: 1.1,
-    max_completion_time: 7200,
-    start_time: 1_000_000,
-    end_time: 1_007_200,
-    cutoff_ratio: 0.9,
-    stop_duration: 300,
+    estimatedDurationS: 1200,
+    paceFactor: 1.1,
+    maxCompletionTime: 7200,
+    startTime: 1_000_000,
+    endTime: 1_007_200,
+    cutoffRatio: 0.9,
+    stopDuration: 300,
     ...overrides,
   };
 }
@@ -175,39 +178,39 @@ function makeAnalysisStage(
 ) {
   return {
     id: 0,
-    start_index: 0,
-    end_index: 5,
-    start_location: startLocation,
-    end_location: endLocation,
-    total_distance_km: 5,
-    total_elevation_gain_m: 200,
-    total_elevation_loss_m: 50,
-    avg_slope: 4,
-    max_slope: 20,
-    min_elevation: 100,
-    max_elevation: 300,
+    startIndex: 0,
+    endIndex: 5,
+    startLocation,
+    endLocation,
+    totalDistanceKm: 5,
+    totalElevationGainM: 200,
+    totalElevationLossM: 50,
+    avgSlope: 4,
+    maxSlope: 20,
+    minElevation: 100,
+    maxElevation: 300,
     bearing: 45,
     difficulty: 3,
-    estimated_duration_s: 7200,
-    pace_factor: 1.2,
-    max_completion_time: 14400,
-    start_time: 1_000_000,
-    end_time: 1_014_400,
-    cutoff_ratio: 0.8,
-    stop_duration: 600,
+    estimatedDurationS: 7200,
+    paceFactor: 1.2,
+    maxCompletionTime: 14400,
+    startTime: 1_000_000,
+    endTime: 1_014_400,
+    cutoffRatio: 0.8,
+    stopDuration: 600,
     ...overrides,
   };
 }
 
 function makeAnalysisClimb(overrides = {}) {
   return {
-    start_index: 2,
-    end_index: 5,
-    start_dist_km: 2,
-    climb_dist_km: 3,
-    elevation_gain: 150,
-    summit_elev: 300,
-    avg_gradient: 5,
+    startIndex: 2,
+    endIndex: 5,
+    startDistKm: 2,
+    climbDistKm: 3,
+    elevationGain: 150,
+    summitElev: 300,
+    avgGradient: 5,
     ...overrides,
   };
 }
@@ -221,7 +224,7 @@ async function dispatch(type, data = {}, id = "req-1") {
 beforeEach(() => {
   vi.stubGlobal("postMessage", vi.fn());
   buildTrace.mockReturnValue(makeNavTrace());
-  parseGpx.mockReturnValue(makeGpxTrace());
+  parseGpxAll.mockReturnValue(makeGpxTrace());
 });
 
 afterEach(() => {
@@ -267,7 +270,7 @@ describe("message routing", () => {
 
   it("forwards an empty weather option array when no forecasts are given", async () => {
     const trace = makeGpxTrace();
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
     const options = trace.analyze.mock.calls[0][0];
     expect(options.weather).toEqual([]);
@@ -275,7 +278,7 @@ describe("message routing", () => {
 
   it("converts forecasts to navigo's weather option shape, keyed by checkpoint name", async () => {
     const trace = makeGpxTrace();
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", {
       gpxBytes: new Uint8Array(0),
       weatherByCheckpoint: {
@@ -296,7 +299,7 @@ describe("message routing", () => {
 
   it("fills neutral defaults for forecast fields that are not finite", async () => {
     const trace = makeGpxTrace();
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", {
       gpxBytes: new Uint8Array(0),
       weatherByCheckpoint: {
@@ -321,7 +324,7 @@ describe("message routing", () => {
   it("routes FIND_CLOSEST_LOCATION and posts CLOSEST_POINT_FOUND", async () => {
     buildTrace.mockReturnValue(
       makeNavTrace({
-        find_closest_point: vi.fn().mockReturnValue({
+        findClosestPoint: vi.fn().mockReturnValue({
           location: { longitude: 2, latitude: 1, altitude: 3 },
           index: 0,
           distance: 0.01,
@@ -360,15 +363,15 @@ describe("message routing", () => {
           etas: [
             {
               id: 0,
-              end_index: 9,
-              remaining_duration_s: 600,
-              cumulative_remaining_s: 600,
+              endIndex: 9,
+              remainingDurationS: 600,
+              cumulativeRemainingS: 600,
             },
           ],
         }),
       })),
     });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
 
     await dispatch("RECALIBRATE", {
       gpxBytes: new Uint8Array(0),
@@ -551,13 +554,13 @@ describe("processGPXFile sanitization", () => {
               longitude: 2.35,
               elevation: 100,
               name: "Col du Bonhomme",
-              wpt_type: "TimeBarrier",
+              wptType: "TimeBarrier",
             }),
           ],
         }),
       ),
     });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -583,14 +586,14 @@ describe("processGPXFile sanitization", () => {
               longitude: 0,
               elevation: null,
               name: "Plain",
-              wpt_type: null,
+              wptType: null,
               time: null,
             }),
           ],
         }),
       ),
     });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -604,7 +607,7 @@ describe("processGPXFile sanitization", () => {
     const trace = makeGpxTrace({
       analyze: vi.fn(analysisWith({ sections: [makeAnalysisSection()] })),
     });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -623,15 +626,15 @@ describe("processGPXFile sanitization", () => {
         analysisWith({
           sections: [
             makeAnalysisSection("A", "B", {
-              start_time: null,
-              end_time: null,
-              max_completion_time: null,
+              startTime: null,
+              endTime: null,
+              maxCompletionTime: null,
             }),
           ],
         }),
       ),
     });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -643,7 +646,7 @@ describe("processGPXFile sanitization", () => {
 
   it("maps navigo climbs into the app's climb shape (km → m)", async () => {
     const trace = makeGpxTrace({ climbs: vi.fn(() => [makeAnalysisClimb()]) });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -663,7 +666,7 @@ describe("processGPXFile sanitization", () => {
         analysisWith({ legs: [makeAnalysisLeg("Départ", "Checkpoint 1")] }),
       ),
     });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -678,7 +681,7 @@ describe("processGPXFile sanitization", () => {
         }),
       ),
     });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -691,7 +694,7 @@ describe("processGPXFile sanitization", () => {
         analysisWith({ stages: [makeAnalysisStage("Start", "Finish")] }),
       ),
     });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -709,7 +712,7 @@ describe("processGPXFile sanitization", () => {
         }),
       ),
     });
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -719,7 +722,7 @@ describe("processGPXFile sanitization", () => {
 
   it("handles null metadata fields", async () => {
     const trace = makeGpxTrace();
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
 
     const { results } = postMessage.mock.calls[0][0];
@@ -729,7 +732,7 @@ describe("processGPXFile sanitization", () => {
 
   it("calls free() after processing to release WASM memory", async () => {
     const trace = makeGpxTrace();
-    parseGpx.mockReturnValue(trace);
+    parseGpxAll.mockReturnValue(trace);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new Uint8Array(0) });
     expect(trace.free).toHaveBeenCalledOnce();
   });

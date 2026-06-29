@@ -16,18 +16,19 @@
 - Singleton — never create new instances, reuse the one from startup
 - Messages use `{ type, data, id }` format for request/response tracking
 - navigo's `Trace` lives in WASM memory — always call `.free()` when done with one
-- navigo's JSON output is snake_case and uses kilometers for distances; the rest of the app expects camelCase and meters — convert at the worker boundary, not downstream
+- navigo's JSON output is camelCase but uses kilometers for distances; the rest of the app expects meters — convert at the worker boundary, not downstream
+- Build the `Trace` with `parseGpxAll` (not plain `parseGpx`) whenever you'll call `.analyze()` or `.recalibrate()` on it — plain `parseGpx` returns an empty waypoint list, so those calls come back with empty/null results
 
 Example sanitization (section stats):
 
 ```javascript
 const sanitizedSections = sections.map((s) => ({
   sectionId: s.id,
-  startLocation: s.start_location,
-  endLocation: s.end_location,
-  totalDistance: s.total_distance_km * 1000, // km → m
-  totalElevation: s.total_elevation_gain_m,
-  paceFactor: s.pace_factor,
+  startLocation: s.startLocation,
+  endLocation: s.endLocation,
+  totalDistance: s.totalDistanceKm * 1000, // km → m
+  totalElevation: s.totalElevationGainM,
+  paceFactor: s.paceFactor,
 }));
 ```
 
