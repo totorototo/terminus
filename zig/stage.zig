@@ -1,9 +1,7 @@
 const std = @import("std");
 const Trace = @import("trace.zig").Trace;
 const Waypoint = @import("gpxdata.zig").Waypoint;
-const bearingTo = @import("gpspoint.zig").bearingTo;
 const paceModel = @import("paceModel.zig");
-const segment = @import("segment.zig");
 const calibration = @import("calibration.zig");
 
 const expect = std.testing.expect;
@@ -44,131 +42,10 @@ pub const StageStats = struct {
 /// k_fatigue: cumulative fatigue coefficient (e.g. 0.004 for 200km+ ultra).
 /// weather: forecast conditions keyed by checkpoint name; pass
 /// `paceModel.WeatherLookup.empty` to leave estimates weather-neutral.
+/// Thin stage-granularity wrapper over `calibration.computeBoundaryStats`,
+/// which holds the boundary resolution and physics shared with sections.
 pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, waypoints: []const Waypoint, base_pace_s_per_km: f64, k_fatigue: f64, life_base_stop_s: u32, weather: paceModel.WeatherLookup) !?[]StageStats {
-    // Collect stage-boundary waypoints (Start/LifeBase/Arrival)
-    var stage_wpts = std.ArrayList(Waypoint){};
-    defer stage_wpts.deinit(allocator);
-
-    for (waypoints) |wpt| {
-        if (wpt.isStageBoundary()) {
-            try stage_wpts.append(allocator, wpt);
-        }
-    }
-
-    if (stage_wpts.items.len < 2) {
-        return null;
-    }
-
-    const num_stages = stage_wpts.items.len - 1;
-    var stages = std.ArrayList(StageStats){};
-    errdefer stages.deinit(allocator);
-
-    var search_start: usize = 0;
-
-    // Cumulative effort-weighted distance (m) for fatigue model.
-    // Accumulates across stages in race order.
-    var d_eff: f64 = 0.0;
-
-    // Cumulative moving-time clock (s) for the circadian model, seeded from the
-    // race start time. Kept in f64 and truncated only when read so total clock
-    // drift stays sub-second across the whole race.
-    const clock_start: ?i64 = stage_wpts.items[0].time;
-    var elapsed_s: f64 = 0.0;
-
-    for (0..num_stages) |i| {
-        const start_wpt = stage_wpts.items[i];
-        const end_wpt = stage_wpts.items[i + 1];
-
-        const start_coord = [3]f64{ start_wpt.lat, start_wpt.lon, 0.0 };
-        const end_coord = [3]f64{ end_wpt.lat, end_wpt.lon, 0.0 };
-
-        const start_result = trace.findClosestPointAfter(start_coord, search_start) orelse continue;
-        const end_result = trace.findClosestPointAfter(end_coord, start_result.index + 1) orelse continue;
-        // Advance floor to the END of this stage so the next search does not snap to
-        // an earlier (outbound) track occurrence of the shared boundary on loop courses.
-        search_start = end_result.index;
-
-        const bearing = bearingTo(start_coord, end_coord);
-
-        const start_index = start_result.index;
-        const end_index = end_result.index;
-
-        if (start_index >= end_index) continue;
-
-        const dist = trace.cumulativeDistances[end_index] - trace.cumulativeDistances[start_index];
-        const elevation_gain = trace.cumulativeElevations[end_index] - trace.cumulativeElevations[start_index];
-        const elevation_loss = trace.cumulativeElevationLoss[end_index] - trace.cumulativeElevationLoss[start_index];
-
-        // Weather for this stage is the forecast at the checkpoint the runner is
-        // heading to (the end waypoint). Unknown checkpoints resolve to neutral.
-        const stage_weather = weather.find(end_wpt.name);
-
-        const m = segment.computeSegmentMetrics(trace, start_index, end_index, base_pace_s_per_km, k_fatigue, clock_start, stage_weather, &d_eff, &elapsed_s);
-        const min_elevation = m.minElevation;
-        const max_elevation = m.maxElevation;
-        const max_slope = m.maxSlope;
-        const total_time = m.totalTime;
-        const total_weighted_dist = m.totalWeightedDist;
-
-        // LifeBase checkpoints mark a rest/resupply stop — shed 20% of accumulated fatigue.
-        if (end_wpt.wptType) |t| {
-            if (std.mem.eql(u8, t, "LifeBase")) {
-                d_eff *= (1.0 - paceModel.RECOVERY_LIFE_BASE);
-            }
-        }
-
-        const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
-
-        const avg_pf = if (dist > 0) total_weighted_dist / dist else 1.0;
-        const stop_secs: f64 = blk: {
-            if (end_wpt.stopDuration) |sd| break :blk @as(f64, @floatFromInt(sd));
-            if (end_wpt.wptType) |t| {
-                if (std.mem.eql(u8, t, "LifeBase")) break :blk @as(f64, @floatFromInt(life_base_stop_s));
-            }
-            break :blk 0.0;
-        };
-        const estimated_duration = total_time + stop_secs;
-        const difficulty: u8 = if (avg_pf < 1.1) 1 else if (avg_pf < 1.4) 2 else if (avg_pf < 1.8) 3 else if (avg_pf < 2.5) 4 else 5;
-
-        const point_count = end_index - start_index + 1;
-
-        stages.append(allocator, StageStats{
-            .stageId = i,
-            .startIndex = start_index,
-            .endIndex = end_index,
-            .pointCount = point_count,
-            .startPoint = trace.points[start_index],
-            .endPoint = trace.points[end_index],
-            .startLocation = start_wpt.name,
-            .endLocation = end_wpt.name,
-            .totalDistance = dist,
-            .totalElevation = elevation_gain,
-            .totalElevationLoss = elevation_loss,
-            .avgSlope = avg_slope,
-            .maxSlope = max_slope,
-            .minElevation = min_elevation,
-            .maxElevation = max_elevation,
-            .startTime = start_wpt.time,
-            .endTime = end_wpt.time,
-            .bearing = bearing,
-            .difficulty = difficulty,
-            .estimatedDuration = estimated_duration,
-            .paceFactor = avg_pf,
-            .maxCompletionTime = if (start_wpt.time != null and end_wpt.time != null)
-                end_wpt.time.? - start_wpt.time.?
-            else
-                null,
-            .cutoffRatio = blk: {
-                if (start_wpt.time == null or end_wpt.time == null) break :blk null;
-                const mct = end_wpt.time.? - start_wpt.time.?;
-                if (mct <= 0) break :blk null;
-                break :blk estimated_duration / @as(f64, @floatFromInt(mct));
-            },
-            .stopDuration = end_wpt.stopDuration,
-        }) catch |err| return err;
-    }
-
-    return try stages.toOwnedSlice(allocator);
+    return calibration.computeBoundaryStats(StageStats, .stage, trace, allocator, waypoints, base_pace_s_per_km, k_fatigue, life_base_stop_s, weather);
 }
 
 // Live stage recalibration lives in `calibration.zig`, shared with sections.

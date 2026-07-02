@@ -12,8 +12,12 @@ elevation.zig  ── Denoised D+/D- (distance-windowed median + hysteresis dead
 gpspoint.zig   ── Pure math on [3]f64 (Haversine, bearing, elevation)
 gpxdata.zig    ── Data structs: GPXData, Waypoint, Metadata
 leg.zig        ── LegStats: per-waypoint-pair intervals (Naismith)
-section.zig    ── SectionStats data struct (camelCase fields — maps to JS)
-stage.zig      ── StageStats: LifeBase-to-LifeBase groupings (Minetti)
+section.zig    ── SectionStats struct (camelCase fields — maps to JS); thin
+                  wrappers over calibration.zig's boundary-kind generics
+stage.zig      ── StageStats: LifeBase-to-LifeBase groupings; same thin-wrapper
+                  pattern as section.zig
+calibration.zig ── Boundary-kind (section/stage) shared logic: a-priori interval
+                  stats (computeBoundaryStats) + live recalibration
 segment.zig    ── Shared per-point Minetti metrics for sections & stages
 minetti.zig    ── Metabolic-cost slope model (Minetti et al. 2002): cmet, paceFactor
 paceModel.zig  ── Full pace model: folds minetti's slope factor together with

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // vi.mock calls are hoisted above all imports by Vitest
 vi.mock("../zig/gpx.zig", () => ({
   readGPXComplete: vi.fn(),
-  recalibrateGPXBoth: vi.fn(),
+  Route: { init: vi.fn() },
 }));
 vi.mock("../zig/trace.zig", () => ({
   __zigar: { init: vi.fn().mockResolvedValue(undefined) },
@@ -11,12 +11,11 @@ vi.mock("../zig/trace.zig", () => ({
 }));
 vi.mock("../zig/soundscape.zig", () => ({ generateAudioFrames: vi.fn() }));
 
-import { readGPXComplete, recalibrateGPXBoth } from "../zig/gpx.zig";
+import { readGPXComplete, Route } from "../zig/gpx.zig";
 import { generateAudioFrames } from "../zig/soundscape.zig";
 import { Trace } from "../zig/trace.zig";
-
 // Import worker — executes self.onmessage = async function(e){...}
-import "./gpxWorker.js";
+import { __resetWorkerCachesForTests } from "./gpxWorker.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -162,13 +161,20 @@ function makeGpxData(overrides = {}) {
     legs: null,
     sections: null,
     stages: null,
-    fullResPoints: [
-      [0.0, 0.0, 100],
-      [0.001, 0.002, 120],
-      [0.003, 0.004, 160],
-    ],
+    // Flat [lat, lon, ele, ...] (stride 3), as the Zig side now returns.
+    // Real Zigar slices expose `.typedArray`; a plain array exercises the
+    // fallback path in the worker.
+    fullResPoints: [0.0, 0.0, 100, 0.001, 0.002, 120, 0.003, 0.004, 160],
     deinit: vi.fn(),
     ...overrides,
+  };
+}
+
+/** Resident parsed route: recalibrateBoth resolves the given RecalibrationPair. */
+function makeRoute(pair) {
+  return {
+    recalibrateBoth: vi.fn().mockResolvedValue(pair),
+    deinit: vi.fn(),
   };
 }
 
@@ -181,6 +187,9 @@ async function dispatch(type, data = {}, id = "req-1") {
 beforeEach(() => {
   vi.stubGlobal("postMessage", vi.fn());
   Trace.init.mockReturnValue(makeTrace());
+  // The worker caches a resident Trace and parsed Route across messages; drop
+  // them so state mocked by a previous test can never satisfy this test.
+  __resetWorkerCachesForTests();
 });
 
 afterEach(() => {
@@ -295,6 +304,25 @@ describe("message routing", () => {
     );
   });
 
+  it("posts null closest location instead of crashing when the trace is empty", async () => {
+    Trace.init.mockReturnValue({
+      ...makeTrace(),
+      findClosestPoint: vi.fn().mockReturnValue(null),
+    });
+    await dispatch("FIND_CLOSEST_LOCATION", {
+      coordinates: [[0, 0, 0]],
+      target: [1, 2, 3],
+    });
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "CLOSEST_POINT_FOUND",
+        closestLocation: null,
+        closestIndex: null,
+        deviationDistance: 0,
+      }),
+    );
+  });
+
   it("routes GENERATE_AUDIO_FRAMES and posts AUDIO_FRAMES_READY", async () => {
     generateAudioFrames.mockResolvedValue(
       Object.assign([], { deinit: vi.fn() }),
@@ -351,11 +379,9 @@ describe("message routing", () => {
         },
       ],
     };
-    recalibrateGPXBoth.mockResolvedValue({
-      section: sectionRecal,
-      stage: stageRecal,
-      deinit,
-    });
+    Route.init.mockResolvedValue(
+      makeRoute({ section: sectionRecal, stage: stageRecal, deinit }),
+    );
 
     await dispatch("RECALIBRATE", {
       gpxBytes: new ArrayBuffer(0),
@@ -412,26 +438,21 @@ describe("message routing", () => {
     expect(deinit).toHaveBeenCalledTimes(1);
   });
 
-  it("computes both kinds from a single recalibrateGPXBoth call", async () => {
-    recalibrateGPXBoth.mockResolvedValue({
-      section: null,
-      stage: null,
-      deinit: vi.fn(),
-    });
+  it("computes both kinds from a single recalibrateBoth call", async () => {
+    const route = makeRoute({ section: null, stage: null, deinit: vi.fn() });
+    Route.init.mockResolvedValue(route);
     await dispatch("RECALIBRATE", {
       gpxBytes: new ArrayBuffer(0),
       currentIndex: 0,
       actualElapsedS: 0,
     });
-    expect(recalibrateGPXBoth).toHaveBeenCalledTimes(1);
+    expect(route.recalibrateBoth).toHaveBeenCalledTimes(1);
   });
 
   it("posts null kinds when the route lacks two boundaries", async () => {
-    recalibrateGPXBoth.mockResolvedValue({
-      section: null,
-      stage: null,
-      deinit: vi.fn(),
-    });
+    Route.init.mockResolvedValue(
+      makeRoute({ section: null, stage: null, deinit: vi.fn() }),
+    );
     await dispatch("RECALIBRATE", {
       gpxBytes: new ArrayBuffer(0),
     });
@@ -441,6 +462,144 @@ describe("message routing", () => {
         results: { recalibration: { section: null, stage: null } },
       }),
     );
+  });
+
+  it("posts ERROR when recalibrating with no route loaded and no gpxBytes", async () => {
+    await dispatch("RECALIBRATE", { currentIndex: 0, actualElapsedS: 0 });
+    expect(Route.init).not.toHaveBeenCalled();
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "ERROR", id: "req-1" }),
+    );
+  });
+});
+
+describe("resident trace cache", () => {
+  function makeClosestTrace(result) {
+    return {
+      ...makeTrace(),
+      findClosestPoint: vi.fn().mockReturnValue(result),
+    };
+  }
+
+  it("reuses the cached Trace for repeated queries on the same coordinates", async () => {
+    Trace.init.mockReturnValue(
+      makeClosestTrace({ point: [1, 2, 3], index: 0, distance: 10 }),
+    );
+    const coordinates = [
+      [0.0, 0.0, 100],
+      [0.001, 0.0, 120],
+    ];
+
+    await dispatch("FIND_CLOSEST_LOCATION", { coordinates, target: [1, 2, 3] });
+    // Same route content, different array instance (as after structured clone)
+    await dispatch(
+      "FIND_CLOSEST_LOCATION",
+      { coordinates: coordinates.map((p) => [...p]), target: [4, 5, 6] },
+      "req-2",
+    );
+
+    expect(Trace.init).toHaveBeenCalledTimes(1);
+    expect(postMessage).toHaveBeenCalledTimes(2);
+    expect(postMessage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: "CLOSEST_POINT_FOUND", id: "req-2" }),
+    );
+  });
+
+  it("frees the previous Trace and rebuilds when coordinates change", async () => {
+    const first = makeClosestTrace({ point: [1, 2, 3], index: 0, distance: 1 });
+    const second = makeClosestTrace({
+      point: [4, 5, 6],
+      index: 1,
+      distance: 2,
+    });
+    Trace.init.mockReturnValueOnce(first).mockReturnValueOnce(second);
+
+    await dispatch("FIND_CLOSEST_LOCATION", {
+      coordinates: [[0.0, 0.0, 100]],
+      target: [1, 2, 3],
+    });
+    await dispatch(
+      "FIND_CLOSEST_LOCATION",
+      { coordinates: [[9.0, 9.0, 900]], target: [1, 2, 3] },
+      "req-2",
+    );
+
+    expect(Trace.init).toHaveBeenCalledTimes(2);
+    expect(first.deinit).toHaveBeenCalledTimes(1);
+    expect(second.deinit).not.toHaveBeenCalled();
+  });
+
+  it("shares the cached Trace across different query message types", async () => {
+    const trace = {
+      ...makeTrace(),
+      findClosestPoint: vi
+        .fn()
+        .mockReturnValue({ point: [1, 2, 3], index: 0, distance: 10 }),
+      pointAtDistance: vi.fn().mockReturnValue([0.001, 0.0, 120]),
+    };
+    Trace.init.mockReturnValue(trace);
+    const coordinates = [
+      [0.0, 0.0, 100],
+      [0.001, 0.0, 120],
+    ];
+
+    await dispatch("FIND_CLOSEST_LOCATION", { coordinates, target: [1, 2, 3] });
+    await dispatch(
+      "FIND_POINTS_AT_DISTANCES",
+      { coordinates, distances: [500] },
+      "req-2",
+    );
+
+    expect(Trace.init).toHaveBeenCalledTimes(1);
+    expect(postMessage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: "POINTS_FOUND", id: "req-2" }),
+    );
+  });
+});
+
+describe("resident route cache (recalibration)", () => {
+  const nullPair = () => ({ section: null, stage: null, deinit: vi.fn() });
+
+  it("parses the route once and reuses it across recalibration ticks", async () => {
+    const route = makeRoute(nullPair());
+    route.recalibrateBoth.mockImplementation(() => Promise.resolve(nullPair()));
+    Route.init.mockResolvedValue(route);
+
+    await dispatch("RECALIBRATE", { gpxBytes: new ArrayBuffer(0) });
+    await dispatch("RECALIBRATE", { gpxBytes: new ArrayBuffer(0) }, "req-2");
+
+    expect(Route.init).toHaveBeenCalledTimes(1);
+    expect(route.recalibrateBoth).toHaveBeenCalledTimes(2);
+  });
+
+  it("recalibrates from bytes retained by PROCESS_GPX_FILE without gpxBytes in the payload", async () => {
+    readGPXComplete.mockResolvedValue(makeGpxData());
+    const gpxBytes = new ArrayBuffer(8);
+    await dispatch("PROCESS_GPX_FILE", { gpxBytes });
+
+    const route = makeRoute(nullPair());
+    Route.init.mockResolvedValue(route);
+    await dispatch("RECALIBRATE", { currentIndex: 3 }, "req-2");
+
+    expect(Route.init).toHaveBeenCalledWith(gpxBytes);
+    expect(postMessage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: "RECALIBRATED", id: "req-2" }),
+    );
+  });
+
+  it("frees the parsed route when a new GPX file is processed", async () => {
+    const route = makeRoute(nullPair());
+    Route.init.mockResolvedValue(route);
+    await dispatch("RECALIBRATE", { gpxBytes: new ArrayBuffer(0) });
+
+    readGPXComplete.mockResolvedValue(makeGpxData());
+    await dispatch(
+      "PROCESS_GPX_FILE",
+      { gpxBytes: new ArrayBuffer(8) },
+      "req-2",
+    );
+
+    expect(route.deinit).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -719,6 +878,66 @@ describe("processGPXFile sanitization", () => {
     readGPXComplete.mockResolvedValue(gpxData);
     await dispatch("PROCESS_GPX_FILE", { gpxBytes: new ArrayBuffer(0) });
     expect(gpxData.deinit).toHaveBeenCalledOnce();
+  });
+});
+
+describe("WASM cleanup on error paths", () => {
+  it("frees gpxData when sanitization throws mid-processGPXFile", async () => {
+    // A waypoint with a null name makes `wpt.name.string` throw during sanitization.
+    const gpxData = makeGpxData({
+      waypoints: [{ lat: 0, lon: 0, ele: null, name: null, time: null }],
+    });
+    readGPXComplete.mockResolvedValue(gpxData);
+
+    await dispatch("PROCESS_GPX_FILE", { gpxBytes: new ArrayBuffer(0) });
+
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "ERROR", id: "req-1" }),
+    );
+    expect(gpxData.deinit).toHaveBeenCalledOnce();
+  });
+
+  it("frees the recalibration result when sanitization throws", async () => {
+    const deinit = vi.fn();
+    // `etas` missing → sanitizeKind throws reading `.length`.
+    Route.init.mockResolvedValue(
+      makeRoute({ section: {}, stage: null, deinit }),
+    );
+
+    await dispatch("RECALIBRATE", {
+      gpxBytes: new ArrayBuffer(0),
+      currentIndex: 0,
+      actualElapsedS: 0,
+    });
+
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "ERROR", id: "req-1" }),
+    );
+    expect(deinit).toHaveBeenCalledOnce();
+  });
+
+  it("frees the ephemeral trace when getRouteSection fails after init", async () => {
+    const trace = {
+      deinit: vi.fn(),
+      get totalDistance() {
+        throw new Error("boom");
+      },
+    };
+    Trace.init.mockReturnValue(trace);
+
+    await dispatch("GET_ROUTE_SECTION", {
+      coordinates: [
+        [0, 0, 0],
+        [1, 1, 1],
+      ],
+      start: 0,
+      end: 2,
+    });
+
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "ERROR", id: "req-1" }),
+    );
+    expect(trace.deinit).toHaveBeenCalledOnce();
   });
 });
 

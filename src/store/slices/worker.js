@@ -355,8 +355,9 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       } = get().app?.paceSettings ?? {};
       const weatherByCheckpoint = get().weather?.forecasts ?? null;
 
+      // No gpxBytes: the worker retained them from PROCESS_GPX_FILE and keeps a
+      // resident parsed route, so each tick avoids cloning + re-parsing the file.
       const payload = {
-        gpxBytes: rawGpxBytes,
         currentIndex,
         actualElapsedS,
         basePaceSPerKm,

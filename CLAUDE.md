@@ -45,7 +45,9 @@ npm run test:zig         # All Zig tests
 npm run test:all         # Zig tests then JS tests
 ```
 
-Single Zig test: `cd zig && zig test <file>.zig`
+All npm scripts run through `scripts/with-mac-bin.mjs`, which prepends `.bin/` to PATH on macOS: its `xcrun` shim pins the macOS 15.4 SDK because Zig 0.15.2 cannot link against the macOS 26 SDK (every libSystem symbol comes back undefined). Never invoke `npx vitest` or `zig` directly — use the npm scripts, or prefix manual commands with `PATH="$PWD/.bin:$PATH"`.
+
+Single Zig test: `PATH="$PWD/.bin:$PATH" sh -c "cd zig && zig test <file>.zig"`
 
 ## Architecture
 

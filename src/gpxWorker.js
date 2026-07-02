@@ -1,8 +1,10 @@
 // GPS Processing Web Worker
 // This runs GPS computations off the main thread to prevent UI freezing
-// All Trace objects must be manually cleaned up with .deinit() to prevent memory leaks
+// Trace objects live in WASM memory and must be freed with .deinit(). Query
+// handlers share one resident Trace (see getResidentTrace); only traces created
+// outside the cache (getRouteSection, readGPXComplete results) are freed per call.
 
-import { readGPXComplete, recalibrateGPXBoth } from "../zig/gpx.zig";
+import { readGPXComplete, Route } from "../zig/gpx.zig";
 import { generateAudioFrames } from "../zig/soundscape.zig";
 import { __zigar, Trace } from "../zig/trace.zig";
 
@@ -15,6 +17,86 @@ async function initializeZig() {
     await init();
     isInitialized = true;
   }
+}
+
+// ── Resident trace cache ──────────────────────────────────────────────────────
+// Trace.init is expensive: it runs Douglas-Peucker simplification, median-
+// smoothed gain/loss, windowed slopes, AMPD peak/valley detection and climb
+// qualification. Query messages (closest point, points at distances, section
+// stats) all operate on the same route, and findClosestLocation fires on every
+// GPS fix — so the worker keeps one resident Trace and only rebuilds it when
+// the incoming coordinates actually change.
+//
+// Coordinates arrive by structured clone, so reference identity can't be used;
+// a cheap fingerprint (length + first/middle/last point) identifies the route.
+
+let residentTrace = null;
+let residentTraceKey = null;
+
+function traceKeyFor(coordinates) {
+  const n = coordinates.length;
+  if (n === 0) return "empty";
+  const first = coordinates[0];
+  const mid = coordinates[n >> 1];
+  const last = coordinates[n - 1];
+  return `${n}:${first[0]},${first[1]},${first[2]}:${mid[0]},${mid[1]},${mid[2]}:${last[0]},${last[1]},${last[2]}`;
+}
+
+/**
+ * Return the resident Trace for these coordinates, rebuilding it only when the
+ * fingerprint changes. The cache owns the Trace — callers must NOT deinit it.
+ */
+function getResidentTrace(coordinates) {
+  const key = traceKeyFor(coordinates);
+  if (residentTrace !== null && key === residentTraceKey) {
+    return residentTrace;
+  }
+  if (residentTrace !== null) {
+    residentTrace.deinit();
+    residentTrace = null;
+    residentTraceKey = null;
+  }
+  const trace = Trace.init(coordinates);
+  residentTrace = trace;
+  residentTraceKey = key;
+  return trace;
+}
+
+// ── Resident route (parsed GPX) for live recalibration ───────────────────────
+// Recalibration fires on every GPS fix. Parsing the GPX bytes and rebuilding
+// the trace + waypoints per tick is far more expensive than the recalibration
+// itself, so PROCESS_GPX_FILE retains the raw bytes and the first RECALIBRATE
+// parses them once into a resident Route that later ticks reuse.
+
+let residentRouteBytes = null;
+let residentRoute = null;
+
+/**
+ * Return the resident Route, lazily parsing `bytes` on first use. The cache
+ * owns the Route — callers must NOT deinit it.
+ */
+async function getResidentRoute(bytes) {
+  if (residentRoute === null) {
+    residentRoute = await Route.init(bytes);
+  }
+  return residentRoute;
+}
+
+/** Drop the resident Route (a new GPX file invalidates it). */
+function clearResidentRoute() {
+  if (residentRoute !== null) {
+    residentRoute.deinit();
+    residentRoute = null;
+  }
+  residentRouteBytes = null;
+}
+
+/** Test hook: drop cached WASM state so mocks don't leak across tests. */
+export function __resetWorkerCachesForTests() {
+  residentTrace = null;
+  residentTraceKey = null;
+  residentRoute = null;
+  residentRouteBytes = null;
 }
 
 // ── Performance timing helpers ────────────────────────────────────────────────
@@ -148,6 +230,11 @@ async function processGPXFile(gpxFileBytes, requestId) {
     weatherByCheckpoint = null,
   } = gpxFileBytes;
 
+  // Retain the raw bytes for live recalibration (parsed lazily on the first
+  // RECALIBRATE) and drop any route parsed from a previous file.
+  clearResidentRoute();
+  residentRouteBytes = gpxFileBytes.gpxBytes;
+
   // Build the Zig WeatherLookup (parallel name/value arrays) from the forecast
   // map. Keys are checkpoint names; an absent map leaves every section neutral.
   const weather = buildWeatherLookup(weatherByCheckpoint);
@@ -159,7 +246,16 @@ async function processGPXFile(gpxFileBytes, requestId) {
     lifeBaseStopS,
     weather,
   );
+  try {
+    await sanitizeAndPostGPXResults(gpxData, requestId);
+  } finally {
+    // Frees the trace and all parse allocations even when sanitization throws
+    // (the onmessage catch only posts an ERROR — it cannot free WASM memory).
+    gpxData.deinit();
+  }
+}
 
+async function sanitizeAndPostGPXResults(gpxData, requestId) {
   // Convert Zigar proxy objects to plain JS before sending
   // Note: Zig string fields ([]const u8) need .string property to convert to JS strings
   // Note: Zig i64 fields need explicit Number() conversion (they become BigInt in JS)
@@ -254,24 +350,16 @@ async function processGPXFile(gpxFileBytes, requestId) {
       : null,
   };
 
-  // Full-resolution route coordinates for the map. Kept in Zig's native
-  // [lat, lon, ele] order (stride 3) so the worker just flattens with no
-  // per-point swap; the map swaps to [lng, lat] at read time. A flat
-  // Float64Array is compact and transferable, so the store never holds the raw
-  // XML string and the main thread skips a DOMParser pass.
-  // valueOf() deep-copies the whole Zigar proxy once instead of paying a proxy
-  // trap per point, which matters for large full-resolution traces.
-  const fullResPoints = gpxData.fullResPoints
-    ? gpxData.fullResPoints.valueOf()
-    : [];
-  const pointCount = fullResPoints.length;
-  const routeLatLonEle = new Float64Array(pointCount * 3);
-  for (let i = 0; i < pointCount; i++) {
-    const p = fullResPoints[i];
-    routeLatLonEle[i * 3] = p[0]; // lat
-    routeLatLonEle[i * 3 + 1] = p[1]; // lon
-    routeLatLonEle[i * 3 + 2] = p[2]; // ele
-  }
+  // Full-resolution route coordinates for the map. Zig hands back a flat
+  // [lat, lon, ele, ...] []f64 (stride 3); its `.typedArray` is a zero-copy
+  // Float64Array view into WASM memory, so one Float64Array construction is
+  // the only copy — into a fresh transferable buffer (the WASM view itself
+  // must never be transferred or WASM memory would be detached). The map swaps
+  // to [lng, lat] at read time, and the store never holds the raw XML string.
+  const fullResPoints = gpxData.fullResPoints;
+  const routeLatLonEle = fullResPoints
+    ? new Float64Array(fullResPoints.typedArray ?? fullResPoints)
+    : new Float64Array(0);
 
   // Sanitize climb segments — all fields are numeric (usize/f64), no strings or i64
   const sanitizedClimbs = [];
@@ -313,14 +401,11 @@ async function processGPXFile(gpxFileBytes, requestId) {
     },
     [routeLatLonEle.buffer],
   );
-
-  // gpxData.deinit() will now clean up the trace as well
-  gpxData.deinit();
 }
 
 async function processGPSData(gpsData, requestId) {
   markStart("processGPSData");
-  const trace = Trace.init(gpsData.coordinates);
+  const trace = getResidentTrace(gpsData.coordinates);
 
   self.postMessage({
     type: "PROGRESS",
@@ -336,7 +421,7 @@ async function processGPSData(gpsData, requestId) {
     message: "Calculating statistics...",
   });
 
-  // Convert to plain JS object before deinit
+  // Convert to plain JS object before posting (never post Zigar proxies)
   const results = trace.valueOf();
 
   markEnd("processGPSData");
@@ -347,8 +432,6 @@ async function processGPSData(gpsData, requestId) {
     results,
     timingMs: { gpsProcess: measureMs("processGPSData") },
   });
-
-  trace.deinit();
 }
 
 async function processSections(data, requestId) {
@@ -360,7 +443,7 @@ async function processSections(data, requestId) {
     throw new Error("Invalid coordinates data");
   }
 
-  const trace = Trace.init(coordinates);
+  const trace = getResidentTrace(coordinates);
 
   // Send progress updates during processing
   self.postMessage({
@@ -369,6 +452,10 @@ async function processSections(data, requestId) {
     progress: 25,
     message: "Trace initialized...",
   });
+
+  // One deep copy of the points via valueOf() instead of paying three Zigar
+  // proxy traps per point when slicing section ranges below.
+  const allPoints = trace.points.valueOf();
 
   const results = sections.map((section) => {
     const {
@@ -399,15 +486,7 @@ async function processSections(data, requestId) {
         trace.cumulativeElevationLoss[endIndex] -
         trace.cumulativeElevationLoss[startIndex];
 
-      // Only extract points if needed (causes WASM → JS copy)
-      // Better: keep points in WASM and only copy when necessary
-      for (let i = startIndex; i <= endIndex; i++) {
-        sectionPoints.push([
-          trace.points[i][0],
-          trace.points[i][1],
-          trace.points[i][2],
-        ]);
-      }
+      sectionPoints = allPoints.slice(startIndex, endIndex + 1);
     }
 
     const startPoint = trace.pointAtDistance(startKm * 1000);
@@ -459,14 +538,12 @@ async function processSections(data, requestId) {
     results,
     timingMs: { sectionsProcess: measureMs("processSections") },
   });
-
-  trace.deinit();
 }
 
 // Calculate route statistics (moderate computation)
 async function calculateRouteStats(data, requestId) {
   const { coordinates, segments } = data;
-  const trace = Trace.init(coordinates);
+  const trace = getResidentTrace(coordinates);
   const maxDistance = trace.totalDistance;
 
   const stats = segments.map((segment) => {
@@ -490,8 +567,6 @@ async function calculateRouteStats(data, requestId) {
     };
   });
 
-  trace.deinit();
-
   self.postMessage({
     type: "ROUTE_STATS_CALCULATED",
     id: requestId,
@@ -502,7 +577,7 @@ async function calculateRouteStats(data, requestId) {
 // Find multiple points at specified distances (light computation)
 async function findPointsAtDistances(data, requestId) {
   const { coordinates, distances } = data;
-  const trace = Trace.init(coordinates);
+  const trace = getResidentTrace(coordinates);
 
   const points = distances
     .map((distance) => {
@@ -514,8 +589,6 @@ async function findPointsAtDistances(data, requestId) {
       };
     })
     .filter((item) => item.point !== null);
-
-  trace.deinit();
 
   self.postMessage({
     type: "POINTS_FOUND",
@@ -537,19 +610,22 @@ async function getRouteSection(data, requestId) {
     throw new Error("Invalid section range");
   const section = coordinates.slice(start, end); // Copy to avoid modifying original
 
+  // Ephemeral trace on purpose: this operates on a per-call sub-slice, and
+  // caching it would evict the resident full-route trace on every request.
   const trace = Trace.init(section);
-
-  self.postMessage({
-    type: "ROUTE_SECTION_READY",
-    id: requestId,
-    section: {
-      totalDistance: trace.totalDistance,
-      totalElevation: trace.totalElevation,
-      totalElevationLoss: trace.totalElevationLoss,
-    },
-  });
-
-  trace.deinit();
+  try {
+    self.postMessage({
+      type: "ROUTE_SECTION_READY",
+      id: requestId,
+      section: {
+        totalDistance: trace.totalDistance,
+        totalElevation: trace.totalElevation,
+        totalElevationLoss: trace.totalElevationLoss,
+      },
+    });
+  } finally {
+    trace.deinit();
+  }
 }
 
 // Generate soundscape AudioFrame[] from pre-computed trace arrays
@@ -606,12 +682,12 @@ async function generateSoundscapeFrames(data, requestId) {
   });
 }
 
-// Recalibrate section and stage ETAs in a single GPX parse. Either kind is null
-// when the route has fewer than two boundaries of that kind.
+// Recalibrate section and stage ETAs against the resident parsed route. Either
+// kind is null when the route has fewer than two boundaries of that kind.
 async function recalibrate(data, requestId) {
   markStart("recalibrate");
   const {
-    gpxBytes,
+    gpxBytes = null,
     currentIndex = 0,
     actualElapsedS = 0,
     basePaceSPerKm = 500.0,
@@ -622,8 +698,16 @@ async function recalibrate(data, requestId) {
 
   const weather = buildWeatherLookup(weatherByCheckpoint);
 
-  const result = await recalibrateGPXBoth(
-    gpxBytes,
+  // Steady state: bytes were retained by PROCESS_GPX_FILE and the route is
+  // parsed once. Explicit gpxBytes in the payload is a fallback for callers
+  // that recalibrate without loading a file through this worker first.
+  const bytes = residentRouteBytes ?? gpxBytes;
+  if (bytes == null) {
+    throw new Error("No GPX route loaded for recalibration");
+  }
+  const route = await getResidentRoute(bytes);
+
+  const result = await route.recalibrateBoth(
     currentIndex,
     actualElapsedS,
     basePaceSPerKm,
@@ -632,7 +716,8 @@ async function recalibrate(data, requestId) {
     weather,
   );
 
-  // Copy the Zigar proxy to plain JS; usize fields come back as BigInt.
+  // Copy the Zigar proxy to plain JS. On wasm32, usize is 32-bit and already a
+  // Number; Number() is kept as a cheap guard should the target ever be wasm64.
   const sanitizeKind = (recalibration, kind) => {
     if (!recalibration) return null;
     const etas = [];
@@ -655,11 +740,15 @@ async function recalibrate(data, requestId) {
     };
   };
 
-  const sanitized = {
-    section: sanitizeKind(result.section, "section"),
-    stage: sanitizeKind(result.stage, "stage"),
-  };
-  result.deinit();
+  let sanitized;
+  try {
+    sanitized = {
+      section: sanitizeKind(result.section, "section"),
+      stage: sanitizeKind(result.stage, "stage"),
+    };
+  } finally {
+    result.deinit();
+  }
 
   markEnd("recalibrate");
 
@@ -675,20 +764,19 @@ async function recalibrate(data, requestId) {
 // Find closest point to target location
 async function findClosestLocation(data, requestId) {
   const { coordinates, target } = data;
-  const trace = Trace.init(coordinates);
+  const trace = getResidentTrace(coordinates);
 
+  // Null on an empty trace — report "nothing found" instead of crashing.
   const closest = trace.findClosestPoint(target);
-
-  trace.deinit();
 
   self.postMessage({
     type: "CLOSEST_POINT_FOUND",
     id: requestId,
     // Read directly from WASM instead of calling .valueOf()
-    closestLocation: closest.point
+    closestLocation: closest?.point
       ? [closest.point[0], closest.point[1], closest.point[2]]
       : null,
-    closestIndex: closest.index,
-    deviationDistance: closest.distance ?? 0,
+    closestIndex: closest?.index ?? null,
+    deviationDistance: closest?.distance ?? 0,
   });
 }

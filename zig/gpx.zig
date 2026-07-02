@@ -86,15 +86,22 @@ pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoin
         const content_start = wpt_start + tag_end + 1;
         const content = bytes[content_start..wpt_end];
 
-        // lat and lon are required; skip the waypoint if missing or malformed
-        const lat_pos = std.mem.indexOf(u8, tag_section, "lat=\"") orelse continue :wpt_loop;
+        // lat and lon are required; skip the waypoint if missing or malformed.
+        // Match the closing quote to whichever quote character opened the
+        // attribute, so single-quoted GPX files keep their waypoints (the
+        // trkpt parser already handles both).
+        const lat_pos = std.mem.indexOf(u8, tag_section, "lat=") orelse continue :wpt_loop;
         const lat_start = wpt_start + lat_pos + 5;
-        const lat_end = std.mem.indexOfScalarPos(u8, bytes, lat_start, '"') orelse continue :wpt_loop;
+        const lat_quote = bytes[lat_start - 1];
+        if (lat_quote != '"' and lat_quote != '\'') continue :wpt_loop;
+        const lat_end = std.mem.indexOfScalarPos(u8, bytes, lat_start, lat_quote) orelse continue :wpt_loop;
         const lat = std.fmt.parseFloat(f64, bytes[lat_start..lat_end]) catch continue :wpt_loop;
 
-        const lon_pos = std.mem.indexOf(u8, tag_section, "lon=\"") orelse continue :wpt_loop;
+        const lon_pos = std.mem.indexOf(u8, tag_section, "lon=") orelse continue :wpt_loop;
         const lon_start = wpt_start + lon_pos + 5;
-        const lon_end = std.mem.indexOfScalarPos(u8, bytes, lon_start, '"') orelse continue :wpt_loop;
+        const lon_quote = bytes[lon_start - 1];
+        if (lon_quote != '"' and lon_quote != '\'') continue :wpt_loop;
+        const lon_end = std.mem.indexOfScalarPos(u8, bytes, lon_start, lon_quote) orelse continue :wpt_loop;
         const lon = std.fmt.parseFloat(f64, bytes[lon_start..lon_end]) catch continue :wpt_loop;
 
         const ele: ?f64 = if (parseTagContent(bytes, content, content_start, wpt_end, "<ele>", "</ele>")) |s|
@@ -257,22 +264,16 @@ pub fn readGPXComplete(allocator: std.mem.Allocator, bytes: []const u8, base_pac
         .sections = sections,
         .stages = stages,
         .metadata = metadata,
-        .fullResPoints = trace_points,
+        // Same allocation reinterpreted as a flat [lat, lon, ele, ...] slice:
+        // [3]f64 has no padding, so the [n][3]f64 buffer is exactly 3n f64s.
+        // GPXData.deinit frees it (byte length and alignment are unchanged).
+        .fullResPoints = @as([*]f64, @ptrCast(trace_points.ptr))[0 .. trace_points.len * 3],
     };
 }
 
-/// Live-recalibration entry point for the worker. Re-parses the GPX bytes,
-/// rebuilds the trace and waypoints, then recalibrates the section or stage ETAs
-/// against the runner's current trace index and actual elapsed seconds.
-///
-/// `is_stage` selects which boundary set to recalibrate against: false walks the
-/// section boundaries (Start/TimeBarrier/LifeBase/Arrival), true walks the stage
-/// boundaries (Start/LifeBase/Arrival). Legs are intentionally unsupported — they
-/// have no cutoff anchor to calibrate against. Returns null when the route has
-/// fewer than two boundaries of the requested kind. Caller owns the result and
-/// must call `.deinit()`.
-/// Section and stage recalibration sharing one GPX parse. Either field is null
-/// when the route lacks two boundaries of that kind. Caller owns both.
+/// Section and stage recalibration from one parsed route. Either field is null
+/// when the route lacks two boundaries of that kind (legs are intentionally
+/// unsupported — no cutoff anchor to calibrate against). Caller owns both.
 pub const RecalibrationPair = struct {
     section: ?calibration.Recalibration,
     stage: ?calibration.Recalibration,
@@ -283,6 +284,82 @@ pub const RecalibrationPair = struct {
     }
 };
 
+/// A parsed GPX route (trace + waypoints) that outlives a single call, so live
+/// recalibration can run repeatedly (every GPS fix) without re-parsing the GPX
+/// bytes and rebuilding the trace each tick. The worker holds one resident
+/// Route per loaded file and calls `recalibrateBoth` on it.
+pub const Route = struct {
+    trace: Trace,
+    waypoints: []Waypoint,
+
+    pub fn init(allocator: std.mem.Allocator, bytes: []const u8) !Route {
+        const trace_points = try readTracePoints(allocator, bytes);
+        defer allocator.free(trace_points);
+
+        const waypoints = try readWaypoints(allocator, bytes);
+        errdefer {
+            for (waypoints) |*wpt| wpt.deinit(allocator);
+            allocator.free(waypoints);
+        }
+
+        // Trace.init copies trace_points, so the parse buffer is freed above.
+        const trace = try Trace.init(allocator, trace_points);
+        return .{ .trace = trace, .waypoints = waypoints };
+    }
+
+    pub fn deinit(self: *Route, allocator: std.mem.Allocator) void {
+        self.trace.deinit(allocator);
+        for (self.waypoints) |*wpt| wpt.deinit(allocator);
+        allocator.free(self.waypoints);
+    }
+
+    /// Recalibrate section and stage ETAs against the runner's live progress.
+    /// Either field of the pair is null when the route has fewer than two
+    /// boundaries of that kind. Caller owns the result (`.deinit()`).
+    pub fn recalibrateBoth(
+        self: *const Route,
+        allocator: std.mem.Allocator,
+        current_index: usize,
+        actual_elapsed_s: f64,
+        base_pace_s_per_km: f64,
+        k_fatigue: f64,
+        life_base_stop_s: u32,
+        weather: paceModel.WeatherLookup,
+    ) !RecalibrationPair {
+        var section = try calibration.recalibrateFromCurrent(
+            &self.trace,
+            allocator,
+            self.waypoints,
+            .section,
+            current_index,
+            actual_elapsed_s,
+            base_pace_s_per_km,
+            k_fatigue,
+            life_base_stop_s,
+            weather,
+        );
+        errdefer if (section) |*result| result.deinit(allocator);
+
+        const stage = try calibration.recalibrateFromCurrent(
+            &self.trace,
+            allocator,
+            self.waypoints,
+            .stage,
+            current_index,
+            actual_elapsed_s,
+            base_pace_s_per_km,
+            k_fatigue,
+            life_base_stop_s,
+            weather,
+        );
+
+        return .{ .section = section, .stage = stage };
+    }
+};
+
+/// One-shot variant: parse the GPX bytes, recalibrate both kinds, free the
+/// parse. Kept for callers without a resident Route; the worker's steady-state
+/// path is `Route.init` once + `recalibrateBoth` per tick.
 pub fn recalibrateGPXBoth(
     allocator: std.mem.Allocator,
     bytes: []const u8,
@@ -293,23 +370,10 @@ pub fn recalibrateGPXBoth(
     life_base_stop_s: u32,
     weather: paceModel.WeatherLookup,
 ) !RecalibrationPair {
-    const trace_points = try readTracePoints(allocator, bytes);
-    defer allocator.free(trace_points);
-
-    const waypoints = try readWaypoints(allocator, bytes);
-    defer {
-        for (waypoints) |*waypoint| waypoint.deinit(allocator);
-        allocator.free(waypoints);
-    }
-
-    var trace = try Trace.init(allocator, trace_points);
-    defer trace.deinit(allocator);
-
-    var section = try calibration.recalibrateFromCurrent(
-        &trace,
+    var route = try Route.init(allocator, bytes);
+    defer route.deinit(allocator);
+    return route.recalibrateBoth(
         allocator,
-        waypoints,
-        .section,
         current_index,
         actual_elapsed_s,
         base_pace_s_per_km,
@@ -317,22 +381,6 @@ pub fn recalibrateGPXBoth(
         life_base_stop_s,
         weather,
     );
-    errdefer if (section) |*result| result.deinit(allocator);
-
-    const stage = try calibration.recalibrateFromCurrent(
-        &trace,
-        allocator,
-        waypoints,
-        .stage,
-        current_index,
-        actual_elapsed_s,
-        base_pace_s_per_km,
-        k_fatigue,
-        life_base_stop_s,
-        weather,
-    );
-
-    return .{ .section = section, .stage = stage };
 }
 
 // Tests
@@ -869,6 +917,31 @@ test "readWaypoints: handles time parsing correctly" {
     try testing.expect(waypoints[1].time == null);
 }
 
+test "readWaypoints: single-quote attributes are parsed like double quotes" {
+    const allocator = testing.allocator;
+    const single_quote_gpx =
+        \\<?xml version="1.0" encoding="UTF-8"?>
+        \\<gpx version="1.1">
+        \\ <wpt lat='45.5' lon='7.25'>
+        \\  <name>Single Quoted</name>
+        \\  <type>LifeBase</type>
+        \\ </wpt>
+        \\</gpx>
+    ;
+
+    const waypoints = try readWaypoints(allocator, single_quote_gpx);
+    defer {
+        for (waypoints) |*wpt| wpt.deinit(allocator);
+        allocator.free(waypoints);
+    }
+
+    try testing.expectEqual(@as(usize, 1), waypoints.len);
+    try testing.expectApproxEqAbs(45.5, waypoints[0].lat, 0.0001);
+    try testing.expectApproxEqAbs(7.25, waypoints[0].lon, 0.0001);
+    try testing.expectEqualStrings("Single Quoted", waypoints[0].name);
+    try testing.expectEqualStrings("LifeBase", waypoints[0].wptType.?);
+}
+
 test "readWaypoints: missing name yields empty string" {
     const allocator = testing.allocator;
     const sample_gpx =
@@ -1112,6 +1185,36 @@ test "recalibrateGPXBoth: section and stage from one parse have the right interv
     // Start/LifeBase/Arrival -> 2 stage intervals (TimeBarrier is not a stage boundary).
     try testing.expect(pair.stage != null);
     try testing.expectEqual(@as(usize, 2), pair.stage.?.etas.len);
+}
+
+test "Route: init/deinit is leak-clean and reuse across ticks matches the one-shot path" {
+    const allocator = testing.allocator;
+
+    var route = try Route.init(allocator, recal_gpx);
+    defer route.deinit(allocator);
+
+    try testing.expectEqual(@as(usize, 7), route.trace.points.len);
+    try testing.expectEqual(@as(usize, 4), route.waypoints.len);
+
+    // Two consecutive ticks on the same parsed route (the worker's steady state).
+    var tick1 = try route.recalibrateBoth(allocator, 0, 0.0, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
+    defer tick1.deinit(allocator);
+    var tick2 = try route.recalibrateBoth(allocator, 2, 600.0, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
+    defer tick2.deinit(allocator);
+
+    // Must agree with the one-shot parse-per-call variant.
+    var one_shot = try recalibrateGPXBoth(allocator, recal_gpx, 2, 600.0, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
+    defer one_shot.deinit(allocator);
+
+    try testing.expect(tick2.section != null and one_shot.section != null);
+    try testing.expectEqual(one_shot.section.?.etas.len, tick2.section.?.etas.len);
+    try testing.expectApproxEqAbs(one_shot.section.?.calibrationFactor, tick2.section.?.calibrationFactor, 1e-9);
+    for (one_shot.section.?.etas, tick2.section.?.etas) |a, b| {
+        try testing.expectApproxEqAbs(a.remainingDurationS, b.remainingDurationS, 1e-9);
+        try testing.expectApproxEqAbs(a.cumulativeRemainingS, b.cumulativeRemainingS, 1e-9);
+    }
+    try testing.expect(tick2.stage != null and one_shot.stage != null);
+    try testing.expectEqual(one_shot.stage.?.etas.len, tick2.stage.?.etas.len);
 }
 
 test "recalibrateGPXBoth: returns null fields when fewer than two boundaries" {

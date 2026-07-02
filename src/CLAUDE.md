@@ -17,6 +17,8 @@
 - Messages use `{ type, data, id }` format for request/response tracking
 - Never `postMessage` Zigar proxy objects — use `valueOf()` to copy to plain JS first
 - Convert Zig strings via `.string`, Zig `i64` via `Number()` (no BigInt in state)
+- The worker owns two resident WASM objects: a cached `Trace` (query handlers) and a parsed `Route` (recalibration). They are cache-owned — never `deinit()` them inside a message handler; only the cache-replacement paths free them
+- Per-call WASM objects (`readGPXComplete` results, `getRouteSection`'s trace) must be freed in `try/finally` so error paths don't leak
 
 Example sanitization:
 

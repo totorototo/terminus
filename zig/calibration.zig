@@ -1,11 +1,15 @@
 const std = @import("std");
 const Trace = @import("trace.zig").Trace;
 const Waypoint = @import("gpxdata.zig").Waypoint;
+const bearingTo = @import("gpspoint.zig").bearingTo;
 const paceModel = @import("paceModel.zig");
 const segment = @import("segment.zig");
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Live recalibration (shared by section.zig and stage.zig)
+// Boundary-kind generic logic shared by section.zig and stage.zig:
+// a-priori interval statistics (computeBoundaryStats) + live recalibration
+// (recalibrateFromCurrent). Sections and stages differ only in WHICH waypoints
+// are boundaries — captured by `BoundaryKind` — so the physics live here once.
 // ──────────────────────────────────────────────────────────────────────────────
 //
 // Where computeFromWaypoints predicts once at file load, `recalibrateFromCurrent`
@@ -39,6 +43,179 @@ fn isBoundary(wpt: Waypoint, kind: BoundaryKind) bool {
         .stage => wpt.isStageBoundary(),
     };
 }
+
+/// Planned stop at an interval's end checkpoint: an explicit <stopDuration>
+/// wins, otherwise LifeBases get the configured default, everything else 0.
+fn plannedStopSeconds(end_wpt: Waypoint, life_base_stop_s: u32) f64 {
+    if (end_wpt.stopDuration) |sd| return @floatFromInt(sd);
+    if (end_wpt.wptType) |t| {
+        if (std.mem.eql(u8, t, "LifeBase")) return @floatFromInt(life_base_stop_s);
+    }
+    return 0.0;
+}
+
+/// LifeBase checkpoints mark a rest/resupply stop — shed RECOVERY_LIFE_BASE of
+/// the accumulated effort distance.
+fn applyLifeBaseRecovery(end_wpt: Waypoint, d_eff: *f64) void {
+    if (end_wpt.wptType) |t| {
+        if (std.mem.eql(u8, t, "LifeBase")) {
+            d_eff.* *= (1.0 - paceModel.RECOVERY_LIFE_BASE);
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// A-priori interval statistics (file-load time)
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// Compute per-interval statistics between consecutive boundary waypoints of
+/// `kind`. `Stats` is SectionStats or StageStats — the two structs share every
+/// field except the id (`sectionId`+`stageIdx` vs `stageId`), so boundary
+/// resolution and physics live here once and the id fields are filled per kind.
+/// Returns null when the route has fewer than 2 boundaries of the requested
+/// kind. Caller owns the returned slice.
+pub fn computeBoundaryStats(
+    comptime Stats: type,
+    comptime kind: BoundaryKind,
+    trace: *const Trace,
+    allocator: std.mem.Allocator,
+    waypoints: []const Waypoint,
+    base_pace_s_per_km: f64,
+    k_fatigue: f64,
+    life_base_stop_s: u32,
+    weather: paceModel.WeatherLookup,
+) !?[]Stats {
+    var boundary_wpts = std.ArrayList(Waypoint){};
+    defer boundary_wpts.deinit(allocator);
+    for (waypoints) |wpt| {
+        if (isBoundary(wpt, kind)) try boundary_wpts.append(allocator, wpt);
+    }
+    if (boundary_wpts.items.len < 2) return null;
+
+    const num_intervals = boundary_wpts.items.len - 1;
+    var stats = std.ArrayList(Stats){};
+    errdefer stats.deinit(allocator);
+
+    // Search floor so each boundary resolves after the previous one — loop
+    // courses must not snap back to an earlier (outbound) track occurrence.
+    var search_start: usize = 0;
+
+    // Sections only: which stage each section belongs to. Increments each time
+    // a stage-boundary waypoint is encountered after the first one.
+    var current_stage_idx: usize = 0;
+    var stage_active = false;
+
+    // Cumulative effort-weighted distance (m) for the fatigue model and the
+    // moving-time clock (s) for the circadian model, carried across intervals
+    // in race order so later intervals reflect the cost of prior effort. The
+    // clock is seeded from the race start waypoint's time (if present) and
+    // kept in f64, truncated only when read, so drift stays sub-second.
+    var d_eff: f64 = 0.0;
+    const clock_start: ?i64 = boundary_wpts.items[0].time;
+    var elapsed_s: f64 = 0.0;
+
+    for (0..num_intervals) |i| {
+        if (kind == .section) {
+            if (boundary_wpts.items[i].isStageBoundary()) {
+                if (stage_active) {
+                    current_stage_idx += 1;
+                } else {
+                    stage_active = true;
+                }
+            }
+        }
+        const start_wpt = boundary_wpts.items[i];
+        const end_wpt = boundary_wpts.items[i + 1];
+
+        const start_coord = [3]f64{ start_wpt.lat, start_wpt.lon, 0.0 };
+        const end_coord = [3]f64{ end_wpt.lat, end_wpt.lon, 0.0 };
+
+        const start_result = trace.findClosestPointAfter(start_coord, search_start) orelse continue;
+        const end_result = trace.findClosestPointAfter(end_coord, start_result.index + 1) orelse continue;
+        search_start = end_result.index;
+
+        const start_index = start_result.index;
+        const end_index = end_result.index;
+        if (start_index >= end_index) continue;
+
+        const dist = trace.cumulativeDistances[end_index] - trace.cumulativeDistances[start_index];
+        const elevation_gain = trace.cumulativeElevations[end_index] - trace.cumulativeElevations[start_index];
+        const elevation_loss = trace.cumulativeElevationLoss[end_index] - trace.cumulativeElevationLoss[start_index];
+
+        // Weather for this interval is the forecast at the checkpoint the
+        // runner is heading to (the end waypoint); unknown names are neutral.
+        const interval_weather = weather.find(end_wpt.name);
+
+        const m = segment.computeSegmentMetrics(trace, start_index, end_index, base_pace_s_per_km, k_fatigue, clock_start, interval_weather, &d_eff, &elapsed_s);
+
+        applyLifeBaseRecovery(end_wpt, &d_eff);
+
+        const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
+        const avg_pf = if (dist > 0) m.totalWeightedDist / dist else 1.0;
+        const estimated_duration = m.totalTime + plannedStopSeconds(end_wpt, life_base_stop_s);
+        const difficulty: u8 = if (avg_pf < 1.1) 1 else if (avg_pf < 1.4) 2 else if (avg_pf < 1.8) 3 else if (avg_pf < 2.5) 4 else 5;
+        const max_completion_time: ?i64 = if (start_wpt.time != null and end_wpt.time != null)
+            end_wpt.time.? - start_wpt.time.?
+        else
+            null;
+
+        // Every field shared by SectionStats and StageStats. The per-kind id
+        // fields are filled below; the comptime assert proves nothing else is
+        // left unset when either struct gains a field.
+        const common = .{
+            .startIndex = start_index,
+            .endIndex = end_index,
+            .pointCount = end_index - start_index + 1,
+            .startPoint = trace.points[start_index],
+            .endPoint = trace.points[end_index],
+            .startLocation = start_wpt.name,
+            .endLocation = end_wpt.name,
+            .totalDistance = dist,
+            .totalElevation = elevation_gain,
+            .totalElevationLoss = elevation_loss,
+            .avgSlope = avg_slope,
+            .maxSlope = m.maxSlope,
+            .minElevation = m.minElevation,
+            .maxElevation = m.maxElevation,
+            .startTime = start_wpt.time,
+            .endTime = end_wpt.time,
+            .bearing = bearingTo(start_coord, end_coord),
+            .difficulty = difficulty,
+            .estimatedDuration = estimated_duration,
+            .paceFactor = avg_pf,
+            .maxCompletionTime = max_completion_time,
+            .cutoffRatio = blk: {
+                const mct = max_completion_time orelse break :blk null;
+                if (mct <= 0) break :blk null;
+                break :blk estimated_duration / @as(f64, @floatFromInt(mct));
+            },
+            .stopDuration = end_wpt.stopDuration,
+        };
+        comptime {
+            const id_fields: usize = if (kind == .section) 2 else 1;
+            std.debug.assert(@typeInfo(Stats).@"struct".fields.len ==
+                @typeInfo(@TypeOf(common)).@"struct".fields.len + id_fields);
+        }
+
+        var entry: Stats = undefined;
+        inline for (@typeInfo(@TypeOf(common)).@"struct".fields) |f| {
+            @field(entry, f.name) = @field(common, f.name);
+        }
+        if (kind == .section) {
+            entry.sectionId = i;
+            entry.stageIdx = current_stage_idx;
+        } else {
+            entry.stageId = i;
+        }
+        try stats.append(allocator, entry);
+    }
+
+    return try stats.toOwnedSlice(allocator);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Live recalibration (mid-race)
+// ──────────────────────────────────────────────────────────────────────────────
 
 /// Recalibrated ETA for one interval (section or stage), relative to the runner's
 /// current position.
@@ -107,18 +284,8 @@ fn advanceRange(
 
     stop_out.* = 0.0;
     if (apply_end_effects) {
-        if (rs.end_wpt.wptType) |t| {
-            if (std.mem.eql(u8, t, "LifeBase")) {
-                d_eff.* *= (1.0 - paceModel.RECOVERY_LIFE_BASE);
-            }
-        }
-        stop_out.* = blk: {
-            if (rs.end_wpt.stopDuration) |sd| break :blk @as(f64, @floatFromInt(sd));
-            if (rs.end_wpt.wptType) |t| {
-                if (std.mem.eql(u8, t, "LifeBase")) break :blk @as(f64, @floatFromInt(life_base_stop_s));
-            }
-            break :blk 0.0;
-        };
+        applyLifeBaseRecovery(rs.end_wpt, d_eff);
+        stop_out.* = plannedStopSeconds(rs.end_wpt, life_base_stop_s);
     }
     return m.totalTime;
 }
