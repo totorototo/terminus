@@ -25,6 +25,20 @@ fn qualifiesAsClimb(dist_m: f64, avg_gradient: f64) bool {
         dist_m * avg_gradient > MIN_CLIMB_SCORE;
 }
 
+/// Returns the index of the lowest-elevation point within [start, end), or null if the range is empty.
+fn findLowestIndex(points: []const [3]f64, start: usize, end: usize) ?usize {
+    if (start >= end) return null;
+    var lowest_index = start;
+    var lowest_elev = points[start][2];
+    for (start + 1..end) |index| {
+        if (points[index][2] < lowest_elev) {
+            lowest_elev = points[index][2];
+            lowest_index = index;
+        }
+    }
+    return lowest_index;
+}
+
 /// For each peak, find the nearest preceding valley (from the AMPD-detected valleys list)
 /// and compute climb statistics. Falls back to index 0 when no valley precedes a peak.
 /// Both `peaks` and `valleys` must be sorted ascending. Caller owns the returned slice.
@@ -66,13 +80,18 @@ pub fn detectClimbs(
         // Use the detected valley if it precedes this peak, otherwise fall back to index 0.
         // Fallback mirrors Garmin Climb Pro: the trail start is treated as the implicit
         // climb origin, valid for races where the start is typically the lowest point.
-        const valley_idx = if (valleys.len > 0 and valleys[valley_cursor] < peak_idx)
+        const ampd_valley_idx = if (valleys.len > 0 and valleys[valley_cursor] < peak_idx)
             valleys[valley_cursor]
         else
             0;
 
-        // Skip if this valley was already claimed by a previous climb (no shared start)
-        if (valley_idx < min_valley_start) continue;
+        // If the nearest AMPD valley was already claimed by a prior climb, scan the
+        // unclaimed range for the actual lowest point and use it as the valley base,
+        // instead of dropping this peak's climb entirely.
+        const valley_idx = if (ampd_valley_idx < min_valley_start)
+            findLowestIndex(points, min_valley_start, peak_idx) orelse min_valley_start
+        else
+            ampd_valley_idx;
 
         if (valley_idx >= peak_idx) continue;
 
@@ -194,17 +213,20 @@ test "detectClimbs: empty peaks with valid points yields no climbs" {
     try std.testing.expectEqual(@as(usize, 0), climbs.len);
 }
 
-test "detectClimbs: two peaks share same valley produces only one climb" {
+test "detectClimbs: no AMPD valley between peaks uses fallback minimum" {
     const allocator = std.testing.allocator;
 
-    // Valley at 0, then two qualifying peaks with NO valley between them.
-    // Without the min_valley_start guard both peaks would map to valley 0,
-    // producing overlapping climbs (the bug that caused "two climbs in progress").
+    // AMPD detected no valley between the two peaks. The fallback path should
+    // find the lowest point in the unclaimed range and use it as the valley
+    // base for the second climb, instead of dropping it.
+    //
+    // Climb A: valley=0 (100m) -> peak=2 (600m), 2000m, 25%, score 50000 ✓
+    // Climb B: fallback valley=3 (580m) -> peak=4 (700m), 1500m, 8%, score 12000 ✓
     const points = [_][3]f64{
         [3]f64{ 0.0, 0.0, 100.0 }, // 0: valley
         [3]f64{ 0.0, 0.1, 200.0 }, // 1
-        [3]f64{ 0.0, 0.2, 600.0 }, // 2: peak A  (qualifies: 2000m × 25% = 50000)
-        [3]f64{ 0.0, 0.3, 580.0 }, // 3: slight dip, not a detected valley
+        [3]f64{ 0.0, 0.2, 600.0 }, // 2: peak A
+        [3]f64{ 0.0, 0.3, 580.0 }, // 3: dip, not detected by AMPD, used as fallback valley
         [3]f64{ 0.0, 0.4, 700.0 }, // 4: peak B
     };
     const dists = [_]f64{ 0.0, 500.0, 2000.0, 2500.0, 4000.0 };
@@ -215,10 +237,11 @@ test "detectClimbs: two peaks share same valley produces only one climb" {
     const climbs = try detectClimbs(allocator, peaks[0..], valleys[0..], points[0..], dists[0..]);
     defer allocator.free(climbs);
 
-    // Only the first peak can claim valley 0; second peak has no valid valley → 1 climb
-    try std.testing.expectEqual(@as(usize, 1), climbs.len);
+    try std.testing.expectEqual(@as(usize, 2), climbs.len);
     try std.testing.expectEqual(@as(usize, 0), climbs[0].startIndex);
     try std.testing.expectEqual(@as(usize, 2), climbs[0].endIndex);
+    try std.testing.expectEqual(@as(usize, 3), climbs[1].startIndex);
+    try std.testing.expectEqual(@as(usize, 4), climbs[1].endIndex);
 }
 
 test "detectClimbs: Garmin qualification filter" {
