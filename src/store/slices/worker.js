@@ -1,12 +1,9 @@
 import { createWorkerMessenger } from "./workerMessenger.js";
 import { MESSAGE_TYPES } from "./workerTypes.js";
 import {
-  validateGPSDataResults,
   validateGPXResults,
   validatePointsAtDistancesResults,
   validateRouteSectionResults,
-  validateRouteStatsResults,
-  validateSectionsResults,
 } from "./workerValidation.js";
 
 // Default worker factory (can be overridden for testing)
@@ -19,9 +16,6 @@ function createGPSWorker() {
 // Error messages for consistent user feedback and i18n support
 const ERROR_MESSAGES = {
   GPX_FILE: "Failed to process GPX File",
-  GPS_DATA: "Failed to process GPS Data",
-  SECTIONS: "Failed to process Sections",
-  ROUTE_STATS: "Failed to calculate Route Stats",
   POINTS_AT_DISTANCES: "Failed to find points at distances",
   ROUTE_SECTION: "Failed to get route section",
   CLOSEST_LOCATION: "Failed to find closest point",
@@ -41,6 +35,15 @@ export const createWorkerSlice = (set, get, workerFactory) => {
   let worker = null;
   let messenger = null;
   let rawGpxBytes = null; // stored so we can re-process with updated pace settings
+
+  // Route-identity handshake for findClosestLocation, which fires on every GPS
+  // fix: `routeVersion` bumps whenever a route is (re)loaded, and
+  // `coordinatesSentForVersion` tracks whether the worker's resident trace
+  // already matches it. Once they match, the full coordinate array (which can
+  // be tens of thousands of points) no longer needs to be re-cloned through
+  // postMessage on every fix — see getResidentTrace in gpxWorker.js.
+  let routeVersion = 0;
+  let coordinatesSentForVersion = null;
 
   // Helper: Handle worker operation errors and update state
   const handleWorkerError = (error, defaultMessage) => {
@@ -101,6 +104,9 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
       try {
         worker = factory();
+        // A freshly created worker has no resident trace yet — force the next
+        // findClosestLocation call to (re)send coordinates.
+        coordinatesSentForVersion = null;
 
         // Create messenger with state update callbacks
         messenger = createWorkerMessenger(worker, {
@@ -231,6 +237,9 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         worker = null;
       }
 
+      // The next worker instance starts with an empty resident-trace cache.
+      coordinatesSentForVersion = null;
+
       // Reject all pending requests to prevent hanging promises
       if (messenger) {
         messenger.cleanup(new Error("Worker was terminated"));
@@ -291,6 +300,14 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
         // Validate worker results before setting state
         validateGPXResults(results);
+
+        // A newly (re)parsed route means the worker's PROCESS_GPX_FILE call
+        // rebuilt its GPXData/trace from scratch — any resident trace cached
+        // from a prior findClosestLocation call for the old route is now
+        // stale, so bump routeVersion and force the next findClosestLocation
+        // call to resend coordinates once.
+        routeVersion += 1;
+        coordinatesSentForVersion = null;
 
         get().setTraceData({
           data: results.trace.points,
@@ -373,100 +390,6 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       } catch (error) {
         // Recalibration is a refinement, not a hard dependency — log and move on.
         console.error("Recalibration failed:", error.message);
-      }
-    },
-
-    processGPSData: async (coordinates, onProgress) => {
-      try {
-        if (!messenger) {
-          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
-        }
-
-        const results = await messenger.send(
-          "PROCESS_GPS_DATA",
-          { coordinates },
-          onProgress,
-        );
-
-        // Validate worker results before setting state
-        validateGPSDataResults(results);
-
-        get().setTraceData({
-          data: results.points,
-          slopes: results.slopes,
-          cumulativeDistances: results.cumulativeDistances,
-          cumulativeElevations: results.cumulativeElevations,
-          cumulativeElevationLoss: results.cumulativeElevationLoss,
-        });
-
-        get().updateStats({
-          distance: results.totalDistance ?? 0,
-          elevationGain: results.totalElevation ?? 0,
-          elevationLoss: results.totalElevationLoss ?? 0,
-          pointCount: results.pointCount ?? 0,
-        });
-
-        return results;
-      } catch (error) {
-        handleWorkerError(error, ERROR_MESSAGES.GPS_DATA);
-      }
-    },
-
-    processSections: async (coordinates, sections, onProgress) => {
-      try {
-        if (!messenger) {
-          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
-        }
-
-        const results = await messenger.send(
-          "PROCESS_SECTIONS",
-          { coordinates, sections },
-          onProgress,
-        );
-
-        // Validate worker results before setting state
-        if (results) {
-          validateSectionsResults(results);
-        }
-
-        get().setSections(results ?? []);
-        get().updateStats({
-          distance: results?.totalDistance ?? 0,
-          elevationGain: results?.totalElevationGain ?? 0,
-          elevationLoss: results?.totalElevationLoss ?? 0,
-          pointCount: results?.pointCount ?? 0,
-        });
-
-        return results;
-      } catch (error) {
-        handleWorkerError(error, ERROR_MESSAGES.SECTIONS);
-      }
-    },
-
-    calculateRouteStats: async (coordinates, segments) => {
-      try {
-        if (!messenger) {
-          throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
-        }
-
-        const results = await messenger.send("CALCULATE_ROUTE_STATS", {
-          coordinates,
-          segments,
-        });
-
-        // Validate worker results before setting state
-        validateRouteStatsResults(results);
-
-        get().updateStats({
-          distance: results.distance,
-          elevationGain: results.elevationGain,
-          elevationLoss: results.elevationLoss,
-          pointCount: results.pointCount,
-        });
-
-        return results;
-      } catch (error) {
-        handleWorkerError(error, ERROR_MESSAGES.ROUTE_STATS);
       }
     },
 
@@ -590,10 +513,19 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           return null;
         }
 
-        const results = await messenger.send("FIND_CLOSEST_LOCATION", {
-          coordinates,
-          target: point,
-        });
+        // Send the full coordinate array (which can be tens of thousands of
+        // points) only on the first call for this route — the worker caches
+        // it in a resident Trace keyed by routeVersion, and findClosestLocation
+        // fires on every GPS fix, so every call after the first can skip
+        // re-cloning it through postMessage.
+        const needsCoordinates = coordinatesSentForVersion !== routeVersion;
+        const payload = { routeVersion, target: point };
+        if (needsCoordinates) {
+          payload.coordinates = coordinates;
+        }
+
+        const results = await messenger.send("FIND_CLOSEST_LOCATION", payload);
+        coordinatesSentForVersion = routeVersion;
 
         return results;
       } catch (error) {

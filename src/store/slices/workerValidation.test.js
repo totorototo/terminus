@@ -2,14 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   validateArray,
-  validateGPSDataResults,
   validateGPXResults,
   validateNumber,
   validateObject,
   validatePointsAtDistancesResults,
   validateRouteSectionResults,
-  validateRouteStatsResults,
-  validateSectionsResults,
 } from "./workerValidation.js";
 
 // ── Primitive validators ───────────────────────────────────────────────────────
@@ -187,159 +184,6 @@ describe("validateGPXResults", () => {
     const r = validGPXResults();
     r.climbs = undefined;
     expect(() => validateGPXResults(r)).toThrow(/results\.climbs/);
-  });
-});
-
-// ── validateGPSDataResults ─────────────────────────────────────────────────────
-
-function validGPSDataResults() {
-  return {
-    points: [],
-    slopes: [],
-    cumulativeDistances: [],
-    cumulativeElevations: [],
-    cumulativeElevationLoss: [],
-    totalDistance: 0,
-    totalElevation: 0,
-    totalElevationLoss: 0,
-    pointCount: 0,
-  };
-}
-
-describe("validateGPSDataResults", () => {
-  it("returns true for a complete valid result", () => {
-    expect(validateGPSDataResults(validGPSDataResults())).toBe(true);
-  });
-
-  it("throws when results is null", () => {
-    expect(() => validateGPSDataResults(null)).toThrow(
-      "No results returned from worker",
-    );
-  });
-
-  it("throws when points is not an array", () => {
-    const r = validGPSDataResults();
-    r.points = {};
-    expect(() => validateGPSDataResults(r)).toThrow(/results\.points/);
-  });
-
-  it("throws when totalDistance is not a number", () => {
-    const r = validGPSDataResults();
-    r.totalDistance = null;
-    expect(() => validateGPSDataResults(r)).toThrow(/results\.totalDistance/);
-  });
-
-  it("throws when pointCount is not a number", () => {
-    const r = validGPSDataResults();
-    r.pointCount = "5";
-    expect(() => validateGPSDataResults(r)).toThrow(/results\.pointCount/);
-  });
-
-  it("throws when cumulativeElevationLoss is missing", () => {
-    const r = validGPSDataResults();
-    delete r.cumulativeElevationLoss;
-    expect(() => validateGPSDataResults(r)).toThrow(
-      /results\.cumulativeElevationLoss/,
-    );
-  });
-});
-
-// ── validateSectionsResults ────────────────────────────────────────────────────
-
-function validSectionsResults() {
-  const arr = [{ id: 1 }];
-  arr.totalDistance = 1000;
-  arr.totalElevationGain = 50;
-  arr.totalElevationLoss = 30;
-  arr.pointCount = 100;
-  return arr;
-}
-
-describe("validateSectionsResults", () => {
-  it("returns true for a valid sections array with summary properties", () => {
-    expect(validateSectionsResults(validSectionsResults())).toBe(true);
-  });
-
-  it("throws when results is null", () => {
-    expect(() => validateSectionsResults(null)).toThrow(
-      "No results returned from worker",
-    );
-  });
-
-  it("throws when results is a plain object (not array)", () => {
-    const r = {
-      totalDistance: 0,
-      totalElevationGain: 0,
-      totalElevationLoss: 0,
-      pointCount: 0,
-    };
-    expect(() => validateSectionsResults(r)).toThrow(/results/);
-  });
-
-  it("throws when totalDistance is not a number", () => {
-    const r = validSectionsResults();
-    r.totalDistance = "1000";
-    expect(() => validateSectionsResults(r)).toThrow(/results\.totalDistance/);
-  });
-
-  it("throws when totalElevationGain is missing", () => {
-    const r = validSectionsResults();
-    delete r.totalElevationGain;
-    expect(() => validateSectionsResults(r)).toThrow(
-      /results\.totalElevationGain/,
-    );
-  });
-
-  it("throws when pointCount is not a number", () => {
-    const r = validSectionsResults();
-    r.pointCount = null;
-    expect(() => validateSectionsResults(r)).toThrow(/results\.pointCount/);
-  });
-});
-
-// ── validateRouteStatsResults ──────────────────────────────────────────────────
-
-function validRouteStatsResults() {
-  return { distance: 0, elevationGain: 0, elevationLoss: 0, pointCount: 0 };
-}
-
-describe("validateRouteStatsResults", () => {
-  it("returns true for a valid result", () => {
-    expect(validateRouteStatsResults(validRouteStatsResults())).toBe(true);
-  });
-
-  it("throws when results is null", () => {
-    expect(() => validateRouteStatsResults(null)).toThrow(
-      "No results returned from worker",
-    );
-  });
-
-  it("throws when distance is not a number", () => {
-    const r = validRouteStatsResults();
-    r.distance = null;
-    expect(() => validateRouteStatsResults(r)).toThrow(/results\.distance/);
-  });
-
-  it("throws when elevationGain is a string", () => {
-    const r = validRouteStatsResults();
-    r.elevationGain = "50";
-    expect(() => validateRouteStatsResults(r)).toThrow(
-      /results\.elevationGain/,
-    );
-  });
-
-  it("throws when elevationLoss is missing", () => {
-    const r = validRouteStatsResults();
-    delete r.elevationLoss;
-    expect(() => validateRouteStatsResults(r)).toThrow(
-      /results\.elevationLoss/,
-    );
-  });
-
-  it("throws when pointCount is missing", () => {
-    const r = validRouteStatsResults();
-    delete r.pointCount;
-    expect(() => validateRouteStatsResults(r)).toThrow(/results\.pointCount/);
   });
 });
 

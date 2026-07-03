@@ -28,7 +28,12 @@ async function initializeZig() {
 // the incoming coordinates actually change.
 //
 // Coordinates arrive by structured clone, so reference identity can't be used;
-// a cheap fingerprint (length + first/middle/last point) identifies the route.
+// a cheap fingerprint (length + first/middle/last point) identifies the route
+// for callers that always send coordinates. Callers that fire at fix-rate
+// (findClosestLocation) instead pass a `routeVersion` handshake token: once
+// the worker has a resident trace tagged with that version, it can be reused
+// on every subsequent call without the caller re-cloning the whole coordinate
+// array through postMessage each time (see findClosestLocation below).
 
 let residentTrace = null;
 let residentTraceKey = null;
@@ -39,17 +44,42 @@ function traceKeyFor(coordinates) {
   const first = coordinates[0];
   const mid = coordinates[n >> 1];
   const last = coordinates[n - 1];
-  return `${n}:${first[0]},${first[1]},${first[2]}:${mid[0]},${mid[1]},${mid[2]}:${last[0]},${last[1]},${last[2]}`;
+  // Sampling only 3 points can't distinguish two routes of equal length that
+  // happen to agree at those indices but diverge elsewhere (e.g. an edited
+  // waypoint in the middle of one half). The coordinates array was already
+  // fully materialized by postMessage's structured clone, so a single-pass
+  // checksum over every point is negligible next to that cost, and negligible
+  // next to Trace.init's Douglas-Peucker/smoothing work it lets us skip.
+  let checksum = 0;
+  for (let i = 0; i < n; i++) {
+    const p = coordinates[i];
+    checksum = (checksum * 31 + p[0] * 1e6 + p[1] * 1e6 + p[2]) % 1_000_000_007;
+  }
+  return `${n}:${first[0]},${first[1]},${first[2]}:${mid[0]},${mid[1]},${mid[2]}:${last[0]},${last[1]},${last[2]}:${checksum}`;
 }
 
 /**
  * Return the resident Trace for these coordinates, rebuilding it only when the
  * fingerprint changes. The cache owns the Trace — callers must NOT deinit it.
+ *
+ * `routeVersion`, when provided, is a cheap caller-supplied handshake token
+ * (e.g. incremented once per loaded GPX file) that keys the cache instead of
+ * fingerprinting `coordinates`. This lets a caller omit `coordinates` on
+ * repeat calls once the worker already holds the matching trace — the
+ * fix-rate `findClosestLocation` path relies on this to avoid re-sending the
+ * full route on every GPS fix. `coordinates` is required on the first call
+ * for a given routeVersion (cache miss).
  */
-function getResidentTrace(coordinates) {
-  const key = traceKeyFor(coordinates);
+function getResidentTrace(coordinates, routeVersion) {
+  const key =
+    routeVersion != null ? `v:${routeVersion}` : traceKeyFor(coordinates);
   if (residentTrace !== null && key === residentTraceKey) {
     return residentTrace;
+  }
+  if (!coordinates) {
+    throw new Error(
+      "No coordinates provided and no resident trace matches this routeVersion",
+    );
   }
   if (residentTrace !== null) {
     residentTrace.deinit();
@@ -134,6 +164,70 @@ function measureMs(label) {
   }
 }
 
+// ── Trace sanitization ────────────────────────────────────────────────────────
+// Trace.points is [][3]f64 in Zig — an array of fixed-size structs. Walking it
+// with Zigar's generic .valueOf() pays one proxy trap per field per point
+// (3 traps * N points) to build a nested JS array. Trace also exposes the same
+// backing memory flattened as pointsFlat ([]f64, stride 3), so its `.typedArray`
+// is a single zero-copy Float64Array view — reshaping that with a flat loop is
+// far cheaper than the proxy-recursive path, for the same [[lat,lon,ele], ...]
+// output shape callers already expect.
+
+/** Reshape a flat stride-3 [lat, lon, ele, ...] buffer into [[lat,lon,ele], ...]. */
+function flattenToTriples(flat) {
+  const n = flat.length / 3;
+  const points = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const o = i * 3;
+    points[i] = [flat[o], flat[o + 1], flat[o + 2]];
+  }
+  return points;
+}
+
+/** Sanitize climb segments — all fields are numeric (usize/f64), no strings or i64. */
+function sanitizeClimbs(traceClimbs) {
+  const sanitizedClimbs = [];
+  if (traceClimbs) {
+    for (let i = 0; i < traceClimbs.length; i++) {
+      const c = traceClimbs[i].valueOf();
+      sanitizedClimbs.push({
+        startIndex: Number(c.startIndex),
+        endIndex: Number(c.endIndex),
+        startDistM: c.startDistM,
+        climbDistM: c.climbDistM,
+        elevationGain: c.elevationGain,
+        summitElev: c.summitElev,
+        avgGradient: c.avgGradient,
+      });
+    }
+  }
+  return sanitizedClimbs;
+}
+
+/**
+ * Convert a Zigar Trace to plain JS, avoiding the expensive per-point proxy
+ * walk for `points` (see above). `sanitizedClimbs` is optional pre-sanitized
+ * climbs data to reuse instead of re-deriving it from the proxy.
+ */
+function sanitizeTrace(trace, sanitizedClimbs) {
+  const flat = trace.pointsFlat;
+  const points = flat ? flattenToTriples(flat.typedArray ?? flat) : [];
+
+  return {
+    points,
+    slopes: trace.slopes.valueOf(),
+    cumulativeDistances: trace.cumulativeDistances.valueOf(),
+    cumulativeElevations: trace.cumulativeElevations.valueOf(),
+    cumulativeElevationLoss: trace.cumulativeElevationLoss.valueOf(),
+    peaks: trace.peaks.valueOf(),
+    valleys: trace.valleys.valueOf(),
+    climbs: sanitizedClimbs ?? sanitizeClimbs(trace.climbs),
+    totalDistance: trace.totalDistance,
+    totalElevation: trace.totalElevation,
+    totalElevationLoss: trace.totalElevationLoss,
+  };
+}
+
 /**
  * Build a Zig `WeatherLookup` (parallel name/value arrays) from a forecast map
  * keyed by checkpoint name. The values are converted from the store's forecast
@@ -174,18 +268,6 @@ self.onmessage = async function (e) {
     switch (type) {
       case "PROCESS_GPX_FILE":
         await processGPXFile(data, id);
-        break;
-
-      case "PROCESS_GPS_DATA":
-        await processGPSData(data, id);
-        break;
-
-      case "PROCESS_SECTIONS":
-        await processSections(data, id);
-        break;
-
-      case "CALCULATE_ROUTE_STATS":
-        await calculateRouteStats(data, id);
         break;
 
       case "FIND_POINTS_AT_DISTANCES":
@@ -361,27 +443,13 @@ async function sanitizeAndPostGPXResults(gpxData, requestId) {
     ? new Float64Array(fullResPoints.typedArray ?? fullResPoints)
     : new Float64Array(0);
 
-  // Sanitize climb segments — all fields are numeric (usize/f64), no strings or i64
-  const sanitizedClimbs = [];
-  const traceClimbs = gpxData.trace.climbs;
-  if (traceClimbs) {
-    for (let i = 0; i < traceClimbs.length; i++) {
-      const c = traceClimbs[i].valueOf();
-      sanitizedClimbs.push({
-        startIndex: Number(c.startIndex),
-        endIndex: Number(c.endIndex),
-        startDistM: c.startDistM,
-        climbDistM: c.climbDistM,
-        elevationGain: c.elevationGain,
-        summitElev: c.summitElev,
-        avgGradient: c.avgGradient,
-      });
-    }
-  }
+  // Sanitize climb segments once and reuse for both the top-level `climbs` and
+  // `trace.climbs` — avoids sanitizing the same proxy data twice.
+  const sanitizedClimbs = sanitizeClimbs(gpxData.trace.climbs);
 
   const results = {
     metadata,
-    trace: gpxData.trace.valueOf(),
+    trace: sanitizeTrace(gpxData.trace, sanitizedClimbs),
     waypoints: sanitizedWaypoints,
     legs: sanitizedLegs,
     sections: sanitizedSections,
@@ -401,177 +469,6 @@ async function sanitizeAndPostGPXResults(gpxData, requestId) {
     },
     [routeLatLonEle.buffer],
   );
-}
-
-async function processGPSData(gpsData, requestId) {
-  markStart("processGPSData");
-  const trace = getResidentTrace(gpsData.coordinates);
-
-  self.postMessage({
-    type: "PROGRESS",
-    id: requestId,
-    progress: 25,
-    message: "Trace initialized...",
-  });
-
-  self.postMessage({
-    type: "PROGRESS",
-    id: requestId,
-    progress: 75,
-    message: "Calculating statistics...",
-  });
-
-  // Convert to plain JS object before posting (never post Zigar proxies)
-  const results = trace.valueOf();
-
-  markEnd("processGPSData");
-
-  self.postMessage({
-    type: "GPS_DATA_PROCESSED",
-    id: requestId,
-    results,
-    timingMs: { gpsProcess: measureMs("processGPSData") },
-  });
-}
-
-async function processSections(data, requestId) {
-  markStart("processSections");
-  const { coordinates, sections } = data;
-
-  // Validate coordinates before creating trace
-  if (!coordinates || !Array.isArray(coordinates) || coordinates.length === 0) {
-    throw new Error("Invalid coordinates data");
-  }
-
-  const trace = getResidentTrace(coordinates);
-
-  // Send progress updates during processing
-  self.postMessage({
-    type: "PROGRESS",
-    id: requestId,
-    progress: 25,
-    message: "Trace initialized...",
-  });
-
-  // One deep copy of the points via valueOf() instead of paying three Zigar
-  // proxy traps per point when slicing section ranges below.
-  const allPoints = trace.points.valueOf();
-
-  const results = sections.map((section) => {
-    const {
-      startKm,
-      endKm,
-      startCheckpoint: { location: startLocation },
-      endCheckpoint: { location: endLocation },
-    } = section;
-
-    const startIndex = trace.findIndexAtDistance(startKm * 1000);
-    const endIndex = trace.findIndexAtDistance(endKm * 1000);
-
-    // Calculate section statistics directly from main trace using indices
-    // This avoids creating sub-traces and stays in WASM memory (zero-copy)
-    let sectionDistance = 0;
-    let sectionElevation = 0;
-    let sectionElevationLoss = 0;
-    let sectionPoints = [];
-
-    if (startIndex < endIndex && endIndex < trace.cumulativeDistances.length) {
-      sectionDistance =
-        trace.cumulativeDistances[endIndex] -
-        trace.cumulativeDistances[startIndex];
-      sectionElevation =
-        trace.cumulativeElevations[endIndex] -
-        trace.cumulativeElevations[startIndex];
-      sectionElevationLoss =
-        trace.cumulativeElevationLoss[endIndex] -
-        trace.cumulativeElevationLoss[startIndex];
-
-      sectionPoints = allPoints.slice(startIndex, endIndex + 1);
-    }
-
-    const startPoint = trace.pointAtDistance(startKm * 1000);
-    const endPoint = trace.pointAtDistance(endKm * 1000);
-
-    // Extract data before cleanup - convert Zigar proxies to plain JS
-    const result = {
-      segmentId: section.id,
-      pointCount: sectionPoints.length,
-      startKm,
-      endKm,
-      points: sectionPoints,
-      startPoint: startPoint
-        ? [startPoint[0], startPoint[1], startPoint[2]]
-        : null,
-      endPoint: endPoint ? [endPoint[0], endPoint[1], endPoint[2]] : null,
-      startLocation,
-      endLocation,
-      totalDistance: sectionDistance,
-      totalElevation: sectionElevation,
-      totalElevationLoss: sectionElevationLoss,
-      startIndex,
-      endIndex,
-    };
-
-    return result;
-  });
-
-  // Attach summary properties so validateSectionsResults passes
-  results.totalDistance = results.reduce(
-    (sum, s) => sum + (s.totalDistance || 0),
-    0,
-  );
-  results.totalElevationGain = results.reduce(
-    (sum, s) => sum + (s.totalElevation || 0),
-    0,
-  );
-  results.totalElevationLoss = results.reduce(
-    (sum, s) => sum + (s.totalElevationLoss || 0),
-    0,
-  );
-  results.pointCount = results.reduce((sum, s) => sum + (s.pointCount || 0), 0);
-
-  markEnd("processSections");
-
-  self.postMessage({
-    type: "SECTIONS_PROCESSED",
-    id: requestId,
-    results,
-    timingMs: { sectionsProcess: measureMs("processSections") },
-  });
-}
-
-// Calculate route statistics (moderate computation)
-async function calculateRouteStats(data, requestId) {
-  const { coordinates, segments } = data;
-  const trace = getResidentTrace(coordinates);
-  const maxDistance = trace.totalDistance;
-
-  const stats = segments.map((segment) => {
-    // Validate and clamp distances to trace bounds
-    const startDist = Math.max(0, Math.min(segment.start, maxDistance));
-    const endDist = Math.max(startDist, Math.min(segment.end, maxDistance));
-
-    const sectionPoints = trace.sliceBetweenDistances(startDist, endDist);
-    const startPoint = trace.pointAtDistance(startDist);
-    const endPoint = trace.pointAtDistance(endDist);
-
-    return {
-      segmentId: segment.id,
-      distance: endDist - startDist,
-      pointCount: sectionPoints?.length ?? 0,
-      // Read directly from WASM instead of calling .valueOf()
-      startPoint: startPoint
-        ? [startPoint[0], startPoint[1], startPoint[2]]
-        : null,
-      endPoint: endPoint ? [endPoint[0], endPoint[1], endPoint[2]] : null,
-    };
-  });
-
-  self.postMessage({
-    type: "ROUTE_STATS_CALCULATED",
-    id: requestId,
-    stats,
-  });
 }
 
 // Find multiple points at specified distances (light computation)
@@ -761,10 +658,14 @@ async function recalibrate(data, requestId) {
   });
 }
 
-// Find closest point to target location
+// Find closest point to target location. `coordinates` may be omitted once
+// the caller has confirmed (via `routeVersion`) that the worker already holds
+// the matching resident trace — see getResidentTrace's doc comment. This is
+// what lets spotMe()'s per-GPS-fix calls avoid re-cloning the whole route
+// through postMessage on every fix.
 async function findClosestLocation(data, requestId) {
-  const { coordinates, target } = data;
-  const trace = getResidentTrace(coordinates);
+  const { coordinates, target, routeVersion } = data;
+  const trace = getResidentTrace(coordinates, routeVersion);
 
   // Null on an empty trace — report "nothing found" instead of crashing.
   const closest = trace.findClosestPoint(target);
