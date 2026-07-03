@@ -48,50 +48,6 @@ export function validateGPXResults(results) {
   return true;
 }
 
-export function validateGPSDataResults(results) {
-  if (!results) throw new Error("No results returned from worker");
-
-  validateArray(results.points, "results.points");
-  validateArray(results.slopes, "results.slopes");
-  validateArray(results.cumulativeDistances, "results.cumulativeDistances");
-  validateArray(results.cumulativeElevations, "results.cumulativeElevations");
-  validateArray(
-    results.cumulativeElevationLoss,
-    "results.cumulativeElevationLoss",
-  );
-
-  validateNumber(results.totalDistance, "results.totalDistance");
-  validateNumber(results.totalElevation, "results.totalElevation");
-  validateNumber(results.totalElevationLoss, "results.totalElevationLoss");
-  validateNumber(results.pointCount, "results.pointCount");
-
-  return true;
-}
-
-export function validateSectionsResults(results) {
-  if (!results) throw new Error("No results returned from worker");
-
-  // Results is an array with summary properties attached
-  validateArray(results, "results");
-  validateNumber(results.totalDistance, "results.totalDistance");
-  validateNumber(results.totalElevationGain, "results.totalElevationGain");
-  validateNumber(results.totalElevationLoss, "results.totalElevationLoss");
-  validateNumber(results.pointCount, "results.pointCount");
-
-  return true;
-}
-
-export function validateRouteStatsResults(results) {
-  if (!results) throw new Error("No results returned from worker");
-
-  validateNumber(results.distance, "results.distance");
-  validateNumber(results.elevationGain, "results.elevationGain");
-  validateNumber(results.elevationLoss, "results.elevationLoss");
-  validateNumber(results.pointCount, "results.pointCount");
-
-  return true;
-}
-
 export function validatePointsAtDistancesResults(results) {
   if (!results) throw new Error("No results returned from worker");
 

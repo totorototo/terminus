@@ -23,7 +23,13 @@ function zigStr(value) {
   return { string: value };
 }
 
-function makeTrace(overrides = {}) {
+/**
+ * Shared default fields for a Trace proxy mock. Real Zigar Trace exposes
+ * pointsFlat as the same backing memory as points, reinterpreted as a flat
+ * [lat, lon, ele, ...] slice (see trace.zig); a plain array here exercises
+ * gpxWorker.js's `flat.typedArray ?? flat` fallback path.
+ */
+function baseTraceFields(overrides = {}) {
   return {
     totalDistance: 5000,
     totalElevation: 200,
@@ -31,6 +37,7 @@ function makeTrace(overrides = {}) {
     cumulativeDistances: [0, 1000, 2000, 3000, 4000, 5000],
     cumulativeElevations: [0, 20, 60, 100, 150, 200],
     cumulativeElevationLoss: [0, 0, 10, 20, 35, 50],
+    slopes: [0, 0, 0, 0, 0, 0],
     points: [
       [0.0, 0.0, 100],
       [0.001, 0.0, 120],
@@ -39,6 +46,20 @@ function makeTrace(overrides = {}) {
       [0.004, 0.0, 250],
       [0.005, 0.0, 300],
     ],
+    pointsFlat: [
+      0.0, 0.0, 100, 0.001, 0.0, 120, 0.002, 0.0, 160, 0.003, 0.0, 200, 0.004,
+      0.0, 250, 0.005, 0.0, 300,
+    ],
+    peaks: [],
+    valleys: [],
+    climbs: [],
+    ...overrides,
+  };
+}
+
+function makeTrace(overrides = {}) {
+  return {
+    ...baseTraceFields(),
     deinit: vi.fn(),
     ...overrides,
   };
@@ -154,8 +175,7 @@ function makeGpxData(overrides = {}) {
       description: zigStr("A test description"),
     },
     trace: {
-      valueOf: () => ({ points: [], cumulativeDistances: [] }),
-      climbs: [],
+      ...baseTraceFields(),
     },
     waypoints: [],
     legs: null,
@@ -204,17 +224,6 @@ describe("message routing", () => {
     await dispatch("UNKNOWN_TYPE");
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({ type: "ERROR", id: "req-1" }),
-    );
-  });
-
-  it("routes PROCESS_GPS_DATA and posts GPS_DATA_PROCESSED", async () => {
-    Trace.init.mockReturnValue({
-      ...makeTrace(),
-      valueOf: () => ({ points: [], totalDistance: 100 }),
-    });
-    await dispatch("PROCESS_GPS_DATA", { coordinates: [[0, 0, 0]] });
-    expect(postMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "GPS_DATA_PROCESSED", id: "req-1" }),
     );
   });
 
@@ -678,29 +687,6 @@ describe("getRouteSection input validation", () => {
   });
 });
 
-describe("processSections coordinate validation", () => {
-  it("rejects missing coordinates", async () => {
-    await dispatch("PROCESS_SECTIONS", { sections: [] });
-    expect(postMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "ERROR" }),
-    );
-  });
-
-  it("rejects empty coordinates array", async () => {
-    await dispatch("PROCESS_SECTIONS", { coordinates: [], sections: [] });
-    expect(postMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "ERROR" }),
-    );
-  });
-
-  it("rejects non-array coordinates", async () => {
-    await dispatch("PROCESS_SECTIONS", { coordinates: "bad", sections: [] });
-    expect(postMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "ERROR" }),
-    );
-  });
-});
-
 describe("processGPXFile sanitization", () => {
   it("converts Zig .string proxies to JS strings for waypoints", async () => {
     const gpxData = makeGpxData({
@@ -798,7 +784,7 @@ describe("processGPXFile sanitization", () => {
   it("converts BigInt usize indices to Number for climbs", async () => {
     const gpxData = makeGpxData({
       trace: {
-        valueOf: () => ({}),
+        ...baseTraceFields(),
         climbs: [makeClimb()],
       },
     });

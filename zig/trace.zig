@@ -24,6 +24,13 @@ pub const Trace = struct {
     cumulativeElevationLoss: []f64, // Cumulative elevation loss in meters
     slopes: []f64, // Slope percentages between consecutive points
     points: [][3]f64,
+    // Same backing memory as `points`, reinterpreted as a flat [lat, lon, ele, ...]
+    // []f64 (stride 3): [3]f64 has no padding, so this is a zero-copy alias, not a
+    // second allocation. Lets JS read the whole point set as one contiguous
+    // Float64Array (via Zigar's `.typedArray`) instead of paying a proxy trap per
+    // element while walking an array of [3]f64 structs. deinit() must NOT free
+    // this — freeing `points` frees the same memory.
+    pointsFlat: []f64,
     peaks: []usize, // Indices of detected peaks in smoothed elevation
     valleys: []usize, // Indices of detected valleys in smoothed elevation
     climbs: []ClimbStats, // Climb segments derived from peaks and valleys
@@ -35,6 +42,7 @@ pub const Trace = struct {
         if (coordinates.len == 0) {
             return Trace{
                 .points = @as([][3]f64, &.{}),
+                .pointsFlat = @as([]f64, &.{}),
                 .cumulativeDistances = @as([]f64, &.{}),
                 .cumulativeElevations = @as([]f64, &.{}),
                 .cumulativeElevationLoss = @as([]f64, &.{}),
@@ -145,6 +153,9 @@ pub const Trace = struct {
 
         return Trace{
             .points = final_points,
+            // Reinterpret the same allocation as final_points (not a copy); see
+            // the pointsFlat field comment. deinit() below frees only `points`.
+            .pointsFlat = @as([*]f64, @ptrCast(final_points.ptr))[0 .. final_points.len * 3],
             .cumulativeDistances = cumulativeDistances,
             .cumulativeElevations = cumulativeElevations,
             .cumulativeElevationLoss = cumulativeElevationLoss,
