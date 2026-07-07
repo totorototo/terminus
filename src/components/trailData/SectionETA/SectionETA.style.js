@@ -262,11 +262,15 @@ const style = (Component) => styled(Component)`
   .cp-line1 {
     display: flex;
     align-items: baseline;
+    justify-content: space-between;
     gap: 0.5rem;
   }
 
   .cp-line2 {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
 
   .cp-name {
@@ -284,13 +288,6 @@ const style = (Component) => styled(Component)`
     flex: 1;
   }
 
-  .cp-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-shrink: 0;
-  }
-
   .cp-eta {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
@@ -299,6 +296,7 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
     letter-spacing: -0.5px;
     line-height: 1;
+    flex-shrink: 0;
   }
 
   .cp-row.past .cp-eta {
@@ -335,16 +333,26 @@ const style = (Component) => styled(Component)`
   .cp-weather {
     display: flex;
     align-items: center;
-    gap: 0.2rem;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    padding: 0.15rem 0.4rem;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.06,
+      )};
   }
 
   .cp-weather-temp {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) =>
+      props.theme.font.weights["--font-weight-semibold"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
+        0.8,
       )};
     line-height: 1;
   }

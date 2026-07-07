@@ -82,7 +82,8 @@ const SectionETA = memo(function SectionETA({ className }) {
     })),
   );
 
-  const mutedColor = theme.colors[theme.currentVariant]["--color-text"] + "99";
+  const weatherIconColor =
+    theme.colors[theme.currentVariant]["--color-text"] + "cc";
 
   const { etaFetchKey, fetchCheckpoints } = useMemo(() => {
     if (!raceStart || isPreRace)
@@ -217,9 +218,7 @@ const SectionETA = memo(function SectionETA({ className }) {
               <span className="cp-name">
                 {sections?.[0]?.startLocation || "Start"}
               </span>
-              <div className="cp-right">
-                <span className="cp-eta">{startEtaStr}</span>
-              </div>
+              <span className="cp-eta">{startEtaStr}</span>
             </div>
             <div className="cp-line2">
               <span className="cp-km">0.0 km</span>
@@ -277,21 +276,21 @@ const SectionETA = memo(function SectionETA({ className }) {
                 <div className="cp-body">
                   <div className="cp-line1">
                     <span className="cp-name">{row.endLocation}</span>
-                    <div className="cp-right">
+                    <span className="cp-eta">{row.etaStr}</span>
+                  </div>
+                  {(Number.isFinite(row.endKm) || WeatherIcon) && (
+                    <div className="cp-line2">
+                      {Number.isFinite(row.endKm) && (
+                        <span className="cp-km">{row.endKm.toFixed(1)} km</span>
+                      )}
                       {WeatherIcon && (
                         <div className="cp-weather">
-                          <WeatherIcon size={13} color={mutedColor} />
+                          <WeatherIcon size={15} color={weatherIconColor} />
                           <span className="cp-weather-temp">
                             {row.weather.temp}°C
                           </span>
                         </div>
                       )}
-                      <span className="cp-eta">{row.etaStr}</span>
-                    </div>
-                  </div>
-                  {Number.isFinite(row.endKm) && (
-                    <div className="cp-line2">
-                      <span className="cp-km">{row.endKm.toFixed(1)} km</span>
                     </div>
                   )}
                 </div>
