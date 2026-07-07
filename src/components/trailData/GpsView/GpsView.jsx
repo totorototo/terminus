@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 
 import { animated, to, useSpring } from "@react-spring/web";
 import { useTheme } from "styled-components";
@@ -85,12 +85,6 @@ const HEADING_MIN_CHORD_RATIO = 0.1;
 // jitter.
 const RESAMPLE_STEP_METERS = 8;
 const SMOOTH_RADIUS = 3;
-
-// Scrub sensitivity: how many metres along the path a single pixel of native
-// scroll advances the position. Native scroll is used rather than wheel or drag
-// gestures so touch devices — which emit no wheel events — can scrub by swiping
-// vertically.
-const METERS_PER_SCROLL_PIXEL = 0.5;
 
 const EARTH_RADIUS = 6371000;
 const DEG_TO_RAD = Math.PI / 180;
@@ -343,23 +337,12 @@ const GpsView = memo(function GpsView({ className }) {
   );
   const cumulativeDistances = path ? path.cumulative : EMPTY_ARRAY;
 
-  // Distance scrubbed manually along the path. Null means "follow the live GPS
-  // position"; any number switches to manual preview mode.
-  const [previewMeters, setPreviewMeters] = useState(null);
-
   // Continuous (unwrapped) heading so the rotation spring always takes the
   // shortest path and never spins the long way around at the ±180° seam.
   const headingRef = useRef(0);
   // Snap (don't animate) the very first frame so the scene doesn't spin up from
   // an arbitrary zero heading on load.
   const initializedRef = useRef(false);
-  // The native scroll container that drives manual scrubbing, plus a flag to
-  // ignore the scroll events we trigger ourselves when syncing to live GPS.
-  const scrollRef = useRef(null);
-  const isSyncingScrollRef = useRef(false);
-
-  const totalDistance =
-    cumulativeDistances[cumulativeDistances.length - 1] || 0;
 
   // Live along-path distance: nearest path point to the projected GPS location.
   // Recomputed only when the location or route changes.
@@ -392,31 +375,14 @@ const GpsView = memo(function GpsView({ className }) {
     return path.cumulative[nearestIndex] || 0;
   }, [path, projectedLocation?.coords]);
 
-  const effectiveDistance = previewMeters ?? liveDistance;
-
-  // Native scroll drives the scrub: the scroll container's offset maps directly
-  // to a distance along the path. Touch swipes and desktop wheels both produce
-  // scroll events, so this works on mobile where wheel events never fire.
-  const handleScroll = (event) => {
-    // Ignore the programmatic scrolls we issue to follow the live GPS position.
-    if (isSyncingScrollRef.current) {
-      isSyncingScrollRef.current = false;
-      return;
-    }
-    const element = event.currentTarget;
-    const maxScroll = element.scrollHeight - element.clientHeight;
-    const next = (maxScroll - element.scrollTop) * METERS_PER_SCROLL_PIXEL;
-    setPreviewMeters(Math.min(Math.max(next, 0), totalDistance));
-  };
-
   // Camera target: the raw heading that should point up at the current
   // distance. Position is derived from the animated distance directly (see the
   // transform below) so the camera always lands exactly on the path instead of
   // cutting corners between interpolated x/y values.
   const rawHeading = useMemo(() => {
     if (!path) return 0;
-    return forwardHeading(path.points, cumulativeDistances, effectiveDistance);
-  }, [path, cumulativeDistances, effectiveDistance]);
+    return forwardHeading(path.points, cumulativeDistances, liveDistance);
+  }, [path, cumulativeDistances, liveDistance]);
 
   const [cameraSpring, springApi] = useSpring(() => ({
     distance: 0,
@@ -444,34 +410,14 @@ const GpsView = memo(function GpsView({ className }) {
       heading = previousHeading + shortestDelta;
       headingRef.current = heading;
     }
-    const target = { distance: effectiveDistance, rotation: heading };
+    const target = { distance: liveDistance, rotation: heading };
     if (!initializedRef.current) {
       initializedRef.current = true;
       springApi.set(target);
       return;
     }
     springApi.start(target);
-  }, [path, rawHeading, effectiveDistance, springApi]);
-
-  // While following live GPS, keep the scroll offset aligned with the live
-  // distance so a later swipe scrubs from the current spot instead of jumping.
-  useEffect(() => {
-    if (previewMeters !== null) return;
-    const element = scrollRef.current;
-    if (!element) return;
-    // Clamp to the actual maximum scroll: setting scrollTop beyond it is a
-    // no-op that fires no scroll event, which would leave the sync flag armed
-    // and swallow the next genuine swipe.
-    const maxScroll = element.scrollHeight - element.clientHeight;
-    const target = Math.max(
-      maxScroll - liveDistance / METERS_PER_SCROLL_PIXEL,
-      0,
-    );
-    if (Math.abs(element.scrollTop - target) > 0.5) {
-      isSyncingScrollRef.current = true;
-      element.scrollTop = target;
-    }
-  }, [previewMeters, liveDistance]);
+  }, [path, rawHeading, liveDistance, springApi]);
 
   const variant = theme.colors[theme.currentVariant];
   const routeColor = variant["--color-primary"];
@@ -485,7 +431,6 @@ const GpsView = memo(function GpsView({ className }) {
     );
   }
 
-  const isScrubbing = previewMeters !== null;
   // Re-project the visible trail each animation frame from the spring's distance
   // and rotation, split at the user into the upcoming route (ahead, drawn bright
   // and faded into the horizon) and the travelled trail (behind, drawn muted and
@@ -594,31 +539,6 @@ const GpsView = memo(function GpsView({ className }) {
           />
         </g>
       </svg>
-      <div
-        className="gps-view-scroll"
-        ref={scrollRef}
-        onScroll={handleScroll}
-        aria-hidden="true"
-      >
-        {/* The +100% padding adds one viewport of extra scroll so the very end
-            of the trail — otherwise hidden in the unscrollable last viewport —
-            is still reachable. */}
-        <div
-          className="gps-view-spacer"
-          style={{
-            height: `calc(${totalDistance / METERS_PER_SCROLL_PIXEL}px + 100%)`,
-          }}
-        />
-      </div>
-      {isScrubbing && (
-        <button
-          type="button"
-          className="gps-view-reset"
-          onClick={() => setPreviewMeters(null)}
-        >
-          {(effectiveDistance / 1000).toFixed(2)} km · tap to follow
-        </button>
-      )}
     </div>
   );
 });
