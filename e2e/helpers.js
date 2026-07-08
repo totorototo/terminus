@@ -13,6 +13,16 @@ export const NEAR_START = {
 };
 export const OFF_TRAIL = { latitude: 48.8584, longitude: 2.2945, accuracy: 10 };
 
+/** "km left" stat value in the mobile bottom sheet (confirms GPX loaded/updated). */
+export const kmLeft = (page) =>
+  page
+    .locator(".stat-item", { has: page.getByText("km left") })
+    .locator(".stat-value");
+
+/** "Auto-share location" toggle button (Find my current location / broadcast). */
+export const autoShareBtn = (page) =>
+  page.getByRole("button", { name: /auto-share location/i });
+
 /**
  * Click "I'm running" on the wizard, pick the first available race, and wait
  * for the app to load.

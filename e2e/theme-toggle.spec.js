@@ -11,7 +11,12 @@
 import { expect, test } from "@playwright/test";
 
 import THEME from "../src/theme/Theme.js";
-import { MID_TRAIL, mockClipboard, selectRunnerRole } from "./helpers.js";
+import {
+  kmLeft,
+  MID_TRAIL,
+  mockClipboard,
+  selectRunnerRole,
+} from "./helpers.js";
 
 const DARK_BG = THEME.colors.dark["--color-background"].toLowerCase();
 const LIGHT_BG = THEME.colors.light["--color-background"].toLowerCase();
@@ -81,14 +86,14 @@ test.describe("Theme Toggle — starting in light mode", () => {
 
 // ── Regression: 025c183 ──────────────────────────────────────────────────────
 
-test("GPS position is preserved after theme switch", async ({ browser }) => {
-  const ctx = await browser.newContext({
+test.describe("GPS position preserved after theme switch", () => {
+  test.use({
     geolocation: MID_TRAIL,
     permissions: ["geolocation"],
     colorScheme: "dark",
   });
-  try {
-    const page = await ctx.newPage();
+
+  test("GPS position is preserved after theme switch", async ({ page }) => {
     await mockClipboard(page);
     await page.goto("/");
     await selectRunnerRole(page);
@@ -96,10 +101,7 @@ test("GPS position is preserved after theme switch", async ({ browser }) => {
       timeout: 15_000,
     });
 
-    const kmLeft = page
-      .locator(".stat-item", { has: page.getByText("km left") })
-      .locator(".stat-value");
-    await expect(kmLeft).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
+    await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
 
     // Project location onto trail (~50% point)
     await page.getByRole("button", { name: /auto-share location/i }).click();
@@ -109,7 +111,7 @@ test("GPS position is preserved after theme switch", async ({ browser }) => {
     await expect
       .poll(
         async () => {
-          const v = parseFloat(await kmLeft.textContent());
+          const v = parseFloat(await kmLeft(page).textContent());
           if (Math.abs(v - settled) < 1) return v;
           settled = v;
           return null;
@@ -118,19 +120,17 @@ test("GPS position is preserved after theme switch", async ({ browser }) => {
       )
       .not.toBeNull();
 
-    const kmAtMidTrail = parseFloat(await kmLeft.textContent());
+    const kmAtMidTrail = parseFloat(await kmLeft(page).textContent());
     expect(kmAtMidTrail).toBeGreaterThan(0);
 
     // Switch theme — projected position must be preserved
     await page.getByRole("button", { name: /switch to light mode/i }).click();
     await page.waitForTimeout(600);
 
-    const kmAfterThemeSwitch = parseFloat(await kmLeft.textContent());
+    const kmAfterThemeSwitch = parseFloat(await kmLeft(page).textContent());
     expect(Math.abs(kmAfterThemeSwitch - kmAtMidTrail)).toBeLessThan(5);
 
     // Canvas still visible — 3D scene not torn down
     await expect(page.locator("canvas").first()).toBeVisible();
-  } finally {
-    await ctx.close();
-  }
+  });
 });

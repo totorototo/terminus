@@ -20,6 +20,8 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  autoShareBtn,
+  kmLeft,
   mockClipboard,
   selectFollowerRole,
   selectRunnerRole,
@@ -30,10 +32,7 @@ import {
 const FAKE_GEOLOCATION = { latitude: 42.9308, longitude: 0.154, accuracy: 10 };
 
 // Runner page: km-left stat in the mobile bottom sheet (confirms GPX loaded).
-const kmLeftValue = (page) =>
-  page
-    .locator(".stat-item", { has: page.getByText("km left") })
-    .locator(".stat-value");
+const kmLeftValue = kmLeft;
 
 // Follower page: TrailOverview total distance (confirms GPX loaded on follower).
 // .first() scopes to TrailOverview — StageAnalytics and SectionAnalytics also
@@ -113,9 +112,7 @@ test.describe("Location Sharing", () => {
         await expect(elevationLoss(followerPage)).toHaveText("0 m");
 
         // ── 4. Runner broadcasts their location via auto-share ────────────
-        await runnerPage
-          .getByRole("button", { name: /auto-share location/i })
-          .click();
+        await autoShareBtn(runnerPage).click();
 
         // ── 5. Assertions on the follower page (TrailProgression) ─────────
         // Distance % advanced from 0 — the projected position is now at the

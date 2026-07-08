@@ -19,20 +19,18 @@
 
 import { expect, test } from "@playwright/test";
 
-import { MID_TRAIL, mockClipboard, selectRunnerRole } from "./helpers.js";
+import {
+  autoShareBtn,
+  kmLeft,
+  MID_TRAIL,
+  mockClipboard,
+  selectRunnerRole,
+} from "./helpers.js";
 
 // Race Start waypoint in grp-160-2026.gpx. The clock is pinned 2h past it: at
 // that point a runner already at the trail midpoint is well ahead of the a-priori
 // schedule, so the calibration factor floors and the finish ETA shifts clearly.
 const RACE_STARTED_AT = new Date("2026-08-21T07:00:00Z");
-
-const autoShareBtn = (page) =>
-  page.getByRole("button", { name: /auto-share location/i });
-
-const kmLeft = (page) =>
-  page
-    .locator(".stat-item", { has: page.getByText("km left") })
-    .locator(".stat-value");
 
 // Checkpoints panel (SectionETA): the last .cp-eta row is the finish ETA. Scoped to
 // the panel by its header text — the Life bases panel reuses the same .cp-eta class.
@@ -46,57 +44,51 @@ const finishEta = (page) =>
 
 test.describe("Live Recalibration", () => {
   test("broadcasting a mid-trail fix recalibrates the finish ETA", async ({
-    browser,
+    page,
   }) => {
     test.setTimeout(90_000);
-    const ctx = await browser.newContext();
-    try {
-      const page = await ctx.newPage();
 
-      // Pin Date.now() past the race start; timers keep running.
-      await page.clock.setFixedTime(RACE_STARTED_AT);
+    // Pin Date.now() past the race start; timers keep running.
+    await page.clock.setFixedTime(RACE_STARTED_AT);
 
-      // Override geolocation so the fix carries a timestamp on the pinned clock.
-      await page.addInitScript((pos) => {
-        navigator.geolocation.getCurrentPosition = (success) =>
-          success({
-            coords: {
-              latitude: pos.latitude,
-              longitude: pos.longitude,
-              accuracy: pos.accuracy,
-              altitude: null,
-              altitudeAccuracy: null,
-              heading: null,
-              speed: null,
-            },
-            timestamp: Date.now(),
-          });
-      }, MID_TRAIL);
+    // Override geolocation so the fix carries a timestamp on the pinned clock.
+    await page.addInitScript((pos) => {
+      navigator.geolocation.getCurrentPosition = (success) =>
+        success({
+          coords: {
+            latitude: pos.latitude,
+            longitude: pos.longitude,
+            accuracy: pos.accuracy,
+            altitude: null,
+            altitudeAccuracy: null,
+            heading: null,
+            speed: null,
+          },
+          timestamp: Date.now(),
+        });
+    }, MID_TRAIL);
 
-      await mockClipboard(page);
-      await page.goto("/");
-      await selectRunnerRole(page);
+    await mockClipboard(page);
+    await page.goto("/");
+    await selectRunnerRole(page);
 
-      // Wait for the GPX to finish processing.
-      await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
+    // Wait for the GPX to finish processing.
+    await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
 
-      // The Checkpoints panel (SectionETA) renders in the DOM even while the bottom
-      // sheet is collapsed, so read .cp-eta directly. Capture the pre-fix finish
-      // ETA (anchored at the race start, no recalibration yet).
-      await expect(finishEta(page)).toBeAttached({ timeout: 10_000 });
-      const beforeEta = await finishEta(page).textContent();
+    // The Checkpoints panel (SectionETA) renders in the DOM even while the bottom
+    // sheet is collapsed, so read .cp-eta directly. Capture the pre-fix finish
+    // ETA (anchored at the race start, no recalibration yet).
+    await expect(finishEta(page)).toBeAttached({ timeout: 10_000 });
+    const beforeEta = await finishEta(page).textContent();
 
-      // Turn on broadcast: the immediate spotMe fix triggers recalibration.
-      await autoShareBtn(page).click();
+    // Turn on broadcast: the immediate spotMe fix triggers recalibration.
+    await autoShareBtn(page).click();
 
-      // The recalibrated forward ETA must differ from the pre-fix one, and it must
-      // resolve to a real clock time (not "--:--").
-      await expect
-        .poll(async () => finishEta(page).textContent(), { timeout: 15_000 })
-        .not.toBe(beforeEta);
-      await expect(finishEta(page)).toHaveText(/^\w{3} \d{2}:\d{2}$/);
-    } finally {
-      await ctx.close();
-    }
+    // The recalibrated forward ETA must differ from the pre-fix one, and it must
+    // resolve to a real clock time (not "--:--").
+    await expect
+      .poll(async () => finishEta(page).textContent(), { timeout: 15_000 })
+      .not.toBe(beforeEta);
+    await expect(finishEta(page)).toHaveText(/^\w{3} \d{2}:\d{2}$/);
   });
 });

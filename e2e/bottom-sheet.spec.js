@@ -16,15 +16,16 @@
 
 import { expect, test } from "@playwright/test";
 
-import { MID_TRAIL, mockClipboard, selectRunnerRole } from "./helpers.js";
+import {
+  kmLeft,
+  MID_TRAIL,
+  mockClipboard,
+  selectRunnerRole,
+} from "./helpers.js";
 
 /** Wait for the GPX route to finish loading (km-left stat populated). */
 async function waitForGpx(page) {
-  await expect(
-    page
-      .locator(".stat-item", { has: page.getByText("km left") })
-      .locator(".stat-value"),
-  ).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
+  await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
 }
 
 // ── Static data tests (no GPS needed) ────────────────────────────────────────
@@ -142,15 +143,12 @@ test.describe("Bottom Sheet Panel", () => {
   });
 });
 
-// ── GPS-dependent test (own context, no wasted beforeEach) ───────────────────
+// ── GPS-dependent test (own geolocation option, no wasted beforeEach) ────────
 
-test("TrailProgression: updates after GPS fix", async ({ browser }) => {
-  const ctx = await browser.newContext({
-    geolocation: MID_TRAIL,
-    permissions: ["geolocation"],
-  });
-  try {
-    const page = await ctx.newPage();
+test.describe("GPS fix", () => {
+  test.use({ geolocation: MID_TRAIL, permissions: ["geolocation"] });
+
+  test("TrailProgression: updates after GPS fix", async ({ page }) => {
     await mockClipboard(page);
     await page.goto("/");
     await selectRunnerRole(page);
@@ -165,7 +163,5 @@ test("TrailProgression: updates after GPS fix", async ({ browser }) => {
     await expect(page.locator(".progression-value").first()).toHaveText(
       /^\d+%$/,
     );
-  } finally {
-    await ctx.close();
-  }
+  });
 });

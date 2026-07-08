@@ -8,12 +8,12 @@
 
 import { expect, test } from "@playwright/test";
 
-import { MID_TRAIL, mockClipboard, selectRunnerRole } from "./helpers.js";
-
-const kmLeft = (page) =>
-  page
-    .locator(".stat-item", { has: page.getByText("km left") })
-    .locator(".stat-value");
+import {
+  kmLeft,
+  MID_TRAIL,
+  mockClipboard,
+  selectRunnerRole,
+} from "./helpers.js";
 
 test.describe("Navigation Panel", () => {
   test("shows sections with distance, waypoint and elevation after GPX loads", async ({
@@ -41,15 +41,12 @@ test.describe("Navigation Panel", () => {
     await expect(current.locator(".elevation-item.loss")).toContainText(/\d/);
   });
 
-  test("GPS projection updates the current section distance", async ({
-    browser,
-  }) => {
-    const ctx = await browser.newContext({
-      geolocation: MID_TRAIL,
-      permissions: ["geolocation"],
-    });
-    try {
-      const page = await ctx.newPage();
+  test.describe("GPS projection", () => {
+    test.use({ geolocation: MID_TRAIL, permissions: ["geolocation"] });
+
+    test("GPS projection updates the current section distance", async ({
+      page,
+    }) => {
       await mockClipboard(page);
       await page.goto("/");
       await selectRunnerRole(page);
@@ -86,8 +83,6 @@ test.describe("Navigation Panel", () => {
 
       // Panel must remain visible after the GPS update
       await expect(panel).toBeVisible();
-    } finally {
-      await ctx.close();
-    }
+    });
   });
 });

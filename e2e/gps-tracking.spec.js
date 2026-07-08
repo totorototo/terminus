@@ -8,6 +8,8 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  autoShareBtn,
+  kmLeft,
   MID_TRAIL,
   mockClipboard,
   NEAR_START,
@@ -15,22 +17,11 @@ import {
   selectRunnerRole,
 } from "./helpers.js";
 
-const autoShareBtn = (page) =>
-  page.getByRole("button", { name: /auto-share location/i });
-
-const kmLeft = (page) =>
-  page
-    .locator(".stat-item", { has: page.getByText("km left") })
-    .locator(".stat-value");
-
 test.describe("Live GPS Tracking", () => {
-  test("GPS fix updates km-left to a different value", async ({ browser }) => {
-    const ctx = await browser.newContext({
-      geolocation: MID_TRAIL,
-      permissions: ["geolocation"],
-    });
-    try {
-      const page = await ctx.newPage();
+  test.describe("mid-trail fix", () => {
+    test.use({ geolocation: MID_TRAIL, permissions: ["geolocation"] });
+
+    test("GPS fix updates km-left to a different value", async ({ page }) => {
       await mockClipboard(page);
       await page.goto("/");
       await selectRunnerRole(page);
@@ -47,18 +38,12 @@ test.describe("Live GPS Tracking", () => {
         })
         .not.toBe(before);
       await expect(kmLeft(page)).toHaveText(/^\d+\.\d/);
-    } finally {
-      await ctx.close();
-    }
-  });
-
-  test("second GPS fix reflects the new position", async ({ browser }) => {
-    const ctx = await browser.newContext({
-      geolocation: MID_TRAIL,
-      permissions: ["geolocation"],
     });
-    try {
-      const page = await ctx.newPage();
+
+    test("second GPS fix reflects the new position", async ({
+      page,
+      context,
+    }) => {
       await mockClipboard(page);
       await page.goto("/");
       await selectRunnerRole(page);
@@ -76,7 +61,7 @@ test.describe("Live GPS Tracking", () => {
       const kmAfterFirst = parseFloat(await kmLeft(page).textContent());
 
       // Move GPS to near start, disable then re-enable to trigger a new fix
-      await ctx.setGeolocation(NEAR_START);
+      await context.setGeolocation(NEAR_START);
       await page
         .getByRole("button", { name: /stop auto-sharing location/i })
         .click();
@@ -88,18 +73,13 @@ test.describe("Live GPS Tracking", () => {
         })
         .not.toBe(kmAfterFirst);
       await expect(kmLeft(page)).toHaveText(/^\d+\.\d/);
-    } finally {
-      await ctx.close();
-    }
+    });
   });
 
-  test("off-trail position does not crash the app", async ({ browser }) => {
-    const ctx = await browser.newContext({
-      geolocation: OFF_TRAIL,
-      permissions: ["geolocation"],
-    });
-    try {
-      const page = await ctx.newPage();
+  test.describe("off-trail fix", () => {
+    test.use({ geolocation: OFF_TRAIL, permissions: ["geolocation"] });
+
+    test("off-trail position does not crash the app", async ({ page }) => {
       await mockClipboard(page);
       const errors = [];
       page.on("pageerror", (err) => errors.push(err.message));
@@ -118,8 +98,6 @@ test.describe("Live GPS Tracking", () => {
 
       await expect(page.locator("canvas").first()).toBeVisible();
       expect(errors).toEqual([]);
-    } finally {
-      await ctx.close();
-    }
+    });
   });
 });
