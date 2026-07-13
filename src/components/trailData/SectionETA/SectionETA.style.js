@@ -62,90 +62,50 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  /* ── Distance-scaled segment rail ───────────────────── */
-
-  .bc-row {
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    opacity: 0.6;
-    transition: opacity
-      ${(props) => props.theme.transitions["--transition-fast"]};
-
-    &.past {
-      opacity: 0.35;
-    }
-
-    &.current {
-      opacity: 1;
-    }
-  }
-
-  .bc-rail {
-    position: relative;
-    width: 7px;
-    flex-shrink: 0;
-    align-self: stretch;
-
-    /* base track — full segment height, faint */
-    &::before {
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 0;
-      bottom: 0;
-      width: 1px;
-      transform: translateX(-50%);
-      background: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.15,
-        )};
-    }
-  }
-
-  /* covered portion of the segment */
-  .bc-rail-fill {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    width: 2px;
-    transform: translateX(-50%);
-    border-radius: 1px;
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-primary"],
-        0.7,
-      )};
-  }
-
-  /* runner's projected location */
-  .bc-bead {
-    position: absolute;
-    left: 50%;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-    background: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
-    box-shadow: 0 0 7px
-      ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.6,
-        )};
-  }
-
   .bc-caption {
     display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    flex-wrap: wrap;
-    flex: 1;
+    flex-direction: column;
+    gap: 0.5rem;
     min-width: 0;
-    padding: 0.4rem 0;
+  }
+
+  .bc-caption-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .bc-caption-row:last-child {
+    justify-content: flex-start;
+  }
+
+  .bc-profile + .bc-caption-row {
+    margin-top: 0.25rem;
+  }
+
+  .bc-profile {
+    display: flex;
+    height: 8px;
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.12,
+      )};
+    flex-shrink: 0;
+  }
+
+  .bc-profile-gain {
+    background: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+  }
+
+  .bc-profile-loss {
+    background: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
   }
 
   .bc-stat {
@@ -162,16 +122,38 @@ const style = (Component) => styled(Component)`
     flex-shrink: 0;
   }
 
+  .bc-elev {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    line-height: 1;
+    white-space: nowrap;
+    margin-right: 1rem;
+  }
+
+  .bc-elev-up {
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+  }
+
+  .bc-elev-down {
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+  }
+
   .bc-dots {
     display: flex;
-    gap: 3px;
+    gap: 5px;
     align-items: center;
     flex-shrink: 0;
   }
 
   .bc-dot {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: ${(props) =>
       rgba(
@@ -185,13 +167,15 @@ const style = (Component) => styled(Component)`
 
   .cp-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 1.2rem;
-    padding: 0.75rem 0;
+    padding: 1.5rem 0;
     opacity: 0.55;
     position: relative;
-    transition: opacity
-      ${(props) => props.theme.transitions["--transition-fast"]};
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
+    transition:
+      opacity ${(props) => props.theme.transitions["--transition-fast"]},
+      background ${(props) => props.theme.transitions["--transition-fast"]};
 
     &::before {
       content: "";
@@ -214,6 +198,17 @@ const style = (Component) => styled(Component)`
     &.current {
       opacity: 1;
     }
+  }
+
+  .cp-row.current .cp-body {
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.06,
+      )};
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
+    padding: 0.75rem 1rem;
+    margin: -0.1rem 0;
   }
 
   .cp-dot {
@@ -254,9 +249,17 @@ const style = (Component) => styled(Component)`
   .cp-body {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.8rem;
     flex: 1;
     min-width: 0;
+  }
+
+  .cp-weather-line {
+    margin-top: 0.6rem;
+  }
+
+  .bc-caption {
+    margin-top: 0.8rem;
   }
 
   .cp-line1 {
@@ -286,6 +289,19 @@ const style = (Component) => styled(Component)`
     text-overflow: ellipsis;
     min-width: 0;
     flex: 1;
+  }
+
+  .cp-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    letter-spacing: 1.5px;
+    flex-shrink: 0;
   }
 
   .cp-eta {
@@ -319,42 +335,84 @@ const style = (Component) => styled(Component)`
 
   .cp-km {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
         0.35,
       )};
-    letter-spacing: 0.3px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
     line-height: 1;
     white-space: nowrap;
   }
 
-  .cp-weather {
+  .cp-weather-line {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    flex-shrink: 0;
-    padding: 0.15rem 0.4rem;
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.06,
+        0.04,
       )};
+    border: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.08,
+        )};
+
+    &.flagged {
+      background: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.08,
+        )};
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.3,
+        )};
+    }
+  }
+
+  .cp-weather-main {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
   }
 
   .cp-weather-temp {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-    font-weight: ${(props) =>
-      props.theme.font.weights["--font-weight-semibold"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+    line-height: 1;
+  }
+
+  .cp-weather-detail {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.8,
+        0.5,
       )};
-    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .cp-weather-wind {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
   }
 
   .empty-state {

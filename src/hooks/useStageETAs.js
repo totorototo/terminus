@@ -13,6 +13,7 @@ import useStore, { useProjectedLocation } from "../store/store.js";
  * Returns:
  *   raceStart: number | null  — ms timestamp of race start
  *   isPreRace: boolean
+ *   hasGPSLock: boolean  — true once a real projected location exists
  *   stageETAs: Array of {
  *     stageId, endLocation, endKm,
  *     etaMs: number | null,
@@ -93,8 +94,12 @@ export function useStageETAs() {
     let cutoffBreached = false;
 
     return stages.map((stage) => {
-      const isPast = currentIndex >= stage.endIndex;
+      // Without a GPS fix, currentIndex defaults to 0 — indistinguishable from
+      // "confirmed at the start". Gate on hasGPSLock so no stage claims past/current
+      // before the runner actually has a position; Start owns "current" until then.
+      const isPast = hasGPSLock && currentIndex >= stage.endIndex;
       const isCurrent =
+        hasGPSLock &&
         !isPast &&
         currentIndex >= stage.startIndex &&
         currentIndex < stage.endIndex;
@@ -177,5 +182,7 @@ export function useStageETAs() {
     return now < raceStart;
   }, [raceStart, projectedLocation?.timestamp, currentTime]);
 
-  return { raceStart, stageETAs, isPreRace };
+  const hasGPSLock = (projectedLocation?.timestamp ?? 0) > 0;
+
+  return { raceStart, stageETAs, isPreRace, hasGPSLock };
 }

@@ -12,6 +12,7 @@ import useStore, { useProjectedLocation } from "../store/store.js";
  * Returns:
  *   raceStart: number | null  — ms timestamp of race start
  *   isPreRace: boolean
+ *   hasGPSLock: boolean  — true once a real projected location exists
  *   checkpointETAs: Array of {
  *     sectionId, endLocation, endKm,
  *     etaMs: number | null,
@@ -92,8 +93,12 @@ export function useCheckpointETAs() {
     let cutoffBreached = false;
 
     return sections.map((section) => {
-      const isPast = currentIndex >= section.endIndex;
+      // Without a GPS fix, currentIndex defaults to 0 — indistinguishable from
+      // "confirmed at the start". Gate on hasGPSLock so no leg claims past/current
+      // before the runner actually has a position; Start owns "current" until then.
+      const isPast = hasGPSLock && currentIndex >= section.endIndex;
       const isCurrent =
+        hasGPSLock &&
         !isPast &&
         currentIndex >= section.startIndex &&
         currentIndex < section.endIndex;
@@ -182,5 +187,7 @@ export function useCheckpointETAs() {
     return now < raceStart;
   }, [raceStart, projectedLocation?.timestamp, currentTime]);
 
-  return { raceStart, checkpointETAs, isPreRace };
+  const hasGPSLock = (projectedLocation?.timestamp ?? 0) > 0;
+
+  return { raceStart, checkpointETAs, isPreRace, hasGPSLock };
 }
