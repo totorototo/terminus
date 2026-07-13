@@ -37,13 +37,20 @@ export default function Sections({ sectionsPoints3D }) {
       if (!section) {
         return null;
       }
+      // slopes is the full-race array; points is a per-section slice
+      // (tracePoints.slice(startIndex, endIndex + 1) in transformSections),
+      // so slopes must be sliced the same way to stay aligned.
+      const sectionSlopes = slopes?.slice(
+        section.startIndex,
+        section.endIndex + 1,
+      );
       return (
         <MemoizedProfile
           key={`${raceId}/${id}`}
           points={points}
           color={getSectionShade(idx, sectionsPoints3D.length, colorPrimary)}
           showSlopeColors={showSlopeColors}
-          slopes={slopes}
+          slopes={sectionSlopes}
           profileMode={profileMode}
           progressIndex={progressIndex}
           progressColor={progressColor}

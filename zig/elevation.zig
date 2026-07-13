@@ -5,10 +5,12 @@ pub const ELEV_NOISE_THRESHOLD_M: f64 = 3.0;
 pub const ELEV_MEDIAN_RADIUS_M: f64 = 15.0;
 const MAX_WINDOW_SAMPLES: usize = 256;
 
-// Half-width of the centered window used for slope estimation. The full 10m
-// window (5m behind + 5m ahead) gives a second-order accurate gradient that is
-// far more stable than a raw point-to-point difference.
-pub const SLOPE_HALF_WINDOW_M: f64 = 5.0;
+// Half-width of the centered window used for slope estimation. GPX elevation
+// is typically only 1m-accurate, so a short window turns that quantization
+// into large, spurious percent-grade swings (e.g. 1m over a 10m window is a
+// 10% grade). Matching this to `ELEV_MEDIAN_RADIUS_M` keeps the gradient
+// consistent with the denoising already applied to the elevation signal.
+pub const SLOPE_HALF_WINDOW_M: f64 = ELEV_MEDIAN_RADIUS_M;
 
 pub const GainLoss = struct {
     cumGain: []f64,
@@ -120,6 +122,10 @@ pub fn accumulate(
 // `SLOPE_HALF_WINDOW_M` behind and ahead, then take the elevation change over
 // the spanned distance. `cum_dist` must be the monotonic cumulative horizontal
 // distance aligned with `points` (same length).
+//
+// Elevation is median-smoothed first (same denoising used for D+/D-) so that
+// GPS elevation jitter doesn't get amplified into a fake steep grade by the
+// short slope window.
 pub fn computeSlopes(
     allocator: std.mem.Allocator,
     points: []const [3]f64,
@@ -132,6 +138,9 @@ pub fn computeSlopes(
     if (points.len == 0) return slopes;
 
     slopes[0] = 0.0;
+
+    const smoothed_elevations = try medianSmooth(allocator, points, cum_dist, ELEV_MEDIAN_RADIUS_M);
+    defer allocator.free(smoothed_elevations);
 
     for (0..points.len) |i| {
         const current_dist = cum_dist[i];
@@ -162,7 +171,7 @@ pub fn computeSlopes(
         };
 
         const segment_dist = cum_dist[ahead_idx] - cum_dist[behind_idx];
-        const segment_elev = points[ahead_idx][2] - points[behind_idx][2];
+        const segment_elev = smoothed_elevations[ahead_idx] - smoothed_elevations[behind_idx];
         slopes[i] = if (segment_dist > 0.0) (segment_elev / segment_dist) * 100.0 else 0.0;
     }
 
@@ -291,6 +300,26 @@ test "computeSlopes: flat profile is zero grade" {
     const slopes = try computeSlopes(allocator, &points, cum);
     defer allocator.free(slopes);
     for (slopes) |s| try std.testing.expectApproxEqAbs(0.0, s, 0.001);
+}
+
+test "computeSlopes: single elevation spike on a flat trail does not read as steep" {
+    const allocator = std.testing.allocator;
+    // ~11m horizontal per point at the equator; a lone 5m GPS elevation spike
+    // over a ~10m slope window would read as a ~45% grade if unsmoothed.
+    const points = [_][3]f64{
+        .{ 0.0, 0.0000, 100.0 },
+        .{ 0.0, 0.0001, 100.0 },
+        .{ 0.0, 0.0002, 105.0 },
+        .{ 0.0, 0.0003, 100.0 },
+        .{ 0.0, 0.0004, 100.0 },
+        .{ 0.0, 0.0005, 100.0 },
+        .{ 0.0, 0.0006, 100.0 },
+    };
+    const cum = try cumulativeHorizontalDistance(allocator, &points);
+    defer allocator.free(cum);
+    const slopes = try computeSlopes(allocator, &points, cum);
+    defer allocator.free(slopes);
+    for (slopes) |s| try std.testing.expect(@abs(s) < 20.0);
 }
 
 test "computeSlopes: empty input" {
