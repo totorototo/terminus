@@ -62,7 +62,7 @@ pub const Trace = struct {
         // fragile float-equality lookups. Small datasets use the identity mapping.
         var src_indices: []usize = undefined;
         const final_points = if (coordinates.len > 1000) blk: {
-            const idx = try douglasPeuckerIndices(allocator, coordinates, 15.0);
+            const idx = try douglasPeuckerIndices(allocator, coordinates, 2.0);
             errdefer allocator.free(idx);
             const pts = try allocator.alloc([3]f64, idx.len);
             for (idx, 0..) |src, i| pts[i] = coordinates[src];
