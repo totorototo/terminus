@@ -229,6 +229,7 @@ const style = (Component) => styled(Component)`
     height: 7px;
     border-radius: 50%;
     flex-shrink: 0;
+    align-self: center;
     position: relative;
     z-index: 1;
     background: transparent;
