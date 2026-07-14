@@ -170,7 +170,7 @@ const style = (Component) => styled(Component)`
     align-items: flex-start;
     gap: 1.2rem;
     padding: 1.5rem 0;
-    opacity: 0.55;
+    opacity: 0.75;
     position: relative;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     transition:
@@ -192,7 +192,7 @@ const style = (Component) => styled(Component)`
     }
 
     &.past {
-      opacity: 0.2;
+      opacity: 0.4;
     }
 
     &.current {
@@ -200,15 +200,28 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  .cp-row.current .cp-body {
+  .cp-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    flex: 1;
+    min-width: 0;
     background: ${(props) =>
       rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-primary"],
-        0.06,
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.05,
       )};
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     padding: 0.75rem 1rem;
     margin: -0.1rem 0;
+  }
+
+  .cp-row.current .cp-body {
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.1,
+      )};
   }
 
   .cp-dot {
@@ -244,14 +257,6 @@ const style = (Component) => styled(Component)`
             0.55,
           )};
     }
-  }
-
-  .cp-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    flex: 1;
-    min-width: 0;
   }
 
   .cp-weather-line {
