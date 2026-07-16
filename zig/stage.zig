@@ -9,32 +9,9 @@ const expectEqual = std.testing.expectEqual;
 
 /// Interval between two consecutive stage-boundary waypoints (Start/LifeBase/Arrival).
 /// Top-level grouping — contains multiple sections.
-pub const StageStats = struct {
-    stageId: usize,
-    startIndex: usize,
-    endIndex: usize,
-    pointCount: usize,
-    startPoint: [3]f64, // [lat, lon, elevation]
-    endPoint: [3]f64, // [lat, lon, elevation]
-    startLocation: []const u8, // Name of start waypoint (Start/LifeBase/Arrival)
-    endLocation: []const u8, // Name of end waypoint
-    totalDistance: f64, // meters
-    totalElevation: f64, // meters elevation gain
-    totalElevationLoss: f64, // meters elevation loss
-    avgSlope: f64, // percentage
-    maxSlope: f64, // percentage
-    minElevation: f64,
-    maxElevation: f64,
-    startTime: ?i64, // Unix epoch time in seconds
-    endTime: ?i64, // Unix epoch time in seconds
-    bearing: f64, // degrees from north
-    difficulty: u8, // 1–5 (Minetti pace factor vs flat: <1.1→1, <1.4→2, <1.8→3, <2.5→4, ≥2.5→5)
-    estimatedDuration: f64, // seconds — moving time + planned stop at end checkpoint
-    paceFactor: f64, // average Minetti pace factor relative to flat (1.0 = flat equivalent)
-    maxCompletionTime: ?i64, // seconds allowed (endTime - startTime), null if absent
-    cutoffRatio: ?f64, // estimatedDuration / maxCompletionTime; null if no cutoff; >1.0 means cutoff missed
-    stopDuration: ?u32, // planned stop at the end checkpoint in seconds (from <stopDuration> in GPX), null if unset
-};
+/// Field list lives in `calibration.CommonIntervalStats` + `calibration.WithIds`,
+/// shared with SectionStats so the two can't drift out of sync.
+pub const StageStats = calibration.StageStats;
 
 /// Compute stage statistics between consecutive stage-boundary waypoints (Start/LifeBase/Arrival).
 /// TimeBarrier waypoints are skipped — they only appear in sections, not stages.

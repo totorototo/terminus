@@ -37,6 +37,63 @@ pub const CALIBRATION_MAX: f64 = 3.0;
 /// stages split on Start/LifeBase/Arrival (life-base granularity).
 pub const BoundaryKind = enum { section, stage };
 
+/// Every interval statistic shared by SectionStats and StageStats — everything
+/// except the id field(s), which differ per `BoundaryKind` (see `WithIds`).
+const CommonIntervalStats = struct {
+    startIndex: usize,
+    endIndex: usize,
+    pointCount: usize,
+    startPoint: [3]f64, // [lat, lon, elevation]
+    endPoint: [3]f64, // [lat, lon, elevation]
+    startLocation: []const u8, // Name of start waypoint
+    endLocation: []const u8, // Name of end waypoint
+    totalDistance: f64, // meters
+    totalElevation: f64, // meters elevation gain
+    totalElevationLoss: f64, // meters elevation loss
+    avgSlope: f64, // percentage
+    maxSlope: f64, // percentage
+    minElevation: f64,
+    maxElevation: f64,
+    startTime: ?i64, // Unix epoch time in seconds
+    endTime: ?i64, // Unix epoch time in seconds
+    bearing: f64, // degrees from north
+    difficulty: u8, // 1–5 (Minetti pace factor vs flat: <1.1→1, <1.4→2, <1.8→3, <2.5→4, ≥2.5→5)
+    estimatedDuration: f64, // seconds — moving time + planned stop at end checkpoint
+    paceFactor: f64, // average Minetti pace factor relative to flat (1.0 = flat equivalent)
+    maxCompletionTime: ?i64, // seconds allowed (endTime - startTime), null if absent
+    cutoffRatio: ?f64, // estimatedDuration / maxCompletionTime; null if no cutoff; >1.0 means cutoff missed
+    stopDuration: ?u32, // planned stop at the end checkpoint in seconds, null if unset
+};
+
+/// Generate a boundary-stats struct by prepending `Ids`' fields to
+/// `CommonIntervalStats`'s. SectionStats and StageStats are built from this one
+/// field list, so the two can't drift out of sync the way two hand-copied
+/// structs could.
+fn WithIds(comptime Ids: type) type {
+    const id_fields = @typeInfo(Ids).@"struct".fields;
+    const common_fields = @typeInfo(CommonIntervalStats).@"struct".fields;
+    return @Type(.{
+        .@"struct" = .{
+            .layout = .auto,
+            .fields = id_fields ++ common_fields,
+            .decls = &.{},
+            .is_tuple = false,
+        },
+    });
+}
+
+/// Interval between two consecutive section-boundary waypoints
+/// (Start/TimeBarrier/LifeBase/Arrival). Has timing info (cutoffs). Belongs to a
+/// stage (stageIdx).
+pub const SectionStats = WithIds(struct {
+    sectionId: usize,
+    stageIdx: usize, // index of the stage this section belongs to
+});
+
+/// Interval between two consecutive stage-boundary waypoints (Start/LifeBase/Arrival).
+/// Top-level grouping — contains multiple sections.
+pub const StageStats = WithIds(struct { stageId: usize });
+
 fn isBoundary(wpt: Waypoint, kind: BoundaryKind) bool {
     return switch (kind) {
         .section => wpt.isSectionBoundary(),
@@ -159,10 +216,10 @@ pub fn computeBoundaryStats(
         else
             null;
 
-        // Every field shared by SectionStats and StageStats. The per-kind id
-        // fields are filled below; the comptime assert proves nothing else is
-        // left unset when either struct gains a field.
-        const common = .{
+        // Every field shared by SectionStats and StageStats (typed as
+        // CommonIntervalStats, so a missing/misspelled field is a compile error).
+        // The per-kind id fields are filled in below.
+        const common: CommonIntervalStats = .{
             .startIndex = start_index,
             .endIndex = end_index,
             .pointCount = end_index - start_index + 1,
@@ -191,14 +248,8 @@ pub fn computeBoundaryStats(
             },
             .stopDuration = end_wpt.stopDuration,
         };
-        comptime {
-            const id_fields: usize = if (kind == .section) 2 else 1;
-            std.debug.assert(@typeInfo(Stats).@"struct".fields.len ==
-                @typeInfo(@TypeOf(common)).@"struct".fields.len + id_fields);
-        }
-
         var entry: Stats = undefined;
-        inline for (@typeInfo(@TypeOf(common)).@"struct".fields) |f| {
+        inline for (@typeInfo(CommonIntervalStats).@"struct".fields) |f| {
             @field(entry, f.name) = @field(common, f.name);
         }
         if (kind == .section) {
