@@ -30,12 +30,12 @@ const PANEL_LABELS = [
   "Map",
   "GPS view",
   "Trail progression",
-  "Checkpoints",
-  "Life bases",
   "Pace profile",
-  "Stage analytics",
-  "Section analytics",
   "Peak summary",
+  "Sections",
+  "Stages",
+  "Section analytics",
+  "Stage analytics",
   "Pace settings",
   "Trail actions",
 ];
@@ -159,12 +159,12 @@ const TrailData = memo(function TrailData({ className }) {
         </LazyPanel>
         <GpsView />
         <TrailProgression />
+        <PaceProfile />
+        <PeakSummary />
         <SectionETA />
         <StageETA />
-        <PaceProfile />
-        <StageAnalytics />
         <SectionAnalytics />
-        <PeakSummary />
+        <StageAnalytics />
         <PaceSettings />
         <TrailActions />
       </Carousel>
