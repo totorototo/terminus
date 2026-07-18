@@ -127,6 +127,19 @@ PARTYKIT_HOST=<your-partykit-host> node scripts/simulate-partykit.js public/vvx-
 
 Open the app as a follower and join room `ABC123` to watch the position move in real time.
 
+### Shifting GPX race dates
+
+To debug time-dependent features (ETAs, cutoffs, circadian pace model) without waiting for race day, shift every `<time>` tag in a GPX file so the race starts on a chosen date:
+
+```bash
+npm run gpx:shift -- public/grp-160-2026.gpx                       # start = today
+npm run gpx:shift -- public/grp-160-2026.gpx 2026-09-01            # start = that day
+npm run gpx:shift -- public/grp-160-2026.gpx 2026-09-01T12:00:00Z  # start = exact instant
+npm run gpx:shift -- public/grp-160-2026.gpx --dry-run             # preview only
+```
+
+The script anchors on the waypoint typed `Start` (falling back to the earliest time in the file) and applies one offset to all `<time>` tags — waypoints, trackpoints, and metadata — so time barriers, multi-day structure, and recording cadence stay relatively intact. A date-only target shifts by whole days and preserves times of day (a 05:00 start stays 05:00); a datetime target shifts exactly. The file is edited in place — undo with `git checkout <file>`. Times are normalized to second-precision UTC (`Z`).
+
 ## Why Zig?
 
 GPX files for ultra-trail races can contain 10 000+ trackpoints. Running Haversine distance calculations, Douglas-Peucker simplification, and the AMPD peak-detection algorithm over that in JavaScript blocks the main thread for hundreds of milliseconds.
