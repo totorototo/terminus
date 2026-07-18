@@ -16,7 +16,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
-import useStore from "../../../store/store.js";
+import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./SectionETA.style.js";
 
@@ -29,6 +29,33 @@ const WEATHER_ICONS = {
   CloudLightning,
   Wind,
 };
+
+// Distance-scaled connector rail: each leg's height grows with its real
+// distance (px), floored so it stays visible and capped so a single long
+// leg can't dominate the scroll.
+const RAIL_MIN_PX = 24;
+const RAIL_PER_KM = 7;
+const RAIL_MAX_PX = 220;
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// Progress within a leg: full when passed, fractional when current (via the
+// runner's projected index), empty ahead. Drives the rail fill and bead.
+function legProgress(
+  section,
+  isPast,
+  isCurrent,
+  cumulativeDistances,
+  projIndex,
+) {
+  if (isPast) return 100;
+  if (!isCurrent || !section || !cumulativeDistances.length) return 0;
+  const segStart = cumulativeDistances[section.startIndex] || 0;
+  const segEnd = cumulativeDistances[section.endIndex] || 0;
+  const here = cumulativeDistances[projIndex] || 0;
+  const span = segEnd - segStart;
+  return span > 0 ? clamp((here - segStart) / span, 0, 1) * 100 : 0;
+}
 
 function formatDuration(sec) {
   if (!sec || !Number.isFinite(sec) || sec <= 0) return "--";
@@ -135,15 +162,23 @@ const SectionETA = memo(function SectionETA({ className }) {
   const theme = useTheme();
   const { raceStart, checkpointETAs, isPreRace, hasGPSLock } =
     useCheckpointETAs();
-  const { forecasts, fetchWeatherForCheckpoints, sections, coordinates } =
-    useStore(
-      useShallow((state) => ({
-        forecasts: state.weather.forecasts,
-        fetchWeatherForCheckpoints: state.fetchWeatherForCheckpoints,
-        sections: state.sections,
-        coordinates: state.gpx.data,
-      })),
-    );
+  const projectedLocation = useProjectedLocation();
+  const {
+    forecasts,
+    fetchWeatherForCheckpoints,
+    sections,
+    coordinates,
+    cumulativeDistances,
+  } = useStore(
+    useShallow((state) => ({
+      forecasts: state.weather.forecasts,
+      fetchWeatherForCheckpoints: state.fetchWeatherForCheckpoints,
+      sections: state.sections,
+      coordinates: state.gpx.data,
+      cumulativeDistances: state.gpx.cumulativeDistances || [],
+    })),
+  );
+  const projIndex = projectedLocation?.index || 0;
 
   const startLocation = sections?.[0]?.startLocation || "Start";
   const startCoord = coordinates?.[sections?.[0]?.startIndex ?? -1];
@@ -211,9 +246,9 @@ const SectionETA = memo(function SectionETA({ className }) {
     const rows = checkpointETAs.map((cp, i) => {
       const section = sections?.[i];
       totalEstSec += section?.estimatedDuration || 0;
-      const { distKm, gainM, lossM, estSec, difficulty } = toCaption(
-        sections?.[i + 1],
-      );
+      const aheadSection = sections?.[i + 1];
+      const { distKm, gainM, lossM, estSec, difficulty } =
+        toCaption(aheadSection);
 
       // A row's own past/current state now tracks the leg AHEAD of it (see
       // toCaption above), not the leg that ends here — so it's borrowed from
@@ -224,6 +259,18 @@ const SectionETA = memo(function SectionETA({ className }) {
       const next = checkpointETAs[i + 1];
       const isPast = next ? next.isPast : cp.isPast;
       const isCurrent = next ? next.isCurrent : cp.isCurrent;
+
+      const railPx = Math.round(
+        clamp(RAIL_MIN_PX + distKm * RAIL_PER_KM, RAIL_MIN_PX, RAIL_MAX_PX),
+      );
+      const fillPct = legProgress(
+        aheadSection,
+        isPast,
+        isCurrent,
+        cumulativeDistances,
+        projIndex,
+      );
+      const beadPct = isCurrent ? fillPct : null;
 
       return {
         id: cp.sectionId,
@@ -237,17 +284,28 @@ const SectionETA = memo(function SectionETA({ className }) {
             ? format(new Date(cp.etaMs), "EEE HH:mm")
             : "--:--",
         difficulty,
-        hasNextLeg: sections?.[i + 1] != null,
+        hasNextLeg: aheadSection != null,
         weather: forecasts[cp.endLocation] ?? null,
         distKm,
         gainM,
         lossM,
         estSec,
+        railPx,
+        fillPct,
+        beadPct,
       };
     });
 
     return { totalEstSec, rows, startCaption };
-  }, [checkpointETAs, sections, raceStart, isPreRace, forecasts]);
+  }, [
+    checkpointETAs,
+    sections,
+    raceStart,
+    isPreRace,
+    forecasts,
+    cumulativeDistances,
+    projIndex,
+  ]);
 
   // Start's past/current mirrors checkpointETAs[0] (the leg Start→first
   // checkpoint is Start's "leg ahead", same borrowing as the rows above).
@@ -262,6 +320,24 @@ const SectionETA = memo(function SectionETA({ className }) {
       ? format(new Date(raceStart), "EEE HH:mm")
       : "--:--";
   const startWeather = forecasts[startLocation] ?? null;
+
+  const startRailPx = startCaption
+    ? Math.round(
+        clamp(
+          RAIL_MIN_PX + startCaption.distKm * RAIL_PER_KM,
+          RAIL_MIN_PX,
+          RAIL_MAX_PX,
+        ),
+      )
+    : RAIL_MIN_PX;
+  const startFillPct = legProgress(
+    sections?.[0],
+    startIsPast,
+    startIsCurrent,
+    cumulativeDistances,
+    projIndex,
+  );
+  const startBeadPct = startIsCurrent ? startFillPct : null;
 
   if (!rows.length) {
     return (
@@ -306,6 +382,24 @@ const SectionETA = memo(function SectionETA({ className }) {
             {startCaption && <LegCaption {...startCaption} />}
           </div>
         </div>
+
+        {startCaption && (
+          <div
+            className={`bc-row${startIsPast ? " past" : startIsCurrent ? " current" : ""}`}
+            style={{ minHeight: startRailPx }}
+            aria-hidden="true"
+          >
+            <div className="bc-rail">
+              <div
+                className="bc-rail-fill"
+                style={{ height: `${startFillPct}%` }}
+              />
+              {startBeadPct != null && !isPreRace && (
+                <div className="bc-bead" style={{ top: `${startBeadPct}%` }} />
+              )}
+            </div>
+          </div>
+        )}
 
         {rows.map((row) => {
           const stateClass = `${row.isPast ? " past" : ""}${row.isCurrent ? " current" : ""}`;
@@ -356,6 +450,28 @@ const SectionETA = memo(function SectionETA({ className }) {
                   )}
                 </div>
               </div>
+
+              {/* Distance-scaled rail for the leg ahead of this checkpoint */}
+              {row.hasNextLeg && (
+                <div
+                  className={`bc-row${stateClass}`}
+                  style={{ minHeight: row.railPx }}
+                  aria-hidden="true"
+                >
+                  <div className="bc-rail">
+                    <div
+                      className="bc-rail-fill"
+                      style={{ height: `${row.fillPct}%` }}
+                    />
+                    {row.beadPct != null && !isPreRace && (
+                      <div
+                        className="bc-bead"
+                        style={{ top: `${row.beadPct}%` }}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </Fragment>
           );
         })}

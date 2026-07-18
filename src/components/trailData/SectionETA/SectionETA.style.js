@@ -110,7 +110,7 @@ const style = (Component) => styled(Component)`
 
   .bc-stat {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
@@ -163,19 +163,93 @@ const style = (Component) => styled(Component)`
     flex-shrink: 0;
   }
 
+  /* ── Distance-scaled connector rail ─────────────────── */
+
+  .bc-row {
+    display: flex;
+    align-items: stretch;
+    gap: 1.2rem;
+    padding-left: 0.05rem;
+    opacity: 0.75;
+    transition: opacity
+      ${(props) => props.theme.transitions["--transition-fast"]};
+
+    &.past {
+      opacity: 0.4;
+    }
+
+    &.current {
+      opacity: 1;
+    }
+  }
+
+  .bc-rail {
+    position: relative;
+    width: 7px;
+    flex-shrink: 0;
+
+    /* base track — full leg height, faint */
+    &::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      transform: translateX(-50%);
+      background: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.15,
+        )};
+    }
+  }
+
+  /* covered portion of the leg */
+  .bc-rail-fill {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    transform: translateX(-50%);
+    border-radius: 1px;
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.7,
+      )};
+  }
+
+  /* runner's projected location within the current leg */
+  .bc-bead {
+    position: absolute;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    background: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    box-shadow: 0 0 7px
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.6,
+        )};
+  }
+
   /* ── Checkpoint line ───────────────────────────────── */
 
   .cp-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 1.2rem;
-    padding: 1.5rem 0;
-    opacity: 0.75;
+    padding: 0.75rem 0;
+    opacity: 0.55;
     position: relative;
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
-    transition:
-      opacity ${(props) => props.theme.transitions["--transition-fast"]},
-      background ${(props) => props.theme.transitions["--transition-fast"]};
+    transition: opacity
+      ${(props) => props.theme.transitions["--transition-fast"]};
 
     &::before {
       content: "";
@@ -192,7 +266,7 @@ const style = (Component) => styled(Component)`
     }
 
     &.past {
-      opacity: 0.4;
+      opacity: 0.2;
     }
 
     &.current {
@@ -203,25 +277,9 @@ const style = (Component) => styled(Component)`
   .cp-body {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 0.4rem;
     flex: 1;
     min-width: 0;
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.05,
-      )};
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
-    padding: 0.75rem 1rem;
-    margin: -0.1rem 0;
-  }
-
-  .cp-row.current .cp-body {
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-primary"],
-        0.1,
-      )};
   }
 
   .cp-dot {
@@ -229,7 +287,6 @@ const style = (Component) => styled(Component)`
     height: 7px;
     border-radius: 50%;
     flex-shrink: 0;
-    align-self: center;
     position: relative;
     z-index: 1;
     background: transparent;
@@ -258,14 +315,6 @@ const style = (Component) => styled(Component)`
             0.55,
           )};
     }
-  }
-
-  .cp-weather-line {
-    margin-top: 0.6rem;
-  }
-
-  .bc-caption {
-    margin-top: 0.8rem;
   }
 
   .cp-line1 {
@@ -341,7 +390,7 @@ const style = (Component) => styled(Component)`
 
   .cp-km {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],

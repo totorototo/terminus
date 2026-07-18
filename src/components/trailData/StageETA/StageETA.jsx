@@ -8,12 +8,31 @@ import { useShallow } from "zustand/react/shallow";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useStageETAs } from "../../../hooks/useStageETAs.js";
-import useStore from "../../../store/store.js";
+import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 // Stages are the coarser life-base intervals (Start/LifeBase/Arrival); this is
 // the stage-granularity twin of SectionETA (which renders the finer checkpoints).
 // The breadcrumb timeline markup and classNames are shared, so reuse its style.
 import style from "../SectionETA/SectionETA.style.js";
+
+// Mirrors SectionETA's rail constants/helper — distance-scaled connector
+// whose height grows with the leg's real distance, floored/capped, with a
+// fill + bead tracking the runner's projected progress within it.
+const RAIL_MIN_PX = 24;
+const RAIL_PER_KM = 7;
+const RAIL_MAX_PX = 220;
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+function legProgress(stage, isPast, isCurrent, cumulativeDistances, projIndex) {
+  if (isPast) return 100;
+  if (!isCurrent || !stage || !cumulativeDistances.length) return 0;
+  const segStart = cumulativeDistances[stage.startIndex] || 0;
+  const segEnd = cumulativeDistances[stage.endIndex] || 0;
+  const here = cumulativeDistances[projIndex] || 0;
+  const span = segEnd - segStart;
+  return span > 0 ? clamp((here - segStart) / span, 0, 1) * 100 : 0;
+}
 
 function formatDuration(sec) {
   if (!sec || !Number.isFinite(sec) || sec <= 0) return "--";
@@ -88,11 +107,14 @@ function LegCaption({ distKm, gainM, lossM, estSec, difficulty }) {
 
 const StageETA = memo(function StageETA({ className }) {
   const { raceStart, stageETAs, isPreRace, hasGPSLock } = useStageETAs();
-  const { stages } = useStore(
+  const projectedLocation = useProjectedLocation();
+  const { stages, cumulativeDistances } = useStore(
     useShallow((state) => ({
       stages: state.stages,
+      cumulativeDistances: state.gpx.cumulativeDistances || [],
     })),
   );
+  const projIndex = projectedLocation?.index || 0;
 
   const { totalEstSec, rows, startCaption } = useMemo(() => {
     if (!stageETAs.length)
@@ -115,9 +137,9 @@ const StageETA = memo(function StageETA({ className }) {
     const rows = stageETAs.map((st, i) => {
       const stage = stages?.[i];
       totalEstSec += stage?.estimatedDuration || 0;
-      const { distKm, gainM, lossM, estSec, difficulty } = toCaption(
-        stages?.[i + 1],
-      );
+      const aheadStage = stages?.[i + 1];
+      const { distKm, gainM, lossM, estSec, difficulty } =
+        toCaption(aheadStage);
 
       // A row's own past/current state now tracks the stage AHEAD of it (see
       // toCaption above), not the stage that ends here — so it's borrowed
@@ -126,6 +148,18 @@ const StageETA = memo(function StageETA({ className }) {
       const next = stageETAs[i + 1];
       const isPast = next ? next.isPast : st.isPast;
       const isCurrent = next ? next.isCurrent : st.isCurrent;
+
+      const railPx = Math.round(
+        clamp(RAIL_MIN_PX + distKm * RAIL_PER_KM, RAIL_MIN_PX, RAIL_MAX_PX),
+      );
+      const fillPct = legProgress(
+        aheadStage,
+        isPast,
+        isCurrent,
+        cumulativeDistances,
+        projIndex,
+      );
+      const beadPct = isCurrent ? fillPct : null;
 
       return {
         id: st.stageId,
@@ -139,16 +173,19 @@ const StageETA = memo(function StageETA({ className }) {
             ? format(new Date(st.etaMs), "EEE HH:mm")
             : "--:--",
         difficulty,
-        hasNextLeg: stages?.[i + 1] != null,
+        hasNextLeg: aheadStage != null,
         distKm,
         gainM,
         lossM,
         estSec,
+        railPx,
+        fillPct,
+        beadPct,
       };
     });
 
     return { totalEstSec, rows, startCaption };
-  }, [stageETAs, stages, raceStart, isPreRace]);
+  }, [stageETAs, stages, raceStart, isPreRace, cumulativeDistances, projIndex]);
 
   // Start's past/current mirrors stageETAs[0] (the stage Start→first life
   // base is Start's "stage ahead", same borrowing as the rows above).
@@ -162,6 +199,24 @@ const StageETA = memo(function StageETA({ className }) {
     raceStart && !isPreRace
       ? format(new Date(raceStart), "EEE HH:mm")
       : "--:--";
+
+  const startRailPx = startCaption
+    ? Math.round(
+        clamp(
+          RAIL_MIN_PX + startCaption.distKm * RAIL_PER_KM,
+          RAIL_MIN_PX,
+          RAIL_MAX_PX,
+        ),
+      )
+    : RAIL_MIN_PX;
+  const startFillPct = legProgress(
+    stages?.[0],
+    startIsPast,
+    startIsCurrent,
+    cumulativeDistances,
+    projIndex,
+  );
+  const startBeadPct = startIsCurrent ? startFillPct : null;
 
   if (!rows.length) {
     return (
@@ -201,6 +256,24 @@ const StageETA = memo(function StageETA({ className }) {
             {startCaption && <LegCaption {...startCaption} />}
           </div>
         </div>
+
+        {startCaption && (
+          <div
+            className={`bc-row${startIsPast ? " past" : startIsCurrent ? " current" : ""}`}
+            style={{ minHeight: startRailPx }}
+            aria-hidden="true"
+          >
+            <div className="bc-rail">
+              <div
+                className="bc-rail-fill"
+                style={{ height: `${startFillPct}%` }}
+              />
+              {startBeadPct != null && !isPreRace && (
+                <div className="bc-bead" style={{ top: `${startBeadPct}%` }} />
+              )}
+            </div>
+          </div>
+        )}
 
         {rows.map((row) => {
           const stateClass = `${row.isPast ? " past" : ""}${row.isCurrent ? " current" : ""}`;
@@ -243,6 +316,28 @@ const StageETA = memo(function StageETA({ className }) {
                   )}
                 </div>
               </div>
+
+              {/* Distance-scaled rail for the stage ahead of this life base */}
+              {row.hasNextLeg && (
+                <div
+                  className={`bc-row${stateClass}`}
+                  style={{ minHeight: row.railPx }}
+                  aria-hidden="true"
+                >
+                  <div className="bc-rail">
+                    <div
+                      className="bc-rail-fill"
+                      style={{ height: `${row.fillPct}%` }}
+                    />
+                    {row.beadPct != null && !isPreRace && (
+                      <div
+                        className="bc-bead"
+                        style={{ top: `${row.beadPct}%` }}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </Fragment>
           );
         })}
