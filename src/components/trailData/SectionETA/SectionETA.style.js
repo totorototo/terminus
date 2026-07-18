@@ -172,15 +172,20 @@ const style = (Component) => styled(Component)`
     align-items: center;
     gap: 1.2rem;
     padding-left: 0.05rem;
-    opacity: 0.75;
-    transition: opacity
-      ${(props) => props.theme.transitions["--transition-fast"]};
 
-    &.past {
+    /* Dim the caption only — parent opacity would wash out the rail fill,
+       which must stay solid as the covered-distance record on past legs */
+    .bc-caption {
+      opacity: 0.75;
+      transition: opacity
+        ${(props) => props.theme.transitions["--transition-fast"]};
+    }
+
+    &.past .bc-caption {
       opacity: 0.4;
     }
 
-    &.current {
+    &.current .bc-caption {
       opacity: 1;
     }
   }

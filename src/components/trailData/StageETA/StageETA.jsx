@@ -187,13 +187,14 @@ const StageETA = memo(function StageETA({ className }) {
   }, [stageETAs, stages, raceStart, isPreRace, cumulativeDistances, projIndex]);
 
   // Start's past/current mirrors stageETAs[0] (the stage Start→first life
-  // base is Start's "stage ahead", same borrowing as the rows above).
-  // Without a GPS fix the hook withholds isPast/isCurrent from every stage,
-  // so Start stays "current" (not past) until hasGPSLock actually places the
-  // runner on course — only one row is ever current.
-  const startIsPast = !isPreRace && hasGPSLock && !!stageETAs[0]?.isPast;
-  const startIsCurrent =
-    !isPreRace && (!hasGPSLock || !!stageETAs[0]?.isCurrent);
+  // base is Start's "stage ahead", same borrowing as the rows above). With a
+  // GPS fix, trust the projected position outright — the rows do, and gating
+  // on isPreRace here left the start rail empty while later rails filled
+  // (shifted-clock debug data can be pre-race yet mid-course). Without a fix
+  // the hook withholds isPast/isCurrent from every stage, so Start stays
+  // "current" until hasGPSLock places the runner — only one row is current.
+  const startIsPast = !!stageETAs[0]?.isPast;
+  const startIsCurrent = hasGPSLock ? !!stageETAs[0]?.isCurrent : !isPreRace;
   const startEtaStr =
     raceStart && !isPreRace
       ? format(new Date(raceStart), "EEE HH:mm")

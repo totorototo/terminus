@@ -308,12 +308,16 @@ const SectionETA = memo(function SectionETA({ className }) {
 
   // Start's past/current mirrors checkpointETAs[0] (the leg Start→first
   // checkpoint is Start's "leg ahead", same borrowing as the rows above).
-  // Without a GPS fix the hook withholds isPast/isCurrent from every leg, so
-  // Start stays "current" (not past) until hasGPSLock actually places the
-  // runner on course — only one row is ever current.
-  const startIsPast = !isPreRace && hasGPSLock && !!checkpointETAs[0]?.isPast;
-  const startIsCurrent =
-    !isPreRace && (!hasGPSLock || !!checkpointETAs[0]?.isCurrent);
+  // With a GPS fix, trust the projected position outright — the rows do, and
+  // gating on isPreRace here left the start rail empty while later rails
+  // filled (shifted-clock debug data can be pre-race yet mid-course).
+  // Without a fix the hook withholds isPast/isCurrent from every leg, so
+  // Start stays "current" until hasGPSLock places the runner — only one row
+  // is current.
+  const startIsPast = !!checkpointETAs[0]?.isPast;
+  const startIsCurrent = hasGPSLock
+    ? !!checkpointETAs[0]?.isCurrent
+    : !isPreRace;
   const startEtaStr =
     raceStart && !isPreRace
       ? format(new Date(raceStart), "EEE HH:mm")
