@@ -129,7 +129,7 @@ const style = (Component) => styled(Component)`
     align-items: center;
     gap: 3px;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     line-height: 1;
     white-space: nowrap;
@@ -336,7 +336,7 @@ const style = (Component) => styled(Component)`
 
   .cp-name {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
@@ -380,7 +380,7 @@ const style = (Component) => styled(Component)`
 
   .cp-km {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
@@ -445,11 +445,11 @@ const style = (Component) => styled(Component)`
     align-items: center;
     gap: 0.7rem;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
+        0.8,
       )};
     white-space: nowrap;
   }
