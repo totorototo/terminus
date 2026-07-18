@@ -1,7 +1,5 @@
 import { Fragment, memo, useEffect, useMemo } from "react";
 
-import { ArrowDown } from "@styled-icons/feather/ArrowDown";
-import { ArrowUp } from "@styled-icons/feather/ArrowUp";
 import { Cloud } from "@styled-icons/feather/Cloud";
 import { CloudDrizzle } from "@styled-icons/feather/CloudDrizzle";
 import { CloudLightning } from "@styled-icons/feather/CloudLightning";
@@ -13,9 +11,10 @@ import { format } from "date-fns";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
-import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
+import { formatDuration, legProgress, railHeightPx } from "../etaLegHelpers.js";
+import { LegCaption } from "../LegCaption.jsx";
 
 import style from "./SectionETA.style.js";
 
@@ -28,104 +27,6 @@ const WEATHER_ICONS = {
   CloudLightning,
   Wind,
 };
-
-// Distance-scaled connector rail: each leg's height grows with its real
-// distance (px), floored so the in-rail caption stays legible and capped so
-// a single long leg can't dominate the scroll.
-const RAIL_MIN_PX = 64;
-const RAIL_PER_KM = 7;
-const RAIL_MAX_PX = 220;
-
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-
-// Progress within a leg: full when passed, fractional when current (via the
-// runner's projected index), empty ahead. Drives the rail fill and bead.
-function legProgress(
-  section,
-  isPast,
-  isCurrent,
-  cumulativeDistances,
-  projIndex,
-) {
-  if (isPast) return 100;
-  if (!isCurrent || !section || !cumulativeDistances.length) return 0;
-  const segStart = cumulativeDistances[section.startIndex] || 0;
-  const segEnd = cumulativeDistances[section.endIndex] || 0;
-  const here = cumulativeDistances[projIndex] || 0;
-  const span = segEnd - segStart;
-  return span > 0 ? clamp((here - segStart) / span, 0, 1) * 100 : 0;
-}
-
-function formatDuration(sec) {
-  if (!sec || !Number.isFinite(sec) || sec <= 0) return "--";
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  if (h > 0 && m > 0) return `${h}h ${m}m`;
-  if (h > 0) return `${h}h`;
-  return `${m}m`;
-}
-
-function DifficultyDots({ difficulty }) {
-  const color = difficulty > 0 ? DIFFICULTY_COLORS[difficulty - 1] : null;
-  return (
-    <div
-      className="bc-dots"
-      role="img"
-      aria-label={DIFFICULTY_LABELS[difficulty - 1] ?? ""}
-    >
-      {[1, 2, 3, 4, 5].map((d) => (
-        <span
-          key={d}
-          className={`bc-dot${d <= difficulty ? " filled" : ""}`}
-          style={d <= difficulty ? { background: color } : undefined}
-        />
-      ))}
-    </div>
-  );
-}
-
-// Horizontal gain/loss split — same read as the vertical rail's fill, but
-// scannable at a glance instead of requiring the eye to compare two numbers.
-function ProfileStrip({ gainM, lossM }) {
-  const total = gainM + lossM;
-  if (total <= 0) return null;
-  const gainPct = Math.round((gainM / total) * 100);
-  return (
-    <div className="bc-profile">
-      <div className="bc-profile-gain" style={{ width: `${gainPct}%` }} />
-      <div className="bc-profile-loss" style={{ width: `${100 - gainPct}%` }} />
-    </div>
-  );
-}
-
-function ElevStat({ direction, value }) {
-  const Icon = direction === "up" ? ArrowUp : ArrowDown;
-  return (
-    <span className={`bc-elev bc-elev-${direction}`}>
-      <Icon size={11} />
-      {value}m
-    </span>
-  );
-}
-
-// Distance/eta and elevation/difficulty for the leg AHEAD of a block (Start
-// or a checkpoint) — shared so Start and checkpoint cards render identically.
-function LegCaption({ distKm, gainM, lossM, estSec, difficulty }) {
-  return (
-    <div className="bc-caption">
-      <ProfileStrip gainM={gainM} lossM={lossM} />
-      <div className="bc-caption-row">
-        <span className="bc-stat">{distKm.toFixed(1)} km</span>
-        <span className="bc-stat">{formatDuration(estSec)}</span>
-      </div>
-      <div className="bc-caption-row">
-        {gainM > 0 && <ElevStat direction="up" value={gainM} />}
-        {lossM > 0 && <ElevStat direction="down" value={lossM} />}
-        <DifficultyDots difficulty={difficulty} />
-      </div>
-    </div>
-  );
-}
 
 // Weather promoted to its own full-width row (own icon, own margins) rather
 // than a squeezed inline badge, so cold/wet/windy checkpoints stay legible.
@@ -259,9 +160,7 @@ const SectionETA = memo(function SectionETA({ className }) {
       const isPast = next ? next.isPast : cp.isPast;
       const isCurrent = next ? next.isCurrent : cp.isCurrent;
 
-      const railPx = Math.round(
-        clamp(RAIL_MIN_PX + distKm * RAIL_PER_KM, RAIL_MIN_PX, RAIL_MAX_PX),
-      );
+      const railPx = railHeightPx(distKm);
       const fillPct = legProgress(
         aheadSection,
         isPast,
@@ -324,15 +223,7 @@ const SectionETA = memo(function SectionETA({ className }) {
       : "--:--";
   const startWeather = forecasts[startLocation] ?? null;
 
-  const startRailPx = startCaption
-    ? Math.round(
-        clamp(
-          RAIL_MIN_PX + startCaption.distKm * RAIL_PER_KM,
-          RAIL_MIN_PX,
-          RAIL_MAX_PX,
-        ),
-      )
-    : RAIL_MIN_PX;
+  const startRailPx = railHeightPx(startCaption?.distKm ?? 0);
   const startFillPct = legProgress(
     sections?.[0],
     startIsPast,

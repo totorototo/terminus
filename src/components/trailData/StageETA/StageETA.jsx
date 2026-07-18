@@ -1,108 +1,17 @@
 import { Fragment, memo, useMemo } from "react";
 
-import { ArrowDown } from "@styled-icons/feather/ArrowDown";
-import { ArrowUp } from "@styled-icons/feather/ArrowUp";
 import { format } from "date-fns";
 import { useShallow } from "zustand/react/shallow";
 
-import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useStageETAs } from "../../../hooks/useStageETAs.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
+import { formatDuration, legProgress, railHeightPx } from "../etaLegHelpers.js";
+import { LegCaption } from "../LegCaption.jsx";
 
 // Stages are the coarser life-base intervals (Start/LifeBase/Arrival); this is
 // the stage-granularity twin of SectionETA (which renders the finer checkpoints).
 // The breadcrumb timeline markup and classNames are shared, so reuse its style.
 import style from "../SectionETA/SectionETA.style.js";
-
-// Mirrors SectionETA's rail constants/helper — distance-scaled connector
-// whose height grows with the leg's real distance, floored/capped, with a
-// fill + bead tracking the runner's projected progress within it.
-const RAIL_MIN_PX = 64;
-const RAIL_PER_KM = 7;
-const RAIL_MAX_PX = 220;
-
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-
-function legProgress(stage, isPast, isCurrent, cumulativeDistances, projIndex) {
-  if (isPast) return 100;
-  if (!isCurrent || !stage || !cumulativeDistances.length) return 0;
-  const segStart = cumulativeDistances[stage.startIndex] || 0;
-  const segEnd = cumulativeDistances[stage.endIndex] || 0;
-  const here = cumulativeDistances[projIndex] || 0;
-  const span = segEnd - segStart;
-  return span > 0 ? clamp((here - segStart) / span, 0, 1) * 100 : 0;
-}
-
-function formatDuration(sec) {
-  if (!sec || !Number.isFinite(sec) || sec <= 0) return "--";
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  if (h > 0 && m > 0) return `${h}h ${m}m`;
-  if (h > 0) return `${h}h`;
-  return `${m}m`;
-}
-
-function DifficultyDots({ difficulty }) {
-  const color = difficulty > 0 ? DIFFICULTY_COLORS[difficulty - 1] : null;
-  return (
-    <div
-      className="bc-dots"
-      role="img"
-      aria-label={DIFFICULTY_LABELS[difficulty - 1] ?? ""}
-    >
-      {[1, 2, 3, 4, 5].map((d) => (
-        <span
-          key={d}
-          className={`bc-dot${d <= difficulty ? " filled" : ""}`}
-          style={d <= difficulty ? { background: color } : undefined}
-        />
-      ))}
-    </div>
-  );
-}
-
-// Mirrors SectionETA's ProfileStrip/ElevStat — kept as separate copies since
-// DifficultyDots above is already duplicated between the two twins.
-function ProfileStrip({ gainM, lossM }) {
-  const total = gainM + lossM;
-  if (total <= 0) return null;
-  const gainPct = Math.round((gainM / total) * 100);
-  return (
-    <div className="bc-profile">
-      <div className="bc-profile-gain" style={{ width: `${gainPct}%` }} />
-      <div className="bc-profile-loss" style={{ width: `${100 - gainPct}%` }} />
-    </div>
-  );
-}
-
-function ElevStat({ direction, value }) {
-  const Icon = direction === "up" ? ArrowUp : ArrowDown;
-  return (
-    <span className={`bc-elev bc-elev-${direction}`}>
-      <Icon size={11} />
-      {value}m
-    </span>
-  );
-}
-
-// Mirrors SectionETA's LegCaption — distance/eta and elevation/difficulty for
-// the stage AHEAD of a block (Start or a life base).
-function LegCaption({ distKm, gainM, lossM, estSec, difficulty }) {
-  return (
-    <div className="bc-caption">
-      <ProfileStrip gainM={gainM} lossM={lossM} />
-      <div className="bc-caption-row">
-        <span className="bc-stat">{distKm.toFixed(1)} km</span>
-        <span className="bc-stat">{formatDuration(estSec)}</span>
-      </div>
-      <div className="bc-caption-row">
-        {gainM > 0 && <ElevStat direction="up" value={gainM} />}
-        {lossM > 0 && <ElevStat direction="down" value={lossM} />}
-        <DifficultyDots difficulty={difficulty} />
-      </div>
-    </div>
-  );
-}
 
 const StageETA = memo(function StageETA({ className }) {
   const { raceStart, stageETAs, isPreRace, hasGPSLock } = useStageETAs();
@@ -148,9 +57,7 @@ const StageETA = memo(function StageETA({ className }) {
       const isPast = next ? next.isPast : st.isPast;
       const isCurrent = next ? next.isCurrent : st.isCurrent;
 
-      const railPx = Math.round(
-        clamp(RAIL_MIN_PX + distKm * RAIL_PER_KM, RAIL_MIN_PX, RAIL_MAX_PX),
-      );
+      const railPx = railHeightPx(distKm);
       const fillPct = legProgress(
         aheadStage,
         isPast,
@@ -200,15 +107,7 @@ const StageETA = memo(function StageETA({ className }) {
       ? format(new Date(raceStart), "EEE HH:mm")
       : "--:--";
 
-  const startRailPx = startCaption
-    ? Math.round(
-        clamp(
-          RAIL_MIN_PX + startCaption.distKm * RAIL_PER_KM,
-          RAIL_MIN_PX,
-          RAIL_MAX_PX,
-        ),
-      )
-    : RAIL_MIN_PX;
+  const startRailPx = railHeightPx(startCaption?.distKm ?? 0);
   const startFillPct = legProgress(
     stages?.[0],
     startIsPast,
