@@ -2,7 +2,6 @@ import { Fragment, memo, useMemo } from "react";
 
 import { ArrowDown } from "@styled-icons/feather/ArrowDown";
 import { ArrowUp } from "@styled-icons/feather/ArrowUp";
-import { Radio } from "@styled-icons/feather/Radio";
 import { format } from "date-fns";
 import { useShallow } from "zustand/react/shallow";
 
@@ -294,12 +293,6 @@ const StageETA = memo(function StageETA({ className }) {
                     <span className="cp-name">{row.endLocation}</span>
                     <span className="cp-eta">{row.etaStr}</span>
                   </div>
-                  {row.isCurrent && (
-                    <span className="cp-badge">
-                      <Radio size={10} />
-                      NEXT
-                    </span>
-                  )}
                   {Number.isFinite(row.endKm) && (
                     <div className="cp-line2">
                       <span className="cp-km">{row.endKm.toFixed(1)} km</span>

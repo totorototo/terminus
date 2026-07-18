@@ -349,19 +349,6 @@ const style = (Component) => styled(Component)`
     flex: 1;
   }
 
-  .cp-badge {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
-    letter-spacing: 1.5px;
-    flex-shrink: 0;
-  }
-
   .cp-eta {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};

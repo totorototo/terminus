@@ -7,7 +7,6 @@ import { CloudDrizzle } from "@styled-icons/feather/CloudDrizzle";
 import { CloudLightning } from "@styled-icons/feather/CloudLightning";
 import { CloudRain } from "@styled-icons/feather/CloudRain";
 import { CloudSnow } from "@styled-icons/feather/CloudSnow";
-import { Radio } from "@styled-icons/feather/Radio";
 import { Sun } from "@styled-icons/feather/Sun";
 import { Wind } from "@styled-icons/feather/Wind";
 import { format } from "date-fns";
@@ -421,12 +420,6 @@ const SectionETA = memo(function SectionETA({ className }) {
                     <span className="cp-name">{row.endLocation}</span>
                     <span className="cp-eta">{row.etaStr}</span>
                   </div>
-                  {row.isCurrent && (
-                    <span className="cp-badge">
-                      <Radio size={10} />
-                      NEXT
-                    </span>
-                  )}
                   {Number.isFinite(row.endKm) && (
                     <div className="cp-line2">
                       <span className="cp-km">{row.endKm.toFixed(1)} km</span>
