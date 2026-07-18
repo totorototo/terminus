@@ -31,9 +31,9 @@ const WEATHER_ICONS = {
 };
 
 // Distance-scaled connector rail: each leg's height grows with its real
-// distance (px), floored so it stays visible and capped so a single long
-// leg can't dominate the scroll.
-const RAIL_MIN_PX = 24;
+// distance (px), floored so the in-rail caption stays legible and capped so
+// a single long leg can't dominate the scroll.
+const RAIL_MIN_PX = 64;
 const RAIL_PER_KM = 7;
 const RAIL_MAX_PX = 220;
 
@@ -379,7 +379,6 @@ const SectionETA = memo(function SectionETA({ className }) {
                 flaggedIconColor={weatherFlaggedIconColor}
               />
             )}
-            {startCaption && <LegCaption {...startCaption} />}
           </div>
         </div>
 
@@ -398,6 +397,7 @@ const SectionETA = memo(function SectionETA({ className }) {
                 <div className="bc-bead" style={{ top: `${startBeadPct}%` }} />
               )}
             </div>
+            <LegCaption {...startCaption} />
           </div>
         )}
 
@@ -439,19 +439,11 @@ const SectionETA = memo(function SectionETA({ className }) {
                       flaggedIconColor={weatherFlaggedIconColor}
                     />
                   )}
-                  {row.hasNextLeg && (
-                    <LegCaption
-                      distKm={row.distKm}
-                      gainM={row.gainM}
-                      lossM={row.lossM}
-                      estSec={row.estSec}
-                      difficulty={row.difficulty}
-                    />
-                  )}
                 </div>
               </div>
 
-              {/* Distance-scaled rail for the leg ahead of this checkpoint */}
+              {/* Distance-scaled rail for the leg ahead of this checkpoint,
+                  with the leg's stats centered in the gap it spans */}
               {row.hasNextLeg && (
                 <div
                   className={`bc-row${stateClass}`}
@@ -470,6 +462,13 @@ const SectionETA = memo(function SectionETA({ className }) {
                       />
                     )}
                   </div>
+                  <LegCaption
+                    distKm={row.distKm}
+                    gainM={row.gainM}
+                    lossM={row.lossM}
+                    estSec={row.estSec}
+                    difficulty={row.difficulty}
+                  />
                 </div>
               )}
             </Fragment>

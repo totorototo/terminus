@@ -67,6 +67,8 @@ const style = (Component) => styled(Component)`
     flex-direction: column;
     gap: 0.5rem;
     min-width: 0;
+    flex: 1;
+    padding: 0.4rem 0;
   }
 
   .bc-caption-row {
@@ -167,7 +169,7 @@ const style = (Component) => styled(Component)`
 
   .bc-row {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     gap: 1.2rem;
     padding-left: 0.05rem;
     opacity: 0.75;
@@ -187,6 +189,7 @@ const style = (Component) => styled(Component)`
     position: relative;
     width: 7px;
     flex-shrink: 0;
+    align-self: stretch;
 
     /* base track — full leg height, faint */
     &::before {

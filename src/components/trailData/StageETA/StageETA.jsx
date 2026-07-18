@@ -18,7 +18,7 @@ import style from "../SectionETA/SectionETA.style.js";
 // Mirrors SectionETA's rail constants/helper — distance-scaled connector
 // whose height grows with the leg's real distance, floored/capped, with a
 // fill + bead tracking the runner's projected progress within it.
-const RAIL_MIN_PX = 24;
+const RAIL_MIN_PX = 64;
 const RAIL_PER_KM = 7;
 const RAIL_MAX_PX = 220;
 
@@ -253,7 +253,6 @@ const StageETA = memo(function StageETA({ className }) {
             <div className="cp-line2">
               <span className="cp-km">0.0 km</span>
             </div>
-            {startCaption && <LegCaption {...startCaption} />}
           </div>
         </div>
 
@@ -272,6 +271,7 @@ const StageETA = memo(function StageETA({ className }) {
                 <div className="bc-bead" style={{ top: `${startBeadPct}%` }} />
               )}
             </div>
+            <LegCaption {...startCaption} />
           </div>
         )}
 
@@ -305,19 +305,11 @@ const StageETA = memo(function StageETA({ className }) {
                       <span className="cp-km">{row.endKm.toFixed(1)} km</span>
                     </div>
                   )}
-                  {row.hasNextLeg && (
-                    <LegCaption
-                      distKm={row.distKm}
-                      gainM={row.gainM}
-                      lossM={row.lossM}
-                      estSec={row.estSec}
-                      difficulty={row.difficulty}
-                    />
-                  )}
                 </div>
               </div>
 
-              {/* Distance-scaled rail for the stage ahead of this life base */}
+              {/* Distance-scaled rail for the stage ahead of this life base,
+                  with the stage's stats centered in the gap it spans */}
               {row.hasNextLeg && (
                 <div
                   className={`bc-row${stateClass}`}
@@ -336,6 +328,13 @@ const StageETA = memo(function StageETA({ className }) {
                       />
                     )}
                   </div>
+                  <LegCaption
+                    distKm={row.distKm}
+                    gainM={row.gainM}
+                    lossM={row.lossM}
+                    estSec={row.estSec}
+                    difficulty={row.difficulty}
+                  />
                 </div>
               )}
             </Fragment>
