@@ -138,7 +138,9 @@ describe("StageETA", () => {
 
     render(<StageETA />);
 
-    expect(document.querySelector(".cp-row.current")).not.toBeNull();
+    const currentRow = document.querySelector(".cp-row.current");
+    expect(currentRow).not.toBeNull();
+    expect(currentRow).toHaveAttribute("aria-current", "step");
   });
 
   it("shows a live countdown on the next life base's row and cutoffs where defined", () => {

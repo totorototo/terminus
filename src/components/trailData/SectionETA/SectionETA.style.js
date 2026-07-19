@@ -57,6 +57,23 @@ const style = (Component) => styled(Component)`
     flex: 1;
     min-height: 0;
 
+    /* the scrollbar is hidden, so fade the edges as the "more content"
+       affordance instead */
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black 14px,
+      black calc(100% - 18px),
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      black 14px,
+      black calc(100% - 18px),
+      transparent 100%
+    );
+
     &::-webkit-scrollbar {
       display: none;
     }

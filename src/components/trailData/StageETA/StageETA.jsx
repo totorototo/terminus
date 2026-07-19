@@ -171,6 +171,7 @@ const StageETA = memo(function StageETA({ className }) {
         {/* Race start */}
         <div
           role="listitem"
+          aria-current={startIsCurrent ? "step" : undefined}
           className={`cp-row${startIsPast ? " past" : startIsCurrent ? " current" : ""}`}
         >
           <div
@@ -193,11 +194,13 @@ const StageETA = memo(function StageETA({ className }) {
 
         {startCaption && (
           <div
+            role="listitem"
             className={`bc-row${startIsPast ? " past" : startIsCurrent ? " current" : ""}`}
             style={{ minHeight: startRailPx }}
-            aria-hidden="true"
           >
-            <div className="bc-rail">
+            {/* the rail is decorative; the caption stats are real content and
+                must stay in the accessibility tree */}
+            <div className="bc-rail" aria-hidden="true">
               <div
                 className="bc-rail-fill"
                 style={{ height: `${startFillPct}%` }}
@@ -219,6 +222,7 @@ const StageETA = memo(function StageETA({ className }) {
                   (distance/eta, elevation/difficulty to the next life base). */}
               <div
                 role="listitem"
+                aria-current={row.isCurrent ? "step" : undefined}
                 className={`cp-row${stateClass}${row.isOverCutoff ? " over-cutoff" : ""}`}
               >
                 <div
@@ -265,11 +269,11 @@ const StageETA = memo(function StageETA({ className }) {
                   with the stage's stats centered in the gap it spans */}
               {row.hasNextLeg && (
                 <div
+                  role="listitem"
                   className={`bc-row${stateClass}`}
                   style={{ minHeight: row.railPx }}
-                  aria-hidden="true"
                 >
-                  <div className="bc-rail">
+                  <div className="bc-rail" aria-hidden="true">
                     <div
                       className="bc-rail-fill"
                       style={{ height: `${row.fillPct}%` }}

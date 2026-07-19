@@ -166,9 +166,27 @@ describe("SectionETA", () => {
 
     render(<SectionETA />);
 
-    // Should render one row marked as current
+    // Should render one row marked as current, exposed via aria-current
     const currentRow = document.querySelector(".cp-row.current");
     expect(currentRow).not.toBeNull();
+    expect(currentRow).toHaveAttribute("aria-current", "step");
+  });
+
+  it("keeps leg stats in the accessibility tree, hiding only the rail", () => {
+    setupStore(SECTIONS, CUMULATIVE_DISTANCES, {
+      index: 0,
+      timestamp: START_MS,
+    });
+
+    render(<SectionETA />);
+
+    const legRow = document.querySelector(".bc-row");
+    expect(legRow).not.toHaveAttribute("aria-hidden");
+    expect(legRow).toHaveAttribute("role", "listitem");
+    expect(legRow.querySelector(".bc-rail")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
   });
 
   it("shows a live countdown only on the next arrival's row", () => {

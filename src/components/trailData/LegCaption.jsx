@@ -33,8 +33,9 @@ function ProfileStrip({ gainM, lossM }) {
   const total = gainM + lossM;
   if (total <= 0) return null;
   const gainPct = Math.round((gainM / total) * 100);
+  // Decorative — the gain/loss numbers below carry the same information
   return (
-    <div className="bc-profile">
+    <div className="bc-profile" aria-hidden="true">
       <div className="bc-profile-gain" style={{ width: `${gainPct}%` }} />
       <div className="bc-profile-loss" style={{ width: `${100 - gainPct}%` }} />
     </div>
@@ -44,7 +45,10 @@ function ProfileStrip({ gainM, lossM }) {
 function ElevStat({ direction, value }) {
   const Icon = direction === "up" ? ArrowUp : ArrowDown;
   return (
-    <span className={`bc-elev bc-elev-${direction}`}>
+    <span
+      className={`bc-elev bc-elev-${direction}`}
+      aria-label={`${value} m ${direction === "up" ? "gain" : "loss"}`}
+    >
       <Icon size={11} />
       {value}m
     </span>

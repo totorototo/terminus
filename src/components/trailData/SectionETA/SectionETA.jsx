@@ -280,6 +280,7 @@ const SectionETA = memo(function SectionETA({ className }) {
         {/* Race start */}
         <div
           role="listitem"
+          aria-current={startIsCurrent ? "step" : undefined}
           className={`cp-row${startIsPast ? " past" : startIsCurrent ? " current" : ""}`}
         >
           <div
@@ -307,11 +308,13 @@ const SectionETA = memo(function SectionETA({ className }) {
 
         {startCaption && (
           <div
+            role="listitem"
             className={`bc-row${startIsPast ? " past" : startIsCurrent ? " current" : ""}`}
             style={{ minHeight: startRailPx }}
-            aria-hidden="true"
           >
-            <div className="bc-rail">
+            {/* the rail is decorative; the caption stats are real content and
+                must stay in the accessibility tree */}
+            <div className="bc-rail" aria-hidden="true">
               <div
                 className="bc-rail-fill"
                 style={{ height: `${startFillPct}%` }}
@@ -334,6 +337,7 @@ const SectionETA = memo(function SectionETA({ className }) {
                   location). */}
               <div
                 role="listitem"
+                aria-current={row.isCurrent ? "step" : undefined}
                 className={`cp-row${stateClass}${row.isOverCutoff ? " over-cutoff" : ""}`}
               >
                 <div
@@ -387,11 +391,11 @@ const SectionETA = memo(function SectionETA({ className }) {
                   with the leg's stats centered in the gap it spans */}
               {row.hasNextLeg && (
                 <div
+                  role="listitem"
                   className={`bc-row${stateClass}`}
                   style={{ minHeight: row.railPx }}
-                  aria-hidden="true"
                 >
-                  <div className="bc-rail">
+                  <div className="bc-rail" aria-hidden="true">
                     <div
                       className="bc-rail-fill"
                       style={{ height: `${row.fillPct}%` }}
