@@ -19,6 +19,14 @@ vi.mock("./SectionETA.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
 
+vi.mock("../LegCaption/LegCaption.style.js", () => ({
+  default: (Component) => (props) => <Component {...props} />,
+}));
+
+vi.mock("../WeatherLine/WeatherLine.style.js", () => ({
+  default: (Component) => (props) => <Component {...props} />,
+}));
+
 vi.mock("../../../constants.js", () => ({
   DIFFICULTY_COLORS: ["#4CAF50", "#ECBC3E", "#EA8827", "#E1351D", "#96451F"],
   DIFFICULTY_LABELS: ["Easy", "Moderate", "Hard", "Very Hard", "Extreme"],

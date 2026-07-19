@@ -1,12 +1,16 @@
 import { ArrowDown } from "@styled-icons/feather/ArrowDown";
 import { ArrowUp } from "@styled-icons/feather/ArrowUp";
 
-import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../constants.js";
-import { formatDuration } from "./etaLegHelpers.js";
+import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
+import { formatDuration } from "../etaLegHelpers.js";
 
-// Shared between SectionETA and StageETA (see etaLegHelpers.js): the in-rail
-// caption describing the leg AHEAD of a block (Start or a checkpoint/life
-// base). Styled by the parents' shared SectionETA.style.js bc-* classes.
+import style from "./LegCaption.style.js";
+
+// Shared between SectionETA and StageETA: the in-rail caption describing the
+// leg AHEAD of a block (Start or a checkpoint/life base). The parents' own
+// SectionETA.style.js still dims this component via the literal "bc-caption"
+// class (`.bc-row.past .bc-caption`) — that cross-component opacity rule
+// can't move here since it depends on the row's own past/current state.
 
 function DifficultyDots({ difficulty }) {
   const color = difficulty > 0 ? DIFFICULTY_COLORS[difficulty - 1] : null;
@@ -55,9 +59,9 @@ function ElevStat({ direction, value }) {
   );
 }
 
-export function LegCaption({ distKm, gainM, lossM, estSec, difficulty }) {
+function LegCaption({ className, distKm, gainM, lossM, estSec, difficulty }) {
   return (
-    <div className="bc-caption">
+    <div className={`${className ?? ""} bc-caption`}>
       <ProfileStrip gainM={gainM} lossM={lossM} />
       <div className="bc-caption-row">
         <span className="bc-stat">{distKm.toFixed(1)} km</span>
@@ -71,3 +75,7 @@ export function LegCaption({ distKm, gainM, lossM, estSec, difficulty }) {
     </div>
   );
 }
+
+const StyledLegCaption = style(LegCaption);
+
+export default StyledLegCaption;

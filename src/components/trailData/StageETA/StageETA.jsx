@@ -9,7 +9,7 @@ import { useScrollCurrentIntoView } from "../../../hooks/useScrollCurrentIntoVie
 import { useStageETAs } from "../../../hooks/useStageETAs.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 import { formatDuration, legProgress, railHeightPx } from "../etaLegHelpers.js";
-import { LegCaption } from "../LegCaption.jsx";
+import LegCaption from "../LegCaption/LegCaption.jsx";
 
 // Stages are the coarser life-base intervals (Start/LifeBase/Arrival); this is
 // the stage-granularity twin of SectionETA (which renders the finer checkpoints).
