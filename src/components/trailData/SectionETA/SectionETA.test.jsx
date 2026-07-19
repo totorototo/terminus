@@ -84,12 +84,17 @@ const SECTIONS = [
 // 301 cumulative distance entries: 0 at index 0, 50m per index
 const CUMULATIVE_DISTANCES = Array.from({ length: 301 }, (_, i) => i * 50);
 
-function setupStore(sections, cumulativeDistances, projectedLocation) {
+function setupStore(
+  sections,
+  cumulativeDistances,
+  projectedLocation,
+  forecasts = {},
+) {
   storeModule.default.mockImplementation((selector) =>
     selector({
       sections,
       gpx: { cumulativeDistances, data: [] },
-      weather: { forecasts: {} },
+      weather: { forecasts },
       fetchWeatherForCheckpoints: () => {},
     }),
   );
@@ -261,6 +266,61 @@ describe("SectionETA", () => {
     expect(screen.queryByText("Easy")).not.toBeInTheDocument();
     expect(screen.queryByText("Moderate")).not.toBeInTheDocument();
     expect(screen.queryByText("Hard")).not.toBeInTheDocument();
+  });
+
+  // ── Weather flags ────────────────────────────────────────────────────────
+
+  it("flags harsh weather with an alert and highlights the offending stats", () => {
+    setupStore(
+      SECTIONS,
+      CUMULATIVE_DISTANCES,
+      { index: 0, timestamp: START_MS },
+      {
+        "Checkpoint A": {
+          icon: "CloudSnow",
+          temp: -3,
+          precipitation: 80,
+          wind: 45,
+        },
+        "Checkpoint B": { icon: "Sun", temp: 12, precipitation: 5, wind: 8 },
+      },
+    );
+
+    render(<SectionETA />);
+
+    expect(document.querySelectorAll(".cp-weather-line")).toHaveLength(2);
+    const flagged = document.querySelectorAll(".cp-weather-line.flagged");
+    expect(flagged).toHaveLength(1);
+    expect(flagged[0]).toHaveAttribute(
+      "aria-label",
+      "Weather warning: freezing, high precipitation, strong wind",
+    );
+    expect(flagged[0].querySelector(".cp-weather-alert")).not.toBeNull();
+    // cold → temp, wet → precip, windy → wind: all three highlighted here
+    expect(flagged[0].querySelectorAll(".flagged-stat")).toHaveLength(3);
+  });
+
+  it("highlights only the condition that tripped the flag", () => {
+    setupStore(
+      SECTIONS,
+      CUMULATIVE_DISTANCES,
+      { index: 0, timestamp: START_MS },
+      {
+        // windy only: mild temp, dry
+        "Checkpoint A": { icon: "Wind", temp: 8, precipitation: 0, wind: 60 },
+      },
+    );
+
+    render(<SectionETA />);
+
+    const flagged = document.querySelector(".cp-weather-line.flagged");
+    expect(flagged).toHaveAttribute(
+      "aria-label",
+      "Weather warning: strong wind",
+    );
+    const stats = flagged.querySelectorAll(".flagged-stat");
+    expect(stats).toHaveLength(1);
+    expect(stats[0].textContent).toContain("60 km/h");
   });
 
   // ── Distance display ─────────────────────────────────────────────────────

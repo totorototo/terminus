@@ -408,7 +408,7 @@ const style = (Component) => styled(Component)`
 
   .cp-row.over-cutoff .cp-eta {
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+      props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
   }
 
   .cp-km {
@@ -451,7 +451,7 @@ const style = (Component) => styled(Component)`
 
     &.breached {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+        props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
     }
   }
 
@@ -503,6 +503,19 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     gap: 0.4rem;
+  }
+
+  .cp-weather-alert {
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
+    flex-shrink: 0;
+  }
+
+  /* the stat that tripped the flag (cold → temp, wet → precip, windy → wind) */
+  .cp-weather-line .flagged-stat {
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
   }
 
   .cp-weather-temp {

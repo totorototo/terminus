@@ -10,6 +10,7 @@ const THEME = {
       "--color-surface": "#ebe7e2",
       "--color-primary-text": "#2A3AA5",
       "--color-secondary-text": "#7A3509",
+      "--color-accent-text": "#971143",
       "--color-success": "#16a34a",
     },
     dark: {
@@ -23,6 +24,7 @@ const THEME = {
       "--color-progress": "#ced5e0",
       "--color-surface": "#3d3b3b",
       "--color-success": "#22c55e",
+      "--color-accent-text": "#f2789d",
     },
   },
 

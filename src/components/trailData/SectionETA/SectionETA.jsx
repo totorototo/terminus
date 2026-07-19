@@ -33,6 +33,8 @@ const WEATHER_ICONS = {
 
 // Weather promoted to its own full-width row (own icon, own margins) rather
 // than a squeezed inline badge, so cold/wet/windy checkpoints stay legible.
+// A flagged line says WHICH condition tripped it: alert triangle up front and
+// the offending stat(s) highlighted, instead of only a vague card tint.
 function WeatherLine({ weather, iconColor, flaggedIconColor }) {
   const Icon = WEATHER_ICONS[weather.icon] ?? Cloud;
   const isCold = weather.temp <= 0;
@@ -40,19 +42,37 @@ function WeatherLine({ weather, iconColor, flaggedIconColor }) {
   const isWindy = weather.wind >= 30;
   const flagged = isCold || isWet || isWindy;
 
+  const warning = flagged
+    ? `Weather warning: ${[
+        isCold && "freezing",
+        isWet && "high precipitation",
+        isWindy && "strong wind",
+      ]
+        .filter(Boolean)
+        .join(", ")}`
+    : undefined;
+
   return (
-    <div className={`cp-weather-line${flagged ? " flagged" : ""}`}>
+    <div
+      className={`cp-weather-line${flagged ? " flagged" : ""}`}
+      role={flagged ? "group" : undefined}
+      aria-label={warning}
+      title={warning}
+    >
       <div className="cp-weather-main">
         <Icon size={16} color={flagged ? flaggedIconColor : iconColor} />
-        <span className="cp-weather-temp">
+        {flagged && <AlertTriangle size={12} className="cp-weather-alert" />}
+        <span className={`cp-weather-temp${isCold ? " flagged-stat" : ""}`}>
           {weather.temp > 0 ? `+${weather.temp}` : weather.temp}°
         </span>
       </div>
       <div className="cp-weather-detail">
         {weather.precipitation != null && (
-          <span>{weather.precipitation}% precip</span>
+          <span className={isWet ? "flagged-stat" : undefined}>
+            {weather.precipitation}% precip
+          </span>
         )}
-        <span className="cp-weather-wind">
+        <span className={`cp-weather-wind${isWindy ? " flagged-stat" : ""}`}>
           <Wind size={11} />
           {weather.wind} km/h
         </span>
