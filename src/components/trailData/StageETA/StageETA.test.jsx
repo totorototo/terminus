@@ -102,7 +102,10 @@ describe("StageETA", () => {
 
     // Pre-race the hook computes raceStart + estimated durations; every row
     // (start + life bases) shows it via the date-fns mock, dimmed as planned.
-    expect(screen.getAllByText("Sat 10:00")).toHaveLength(STAGES.length + 1);
+    // (Count via .cp-eta — cutoff chips format to the same mocked string.)
+    const etas = [...document.querySelectorAll(".cp-eta")];
+    expect(etas).toHaveLength(STAGES.length + 1);
+    expect(etas.every((el) => el.textContent === "Sat 10:00")).toBe(true);
     expect(screen.queryByText("--:--")).not.toBeInTheDocument();
     expect(document.querySelectorAll(".cp-eta.planned")).toHaveLength(
       STAGES.length + 1,
@@ -136,6 +139,22 @@ describe("StageETA", () => {
     render(<StageETA />);
 
     expect(document.querySelector(".cp-row.current")).not.toBeNull();
+  });
+
+  it("shows a live countdown on the next life base's row and cutoffs where defined", () => {
+    // Halfway through stage 1 (0–100) at 1 h in, pace ratio 1 →
+    // etaMs = now + 1 h → "in 1h" on Life Base 1's row only.
+    setupStore(STAGES, CUMULATIVE_DISTANCES, {
+      index: 50,
+      timestamp: START_MS + 3600 * 1000,
+    });
+
+    render(<StageETA />);
+
+    expect(screen.getByText("in 1h")).toBeInTheDocument();
+    expect(document.querySelectorAll(".cp-countdown")).toHaveLength(1);
+    // st1 carries maxCompletionTime; st2 has none
+    expect(document.querySelectorAll(".cp-cutoff")).toHaveLength(1);
   });
 
   it("prefers the Zig recalibration for forward ETAs when present", () => {

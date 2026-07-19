@@ -1,5 +1,7 @@
 import { Fragment, memo, useEffect, useMemo } from "react";
 
+import { AlertTriangle } from "@styled-icons/feather/AlertTriangle";
+import { Clock } from "@styled-icons/feather/Clock";
 import { Cloud } from "@styled-icons/feather/Cloud";
 import { CloudDrizzle } from "@styled-icons/feather/CloudDrizzle";
 import { CloudLightning } from "@styled-icons/feather/CloudLightning";
@@ -80,6 +82,7 @@ const SectionETA = memo(function SectionETA({ className }) {
     })),
   );
   const projIndex = projectedLocation?.index || 0;
+  const projTimestamp = projectedLocation?.timestamp || 0;
 
   const startLocation = sections?.[0]?.startLocation || "Start";
   const startCoord = coordinates?.[sections?.[0]?.startIndex ?? -1];
@@ -171,6 +174,20 @@ const SectionETA = memo(function SectionETA({ className }) {
       );
       const beadPct = isCurrent ? fillPct : null;
 
+      // Countdown to THIS checkpoint's arrival — keyed on the hook's own
+      // (pre-borrow) isCurrent, i.e. the runner is inside the section that
+      // ends here, so cp.etaMs is the next arrival. Relative to the fix's
+      // timestamp, matching the base the hook computed etaMs from.
+      const remainSec =
+        cp.isCurrent && cp.etaMs && projTimestamp > 0
+          ? (cp.etaMs - projTimestamp) / 1000
+          : 0;
+      const countdownStr =
+        remainSec > 60 ? `in ${formatDuration(remainSec)}` : null;
+
+      const cutoffStr =
+        cp.cutoffMs != null ? format(new Date(cp.cutoffMs), "EEE HH:mm") : null;
+
       return {
         id: cp.sectionId,
         endLocation: cp.endLocation,
@@ -188,6 +205,8 @@ const SectionETA = memo(function SectionETA({ className }) {
         difficulty,
         hasNextLeg: aheadSection != null,
         weather: forecasts[cp.endLocation] ?? null,
+        countdownStr,
+        cutoffStr,
         distKm,
         gainM,
         lossM,
@@ -206,6 +225,7 @@ const SectionETA = memo(function SectionETA({ className }) {
     forecasts,
     cumulativeDistances,
     projIndex,
+    projTimestamp,
   ]);
 
   // Start's past/current mirrors checkpointETAs[0] (the leg Start→first
@@ -329,6 +349,28 @@ const SectionETA = memo(function SectionETA({ className }) {
                   {Number.isFinite(row.endKm) && (
                     <div className="cp-line2">
                       <span className="cp-km">{row.endKm.toFixed(1)} km</span>
+                      {(row.cutoffStr || row.countdownStr) && (
+                        <span className="cp-line2-right">
+                          {row.cutoffStr && (
+                            <span
+                              className={`cp-cutoff${row.isOverCutoff ? " breached" : ""}`}
+                              aria-label={`Cutoff ${row.cutoffStr}`}
+                            >
+                              {row.isOverCutoff ? (
+                                <AlertTriangle size={11} />
+                              ) : (
+                                <Clock size={11} />
+                              )}
+                              {row.cutoffStr}
+                            </span>
+                          )}
+                          {row.countdownStr && (
+                            <span className="cp-countdown">
+                              {row.countdownStr}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </div>
                   )}
                   {row.weather && (

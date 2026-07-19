@@ -17,6 +17,7 @@ import useStore, { useProjectedLocation } from "../store/store.js";
  *   stageETAs: Array of {
  *     stageId, endLocation, endKm,
  *     etaMs: number | null,
+ *     cutoffMs: number | null,
  *     isPast, isCurrent, isOverCutoff,
  *     difficulty,
  *     lat, lon,
@@ -156,6 +157,7 @@ export function useStageETAs() {
         endLocation: stage.endLocation,
         endKm: cumulativeDistances[stage.endIndex] / 1000,
         etaMs,
+        cutoffMs,
         isPast,
         isCurrent,
         isOverCutoff,

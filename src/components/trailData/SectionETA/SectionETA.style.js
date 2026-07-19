@@ -408,6 +408,47 @@ const style = (Component) => styled(Component)`
     white-space: nowrap;
   }
 
+  .cp-line2-right {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* barrière horaire for this checkpoint; breached = predicted arrival later
+     than the cutoff (icon + color so the signal isn't color-only) */
+  .cp-cutoff {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.35,
+      )};
+    line-height: 1;
+    letter-spacing: 0.2px;
+
+    &.breached {
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+    }
+  }
+
+  /* live "in 2h 15m" to the next arrival */
+  .cp-countdown {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    line-height: 1;
+    letter-spacing: 0.2px;
+  }
+
   .cp-weather-line {
     display: flex;
     align-items: center;

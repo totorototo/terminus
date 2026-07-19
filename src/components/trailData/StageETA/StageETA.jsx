@@ -1,5 +1,7 @@
 import { Fragment, memo, useMemo } from "react";
 
+import { AlertTriangle } from "@styled-icons/feather/AlertTriangle";
+import { Clock } from "@styled-icons/feather/Clock";
 import { format } from "date-fns";
 import { useShallow } from "zustand/react/shallow";
 
@@ -24,6 +26,7 @@ const StageETA = memo(function StageETA({ className }) {
     })),
   );
   const projIndex = projectedLocation?.index || 0;
+  const projTimestamp = projectedLocation?.timestamp || 0;
 
   const { totalEstSec, rows, startCaption } = useMemo(() => {
     if (!stageETAs.length)
@@ -68,6 +71,20 @@ const StageETA = memo(function StageETA({ className }) {
       );
       const beadPct = isCurrent ? fillPct : null;
 
+      // Countdown to THIS life base's arrival — keyed on the hook's own
+      // (pre-borrow) isCurrent, i.e. the runner is inside the stage that
+      // ends here, so st.etaMs is the next arrival. Relative to the fix's
+      // timestamp, matching the base the hook computed etaMs from.
+      const remainSec =
+        st.isCurrent && st.etaMs && projTimestamp > 0
+          ? (st.etaMs - projTimestamp) / 1000
+          : 0;
+      const countdownStr =
+        remainSec > 60 ? `in ${formatDuration(remainSec)}` : null;
+
+      const cutoffStr =
+        st.cutoffMs != null ? format(new Date(st.cutoffMs), "EEE HH:mm") : null;
+
       return {
         id: st.stageId,
         endLocation: st.endLocation,
@@ -84,6 +101,8 @@ const StageETA = memo(function StageETA({ className }) {
             : "--:--",
         difficulty,
         hasNextLeg: aheadStage != null,
+        countdownStr,
+        cutoffStr,
         distKm,
         gainM,
         lossM,
@@ -95,7 +114,14 @@ const StageETA = memo(function StageETA({ className }) {
     });
 
     return { totalEstSec, rows, startCaption };
-  }, [stageETAs, stages, raceStart, cumulativeDistances, projIndex]);
+  }, [
+    stageETAs,
+    stages,
+    raceStart,
+    cumulativeDistances,
+    projIndex,
+    projTimestamp,
+  ]);
 
   // Start's past/current mirrors stageETAs[0] (the stage Start→first life
   // base is Start's "stage ahead", same borrowing as the rows above). With a
@@ -208,6 +234,28 @@ const StageETA = memo(function StageETA({ className }) {
                   {Number.isFinite(row.endKm) && (
                     <div className="cp-line2">
                       <span className="cp-km">{row.endKm.toFixed(1)} km</span>
+                      {(row.cutoffStr || row.countdownStr) && (
+                        <span className="cp-line2-right">
+                          {row.cutoffStr && (
+                            <span
+                              className={`cp-cutoff${row.isOverCutoff ? " breached" : ""}`}
+                              aria-label={`Cutoff ${row.cutoffStr}`}
+                            >
+                              {row.isOverCutoff ? (
+                                <AlertTriangle size={11} />
+                              ) : (
+                                <Clock size={11} />
+                              )}
+                              {row.cutoffStr}
+                            </span>
+                          )}
+                          {row.countdownStr && (
+                            <span className="cp-countdown">
+                              {row.countdownStr}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

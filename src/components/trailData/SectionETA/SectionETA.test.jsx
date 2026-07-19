@@ -129,7 +129,10 @@ describe("SectionETA", () => {
 
     // Pre-race the hook computes raceStart + estimated durations; every row
     // (start + checkpoints) shows it via the date-fns mock, dimmed as planned.
-    expect(screen.getAllByText("Sat 10:00")).toHaveLength(SECTIONS.length + 1);
+    // (Count via .cp-eta — cutoff chips format to the same mocked string.)
+    const etas = [...document.querySelectorAll(".cp-eta")];
+    expect(etas).toHaveLength(SECTIONS.length + 1);
+    expect(etas.every((el) => el.textContent === "Sat 10:00")).toBe(true);
     expect(screen.queryByText("--:--")).not.toBeInTheDocument();
     expect(document.querySelectorAll(".cp-eta.planned")).toHaveLength(
       SECTIONS.length + 1,
@@ -166,6 +169,35 @@ describe("SectionETA", () => {
     // Should render one row marked as current
     const currentRow = document.querySelector(".cp-row.current");
     expect(currentRow).not.toBeNull();
+  });
+
+  it("shows a live countdown only on the next arrival's row", () => {
+    // Halfway through section 1 (0–100) at 30 min in, pace ratio 1 →
+    // etaMs = now + 30 min → "in 30m" on Checkpoint A's row only.
+    setupStore(SECTIONS, CUMULATIVE_DISTANCES, {
+      index: 50,
+      timestamp: START_MS + 1800 * 1000,
+    });
+
+    render(<SectionETA />);
+
+    expect(screen.getByText("in 30m")).toBeInTheDocument();
+    expect(document.querySelectorAll(".cp-countdown")).toHaveLength(1);
+  });
+
+  // ── Cutoff display ───────────────────────────────────────────────────────
+
+  it("renders cutoff times for checkpoints that have one", () => {
+    setupStore(SECTIONS, CUMULATIVE_DISTANCES, {
+      index: 0,
+      timestamp: START_MS,
+    });
+
+    render(<SectionETA />);
+
+    // s1 and s2 carry maxCompletionTime; s3 has none
+    expect(document.querySelectorAll(".cp-cutoff")).toHaveLength(2);
+    expect(document.querySelectorAll(".cp-cutoff.breached")).toHaveLength(0);
   });
 
   // ── Future sections ──────────────────────────────────────────────────────
@@ -321,6 +353,8 @@ describe("SectionETA", () => {
 
     const overCutoffRows = document.querySelectorAll(".cp-row.over-cutoff");
     expect(overCutoffRows.length).toBe(1);
+    // the breached row's cutoff chip switches to the warning presentation
+    expect(document.querySelectorAll(".cp-cutoff.breached")).toHaveLength(1);
   });
 
   // ── Speed factor edge cases ───────────────────────────────────────────────

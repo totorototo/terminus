@@ -16,7 +16,8 @@ import useStore, { useProjectedLocation } from "../store/store.js";
  *   checkpointETAs: Array of {
  *     sectionId, endLocation, endKm,
  *     etaMs: number | null,
- *     isPast, isCurrent,
+ *     cutoffMs: number | null,
+ *     isPast, isCurrent, isOverCutoff,
  *     difficulty,
  *     lat, lon,
  *   }
@@ -161,6 +162,7 @@ export function useCheckpointETAs() {
         endLocation: section.endLocation,
         endKm: cumulativeDistances[section.endIndex] / 1000,
         etaMs,
+        cutoffMs,
         isPast,
         isCurrent,
         isOverCutoff,
