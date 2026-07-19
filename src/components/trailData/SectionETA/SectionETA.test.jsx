@@ -119,7 +119,7 @@ describe("SectionETA", () => {
 
   // ── Before race start ────────────────────────────────────────────────────
 
-  it("shows '--:--' for all sections before race start", () => {
+  it("shows the planned schedule, marked as planned, before race start", () => {
     setupStore(SECTIONS, CUMULATIVE_DISTANCES, {
       index: 0,
       timestamp: START_MS - 1000, // one second before start
@@ -127,9 +127,13 @@ describe("SectionETA", () => {
 
     render(<SectionETA />);
 
-    const etaCells = screen.getAllByText("--:--");
-    // +1 for the start row
-    expect(etaCells).toHaveLength(SECTIONS.length + 1);
+    // Pre-race the hook computes raceStart + estimated durations; every row
+    // (start + checkpoints) shows it via the date-fns mock, dimmed as planned.
+    expect(screen.getAllByText("Sat 10:00")).toHaveLength(SECTIONS.length + 1);
+    expect(screen.queryByText("--:--")).not.toBeInTheDocument();
+    expect(document.querySelectorAll(".cp-eta.planned")).toHaveLength(
+      SECTIONS.length + 1,
+    );
   });
 
   // ── Past section with recorded checkpoint ────────────────────────────────

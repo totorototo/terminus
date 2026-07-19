@@ -92,7 +92,7 @@ describe("StageETA", () => {
     expect(screen.getByText("No stages")).toBeInTheDocument();
   });
 
-  it("shows '--:--' for all stages before race start", () => {
+  it("shows the planned schedule, marked as planned, before race start", () => {
     setupStore(STAGES, CUMULATIVE_DISTANCES, {
       index: 0,
       timestamp: START_MS - 1000, // one second before start
@@ -100,9 +100,13 @@ describe("StageETA", () => {
 
     render(<StageETA />);
 
-    const etaCells = screen.getAllByText("--:--");
-    // +1 for the start row
-    expect(etaCells).toHaveLength(STAGES.length + 1);
+    // Pre-race the hook computes raceStart + estimated durations; every row
+    // (start + life bases) shows it via the date-fns mock, dimmed as planned.
+    expect(screen.getAllByText("Sat 10:00")).toHaveLength(STAGES.length + 1);
+    expect(screen.queryByText("--:--")).not.toBeInTheDocument();
+    expect(document.querySelectorAll(".cp-eta.planned")).toHaveLength(
+      STAGES.length + 1,
+    );
   });
 
   it("renders all life-base names", () => {

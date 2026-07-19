@@ -12,6 +12,7 @@ import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
+import { useScrollCurrentIntoView } from "../../../hooks/useScrollCurrentIntoView.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 import { formatDuration, legProgress, railHeightPx } from "../etaLegHelpers.js";
 import { LegCaption } from "../LegCaption.jsx";
@@ -177,8 +178,11 @@ const SectionETA = memo(function SectionETA({ className }) {
         isPast,
         isCurrent,
         isOverCutoff: cp.isOverCutoff,
+        // Pre-race the hook already computes the planned schedule (raceStart +
+        // estimated durations) — show it instead of a wall of "--:--"; the
+        // `planned` class dims it to distinguish plan from live ETA.
         etaStr:
-          raceStart && cp.etaMs && !isPreRace
+          raceStart && cp.etaMs
             ? format(new Date(cp.etaMs), "EEE HH:mm")
             : "--:--",
         difficulty,
@@ -199,7 +203,6 @@ const SectionETA = memo(function SectionETA({ className }) {
     checkpointETAs,
     sections,
     raceStart,
-    isPreRace,
     forecasts,
     cumulativeDistances,
     projIndex,
@@ -217,11 +220,15 @@ const SectionETA = memo(function SectionETA({ className }) {
   const startIsCurrent = hasGPSLock
     ? !!checkpointETAs[0]?.isCurrent
     : !isPreRace;
-  const startEtaStr =
-    raceStart && !isPreRace
-      ? format(new Date(raceStart), "EEE HH:mm")
-      : "--:--";
+  const startEtaStr = raceStart
+    ? format(new Date(raceStart), "EEE HH:mm")
+    : "--:--";
   const startWeather = forecasts[startLocation] ?? null;
+
+  const currentRowKey = startIsCurrent
+    ? "start"
+    : (rows.find((r) => r.isCurrent)?.id ?? null);
+  const listRef = useScrollCurrentIntoView(currentRowKey);
 
   const startRailPx = railHeightPx(startCaption?.distKm ?? 0);
   const startFillPct = legProgress(
@@ -249,7 +256,7 @@ const SectionETA = memo(function SectionETA({ className }) {
           {formatDuration(totalEstSec)} total
         </span>
       </div>
-      <div className="section-list" role="list" tabIndex={0}>
+      <div className="section-list" role="list" tabIndex={0} ref={listRef}>
         {/* Race start */}
         <div
           role="listitem"
@@ -261,7 +268,9 @@ const SectionETA = memo(function SectionETA({ className }) {
           <div className="cp-body">
             <div className="cp-line1">
               <span className="cp-name">{startLocation}</span>
-              <span className="cp-eta">{startEtaStr}</span>
+              <span className={`cp-eta${isPreRace ? " planned" : ""}`}>
+                {startEtaStr}
+              </span>
             </div>
             <div className="cp-line2">
               <span className="cp-km">0.0 km</span>
@@ -313,7 +322,9 @@ const SectionETA = memo(function SectionETA({ className }) {
                 <div className="cp-body">
                   <div className="cp-line1">
                     <span className="cp-name">{row.endLocation}</span>
-                    <span className="cp-eta">{row.etaStr}</span>
+                    <span className={`cp-eta${isPreRace ? " planned" : ""}`}>
+                      {row.etaStr}
+                    </span>
                   </div>
                   {Number.isFinite(row.endKm) && (
                     <div className="cp-line2">

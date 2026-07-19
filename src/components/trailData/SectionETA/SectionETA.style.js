@@ -365,6 +365,17 @@ const style = (Component) => styled(Component)`
     flex-shrink: 0;
   }
 
+  /* pre-race the ETA column is the planned schedule, not a live prediction —
+     dimmed so the two read differently at a glance */
+  .cp-eta.planned {
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.5,
+      )};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
+  }
+
   .cp-row.past .cp-eta {
     color: ${(props) =>
       rgba(
