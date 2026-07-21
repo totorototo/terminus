@@ -19,9 +19,9 @@ const TYPE_ICONS = {
   Checkpoint: CheckCircle,
 };
 
-const MIN_TRAIL_GAP = 1.6;
-const LEVEL_HEIGHT = 0.18;
-const BASE_OFFSET = 0.28;
+const MIN_TRAIL_GAP = 0.3;
+const LEVEL_HEIGHT = 0.035;
+const BASE_OFFSET = 0.12;
 
 function computeLabelLevels(checkpoints) {
   const ordered = checkpoints
@@ -92,7 +92,7 @@ const CheckpointPin = memo(function CheckpointPin({ checkpoint, level = 0 }) {
         checkpoint.point3D[2],
       ]}
       center
-      distanceFactor={8}
+      distanceFactor={2}
       occlude
     >
       <div style={styles.pin}>
