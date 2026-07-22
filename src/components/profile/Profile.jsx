@@ -298,6 +298,11 @@ function Profile({
     positionAttribute.needsUpdate = true;
 
     geometryRef.current.computeVertexNormals();
+    // Occlusion raycasting (Html's `occlude` prop) and any future raycasts
+    // rely on this cached bounding sphere — it must be refreshed whenever the
+    // vertex positions change, otherwise it goes stale after the animation
+    // moves the trail geometry away from the sphere it was first computed at.
+    geometryRef.current.computeBoundingSphere();
 
     if (t === 1) {
       prevVerticesRef.current = targetVertices;
