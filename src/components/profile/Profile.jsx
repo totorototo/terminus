@@ -149,6 +149,7 @@ const SolidColorMaterial = shaderMaterial(
   
   attribute float vertexIndex;
   varying vec3 vNormal;
+  varying vec3 vViewPosition;
   varying float vVertexIndex;
   
   void main() {
@@ -157,6 +158,7 @@ const SolidColorMaterial = shaderMaterial(
     vVertexIndex = vertexIndex;
     
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition = -mvPosition.xyz;
     gl_Position = projectionMatrix * mvPosition;
   }
   `,
@@ -170,6 +172,7 @@ const SolidColorMaterial = shaderMaterial(
   uniform float startIndex;
   uniform float endIndex;
   varying vec3 vNormal;
+  varying vec3 vViewPosition;
   varying float vVertexIndex;
   
   void main() {
@@ -177,20 +180,30 @@ const SolidColorMaterial = shaderMaterial(
 
     ${PROGRESS_COLORING_LOGIC.replace(/baseColor/g, "finalBaseColor")}
 
-    // Simple directional lighting (simulates sun from upper-right)
+    // Key light from upper-right, dim fill light from the opposite side so
+    // shaded faces stay readable instead of going flat/black.
     vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
+    vec3 fillDir = normalize(vec3(-0.7, -0.4, -0.6));
     vec3 normal = normalize(vNormal);
-    
-    // Matte surface - high ambient, soft diffuse, no specular
-    float ambientStrength = 0.6;
+    vec3 viewDir = normalize(vViewPosition);
+
+    float ambientStrength = 0.3;
     vec3 ambient = ambientStrength * finalBaseColor;
-    
-    // Softer diffuse light for matte appearance
+
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * finalBaseColor * 0.5;
-    
-    // Combine lighting (no specular = matte finish)
-    vec3 finalColor = ambient + diffuse;
+    float fillDiff = max(dot(normal, fillDir), 0.0) * 0.2;
+    vec3 diffuse = (diff * 0.85 + fillDiff) * finalBaseColor;
+
+    // Glossy highlight — Blinn-Phong specular for a polished, shiny finish
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float specAngle = max(dot(normal, halfwayDir), 0.0);
+    float specular = pow(specAngle, 64.0) * 0.9;
+
+    // Fresnel rim light — brightens grazing edges to sell depth/curvature
+    float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.5);
+    vec3 rim = fresnel * mix(finalBaseColor, vec3(1.0), 0.5) * 0.4;
+
+    vec3 finalColor = ambient + diffuse + vec3(specular) + rim;
     
     gl_FragColor = vec4(finalColor, 1.0);
   }

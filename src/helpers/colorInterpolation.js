@@ -37,23 +37,3 @@ export const getInterpolatedColor = (
 
   return interpolateColor(t, color1, color2, brightenFactor);
 };
-
-export const getSectionShade = (
-  index,
-  total,
-  baseColor,
-  minFactor = 0.75,
-  maxFactor = 1.35,
-) => {
-  const [r, g, b] = parseHex(baseColor);
-
-  const factor =
-    total <= 1
-      ? maxFactor
-      : minFactor + (index / (total - 1)) * (maxFactor - minFactor);
-
-  const shade = (channel) =>
-    Math.min(255, Math.max(0, Math.round(channel * factor)));
-
-  return `rgb(${shade(r)}, ${shade(g)}, ${shade(b)})`;
-};

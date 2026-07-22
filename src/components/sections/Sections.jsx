@@ -3,7 +3,7 @@ import { memo, useMemo } from "react";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
-import { getSectionShade } from "../../helpers/colorInterpolation.js";
+import { getInterpolatedColor } from "../../helpers/colorInterpolation.js";
 import useStore from "../../store/store.js";
 import Profile from "../profile/Profile.jsx";
 
@@ -25,9 +25,18 @@ export default function Sections({ sectionsPoints3D }) {
   const theme = useTheme();
   const themeVariantColors = theme.colors[theme.currentVariant];
   const colorPrimary = themeVariantColors["--color-primary"];
+  const colorSecondary = themeVariantColors["--color-secondary"];
+  const colorAccent = themeVariantColors["--color-accent"];
   const colorProgress = themeVariantColors["--color-progress"];
 
   const progressColor = useMemo(() => colorProgress, [colorProgress]);
+
+  // Smoothly blend across theme hues along the trail (rather than hard-
+  // cycling between them) so adjacent sections flow into each other.
+  const sectionPalette = useMemo(
+    () => [colorPrimary, colorAccent, colorSecondary],
+    [colorPrimary, colorAccent, colorSecondary],
+  );
 
   const sectionElements = useMemo(() => {
     if (!sectionsPoints3D || sectionsPoints3D.length === 0) return null;
@@ -48,7 +57,12 @@ export default function Sections({ sectionsPoints3D }) {
         <MemoizedProfile
           key={`${raceId}/${id}`}
           points={points}
-          color={getSectionShade(idx, sectionsPoints3D.length, colorPrimary)}
+          color={getInterpolatedColor(
+            idx,
+            sectionsPoints3D.length,
+            sectionPalette,
+            1.1,
+          )}
           showSlopeColors={showSlopeColors}
           slopes={sectionSlopes}
           profileMode={profileMode}
@@ -64,7 +78,7 @@ export default function Sections({ sectionsPoints3D }) {
     showSlopeColors,
     slopes,
     profileMode,
-    colorPrimary,
+    sectionPalette,
     progressIndex,
     progressColor,
     legs,
