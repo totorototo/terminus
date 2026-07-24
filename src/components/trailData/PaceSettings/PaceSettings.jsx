@@ -25,7 +25,7 @@ const PaceSettings = memo(function PaceSettings({ className }) {
     useStore(
       useShallow((state) => ({
         paceSettings: state.app?.paceSettings ?? {
-          basePaceSPerKm: 500,
+          basePaceSPerKm: 365,
           kFatigue: 0.003,
           lifeBaseStopS: 3600,
         },

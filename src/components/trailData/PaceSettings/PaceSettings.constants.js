@@ -24,15 +24,15 @@ export const RUNNER_PROFILES = [
   },
   {
     label: "Trail",
-    basePaceSPerKm: 500,
+    basePaceSPerKm: 365,
     kFatigue: 0.003,
-    sub: "~8 min/km on flat",
+    sub: "~6 min/km on flat",
   },
   {
     label: "Athlete",
-    basePaceSPerKm: 400,
+    basePaceSPerKm: 330,
     kFatigue: 0.002,
-    sub: "~7 min/km on flat",
+    sub: "~5:30 min/km on flat",
   },
   {
     label: "Elite",
