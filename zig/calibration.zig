@@ -59,7 +59,8 @@ const CommonIntervalStats = struct {
     bearing: f64, // degrees from north
     difficulty: u8, // 1–5 (Minetti pace factor vs flat: <1.1→1, <1.4→2, <1.8→3, <2.5→4, ≥2.5→5)
     estimatedDuration: f64, // seconds — moving time + planned stop at end checkpoint
-    paceFactor: f64, // average Minetti pace factor relative to flat (1.0 = flat equivalent)
+    paceFactor: f64, // average Minetti pace factor relative to flat (1.0 = flat equivalent), terrain only
+    effortFactor: f64, // average combined factor (terrain × fatigue × circadian × weather); effortFactor - paceFactor is the non-terrain (fatigue/circadian/weather) slowdown
     maxCompletionTime: ?i64, // seconds allowed (endTime - startTime), null if absent
     cutoffRatio: ?f64, // estimatedDuration / maxCompletionTime; null if no cutoff; >1.0 means cutoff missed
     stopDuration: ?u32, // planned stop at the end checkpoint in seconds, null if unset
@@ -209,6 +210,7 @@ pub fn computeBoundaryStats(
 
         const avg_slope = if (dist > 0) ((elevation_gain - elevation_loss) / dist) * 100.0 else 0.0;
         const avg_pf = if (dist > 0) m.totalWeightedDist / dist else 1.0;
+        const avg_ef = if (dist > 0) m.totalCombinedWeightedDist / dist else 1.0;
         const estimated_duration = m.totalTime + plannedStopSeconds(end_wpt, life_base_stop_s);
         const difficulty: u8 = if (avg_pf < 1.1) 1 else if (avg_pf < 1.4) 2 else if (avg_pf < 1.8) 3 else if (avg_pf < 2.5) 4 else 5;
         const max_completion_time: ?i64 = if (start_wpt.time != null and end_wpt.time != null)
@@ -240,6 +242,7 @@ pub fn computeBoundaryStats(
             .difficulty = difficulty,
             .estimatedDuration = estimated_duration,
             .paceFactor = avg_pf,
+            .effortFactor = avg_ef,
             .maxCompletionTime = max_completion_time,
             .cutoffRatio = blk: {
                 const mct = max_completion_time orelse break :blk null;

@@ -121,6 +121,14 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  .tile-value-sub {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-light"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+  }
+
   .tile-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};

@@ -11,6 +11,7 @@ pub const SegmentMetrics = struct {
     maxSlope: f64, // percentage
     totalTime: f64, // seconds of moving time over this range
     totalWeightedDist: f64, // sum of seg_dist × paceFactor (for avg pace factor)
+    totalCombinedWeightedDist: f64, // sum of seg_dist × combined factor (for avg effort factor)
 };
 
 /// Accumulate metrics over trace points `[start_index, end_index)`.
@@ -43,6 +44,7 @@ pub fn computeSegmentMetrics(
     var max_slope: f64 = 0.0;
     var total_time: f64 = 0.0;
     var total_weighted_dist: f64 = 0.0;
+    var total_combined_weighted_dist: f64 = 0.0;
 
     // Weather is constant over the segment, so its multiplier is computed once.
     const weather_factor = paceModel.weatherFactor(weather);
@@ -61,6 +63,7 @@ pub fn computeSegmentMetrics(
         total_time += seg_time;
         elapsed_s.* += seg_time;
         total_weighted_dist += seg_dist * factors.terrain;
+        total_combined_weighted_dist += seg_dist * factors.combined;
         d_eff_m.* += seg_dist * factors.terrain;
     }
 
@@ -70,6 +73,7 @@ pub fn computeSegmentMetrics(
         .maxSlope = max_slope,
         .totalTime = total_time,
         .totalWeightedDist = total_weighted_dist,
+        .totalCombinedWeightedDist = total_combined_weighted_dist,
     };
 }
 

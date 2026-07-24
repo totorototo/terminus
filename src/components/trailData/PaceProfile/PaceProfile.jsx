@@ -49,6 +49,10 @@ function buildStaticChart(sections, cumulativeDistances) {
         endDist,
         midDist: (startDist + endDist) / 2,
         pace,
+        // Average combined (terrain + fatigue + circadian + weather) factor for
+        // this section, vs paceFactor (terrain only) — the gap between them is
+        // the non-terrain slowdown that raw pace numbers otherwise absorb.
+        effort: section.effortFactor ?? section.paceFactor ?? 1,
         startLocation: section.startLocation || "",
       };
     })
@@ -92,6 +96,32 @@ function buildStaticChart(sections, cumulativeDistances) {
     .y0(scaleY(minPace - paceRange * 0.15))
     .curve(curveCatmullRom.alpha(0.5))(curvePoints);
 
+  // Effort trend — its own y-scale since values (~1.0-3.0x) share no unit with
+  // km/h pace; only the x-axis (distance) is shared with the pace curve.
+  const efforts = bars.map((b) => b.effort);
+  const minEffort = Math.min(...efforts);
+  const maxEffort = Math.max(...efforts);
+  const effortRange = maxEffort - minEffort || 1;
+  const scaleYEffort = createYScale(
+    {
+      min: minEffort - effortRange * 0.15,
+      max: maxEffort + effortRange * 0.15,
+    },
+    { min: HEIGHT, max: 0 },
+  );
+  const effortCurvePoints = [
+    { x: scaleX(bars[0].startDist), y: scaleYEffort(bars[0].effort) },
+    ...bars.map((b) => ({ x: scaleX(b.midDist), y: scaleYEffort(b.effort) })),
+    {
+      x: scaleX(bars[bars.length - 1].endDist),
+      y: scaleYEffort(bars[bars.length - 1].effort),
+    },
+  ];
+  const effortLinePath = line()
+    .x((d) => d.x)
+    .y((d) => d.y)
+    .curve(curveCatmullRom.alpha(0.5))(effortCurvePoints);
+
   // Tightest section = highest required pace (hardest cutoff)
   const tightestBar = bars.reduce(
     (max, b) => (b.pace > max.pace ? b : max),
@@ -102,6 +132,11 @@ function buildStaticChart(sections, cumulativeDistances) {
   const totalDist = bars.reduce((sum, b) => sum + (b.endDist - b.startDist), 0);
   const avgPace =
     bars.reduce((sum, b) => sum + b.pace * (b.endDist - b.startDist), 0) /
+    totalDist;
+
+  // Distance-weighted average effort factor across all sections
+  const avgEffort =
+    bars.reduce((sum, b) => sum + b.effort * (b.endDist - b.startDist), 0) /
     totalDist;
 
   // Section boundary labels — deduplicate overlapping labels
@@ -131,6 +166,10 @@ function buildStaticChart(sections, cumulativeDistances) {
     tightestBar,
     avgPace,
     sectionMarkersBase,
+    effortLinePath,
+    minEffort,
+    maxEffort,
+    avgEffort,
   };
 }
 
@@ -211,6 +250,9 @@ const PaceProfile = memo(function PaceProfile({ className }) {
     hasMaxTime,
     tightestBar,
     avgPace,
+    effortLinePath,
+    maxEffort,
+    avgEffort,
   } = staticChart;
   const {
     markerX,
@@ -223,12 +265,22 @@ const PaceProfile = memo(function PaceProfile({ className }) {
 
   const displayPace = currentBar?.pace ?? avgPace;
   const displayLabel = currentBar ? "current" : "avg required";
+  const displayEffort = currentBar?.effort ?? avgEffort;
 
   return (
     <div className={className}>
       <div className="pp-header">
         <span className="pp-header-label">
           {hasMaxTime ? "Slowest Allowed Pace" : "Estimated Pace"}
+        </span>
+        <span className="pp-legend">
+          <span className="pp-legend-item">
+            <span className="pp-legend-swatch pp-legend-swatch--pace" /> pace
+          </span>
+          <span className="pp-legend-item">
+            <span className="pp-legend-swatch pp-legend-swatch--effort" />{" "}
+            effort
+          </span>
         </span>
       </div>
 
@@ -246,6 +298,15 @@ const PaceProfile = memo(function PaceProfile({ className }) {
               d={linePath}
               fill="none"
               strokeWidth="1.5"
+            />
+          )}
+          {effortLinePath && (
+            <path
+              className="pp-effort-line"
+              d={effortLinePath}
+              fill="none"
+              strokeWidth="1.25"
+              strokeDasharray="4 2"
             />
           )}
 
@@ -291,6 +352,9 @@ const PaceProfile = memo(function PaceProfile({ className }) {
         <div className="pp-overlay">
           <span className="pp-label pp-label--tl">
             {maxPace.toFixed(1)} km/h
+          </span>
+          <span className="pp-label pp-label--tr pp-label--effort">
+            {maxEffort.toFixed(1)}×
           </span>
           <span className="pp-label pp-label--bl">
             {minPace.toFixed(1)} km/h
@@ -354,6 +418,16 @@ const PaceProfile = memo(function PaceProfile({ className }) {
               {truncate(currentBar.startLocation) || "—"}
             </span>
           )}
+        </div>
+
+        <div className="pp-stat-sep" />
+
+        <div className="pp-stat">
+          <span className="pp-stat-value pp-stat-value--effort">
+            {displayEffort.toFixed(1)}
+            <span className="pp-stat-unit">×</span>
+          </span>
+          <span className="pp-stat-label">effort</span>
         </div>
       </div>
     </div>

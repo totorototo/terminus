@@ -65,6 +65,16 @@ const AnalyticsPanel = memo(function AnalyticsPanel({
         ? (maxTimeSec / item.totalDistance) * 1000
         : null;
 
+    // effortFactor (terrain + fatigue + circadian + weather) vs paceFactor
+    // (terrain only) — the gap is the non-terrain slowdown raw pace numbers
+    // otherwise absorb invisibly.
+    const effortFactor = item.effortFactor ?? null;
+    const paceFactor = item.paceFactor ?? null;
+    const fatiguePct =
+      effortFactor != null && paceFactor > 0
+        ? Math.round((effortFactor / paceFactor - 1) * 100)
+        : null;
+
     return {
       startLocation: item.startLocation || "--",
       endLocation: item.endLocation || "--",
@@ -76,6 +86,8 @@ const AnalyticsPanel = memo(function AnalyticsPanel({
       elevationLoss: item.totalElevationLoss || 0,
       difficulty: item.difficulty || 0,
       slowestPaceSecPerKm,
+      effortFactor,
+      fatiguePct,
     };
   }, [item]);
 
@@ -153,6 +165,14 @@ const AnalyticsPanel = memo(function AnalyticsPanel({
             </span>
           ) : (
             <span className="tile-value">--</span>
+          )}
+          {analytics?.effortFactor != null && (
+            <span className="tile-value-sub">
+              {analytics.effortFactor.toFixed(1)}× effort
+              {analytics.fatiguePct != null && analytics.fatiguePct > 0
+                ? ` (+${analytics.fatiguePct}%)`
+                : ""}
+            </span>
           )}
         </div>
 
