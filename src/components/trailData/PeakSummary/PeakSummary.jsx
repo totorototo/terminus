@@ -1,6 +1,5 @@
 import { memo } from "react";
 
-import { rgba } from "polished";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
@@ -59,11 +58,6 @@ const PeakSummary = memo(function PeakSummary({ className }) {
           const isCurrent = !isPast && i === currentClimbIndex;
           const distToStartKm = (climb.startDistM - currentDistM) / 1000;
           const category = getClimbCategory(climb);
-          const badgeColor = category ? colors["--color-primary"] : null;
-          const badgeBackground = category
-            ? rgba(colors["--color-primary"], 0.16)
-            : null;
-
           const gainPct = Math.round((climb.elevationGain / maxGain) * 100);
 
           return (
@@ -75,23 +69,14 @@ const PeakSummary = memo(function PeakSummary({ className }) {
               onMouseLeave={() => setHighlightedClimb(null)}
             >
               <div
-                className={`climb-marker${isCurrent ? " current" : ""}`}
-                style={
-                  category
-                    ? {
-                        color: badgeColor,
-                        borderColor: badgeColor,
-                        backgroundColor: badgeBackground,
-                      }
-                    : undefined
-                }
+                className="climb-marker"
                 title={
                   category
                     ? `Climb score ${Math.round(category.score)}`
                     : undefined
                 }
               >
-                {category ? category.label : "–"}
+                {category?.key}
               </div>
               <div className="climb-info">
                 <div className="climb-meta-row">

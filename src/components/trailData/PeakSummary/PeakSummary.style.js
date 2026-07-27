@@ -81,46 +81,6 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  /* Difficulty marker — the first thing scanned in a row. Category climbs
-     get --color-primary inline; uncategorized climbs fall back to this
-     muted default so the column still lines up. */
-  .climb-marker {
-    width: 40px;
-    height: 22px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
-    border: 1px solid
-      ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.15,
-        )};
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.3,
-      )};
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    letter-spacing: 0.2px;
-    transition: box-shadow
-      ${(props) => props.theme.transitions["--transition-fast"]};
-
-    &.current {
-      box-shadow: 0 0 0 2px
-        ${(props) =>
-          rgba(
-            props.theme.colors[props.theme.currentVariant]["--color-primary"],
-            0.4,
-          )};
-    }
-  }
-
   .climb-info {
     display: flex;
     flex-direction: column;
@@ -134,6 +94,22 @@ const style = (Component) => styled(Component)`
     align-items: baseline;
     justify-content: space-between;
     gap: 0.5rem;
+  }
+
+  /* Difficulty label — plain colored text, no chip, in its own left column
+     so it lines up down the list regardless of each row's text length.
+     Only rendered for categorized climbs (Cat 4+); uncategorized climbs
+     leave the column empty rather than filling it with a placeholder. */
+  .climb-marker {
+    width: 40px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-large"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    letter-spacing: 0.2px;
   }
 
   .climb-at {

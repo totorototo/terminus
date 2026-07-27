@@ -3,11 +3,11 @@
 // (climbDistM × avgGradient) so category and "does this even count as a climb" share
 // one mental model. Thresholds mirror Strava's published category cutoffs.
 const CATEGORIES = [
-  { key: "4", label: "Cat 4", minScore: 8_000 },
-  { key: "3", label: "Cat 3", minScore: 16_000 },
-  { key: "2", label: "Cat 2", minScore: 32_000 },
-  { key: "1", label: "Cat 1", minScore: 64_000 },
-  { key: "HC", label: "HC", minScore: 80_000 },
+  { key: "4", minScore: 8_000 },
+  { key: "3", minScore: 16_000 },
+  { key: "2", minScore: 32_000 },
+  { key: "1", minScore: 64_000 },
+  { key: "HC", minScore: 80_000 },
 ];
 
 /**
@@ -23,6 +23,6 @@ export function getClimbCategory(climb) {
   }
   if (matchIndex === -1) return null;
 
-  const { key, label } = CATEGORIES[matchIndex];
-  return { key, label, score };
+  const { key } = CATEGORIES[matchIndex];
+  return { key, score };
 }

@@ -9,19 +9,19 @@ describe("getClimbCategory", () => {
   });
 
   it("categorizes climbs at each threshold boundary", () => {
-    expect(getClimbCategory({ climbDistM: 1000, avgGradient: 8 }).label).toBe(
-      "Cat 4",
+    expect(getClimbCategory({ climbDistM: 1000, avgGradient: 8 }).key).toBe(
+      "4",
     );
-    expect(getClimbCategory({ climbDistM: 2000, avgGradient: 8 }).label).toBe(
-      "Cat 3",
+    expect(getClimbCategory({ climbDistM: 2000, avgGradient: 8 }).key).toBe(
+      "3",
     );
-    expect(getClimbCategory({ climbDistM: 4000, avgGradient: 8 }).label).toBe(
-      "Cat 2",
+    expect(getClimbCategory({ climbDistM: 4000, avgGradient: 8 }).key).toBe(
+      "2",
     );
-    expect(getClimbCategory({ climbDistM: 8000, avgGradient: 8 }).label).toBe(
-      "Cat 1",
+    expect(getClimbCategory({ climbDistM: 8000, avgGradient: 8 }).key).toBe(
+      "1",
     );
-    expect(getClimbCategory({ climbDistM: 10_000, avgGradient: 8 }).label).toBe(
+    expect(getClimbCategory({ climbDistM: 10_000, avgGradient: 8 }).key).toBe(
       "HC",
     );
   });
