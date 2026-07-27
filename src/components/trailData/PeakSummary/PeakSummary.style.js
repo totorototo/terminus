@@ -56,7 +56,7 @@ const style = (Component) => styled(Component)`
     scrollbar-width: none;
     flex: 1;
     min-height: 0;
-    gap: 0.8rem;
+    gap: 1rem;
 
     &::-webkit-scrollbar {
       display: none;
@@ -67,7 +67,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     padding: 0.5rem 0;
-    gap: 0.6rem;
+    gap: 0.8rem;
     opacity: 0.65;
     transition: opacity
       ${(props) => props.theme.transitions["--transition-fast"]};
@@ -124,7 +124,7 @@ const style = (Component) => styled(Component)`
   .climb-info {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.6rem;
     min-width: 0;
     flex: 1;
   }
@@ -163,18 +163,23 @@ const style = (Component) => styled(Component)`
     flex-shrink: 0;
   }
 
+  /* Matches LegCaption's .bc-profile strip (height/radius/track alpha) —
+     same "proportion bar" language used elsewhere in the sidebar. */
   .climb-gain-bar {
-    height: 0.3rem;
+    height: 8px;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
+    overflow: hidden;
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.08,
+        0.12,
       )};
-    overflow: hidden;
   }
 
   .climb-gain-bar-fill {
     height: 100%;
+    background: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
     transition: width ${(props) => props.theme.transitions["--transition-base"]};
   }
 

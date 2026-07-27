@@ -64,7 +64,6 @@ const PeakSummary = memo(function PeakSummary({ className }) {
             ? rgba(colors["--color-primary"], 0.16)
             : null;
 
-          const barColor = badgeColor ?? colors["--color-text"];
           const gainPct = Math.round((climb.elevationGain / maxGain) * 100);
 
           return (
@@ -112,7 +111,12 @@ const PeakSummary = memo(function PeakSummary({ className }) {
                 <div className="climb-gain-bar">
                   <div
                     className="climb-gain-bar-fill"
-                    style={{ width: `${gainPct}%`, backgroundColor: barColor }}
+                    style={{
+                      width: `${gainPct}%`,
+                      backgroundColor: category
+                        ? undefined
+                        : colors["--color-text"],
+                    }}
                   />
                 </div>
                 <div className="climb-stats-row">
