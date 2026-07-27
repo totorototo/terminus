@@ -56,6 +56,7 @@ const style = (Component) => styled(Component)`
     scrollbar-width: none;
     flex: 1;
     min-height: 0;
+    gap: 0.8rem;
 
     &::-webkit-scrollbar {
       display: none;
@@ -64,15 +65,15 @@ const style = (Component) => styled(Component)`
 
   .climb-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     padding: 0.5rem 0;
-    gap: 0.55rem;
+    gap: 0.6rem;
     opacity: 0.65;
     transition: opacity
       ${(props) => props.theme.transitions["--transition-fast"]};
 
     &.past {
-      opacity: 0.22;
+      opacity: 0.5;
     }
 
     &.current {
@@ -80,42 +81,42 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  .climb-left {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.55rem;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .climb-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
+  /* Difficulty marker — the first thing scanned in a row. Category climbs
+     get --color-primary inline; uncategorized climbs fall back to this
+     muted default so the column still lines up. */
+  .climb-marker {
+    width: 40px;
+    height: 22px;
     flex-shrink: 0;
-    margin-top: 4px;
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.2,
-      )};
-
-    &.past {
-      background: ${(props) =>
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
+    border: 1px solid
+      ${(props) =>
         rgba(
           props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.25,
+          0.15,
         )};
-    }
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.3,
+      )};
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    letter-spacing: 0.2px;
+    transition: box-shadow
+      ${(props) => props.theme.transitions["--transition-fast"]};
 
     &.current {
-      background: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
-      box-shadow: 0 0 6px
+      box-shadow: 0 0 0 2px
         ${(props) =>
           rgba(
             props.theme.colors[props.theme.currentVariant]["--color-primary"],
-            0.55,
+            0.4,
           )};
     }
   }
@@ -123,7 +124,7 @@ const style = (Component) => styled(Component)`
   .climb-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.3rem;
     min-width: 0;
     flex: 1;
   }
@@ -152,14 +153,29 @@ const style = (Component) => styled(Component)`
 
   .climb-summit {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.6,
+        0.5,
       )};
     flex-shrink: 0;
+  }
+
+  .climb-gain-bar {
+    height: 0.3rem;
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.08,
+      )};
+    overflow: hidden;
+  }
+
+  .climb-gain-bar-fill {
+    height: 100%;
+    transition: width ${(props) => props.theme.transitions["--transition-base"]};
   }
 
   .climb-stats-row {
@@ -178,18 +194,6 @@ const style = (Component) => styled(Component)`
         props.theme.colors[props.theme.currentVariant]["--color-text"],
         0.65,
       )};
-
-    &.gain {
-      color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
-    }
-
-    &.gradient {
-      color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant][
-          "--color-secondary-text"
-        ]};
-    }
   }
 
   .climb-sep {
