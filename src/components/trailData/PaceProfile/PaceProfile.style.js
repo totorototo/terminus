@@ -158,6 +158,13 @@ const style = (Component) => styled(Component)`
 
   .pp-section-name {
     position: absolute;
+    /* max-width is intentionally less than MIN_GAP_PCT (15%) in
+       PaceProfile.jsx — capping at the full gap lets two max-length
+       labels touch edge-to-edge with zero space, reading as merged text.
+       12% leaves a visible gap regardless of container pixel width. */
+    max-width: 12%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
     color: ${({ theme }) =>
