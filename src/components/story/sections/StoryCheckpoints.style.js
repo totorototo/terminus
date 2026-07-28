@@ -116,6 +116,20 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
 
+  .difficulty-value {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .difficulty-dot {
+    flex-shrink: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-full"]};
+  }
+
   .checkpoint-eta {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};

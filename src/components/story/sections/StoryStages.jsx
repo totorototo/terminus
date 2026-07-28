@@ -75,9 +75,9 @@ const StoryStages = memo(function StoryStages({ className }) {
                       </span>
                     </div>
                     <div className="stat-cell">
-                      <span className="stat-label">Gain</span>
+                      <span className="stat-label">Gain / Loss</span>
                       <span className="stat-value">
-                        +{Math.round(raw.totalElevation || 0)} m
+                        {`+${Math.round(raw.totalElevation || 0)} m −${Math.round(raw.totalElevationLoss || 0)} m`}
                       </span>
                     </div>
                     <div className="stat-cell">
@@ -94,10 +94,13 @@ const StoryStages = memo(function StoryStages({ className }) {
                     </div>
                     <div className="stat-cell wide">
                       <span className="stat-label">Difficulty</span>
-                      <span
-                        className="stat-value"
-                        style={{ color: difficultyColor }}
-                      >
+                      <span className="stat-value difficulty-value">
+                        {difficultyColor && (
+                          <span
+                            className="difficulty-dot"
+                            style={{ background: difficultyColor }}
+                          />
+                        )}
                         {difficultyLabel || "--"}
                       </span>
                     </div>
