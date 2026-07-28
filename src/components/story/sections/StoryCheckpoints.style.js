@@ -37,7 +37,7 @@ const style = (Component) => styled(Component)`
     }
 
     &.past {
-      opacity: 0.4;
+      opacity: 0.55;
     }
 
     &.current .checkpoint-name {
@@ -68,7 +68,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.45,
+        0.6,
       )};
     margin-top: 0.25rem;
   }
@@ -98,13 +98,13 @@ const style = (Component) => styled(Component)`
 
   .stat-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
+        0.55,
       )};
   }
 
@@ -146,7 +146,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
+        0.55,
       )};
   }
 
@@ -155,7 +155,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.35,
+        0.5,
       )};
     text-transform: uppercase;
     letter-spacing: 0.05em;
