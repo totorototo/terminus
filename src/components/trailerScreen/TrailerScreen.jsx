@@ -1,28 +1,18 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
-import AutoSizer from "react-virtualized-auto-sizer";
 import { useParams } from "wouter";
 import { useShallow } from "zustand/react/shallow";
 
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
-import { useIsDesktop } from "../../hooks/useIsDesktop.js";
 import useStore from "../../store/store.js";
-import Commands from "../commands/Commands.jsx";
-import DesktopLayout from "../desktopLayout/DesktopLayout.jsx";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
-import MobileLayout from "../mobileLayout/MobileLayout.jsx";
-import Navigation from "../navigation/Navigation.jsx";
-import TrailData from "../trailData/TrailData.jsx";
+import Story from "../story/Story.jsx";
 
 import style from "./TrailerScreen.style";
-
-// Lazy load 3D Scene (imports Three.js, React Three Fiber, Drei)
-const Scene = lazy(() => import("../scene/Scene.jsx"));
 
 function TrailerScreen({ className }) {
   const { raceId } = useParams();
   const { isWorkerReady } = useGPXWorker(raceId);
-  const isDesktop = useIsDesktop();
   const { disconnectTrailerSession, setMode, setRaceId, resumeAutoShare } =
     useStore(
       useShallow((state) => ({
@@ -59,29 +49,7 @@ function TrailerScreen({ className }) {
 
   return (
     <div className={className}>
-      {!isWorkerReady ? (
-        <LoadingSpinner />
-      ) : (
-        <AutoSizer>
-          {({ width, height }) => {
-            return (
-              <Suspense fallback={<LoadingSpinner />}>
-                <Scene width={width} height={height} />
-                {isDesktop ? (
-                  <DesktopLayout />
-                ) : (
-                  <MobileLayout
-                    containerHeight={height}
-                    top={<Navigation />}
-                    bottom={<TrailData />}
-                  />
-                )}
-                <Commands />
-              </Suspense>
-            );
-          }}
-        </AutoSizer>
-      )}
+      {!isWorkerReady ? <LoadingSpinner /> : <Story />}
     </div>
   );
 }

@@ -1,0 +1,97 @@
+import { rgba } from "polished";
+import styled from "styled-components";
+
+const style = (Component) => styled(Component)`
+  display: block;
+  padding-bottom: clamp(6rem, 20vh, 10rem);
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    background: none;
+    border: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.15,
+        )};
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-base"]};
+    padding: 0.75rem 1.25rem;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+    cursor: pointer;
+    transition: all ${(props) => props.theme.transitions["--transition-base"]};
+
+    &:hover:not(:disabled) {
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.4,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    &.danger:hover:not(:disabled) {
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-accent"],
+          0.5,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+    }
+  }
+
+  .confirm-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+  }
+
+  .confirm-btn {
+    background: none;
+    border: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.2,
+        )};
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
+    padding: 0.375rem 0.75rem;
+    cursor: pointer;
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+
+    &.danger {
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-accent"],
+          0.5,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+    }
+  }
+`;
+
+export default style;
