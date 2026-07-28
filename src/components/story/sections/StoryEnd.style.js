@@ -60,6 +60,32 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  .room-id {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0 1.25rem;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+  }
+
+  .room-id-label {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.4,
+      )};
+  }
+
+  .room-id-value {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+  }
+
   .confirm-row {
     display: flex;
     align-items: center;

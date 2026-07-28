@@ -26,12 +26,13 @@ const StoryEnd = memo(function StoryEnd({ className }) {
   const stages = useStore((state) => state.stages);
   const stats = useStore((state) => state.stats);
   const metadata = useStore((state) => state.gpx.metadata);
-  const { theme, toggleTheme, shareLocation, flush } = useStore(
+  const { theme, toggleTheme, shareLocation, flush, roomId } = useStore(
     useShallow((state) => ({
       theme: state.app.theme,
       toggleTheme: state.toggleTheme,
       shareLocation: state.shareLocation,
       flush: state.flush,
+      roomId: state.app.followerRoomId ?? state.app.liveSessionId,
     })),
   );
 
@@ -102,6 +103,13 @@ const StoryEnd = memo(function StoryEnd({ className }) {
             <UserPlus size={16} />
             Invite someone to follow
           </button>
+
+          {roomId && (
+            <div className="room-id">
+              <span className="room-id-label">Room</span>
+              <span className="room-id-value">{roomId}</span>
+            </div>
+          )}
 
           <button className="action-btn" onClick={toggleTheme}>
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}

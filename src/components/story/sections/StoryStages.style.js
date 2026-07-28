@@ -25,9 +25,8 @@ const style = (Component) => styled(Component)`
 
   .stage-row {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.75rem;
     padding: 0.875rem 0;
     border-bottom: 1px solid
       ${(props) =>
@@ -50,6 +49,13 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  .stage-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
   .stage-main {
     display: flex;
     flex-direction: column;
@@ -68,6 +74,49 @@ const style = (Component) => styled(Component)`
         0.45,
       )};
     margin-top: 0.25rem;
+  }
+
+  .stage-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.625rem 1.5rem;
+    padding: 0.75rem;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.03,
+      )};
+  }
+
+  .stat-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+
+    &.wide {
+      grid-column: span 2;
+    }
+  }
+
+  .stat-label {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.4,
+      )};
+  }
+
+  .stat-value {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
 
   .stage-eta {
