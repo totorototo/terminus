@@ -143,7 +143,6 @@ const style = (Component) => styled(Component)`
      same "proportion bar" language used elsewhere in the sidebar. */
   .climb-gain-bar {
     height: 8px;
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
     overflow: hidden;
     background: ${(props) =>
       rgba(
