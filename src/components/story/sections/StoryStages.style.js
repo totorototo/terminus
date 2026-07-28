@@ -119,6 +119,20 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
 
+  .difficulty-value {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .difficulty-dot {
+    flex-shrink: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-full"]};
+  }
+
   .stage-eta {
     display: flex;
     flex-direction: column;
