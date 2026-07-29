@@ -89,7 +89,7 @@ const SlopeProfile = memo(function SlopeProfile({ className }) {
       </svg>
 
       <div className="sp-overlay">
-        <span className="sp-label sp-label--climb">+{maxClimb}%</span>
+        <span className="sp-label sp-label--climb">{maxClimb}%</span>
         <span className="sp-label sp-label--descent">{maxDescent}%</span>
       </div>
     </div>

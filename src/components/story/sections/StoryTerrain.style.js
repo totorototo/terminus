@@ -26,6 +26,21 @@ const style = (Component) => styled(Component)`
         )};
   }
 
+  .frame-label {
+    display: block;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.4,
+      )};
+    margin-bottom: 0.75rem;
+  }
+
   .stacked-frame {
     margin-top: 1rem;
     padding: 1rem 1.5rem;
