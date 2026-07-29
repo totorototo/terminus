@@ -22,7 +22,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.45,
+        0.65,
       )};
     margin-bottom: 0.75rem;
   }

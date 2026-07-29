@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 
+import { Copy } from "@styled-icons/feather/Copy";
 import { Download } from "@styled-icons/feather/Download";
 import { HelpCircle } from "@styled-icons/feather/HelpCircle";
 import { LogOut } from "@styled-icons/feather/LogOut";
@@ -22,6 +23,7 @@ const StoryEnd = memo(function StoryEnd({ className }) {
   const [confirmingFlush, setConfirmingFlush] = useState(false);
   const [sharingCard, setSharingCard] = useState(false);
   const [cardError, setCardError] = useState(false);
+  const [roomIdCopied, setRoomIdCopied] = useState(false);
 
   const stages = useStore((state) => state.stages);
   const stats = useStore((state) => state.stats);
@@ -105,10 +107,21 @@ const StoryEnd = memo(function StoryEnd({ className }) {
           </button>
 
           {roomId && (
-            <div className="room-id">
+            <button
+              type="button"
+              className="room-id"
+              onClick={() => {
+                navigator.clipboard.writeText(roomId);
+                setRoomIdCopied(true);
+                setTimeout(() => setRoomIdCopied(false), 2000);
+              }}
+              aria-label={`Copy room code ${roomId}`}
+            >
               <span className="room-id-label">Room</span>
               <span className="room-id-value">{roomId}</span>
-            </div>
+              <Copy size={13} />
+              {roomIdCopied && <span className="room-id-copied">Copied</span>}
+            </button>
           )}
 
           <button className="action-btn" onClick={toggleTheme}>

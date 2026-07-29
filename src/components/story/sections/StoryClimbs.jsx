@@ -31,6 +31,10 @@ const StoryClimbs = memo(function StoryClimbs({ className }) {
   return (
     <div className={className}>
       <StorySection eyebrow="The climbs" title={`${climbs.length} climbs`}>
+        <p className="climb-legend-note">
+          Climbs are graded 4 (easiest) to 1, then HC — hors catégorie, harder
+          still — by length and steepness.
+        </p>
         <div className="climb-list">
           {climbs.map((climb, i) => {
             const isPast = currentIdx >= climb.endIndex;

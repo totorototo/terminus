@@ -69,7 +69,7 @@ const StoryNow = memo(function StoryNow({ className }) {
           <span className="live-dot" />
           live
         </div>
-        <div className="now-row">
+        <div className="now-row" aria-live="polite">
           <div className="now-stat">
             <animated.span className="now-value">
               {remainingKm.to((n) => n.toFixed(1))}

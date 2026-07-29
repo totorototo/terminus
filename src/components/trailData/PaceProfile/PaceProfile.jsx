@@ -286,6 +286,7 @@ const PaceProfile = memo(function PaceProfile({ className }) {
 
       <div className="pp-chart">
         <svg
+          aria-hidden="true"
           viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
           preserveAspectRatio="none"
           width="100%"

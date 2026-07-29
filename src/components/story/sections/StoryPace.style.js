@@ -37,6 +37,7 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    min-height: 44px;
     padding: 0.5rem 1rem;
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};

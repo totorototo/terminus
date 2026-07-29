@@ -164,7 +164,7 @@ const style = (Component) => styled(Component)`
 
     &.over {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+        props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
       font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     }
   }

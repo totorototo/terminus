@@ -67,6 +67,7 @@ const SlopeProfile = memo(function SlopeProfile({ className }) {
   return (
     <div className={className}>
       <svg
+        aria-hidden="true"
         viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
         preserveAspectRatio="none"
         width="100%"
