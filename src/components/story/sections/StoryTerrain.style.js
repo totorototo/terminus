@@ -25,6 +25,11 @@ const style = (Component) => styled(Component)`
           0.08,
         )};
   }
+
+  .slope-frame {
+    margin-top: 1rem;
+    padding: 1rem 1.5rem;
+  }
 `;
 
 export default style;
