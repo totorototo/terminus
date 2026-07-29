@@ -124,7 +124,8 @@ const style = (Component) => styled(Component)`
           props.theme.colors[props.theme.currentVariant]["--color-text"],
           0.2,
         )};
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-base"]};
     padding: 0.5rem 0.875rem;
     cursor: pointer;
     color: ${(props) =>
