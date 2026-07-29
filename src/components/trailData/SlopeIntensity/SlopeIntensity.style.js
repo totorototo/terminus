@@ -1,7 +1,10 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
-const legendGap = (props) => `${props.theme.spacing[2]}px`;
+const legendItemGap = (props) => `${props.theme.spacing[2]}px`;
+const legendGap = (props) =>
+  `${props.theme.spacing[3]}px ${props.theme.spacing[4]}px`;
+const legendMarginTop = (props) => `${props.theme.spacing[3]}px`;
 const dotSize = (props) => `${props.theme.spacing[3]}px`;
 
 const style = (Component) => styled(Component)`
@@ -16,14 +19,14 @@ const style = (Component) => styled(Component)`
   .si-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 0.75rem;
-    margin-top: 0.6rem;
+    gap: ${legendGap};
+    margin-top: ${legendMarginTop};
   }
 
   .si-legend-item {
     display: flex;
     align-items: center;
-    gap: ${legendGap};
+    gap: ${legendItemGap};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
     color: ${(props) =>
