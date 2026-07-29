@@ -1,89 +1,96 @@
 import { memo, useMemo } from "react";
 
-import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
+import { area as d3Area, curveLinear } from "d3-shape";
+
+import { createXScale, createYScale } from "../../../helpers/d3.js";
 import useStore from "../../../store/store.js";
 
 import style from "./SlopeProfile.style.js";
 
 const WIDTH = 300;
-const HEIGHT = 8;
+const HEIGHT = 88;
+const VPAD = 4;
 const MAX_POINTS = 300;
-
-// Same 5-tier absolute-grade thresholds and palette as the 3D scene's
-// SlopeMaterial fragment shader (getSlopeColor in components/profile/Profile.jsx)
-// — keeps the 2D story and the 3D ribbon reading the terrain the same way.
-const gradeColor = (grade) => {
-  const abs = Math.abs(grade);
-  if (abs < 5) return DIFFICULTY_COLORS[0];
-  if (abs < 10) return DIFFICULTY_COLORS[1];
-  if (abs < 15) return DIFFICULTY_COLORS[2];
-  if (abs < 20) return DIFFICULTY_COLORS[3];
-  return DIFFICULTY_COLORS[4];
-};
-
-const GRADE_BAND_LABELS = ["<5%", "5–10%", "10–15%", "15–20%", "20%+"];
 
 const SlopeProfile = memo(function SlopeProfile({ className }) {
   const gpxData = useStore((state) => state.gpx.data);
   const slopes = useStore((state) => state.gpx.slopes || []);
 
-  const segments = useMemo(() => {
+  const chart = useMemo(() => {
     if (!gpxData?.length || !slopes.length) return null;
 
     const step = Math.max(1, Math.floor(gpxData.length / MAX_POINTS));
-    const sampledCount = Math.floor((gpxData.length - 1) / step) + 1;
-    if (sampledCount < 2) return null;
+    const grades = [];
+    for (let i = 0; i < gpxData.length; i += step) grades.push(slopes[i] || 0);
+    if (grades.length < 2) return null;
 
-    const segWidth = WIDTH / (sampledCount - 1);
+    const maxAbsGrade = Math.max(...grades.map(Math.abs), 1);
 
-    const bands = [];
-    for (let i = 0; i < sampledCount - 1; i++) {
-      const originalIdx = Math.min((i + 1) * step, gpxData.length - 1);
-      // why: slopes[i] is the grade INTO point i (mirrors buildSlopeAttribute's
-      // per-vertex convention in the 3D mesh), so segment i uses slopes[originalIdx].
-      const grade = slopes[originalIdx] || 0;
-      bands.push({
-        x: i * segWidth,
-        width: segWidth + 0.5, // slight overlap avoids hairline seams between rects
-        color: gradeColor(grade),
-      });
-    }
-    return bands;
+    const scaleX = createXScale(
+      { min: 0, max: grades.length - 1 },
+      { min: 0, max: WIDTH },
+    );
+    // why: a zero-centered, symmetric domain (rather than fitting min/max
+    // independently) keeps a +10% climb and a -10% descent the same visual
+    // height — direction is a sign flip, not a different scale.
+    const scaleY = createYScale(
+      { min: -maxAbsGrade, max: maxAbsGrade },
+      { min: HEIGHT, max: 0 },
+    );
+    const zeroY = scaleY(0);
+
+    const climbArea = d3Area()
+      .x((_, i) => scaleX(i))
+      .y0(zeroY)
+      .y1((g) => scaleY(Math.max(g, 0)))
+      .curve(curveLinear)(grades);
+
+    const descentArea = d3Area()
+      .x((_, i) => scaleX(i))
+      .y0(zeroY)
+      .y1((g) => scaleY(Math.min(g, 0)))
+      .curve(curveLinear)(grades);
+
+    return {
+      climbArea,
+      descentArea,
+      zeroY,
+      maxClimb: Math.round(Math.max(...grades, 0)),
+      maxDescent: Math.round(Math.min(...grades, 0)),
+    };
   }, [gpxData, slopes]);
 
-  if (!segments) return null;
+  if (!chart) return null;
+
+  const { climbArea, descentArea, zeroY, maxClimb, maxDescent } = chart;
 
   return (
     <div className={className}>
       <svg
-        className="sp-strip"
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
         preserveAspectRatio="none"
         width="100%"
-        height={HEIGHT}
+        height={HEIGHT + VPAD * 2}
       >
-        {segments.map((band, i) => (
-          <rect
-            key={i}
-            x={band.x}
-            y={0}
-            width={band.width}
-            height={HEIGHT}
-            fill={band.color}
-          />
-        ))}
+        <line
+          className="sp-zero-line"
+          x1={0}
+          y1={zeroY}
+          x2={WIDTH}
+          y2={zeroY}
+          strokeWidth="1"
+        />
+        {climbArea && (
+          <path className="sp-climb-area" d={climbArea} stroke="none" />
+        )}
+        {descentArea && (
+          <path className="sp-descent-area" d={descentArea} stroke="none" />
+        )}
       </svg>
 
-      <div className="sp-legend">
-        {DIFFICULTY_LABELS.map((label, i) => (
-          <span key={label} className="sp-legend-item">
-            <span
-              className="sp-legend-swatch"
-              style={{ background: DIFFICULTY_COLORS[i] }}
-            />
-            {GRADE_BAND_LABELS[i]}
-          </span>
-        ))}
+      <div className="sp-overlay">
+        <span className="sp-label sp-label--climb">+{maxClimb}%</span>
+        <span className="sp-label sp-label--descent">{maxDescent}%</span>
       </div>
     </div>
   );

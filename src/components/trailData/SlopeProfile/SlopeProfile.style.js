@@ -1,44 +1,68 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+const labelInset = (props) => `${props.theme.spacing[1]}px`;
+const overlayInset = (props) => `-${props.theme.spacing[2]}px 0`;
+
 const style = (Component) => styled(Component)`
   width: 100%;
-  display: block;
+  position: relative;
 
-  .sp-strip {
+  svg {
     display: block;
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
-    overflow: hidden;
+    overflow: visible;
   }
 
-  .sp-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 0.75rem;
-    margin-top: 0.5rem;
-  }
-
-  .sp-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
-    color: ${(props) =>
+  .sp-zero-line {
+    stroke: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
+        0.15,
       )};
-    text-transform: uppercase;
+    stroke-dasharray: 2 3;
   }
 
-  .sp-legend-swatch {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: ${(props) =>
-      props.theme.borderRadius["--border-radius-full"]};
-    flex-shrink: 0;
+  .sp-climb-area {
+    fill: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-accent"],
+        0.4,
+      )};
+  }
+
+  .sp-descent-area {
+    fill: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-secondary"],
+        0.4,
+      )};
+  }
+
+  .sp-overlay {
+    position: absolute;
+    inset: ${overlayInset};
+    pointer-events: none;
+  }
+
+  .sp-label {
+    position: absolute;
+    left: ${labelInset};
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  .sp-label--climb {
+    top: ${labelInset};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
+  }
+
+  .sp-label--descent {
+    bottom: ${labelInset};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-secondary-text"]};
   }
 `;
 
