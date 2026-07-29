@@ -53,11 +53,7 @@ describe("Story", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storeModule.default.mockImplementation((selector) =>
-      selector({
-        gpx: { data: gpxData },
-        app: { theme: "dark" },
-        toggleTheme: vi.fn(),
-      }),
+      selector({ gpx: { data: gpxData } }),
     );
     storeModule.useProjectedLocation.mockReturnValue({ index: 5 });
   });
@@ -77,11 +73,7 @@ describe("Story", () => {
 
   it("renders without a route loaded yet", () => {
     storeModule.default.mockImplementation((selector) =>
-      selector({
-        gpx: { data: null },
-        app: { theme: "dark" },
-        toggleTheme: vi.fn(),
-      }),
+      selector({ gpx: { data: null } }),
     );
     storeModule.useProjectedLocation.mockReturnValue({ index: null });
 
