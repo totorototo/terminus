@@ -1,11 +1,15 @@
-import { memo } from "react";
+import { memo, useEffect, useMemo } from "react";
 
 import { format } from "date-fns";
+import { rgba } from "polished";
+import { useTheme } from "styled-components";
+import { useShallow } from "zustand/react/shallow";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import useStore from "../../../store/store.js";
 import { formatDuration } from "../../trailData/etaLegHelpers.js";
+import WeatherLine from "../../trailData/WeatherLine/WeatherLine.jsx";
 import StorySection from "../StorySection.jsx";
 
 import style from "./StoryCheckpoints.style.js";
@@ -21,8 +25,52 @@ function formatRemaining(etaMs) {
 }
 
 const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
+  const theme = useTheme();
   const { checkpointETAs } = useCheckpointETAs();
-  const sections = useStore((state) => state.sections);
+  const { sections, forecasts, fetchWeatherForCheckpoints } = useStore(
+    useShallow((state) => ({
+      sections: state.sections,
+      forecasts: state.weather.forecasts,
+      fetchWeatherForCheckpoints: state.fetchWeatherForCheckpoints,
+    })),
+  );
+
+  // why: matches .checkpoint-km's rgba(text, 0.6) — WeatherLine's own
+  // defaults (full-opacity temp, 0.8 detail text) were tuned for its native
+  // bordered-card look and read brighter than the rest of this plain-text row.
+  const weatherIconColor = rgba(
+    theme.colors[theme.currentVariant]["--color-text"],
+    0.6,
+  );
+  const weatherFlaggedIconColor =
+    theme.colors[theme.currentVariant]["--color-text"];
+
+  // why: covers both regular checkpoints and LifeBase stops uniformly —
+  // checkpointETAs doesn't distinguish them, and neither does the weather
+  // fetch. Mirrors SectionETA's own fetch, dropped when this list was
+  // ported to the editorial story UI.
+  const { etaFetchKey, fetchCheckpoints } = useMemo(() => {
+    const eligible = checkpointETAs.filter(
+      (cp) => cp.lat != null && cp.lon != null && cp.etaMs != null,
+    );
+    const checkpoints = eligible.map((cp) => ({
+      name: cp.endLocation,
+      lat: cp.lat,
+      lon: cp.lon,
+      etaMs: cp.etaMs,
+    }));
+    const key = checkpoints
+      .map((cp) => Math.round(cp.etaMs / (30 * 60 * 1000)))
+      .join(",");
+    return { etaFetchKey: key, fetchCheckpoints: checkpoints };
+  }, [checkpointETAs]);
+
+  useEffect(() => {
+    if (!etaFetchKey || !fetchCheckpoints.length) return;
+    fetchWeatherForCheckpoints(fetchCheckpoints);
+    // fetchCheckpoints intentionally omitted: always in sync with etaFetchKey
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [etaFetchKey, fetchWeatherForCheckpoints]);
 
   if (!checkpointETAs?.length) {
     return (
@@ -45,6 +93,7 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
               cp.difficulty > 0 ? DIFFICULTY_LABELS[cp.difficulty - 1] : null;
             const difficultyColor =
               cp.difficulty > 0 ? DIFFICULTY_COLORS[cp.difficulty - 1] : null;
+            const weather = forecasts[cp.endLocation] ?? null;
 
             return (
               <li
@@ -86,6 +135,14 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                     )}
                   </div>
                 </div>
+                {weather && (
+                  <WeatherLine
+                    className="checkpoint-weather"
+                    weather={weather}
+                    iconColor={weatherIconColor}
+                    flaggedIconColor={weatherFlaggedIconColor}
+                  />
+                )}
                 {section && (
                   <div className="checkpoint-stats-grid">
                     <div className="stat-cell">
