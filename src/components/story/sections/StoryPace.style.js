@@ -27,6 +27,23 @@ const style = (Component) => styled(Component)`
     margin-bottom: 1.5rem;
   }
 
+  .picker-label {
+    display: block;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.8,
+      )};
+    margin: 1.25rem 0 0.5rem;
+
+    &:first-of-type {
+      margin-top: 0;
+    }
+  }
+
   .profile-picker {
     display: flex;
     flex-wrap: wrap;

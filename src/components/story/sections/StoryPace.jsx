@@ -4,7 +4,11 @@ import { useShallow } from "zustand/react/shallow";
 
 import useStore from "../../../store/store.js";
 import PaceProfile from "../../trailData/PaceProfile/PaceProfile.jsx";
-import { RUNNER_PROFILES } from "../../trailData/PaceSettings/PaceSettings.constants.js";
+import {
+  closestOption,
+  LIFE_BASE_STOP_OPTIONS,
+  RUNNER_PROFILES,
+} from "../../trailData/PaceSettings/PaceSettings.constants.js";
 import StorySection from "../StorySection.jsx";
 
 import style from "./StoryPace.style.js";
@@ -25,6 +29,7 @@ const StoryPace = memo(function StoryPace({ className }) {
         paceSettings: state.app?.paceSettings ?? {
           basePaceSPerKm: 365,
           kFatigue: 0.003,
+          lifeBaseStopS: 3600,
         },
         setPaceSettings: state.setPaceSettings ?? (() => {}),
         reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
@@ -33,6 +38,10 @@ const StoryPace = memo(function StoryPace({ className }) {
     );
 
   const selectedProfile = closestProfile(paceSettings.basePaceSPerKm);
+  const selectedStop = closestOption(
+    LIFE_BASE_STOP_OPTIONS,
+    paceSettings.lifeBaseStopS ?? 3600,
+  );
 
   const handleProfileChange = useCallback(
     (profile) => {
@@ -40,6 +49,19 @@ const StoryPace = memo(function StoryPace({ className }) {
         basePaceSPerKm: profile.basePaceSPerKm,
         kFatigue: profile.kFatigue,
       });
+      reprocessGPXFile();
+    },
+    [setPaceSettings, reprocessGPXFile],
+  );
+
+  // why: LifeBase stop time (rest planned at major aid stations) was only
+  // exposed via the old nav-app's PaceSettings panel — dropped here when the
+  // profile picker was ported over. It feeds the same reprocessGPXFile pass
+  // as the runner profile and materially changes total time estimates (the
+  // hero's "est. time"), so it belongs alongside the profile picker.
+  const handleStopChange = useCallback(
+    (value) => {
+      setPaceSettings({ lifeBaseStopS: value });
       reprocessGPXFile();
     },
     [setPaceSettings, reprocessGPXFile],
@@ -55,6 +77,7 @@ const StoryPace = memo(function StoryPace({ className }) {
           <PaceProfile />
         </div>
 
+        <span className="picker-label">Runner profile</span>
         <div
           className="profile-picker"
           role="radiogroup"
@@ -78,6 +101,33 @@ const StoryPace = memo(function StoryPace({ className }) {
             </button>
           ))}
         </div>
+
+        <span className="picker-label">Life base stops</span>
+        <div
+          className="profile-picker"
+          role="radiogroup"
+          aria-label="Planned stop duration at each life base"
+        >
+          {LIFE_BASE_STOP_OPTIONS.map((opt) => (
+            <button
+              key={opt.label}
+              type="button"
+              role="radio"
+              aria-checked={opt.value === selectedStop.value}
+              className={
+                opt.value === selectedStop.value
+                  ? "profile-btn active"
+                  : "profile-btn"
+              }
+              onClick={() => handleStopChange(opt.value)}
+              disabled={isFollower}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="synced-note">{selectedStop.sub}</p>
+
         {isFollower && (
           <p className="synced-note">
             Synced from the runner you&apos;re following.
