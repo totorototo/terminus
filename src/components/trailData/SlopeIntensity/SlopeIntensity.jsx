@@ -3,7 +3,7 @@ import { memo, useMemo } from "react";
 import { hsl, parseToHsl } from "polished";
 import { useTheme } from "styled-components";
 
-import useStore from "../../../store/store.js";
+import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./SlopeIntensity.style.js";
 
@@ -25,6 +25,8 @@ const bandIndex = (absGrade) =>
 const SlopeIntensity = memo(function SlopeIntensity({ className }) {
   const gpxData = useStore((state) => state.gpx.data);
   const slopes = useStore((state) => state.gpx.slopes || []);
+  const projectedLocation = useProjectedLocation();
+  const projectedIndex = projectedLocation?.index ?? null;
   const theme = useTheme();
 
   // why: a single-hue sequential ramp (same hue/saturation as the theme's
@@ -63,12 +65,25 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
       color: bandColors[bandIndex(Math.abs(g))],
     }));
 
-    return { bands };
-  }, [gpxData, slopes, bandColors]);
+    // why: unlike ElevationProfile/PaceProfile's line-and-dot runner marker,
+    // a discrete marker reads oddly on this flat 8px strip — there's no
+    // vertical axis for a dot to sit on. An opacity mask over the
+    // already-run portion doubles as an implicit progress indicator instead.
+    let doneWidth = null;
+    if (projectedIndex !== null) {
+      const sampledIdx = Math.min(
+        Math.floor(projectedIndex / step),
+        grades.length - 1,
+      );
+      doneWidth = sampledIdx * segWidth;
+    }
+
+    return { bands, doneWidth };
+  }, [gpxData, slopes, bandColors, projectedIndex]);
 
   if (!chart) return null;
 
-  const { bands } = chart;
+  const { bands, doneWidth } = chart;
 
   return (
     <div className={className}>
@@ -89,6 +104,15 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
             fill={band.color}
           />
         ))}
+        {doneWidth !== null && (
+          <rect
+            className="si-done-mask"
+            x={0}
+            y={0}
+            width={doneWidth}
+            height={HEIGHT}
+          />
+        )}
       </svg>
 
       <div className="si-legend">

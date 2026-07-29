@@ -16,6 +16,12 @@ const style = (Component) => styled(Component)`
     overflow: hidden;
   }
 
+  .si-done-mask {
+    fill: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-background"]};
+    opacity: 0.78;
+  }
+
   .si-legend {
     display: flex;
     flex-wrap: wrap;
