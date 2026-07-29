@@ -84,11 +84,33 @@ const TrailMap = memo(function TrailMap({ className }) {
 
   const fitToBounds = useCallback(() => {
     if (!mapRef.current || !bounds) return;
+    // fitBounds's own camera solver treats a nonzero pitch as "needs more
+    // headroom" and zooms out well past what the route actually needs, so
+    // fit flat first, then tilt the already-framed camera in place.
     mapRef.current.fitBounds(bounds, { padding: 32, duration: 0 });
+    mapRef.current.getMap()?.easeTo({ pitch: 55, duration: 0 });
   }, [bounds]);
 
   useEffect(() => {
     fitToBounds();
+  }, [fitToBounds]);
+
+  // react-map-gl's declarative `terrain` prop only retries setTerrain() when
+  // the prop value itself changes, but the "mapbox-dem" source is added by
+  // the <Source> child below on a later tick — so the one attempt make it in
+  // time and it silently never gets set. Apply it imperatively once the DEM
+  // source is actually loaded instead.
+  const handleLoad = useCallback(() => {
+    fitToBounds();
+    const map = mapRef.current?.getMap?.();
+    if (!map) return;
+    const applyTerrain = () => {
+      if (!map.getSource("mapbox-dem")) return;
+      map.setTerrain({ source: "mapbox-dem", exaggeration: 1.5 });
+      map.off("sourcedata", applyTerrain);
+    };
+    applyTerrain();
+    map.on("sourcedata", applyTerrain);
   }, [fitToBounds]);
 
   const routeColor = theme.colors[theme.currentVariant]["--color-primary"];
@@ -123,12 +145,20 @@ const TrailMap = memo(function TrailMap({ className }) {
       <Map
         ref={mapRef}
         mapboxAccessToken={MAPBOX_TOKEN}
-        initialViewState={{ longitude: 0, latitude: 0, zoom: 1 }}
+        initialViewState={{ longitude: 0, latitude: 0, zoom: 1, pitch: 55 }}
+        maxPitch={70}
         mapStyle="mapbox://styles/mapbox/outdoors-v12"
         style={{ width: "100%", height: "100%" }}
         cooperativeGestures
-        onLoad={fitToBounds}
+        onLoad={handleLoad}
       >
+        <Source
+          id="mapbox-dem"
+          type="raster-dem"
+          url="mapbox://mapbox.mapbox-terrain-dem-v1"
+          tileSize={512}
+          maxzoom={14}
+        />
         {routeGeoJSON && (
           <Source id="route" type="geojson" data={routeGeoJSON}>
             <Layer
