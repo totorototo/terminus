@@ -137,7 +137,7 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
           viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
           preserveAspectRatio="none"
           width="100%"
-          height={HEIGHT + VPAD * 2}
+          style={{ aspectRatio: `${WIDTH} / ${HEIGHT + VPAD * 2}` }}
         >
           {areaPath && <path className="ep-area" d={areaPath} stroke="none" />}
           {linePath && (

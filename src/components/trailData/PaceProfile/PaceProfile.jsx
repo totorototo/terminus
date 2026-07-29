@@ -289,7 +289,7 @@ const PaceProfile = memo(function PaceProfile({ className }) {
           viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
           preserveAspectRatio="none"
           width="100%"
-          height={HEIGHT + VPAD * 2}
+          style={{ aspectRatio: `${WIDTH} / ${HEIGHT + VPAD * 2}` }}
         >
           {areaPath && <path className="pp-area" d={areaPath} stroke="none" />}
           {linePath && (

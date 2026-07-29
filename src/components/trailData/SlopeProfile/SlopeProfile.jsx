@@ -70,7 +70,7 @@ const SlopeProfile = memo(function SlopeProfile({ className }) {
         viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
         preserveAspectRatio="none"
         width="100%"
-        height={HEIGHT + VPAD * 2}
+        style={{ aspectRatio: `${WIDTH} / ${HEIGHT + VPAD * 2}` }}
       >
         <line
           className="sp-zero-line"
