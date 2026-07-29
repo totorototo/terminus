@@ -73,6 +73,54 @@ const style = (Component) => styled(Component)`
     margin-top: 0.25rem;
   }
 
+  /* why: WeatherLine's own styling is a bordered/backgrounded card, built for
+     the old nav-app's denser panel — here it's one more line in an already
+     plain-text row, so strip the frame and let it sit flush like
+     checkpoint-km/checkpoint-cutoff do. Chained classes (not !important) win
+     on specificity over WeatherLine's own single-class rules regardless of
+     stylesheet injection order. */
+  .checkpoint-weather.cp-weather-line {
+    padding: 0;
+    background: none;
+    border: none;
+    /* WeatherLine's own space-between spreads icon/temp and precip/wind to
+       the row's full width — fine in its native bordered-card context, but
+       this row now spans the whole list width, leaving a wide empty gap.
+       Match the gap to cp-weather-detail's own internal spacing (below) so
+       temp-to-precip and precip-to-wind read as one consistent rhythm
+       instead of a wide gap followed by a tight one. */
+    justify-content: flex-start;
+    gap: 0.7rem;
+
+    &.flagged {
+      background: none;
+      border: none;
+    }
+
+    .cp-weather-detail {
+      gap: 0.7rem;
+      color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.6,
+        )};
+    }
+
+    .cp-weather-temp {
+      color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.6,
+        )};
+    }
+
+    /* keep the cold/wet/windy warning legible even after the base mute above */
+    .flagged-stat {
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
+    }
+  }
+
   .checkpoint-stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
