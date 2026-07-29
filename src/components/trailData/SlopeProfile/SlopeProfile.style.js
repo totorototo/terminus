@@ -25,7 +25,7 @@ const style = (Component) => styled(Component)`
   .sp-climb-area {
     fill: ${(props) =>
       rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-accent"],
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
         0.4,
       )};
   }
@@ -56,7 +56,7 @@ const style = (Component) => styled(Component)`
   .sp-label--climb {
     top: ${labelInset};
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
+      props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
   }
 
   .sp-label--descent {

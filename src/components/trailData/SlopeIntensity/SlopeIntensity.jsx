@@ -27,25 +27,23 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
   const slopes = useStore((state) => state.gpx.slopes || []);
   const theme = useTheme();
 
-  // why: 5 severity colors interpolated between the theme's "success" and
-  // "accent" tokens — the app's existing mild/urgent semantics (accent is
-  // already used for over-cutoff warnings elsewhere) — instead of a
-  // hardcoded palette, so the ramp follows whichever theme variant is active.
-  // Interpolating in HSL along the shortest hue arc (rather than a
-  // channel-wise RGB mix, which muddies green-to-red through brown) lands on
-  // the familiar green -> yellow -> orange -> red heat-map progression.
+  // why: a single-hue sequential ramp (same hue/saturation as the theme's
+  // "accent" token, lightness stepping from a pale tint down to the accent
+  // color itself) reads severity ordering more directly than a hue-rotating
+  // rainbow, and stays consistent with the app's mostly monochrome palette.
+  // The most severe band lands exactly on --color-accent, so it still means
+  // the same thing here as everywhere else it's used.
   const bandColors = useMemo(() => {
     const colors = theme.colors[theme.currentVariant];
-    const from = parseToHsl(colors["--color-success"]);
-    const to = parseToHsl(colors["--color-accent"]);
-    const hueDelta = ((to.hue - from.hue + 540) % 360) - 180;
+    const accent = parseToHsl(colors["--color-accent"]);
+    const tintLightness = Math.min(0.92, accent.lightness + 0.35);
 
     return GRADE_BANDS.map((_, i) => {
       const t = i / (GRADE_BANDS.length - 1);
       return hsl({
-        hue: (from.hue + hueDelta * t + 360) % 360,
-        saturation: from.saturation + (to.saturation - from.saturation) * t,
-        lightness: from.lightness + (to.lightness - from.lightness) * t,
+        hue: accent.hue,
+        saturation: accent.saturation,
+        lightness: tintLightness + (accent.lightness - tintLightness) * t,
       });
     });
   }, [theme]);
