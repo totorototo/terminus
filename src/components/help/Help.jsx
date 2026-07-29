@@ -3,12 +3,12 @@ import { useLocation } from "wouter";
 import style from "./Help.style.js";
 
 const SECTIONS = [
-  { id: "role", label: "Getting Started" },
-  { id: "race", label: "Pick a Race" },
-  { id: "scene", label: "Scene" },
-  { id: "top", label: "Top Panel" },
-  { id: "bottom", label: "Bottom Panel" },
-  { id: "commands", label: "Commands" },
+  { id: "start", label: "Getting Started" },
+  { id: "story", label: "The Story" },
+  { id: "live", label: "Live Tracking" },
+  { id: "terrain", label: "Terrain & Pace" },
+  { id: "checkpoints", label: "Checkpoints" },
+  { id: "end", label: "End of Line" },
   { id: "follower", label: "Follower" },
   { id: "install", label: "Install" },
 ];
@@ -54,13 +54,14 @@ function Help({ className }) {
           </p>
         </div>
 
-        {/* ROLE */}
-        <section id="role" className="section">
+        {/* GETTING STARTED */}
+        <section id="start" className="section">
           <p className="sec-label">01 — Getting Started</p>
           <h2 className="sec-title">Choose your role</h2>
           <p className="sec-body">
-            When you open Terminus you are greeted by a two-step wizard. First,
-            tell the app who you are — then pick your race.
+            When you open Terminus you are greeted by a short wizard. First tell
+            the app who you are, then pick your race — and if you are following,
+            enter the runner&apos;s room code.
           </p>
           <div className="role-grid">
             <div className="role-card rn">
@@ -80,9 +81,9 @@ function Help({ className }) {
               </div>
               <h3>Runner</h3>
               <p>
-                You are on the course. Terminus visualizes your race in 2D and
-                3D, tracks your real-time position along the route, and shares a
-                live room code with your crew.
+                You are on the course. Terminus turns your race into a
+                scroll-driven story — pace, terrain, checkpoints, and a live
+                position feed — and lets you share a room code with your crew.
               </p>
             </div>
             <div className="role-card fo">
@@ -104,8 +105,8 @@ function Help({ className }) {
               <h3>Follower</h3>
               <p>
                 You are watching from the sidelines. Enter the runner&apos;s
-                room code to join their session and track them live on the same
-                map.
+                room code to join their session and read the exact same story,
+                updated live as they move.
               </p>
             </div>
           </div>
@@ -113,39 +114,103 @@ function Help({ className }) {
 
         <hr className="divider" />
 
-        {/* RACE */}
-        <section id="race" className="section">
-          <p className="sec-label">02 — Race Selection</p>
-          <h2 className="sec-title">Pick a race</h2>
+        {/* THE STORY */}
+        <section id="story" className="section">
+          <p className="sec-label">02 — The Story</p>
+          <h2 className="sec-title">One continuous scroll</h2>
           <p className="sec-body">
-            After choosing your role, select the event you are running or
-            following. Each race includes a pre-loaded GPX route with elevation
-            data, waypoints, and segment markers.
+            There is no map view, no bottom sheet, no floating command dock.
+            Terminus reads like a longform article about the route — every
+            section below lives on that same page, in this order. The only
+            control that persists is a small theme toggle pinned to the top
+            corner.
           </p>
           <div className="feat-grid">
             <div className="feat">
               <h4>
                 <span className="dot" />
-                GPX Route
+                The route
               </h4>
-              <p>Full GPS track with elevation profile loaded automatically.</p>
+              <p>
+                Trail name, distance, elevation gain/loss, total estimated time,
+                and a start/elapsed clock.
+              </p>
             </div>
             <div className="feat">
               <h4>
                 <span className="dot t" />
-                Waypoints
+                The place
+              </h4>
+              <p>An interactive map tracing the course on the ground.</p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot g" />
+                Right now
               </h4>
               <p>
-                Aid stations, checkpoints, and key landmarks along the course.
+                Live km left, ETA, and time remaining — updates as the GPS
+                position moves.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                The climbs
+              </h4>
+              <p>
+                Every climb, graded 4 (easiest) to 1, then HC (hors catégorie)
+                by length and steepness.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot t" />
+                The profile
+              </h4>
+              <p>
+                Full elevation chart, a slope-intensity strip, and an
+                effort-intensity chart, all marked with the current position.
               </p>
             </div>
             <div className="feat">
               <h4>
                 <span className="dot g" />
-                Segments
+                The pace
               </h4>
               <p>
-                Named course sections with distance and elevation gain per leg.
+                Required pace and effort per kilometer, plus the runner profile
+                and life base stop controls that drive every estimate on the
+                page.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                The stages
+              </h4>
+              <p>
+                Milestones — start, life bases, and the finish — with cutoffs.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot t" />
+                The checkpoints
+              </h4>
+              <p>
+                ETA, cutoff, and weather forecast for every checkpoint and life
+                base.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot g" />
+                End of line
+              </h4>
+              <p>
+                Share a trail card, invite someone to follow, switch theme, and
+                leave.
               </p>
             </div>
           </div>
@@ -153,101 +218,47 @@ function Help({ className }) {
 
         <hr className="divider" />
 
-        {/* SCENE */}
-        <section id="scene" className="section">
-          <p className="sec-label">03 — Visualization</p>
-          <h2 className="sec-title">2D / 3D Scene</h2>
+        {/* LIVE TRACKING */}
+        <section id="live" className="section">
+          <p className="sec-label">03 — Live Tracking</p>
+          <h2 className="sec-title">Where you are, right now</h2>
           <p className="sec-body">
-            The main view renders the race route in both 2D (map overhead) and
-            3D (immersive terrain). Switch between views at any time — your
-            position and the route are kept in sync across both modes.
-          </p>
-          <div className="feat-grid">
-            <div className="feat">
-              <h4>
-                <span className="dot" />
-                2D Map
-              </h4>
-              <p>
-                Top-down view of the entire course with elevation coloring and
-                waypoint markers.
-              </p>
-            </div>
-            <div className="feat">
-              <h4>
-                <span className="dot" />
-                3D Terrain
-              </h4>
-              <p>
-                Immersive Three.js scene built from the GPS track. Drag to
-                orbit, pinch to zoom.
-              </p>
-            </div>
-            <div className="feat">
-              <h4>
-                <span className="dot t" />
-                Live Position
-              </h4>
-              <p>
-                Your GPS position is plotted in real time on both 2D and 3D
-                views.
-              </p>
-            </div>
-            <div className="feat">
-              <h4>
-                <span className="dot t" />
-                Elevation Profile
-              </h4>
-              <p>
-                Interactive cross-section graph at the bottom of the screen
-                showing your current position on the climb.
-              </p>
-            </div>
-            <div className="feat">
-              <h4>
-                <span className="dot g" />
-                Fly-by Mode
-              </h4>
-              <p>
-                Animated 3D camera that flies the entire route from start to
-                finish. Start it from the Extra commands card. Camera controls
-                are disabled while the fly-by is running.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <hr className="divider" />
-
-        {/* TOP PANEL */}
-        <section id="top" className="section">
-          <p className="sec-label">04 — Top Panel</p>
-          <h2 className="sec-title">Race header</h2>
-          <p className="sec-body">
-            The race header shows the current section at a glance — how far you
-            have left to run, how much elevation remains, and the direction to
-            the next waypoint. Its layout and container differ between mobile
-            and desktop.
+            The &quot;Right now&quot; section is the one part of the story that
+            updates on its own — km left, ETA, and time remaining, based on the
+            pace run so far against the terrain ahead. The map above it traces
+            the course on an interactive, lazy-loaded map.
           </p>
           <div className="role-grid">
             <div className="role-card rn">
-              <h3>Mobile</h3>
+              <h3>Runner</h3>
               <p>
-                A spring-animated sheet anchored to the top of the screen. Drag
-                it down to expand and reveal all remaining sections in sequence.
-                When collapsed it shows only the current section. Expansion is
-                blocked while the bottom stats panel is open.
+                A &quot;Spot me&quot; button starts your device&apos;s GPS fix
+                and broadcasts your position to anyone following every 30
+                minutes — it is the only control that starts the live numbers
+                this whole page depends on.
               </p>
             </div>
             <div className="role-card fo">
-              <h3>Desktop</h3>
+              <h3>Follower</h3>
               <p>
-                There is no separate race-header sheet. Section information is
-                embedded directly in the sidebar alongside the other stat tiles
-                — always visible, no dragging needed.
+                No &quot;Spot me&quot; button — there is nothing of your own to
+                broadcast. The numbers instead update automatically from the
+                runner&apos;s own GPS broadcast.
               </p>
             </div>
           </div>
+        </section>
+
+        <hr className="divider" />
+
+        {/* TERRAIN & PACE */}
+        <section id="terrain" className="section">
+          <p className="sec-label">04 — Terrain &amp; Pace</p>
+          <h2 className="sec-title">Climbs, profile &amp; pace</h2>
+          <p className="sec-body">
+            Together these sections tell you what the route demands and how fast
+            you can expect to move through it.
+          </p>
           <div className="panel-list">
             <div className="pi">
               <div className="pi-icon primary">
@@ -261,122 +272,15 @@ function Help({ className }) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  <path d="M3 17l4-8 4 5 3-3 4 6H3z" />
                 </svg>
               </div>
               <div>
-                <p className="pi-name">
-                  Current section — km &amp; elevation left
-                </p>
+                <p className="pi-name">Climbs</p>
                 <p className="pi-desc">
-                  Distance remaining and elevation gain (D+) and loss (D−) left
-                  in the current section of the course.
-                </p>
-              </div>
-            </div>
-            <div className="pi">
-              <div className="pi-icon primary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Direction arrow &amp; next waypoint</p>
-                <p className="pi-desc">
-                  A bearing arrow points toward the end of the current section.
-                  The destination waypoint name is shown alongside the distance
-                  and elevation figures.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <hr className="divider" />
-
-        {/* BOTTOM PANEL */}
-        <section id="bottom" className="section">
-          <p className="sec-label">05 — Bottom Panel</p>
-          <h2 className="sec-title">Stats carousel</h2>
-          <p className="sec-body">
-            The stats panel gives you multiple lenses on your race. How it is
-            presented depends on the device.
-          </p>
-          <div className="role-grid">
-            <div className="role-card rn">
-              <h3>Mobile</h3>
-              <p>
-                A swipeable bottom sheet. Drag it up to open, down to minimise
-                to a peek strip. Scroll vertically inside to browse all stat
-                cards one by one. An ETA summary (km left, ETA, time remaining)
-                is pinned at the top of the sheet.
-              </p>
-            </div>
-            <div className="role-card fo">
-              <h3>Desktop</h3>
-              <p>
-                All stat tiles are displayed simultaneously in a fixed sidebar —
-                no swiping or dragging. The left column shows overview,
-                progression, stage and section analytics; a bottom strip shows
-                checkpoint ETAs.
-              </p>
-            </div>
-          </div>
-          <div className="panel-list">
-            <div className="pi">
-              <div className="pi-icon primary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="2" y1="12" x2="22" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Race overview</p>
-                <p className="pi-desc">
-                  Top-level race stats — total distance, total elevation gain,
-                  and overall progress.
-                </p>
-              </div>
-            </div>
-            <div className="pi">
-              <div className="pi-icon primary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Elevation profile</p>
-                <p className="pi-desc">
-                  Interactive cross-section graph of the full route with your
-                  current position highlighted on the climb.
+                  Category (HC, then 1 to 4), summit elevation, average grade,
+                  and length for every climb — the one you are currently on is
+                  marked &quot;In progress&quot;.
                 </p>
               </div>
             </div>
@@ -397,15 +301,15 @@ function Help({ className }) {
                 </svg>
               </div>
               <div>
-                <p className="pi-name">Race progression</p>
+                <p className="pi-name">Profile</p>
                 <p className="pi-desc">
-                  How far you have come and how far remains — distance and
-                  elevation progress through the full course.
+                  The full elevation chart for the route, with your position
+                  marked on the current climb or descent.
                 </p>
               </div>
             </div>
             <div className="pi">
-              <div className="pi-icon primary">
+              <div className="pi-icon secondary">
                 <svg
                   width="15"
                   height="15"
@@ -422,215 +326,146 @@ function Help({ className }) {
                 </svg>
               </div>
               <div>
-                <p className="pi-name">Current stage analytics</p>
+                <p className="pi-name">Slope &amp; effort intensity</p>
                 <p className="pi-desc">
-                  Detailed stats for the current stage: distance, D+, D−, and
-                  your progress within it.
+                  A gradient strip and an effort chart along the whole route —
+                  both dim the portion already covered, doubling as a progress
+                  indicator.
                 </p>
               </div>
             </div>
-            <div className="pi">
-              <div className="pi-icon primary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Current section analytics</p>
-                <p className="pi-desc">
-                  Focused view of the current section — km left, elevation
-                  remaining, and section-level D+/D−.
-                </p>
-              </div>
+          </div>
+          <p className="sec-body pace-intro">
+            The pace chart shows the slowest pace still allowed at every point
+            on the course, and the effort multiplier it represents. Two controls
+            beneath it drive every ETA, cutoff, and estimate on the page:
+          </p>
+          <div className="role-grid">
+            <div className="role-card rn">
+              <h3>Runner profile &amp; life base stops</h3>
+              <p>
+                Pick a runner profile (Casual, Trail, Athlete, Elite) and how
+                long you plan to rest at each life base (none, 30 min, 1 hour, 2
+                hours). Changing either instantly recalculates every estimate on
+                the page.
+              </p>
             </div>
-            <div className="pi">
-              <div className="pi-icon secondary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">ETAs — checkpoints</p>
-                <p className="pi-desc">
-                  Estimated arrival times at upcoming checkpoints based on your
-                  current pace. The first checkpoint where your ETA exceeds the
-                  cutoff time is highlighted in accent colour — subsequent
-                  checkpoints are dimmed since they are moot once that cutoff is
-                  missed.
-                </p>
-              </div>
-            </div>
-            <div className="pi">
-              <div className="pi-icon secondary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Weather at checkpoints</p>
-                <p className="pi-desc">
-                  A weather icon and temperature are shown below each checkpoint
-                  ETA, forecasted for your predicted arrival time using
-                  Open-Meteo. Updates automatically when your estimated pace
-                  shifts significantly. Hidden silently when offline or when no
-                  forecast is available.
-                </p>
-              </div>
-            </div>
-            <div className="pi">
-              <div className="pi-icon secondary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 17l4-8 4 5 3-3 4 6H3z" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Climbs — climb pro</p>
-                <p className="pi-desc">
-                  Upcoming climbs with gradient, length, and elevation gain —
-                  detailed climb-by-climb breakdown.
-                </p>
-              </div>
-            </div>
-            <div className="pi">
-              <div className="pi-icon secondary">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
-                </svg>
-              </div>
-              <div>
-                <p className="pi-name">Extra commands</p>
-                <p className="pi-desc">
-                  Utility actions: fly-by animation, delete saved data, and
-                  other advanced options.
-                </p>
-              </div>
+            <div className="role-card fo">
+              <h3>Synced from the runner</h3>
+              <p>
+                Followers see the same two pickers, disabled, with a
+                &quot;Synced from the runner you&apos;re following&quot; note —
+                they update automatically whenever the runner changes theirs.
+              </p>
             </div>
           </div>
         </section>
 
         <hr className="divider" />
 
-        {/* COMMANDS */}
-        <section id="commands" className="section">
-          <p className="sec-label">06 — Controls</p>
-          <h2 className="sec-title">Commands</h2>
+        {/* CHECKPOINTS */}
+        <section id="checkpoints" className="section">
+          <p className="sec-label">05 — Checkpoints &amp; Stages</p>
+          <h2 className="sec-title">Every stop, with a forecast</h2>
           <p className="sec-body">
-            All commands are the same regardless of device — only the
-            interaction differs.
+            The stages list is the big picture — start, every life base, and the
+            finish. The checkpoints list is the detailed one: every named
+            waypoint, in order, each with distance, ETA, and cutoff. A
+            checkpoint whose ETA is past its cutoff is flagged in accent colour.
           </p>
-          <div className="role-grid">
-            <div className="role-card rn">
-              <h3>Mobile</h3>
+          <div className="feat-grid">
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                Distance &amp; elevation
+              </h4>
               <p>
-                A horizontal row of icon buttons fixed at the bottom of the
-                screen. Each button triggers its action directly with a single
-                tap.
+                Distance, gain/loss, estimated time, and the maximum allotted
+                time for the leg leading to each stop.
               </p>
             </div>
-            <div className="role-card fo">
-              <h3>Desktop</h3>
+            <div className="feat">
+              <h4>
+                <span className="dot t" />
+                Difficulty
+              </h4>
               <p>
-                A Floating Action Button (FAB) sits in the bottom-right corner.
-                Click it to open a radial fan of command buttons on a
-                quarter-circle arc. Click a command or click outside the fan to
-                close it.
+                A colour-coded rating for how demanding each leg is, from easy
+                to very hard.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot g" />
+                Weather forecast
+              </h4>
+              <p>
+                Temperature, chance of precipitation, and wind speed forecast
+                for your predicted arrival time, via Open-Meteo — cold, wet, or
+                windy conditions are flagged.
               </p>
             </div>
           </div>
+          <div className="info-box">
+            <strong>Forecasts refresh automatically</strong> — as your estimated
+            pace shifts, predicted arrival times move, and the weather forecast
+            for each stop is re-fetched to match.
+          </div>
+        </section>
+
+        <hr className="divider" />
+
+        {/* END OF LINE */}
+        <section id="end" className="section">
+          <p className="sec-label">06 — End of Line</p>
+          <h2 className="sec-title">Actions</h2>
+          <p className="sec-body">
+            The bottom of the story is also where the only exit affordance
+            lives, alongside a handful of utility actions.
+          </p>
           <table className="gtable">
             <thead>
               <tr>
-                <th>Command</th>
+                <th>Action</th>
                 <th>Description</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Locate me</td>
+                <td>Share this trail</td>
                 <td>
-                  Request your current GPS location. The browser asks for
-                  permission each time you tap — your position is shown once and
-                  not continuously tracked.
+                  Generates a shareable card — route name, distance, elevation,
+                  and estimated time — and opens the native share sheet, or
+                  downloads it.
                 </td>
               </tr>
               <tr>
-                <td>Section / Slope</td>
+                <td>Invite someone to follow</td>
                 <td>
-                  Toggle slope or section colouring on the route — highlights
-                  gradient intensity or named course sections.
+                  Runner only. Generates a room code and shares a follow link so
+                  others can track you live.
                 </td>
               </tr>
               <tr>
-                <td>2D / 3D</td>
-                <td>
-                  Switch between the overhead map view and the immersive 3D
-                  terrain scene.
-                </td>
-              </tr>
-              <tr>
-                <td>Share room code</td>
-                <td>
-                  Display your room code so followers can join your live
-                  session.
-                </td>
+                <td>Room code</td>
+                <td>Tap to copy the current session&apos;s room code.</td>
               </tr>
               <tr>
                 <td>Switch theme</td>
-                <td>Switch between light and dark colour schemes.</td>
+                <td>Toggle between light and dark mode.</td>
               </tr>
               <tr>
-                <td>Help</td>
+                <td>Flush saved locations</td>
+                <td>
+                  Runner only. Erases this device&apos;s buffered GPS fixes.
+                </td>
+              </tr>
+              <tr>
+                <td>User guide</td>
                 <td>Open this documentation page.</td>
               </tr>
               <tr>
-                <td>Leave session</td>
+                <td>Leave trail</td>
                 <td>
                   Exit the current race and return to the start screen. Your
                   saved route data is preserved.
@@ -647,8 +482,8 @@ function Help({ className }) {
           <p className="sec-label secondary">07 — Follower Mode</p>
           <h2 className="sec-title">Follow a runner live</h2>
           <p className="sec-body">
-            Follower mode lets crew, family, or fans track a runner&apos;s
-            position in real time from any device — no GPS permission needed.
+            Follower mode lets crew, family, or fans read a runner&apos;s story
+            in real time from any device — no GPS permission needed.
           </p>
           <div className="feat-grid">
             <div className="feat">
@@ -657,8 +492,8 @@ function Help({ className }) {
                 Room code
               </h4>
               <p>
-                The runner shares a room code. Enter it in the Follower flow to
-                connect.
+                The runner shares a room code from &quot;Invite someone to
+                follow&quot;. Enter it in the Following flow to connect.
               </p>
             </div>
             <div className="feat">
@@ -667,36 +502,38 @@ function Help({ className }) {
                 Live sync
               </h4>
               <p>
-                Runner position updates are pushed to all connected followers in
-                real time.
+                The runner&apos;s position, pace profile, and life base settings
+                are pushed to every connected follower in real time.
               </p>
             </div>
             <div className="feat">
               <h4>
                 <span className="dot t" />
-                Same map
+                Same story
               </h4>
               <p>
-                Followers see the identical 2D / 3D scene as the runner, locked
-                to their position.
+                Followers read the identical scroll — hero, map, climbs,
+                terrain, pace, checkpoints — locked to the runner&apos;s live
+                position.
               </p>
             </div>
             <div className="feat">
               <h4>
                 <span className="dot t" />
-                Freshness indicator
+                Read-only
               </h4>
               <p>
-                A colour-coded badge shows how recent the last position update
-                is — green means live.
+                Spot me, invite-to-follow, the runner profile / life base
+                pickers, and flush saved locations are hidden or disabled —
+                nothing here can change what the runner set.
               </p>
             </div>
           </div>
           <div className="info-box">
-            <strong>Runner vs. Follower</strong> — the runner app uses the
-            device GPS and broadcasts position. The follower app only receives
-            it. Both see the same race map and elevation profile, but only the
-            runner accumulates stats (pace, D+, elapsed time).
+            <strong>Runner vs. Follower</strong> — the runner&apos;s device
+            holds the GPS fix and broadcasts position and pace settings over the
+            room; the follower&apos;s device only receives them. Both read the
+            same story, but only the runner&apos;s actions are active.
           </div>
         </section>
 
