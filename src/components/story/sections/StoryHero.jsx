@@ -15,10 +15,35 @@ function formatDuration(ms) {
   return `${minutes}m`;
 }
 
+// why: unlike the elapsed/starts-in clock, the total estimate reads more
+// naturally as cumulative hours (e.g. "41h 59m") than split across days —
+// a multi-day ultra's total time isn't usually spoken as "1d 17h".
+function formatDurationHours(ms) {
+  const totalMinutes = Math.floor(Math.abs(ms) / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes}m`;
+}
+
 const StoryHero = memo(function StoryHero({ className }) {
   const stats = useStats();
   const metadata = useStore((state) => state.gpx.metadata);
   const sections = useStore((state) => state.sections);
+  const stages = useStore((state) => state.stages);
+
+  // why: reuses the same stages.estimatedDuration sum StoryEnd already
+  // computes for the share card — reflects whichever runner profile is
+  // selected in StoryPace, since reprocessGPXFile recalculates stages on
+  // profile change. Picked before the reader scrolls to that picker, so it
+  // starts out showing the default profile's estimate.
+  const totalEstimatedMs = useMemo(() => {
+    if (!stages?.length) return null;
+    const totalSec = stages.reduce(
+      (sum, stage) => sum + (stage.estimatedDuration || 0),
+      0,
+    );
+    return totalSec > 0 ? totalSec * 1000 : null;
+  }, [stages]);
 
   const raceStartMs = useMemo(() => {
     if (!sections?.length || sections[0].startTime == null) return null;
@@ -65,6 +90,14 @@ const StoryHero = memo(function StoryHero({ className }) {
           </span>
           <span className="stat-label">m loss</span>
         </div>
+        {totalEstimatedMs != null && (
+          <div className="stat">
+            <span className="stat-value">
+              {formatDurationHours(totalEstimatedMs)}
+            </span>
+            <span className="stat-label">est. time</span>
+          </div>
+        )}
       </div>
 
       {clock && (
