@@ -5,6 +5,19 @@ const style = (Component) => styled(Component)`
   display: block;
   padding-bottom: clamp(6rem, 20vh, 10rem);
 
+  .footer {
+    margin-top: 3rem;
+    text-align: center;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.4,
+      )};
+  }
+
   .actions {
     display: flex;
     flex-direction: column;

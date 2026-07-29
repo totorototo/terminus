@@ -201,6 +201,7 @@ const StoryEnd = memo(function StoryEnd({ className }) {
           )}
         </div>
       </StorySection>
+      <footer className="footer">© 2026 Terminus — La Vallée</footer>
     </div>
   );
 });
