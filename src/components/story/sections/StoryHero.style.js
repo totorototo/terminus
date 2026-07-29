@@ -18,7 +18,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.45,
+        0.85,
       )};
     margin-bottom: 1rem;
   }
@@ -53,7 +53,7 @@ const style = (Component) => styled(Component)`
     letter-spacing: -0.02em;
     line-height: 1;
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
   }
 
   .stat-label {
@@ -65,7 +65,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
+        0.85,
       )};
   }
 
@@ -84,7 +84,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
+        0.85,
       )};
   }
 

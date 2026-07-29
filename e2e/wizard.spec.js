@@ -28,7 +28,7 @@ test.describe("Wizard", () => {
     await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
     await page.locator(".choice-btn").first().click();
 
-    await expect(page.locator("canvas").first()).toBeVisible({
+    await expect(page.locator("h1.name")).toBeVisible({
       timeout: 15_000,
     });
   });

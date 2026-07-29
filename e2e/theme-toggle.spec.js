@@ -12,6 +12,8 @@ import { expect, test } from "@playwright/test";
 
 import THEME from "../src/theme/Theme.js";
 import {
+  autoShareBtn,
+  heroDistanceKm,
   kmLeft,
   MID_TRAIL,
   mockClipboard,
@@ -38,7 +40,7 @@ test.describe("Theme Toggle — starting in dark mode", () => {
   test("toggle switches CSS vars to light mode and back", async ({ page }) => {
     await page.goto("/");
     await selectRunnerRole(page);
-    await expect(page.locator("canvas").first()).toBeVisible({
+    await expect(page.locator("h1.name")).toBeVisible({
       timeout: 15_000,
     });
 
@@ -69,7 +71,7 @@ test.describe("Theme Toggle — starting in light mode", () => {
   test("toggle switches CSS vars to dark mode", async ({ page }) => {
     await page.goto("/");
     await selectRunnerRole(page);
-    await expect(page.locator("canvas").first()).toBeVisible({
+    await expect(page.locator("h1.name")).toBeVisible({
       timeout: 15_000,
     });
 
@@ -97,28 +99,27 @@ test.describe("GPS position preserved after theme switch", () => {
     await mockClipboard(page);
     await page.goto("/");
     await selectRunnerRole(page);
-    await expect(page.locator("canvas").first()).toBeVisible({
+    await expect(page.locator("h1.name")).toBeVisible({
       timeout: 15_000,
     });
 
-    await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
+    // GPX pipeline gate — sections/cumulativeDistances (which spotMe's
+    // findClosestLocation needs) finish after the hero's distance stat
+    // populates, not merely after the trail name renders.
+    await expect(heroDistanceKm(page)).not.toHaveText("0.0", {
+      timeout: 30_000,
+    });
 
     // Project location onto trail (~50% point)
-    await page.getByRole("button", { name: /auto-share location/i }).click();
+    await autoShareBtn(page).click();
 
-    // Wait for animated counter to settle
-    let settled = 0;
+    // Wait for the fix to land, then let the animated counter settle.
     await expect
-      .poll(
-        async () => {
-          const v = parseFloat(await kmLeft(page).textContent());
-          if (Math.abs(v - settled) < 1) return v;
-          settled = v;
-          return null;
-        },
-        { timeout: 20_000, intervals: [500] },
-      )
-      .not.toBeNull();
+      .poll(async () => parseFloat(await kmLeft(page).textContent()), {
+        timeout: 20_000,
+      })
+      .toBeGreaterThan(0);
+    await page.waitForTimeout(1000);
 
     const kmAtMidTrail = parseFloat(await kmLeft(page).textContent());
     expect(kmAtMidTrail).toBeGreaterThan(0);
@@ -130,7 +131,7 @@ test.describe("GPS position preserved after theme switch", () => {
     const kmAfterThemeSwitch = parseFloat(await kmLeft(page).textContent());
     expect(Math.abs(kmAfterThemeSwitch - kmAtMidTrail)).toBeLessThan(5);
 
-    // Canvas still visible — 3D scene not torn down
-    await expect(page.locator("canvas").first()).toBeVisible();
+    // Story still rendered — theme switch didn't tear down the page
+    await expect(page.locator("h1.name")).toBeVisible();
   });
 });

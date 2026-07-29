@@ -13,15 +13,22 @@ export const NEAR_START = {
 };
 export const OFF_TRAIL = { latitude: 48.8584, longitude: 2.2945, accuracy: 10 };
 
-/** "km left" stat value in the mobile bottom sheet (confirms GPX loaded/updated). */
+/** "km left" stat value in the "Right now" story section (confirms GPX loaded/updated). */
 export const kmLeft = (page) =>
   page
-    .locator(".stat-item", { has: page.getByText("km left") })
-    .locator(".stat-value");
+    .locator(".now-stat", { has: page.getByText("km left") })
+    .locator(".now-value");
 
-/** "Auto-share location" toggle button (Find my current location / broadcast). */
-export const autoShareBtn = (page) =>
-  page.getByRole("button", { name: /auto-share location/i });
+/**
+ * "Spot me" / "GPS on · spotting every 30 min" toggle button — same element
+ * throughout, only its label and aria-pressed state change, so one locator
+ * covers both enabling and disabling the broadcast.
+ */
+export const autoShareBtn = (page) => page.locator(".track-btn");
+
+/** Total route distance stat in the story hero (confirms GPX loaded, no GPS fix needed). */
+export const heroDistanceKm = (page) =>
+  page.locator(".stat-row .stat").first().locator(".stat-value");
 
 /**
  * Click "I'm running" on the wizard, pick the first available race, and wait

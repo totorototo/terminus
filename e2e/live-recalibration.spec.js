@@ -21,7 +21,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   autoShareBtn,
-  kmLeft,
+  heroDistanceKm,
   MID_TRAIL,
   mockClipboard,
   selectRunnerRole,
@@ -32,15 +32,11 @@ import {
 // schedule, so the calibration factor floors and the finish ETA shifts clearly.
 const RACE_STARTED_AT = new Date("2026-08-21T07:00:00Z");
 
-// Checkpoints panel (SectionETA): the last .cp-eta row is the finish ETA. Scoped to
-// the panel by its header text — the Life bases panel reuses the same .cp-eta class.
+// The stages ("Milestones") section lists start, life bases, then the finish
+// in order — the last .stage-row is the finish, and its first .stage-eta span
+// (before the cutoff span) is the ETA text.
 const finishEta = (page) =>
-  page
-    .locator(".carousel-item", {
-      has: page.getByText("Checkpoints", { exact: true }),
-    })
-    .locator(".cp-eta")
-    .last();
+  page.locator(".stage-row").last().locator(".stage-eta > span").first();
 
 test.describe("Live Recalibration", () => {
   test("broadcasting a mid-trail fix recalibrates the finish ETA", async ({
@@ -72,8 +68,12 @@ test.describe("Live Recalibration", () => {
     await page.goto("/");
     await selectRunnerRole(page);
 
-    // Wait for the GPX to finish processing.
-    await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
+    // GPX pipeline gate — sections/cumulativeDistances (which spotMe's
+    // findClosestLocation needs) finish after the hero's distance stat
+    // populates, not merely after the trail name renders.
+    await expect(heroDistanceKm(page)).not.toHaveText("0.0", {
+      timeout: 30_000,
+    });
 
     // The Checkpoints panel (SectionETA) renders in the DOM even while the bottom
     // sheet is collapsed, so read .cp-eta directly. Capture the pre-fix finish

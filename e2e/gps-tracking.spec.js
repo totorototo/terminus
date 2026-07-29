@@ -9,6 +9,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   autoShareBtn,
+  heroDistanceKm,
   kmLeft,
   MID_TRAIL,
   mockClipboard,
@@ -26,7 +27,12 @@ test.describe("Live GPS Tracking", () => {
       await page.goto("/");
       await selectRunnerRole(page);
 
-      await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
+      // GPX pipeline gate — sections/cumulativeDistances (which spotMe's
+      // findClosestLocation needs) finish after the hero's distance stat
+      // populates, not merely after the trail name renders.
+      await expect(heroDistanceKm(page)).not.toHaveText("0.0", {
+        timeout: 30_000,
+      });
       const before = parseFloat(await kmLeft(page).textContent());
 
       await autoShareBtn(page).click();
@@ -48,7 +54,9 @@ test.describe("Live GPS Tracking", () => {
       await page.goto("/");
       await selectRunnerRole(page);
 
-      await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
+      await expect(heroDistanceKm(page)).not.toHaveText("0.0", {
+        timeout: 30_000,
+      });
 
       // First fix at mid-trail — enables auto-share and does an immediate spotMe
       await autoShareBtn(page).click();
@@ -62,9 +70,7 @@ test.describe("Live GPS Tracking", () => {
 
       // Move GPS to near start, disable then re-enable to trigger a new fix
       await context.setGeolocation(NEAR_START);
-      await page
-        .getByRole("button", { name: /stop auto-sharing location/i })
-        .click();
+      await autoShareBtn(page).click();
       await autoShareBtn(page).click();
 
       await expect
@@ -87,7 +93,9 @@ test.describe("Live GPS Tracking", () => {
       await page.goto("/");
       await selectRunnerRole(page);
 
-      await expect(kmLeft(page)).toHaveText(/^\d+\.\d/, { timeout: 30_000 });
+      await expect(heroDistanceKm(page)).not.toHaveText("0.0", {
+        timeout: 30_000,
+      });
 
       await autoShareBtn(page).click();
 
@@ -96,7 +104,7 @@ test.describe("Live GPS Tracking", () => {
         .poll(async () => kmLeft(page).textContent(), { timeout: 10_000 })
         .toMatch(/^\d+\.\d/);
 
-      await expect(page.locator("canvas").first()).toBeVisible();
+      await expect(page.locator("h1.name")).toBeVisible();
       expect(errors).toEqual([]);
     });
   });
