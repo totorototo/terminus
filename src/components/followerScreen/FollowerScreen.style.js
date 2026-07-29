@@ -1,5 +1,6 @@
-import { rgba } from "polished";
 import styled from "styled-components";
+
+const topFadeDistance = (props) => `${props.theme.spacing[5]}px`;
 
 const style = (Component) => styled(Component)`
   background-color: var(--color-background);
@@ -7,28 +8,27 @@ const style = (Component) => styled(Component)`
   width: 100%;
   height: 100%;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 
-  .notify-btn {
-    position: absolute;
-    top: calc(0.1rem + env(safe-area-inset-top) + 140px + 0.6rem);
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.45rem 1.25rem;
-    border: 1px solid
-      ${({ theme }) =>
-        rgba(theme.colors[theme.currentVariant]["--color-text"], 0.18)};
-    border-radius: 9999px;
-    background: ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.08)};
-    color: var(--color-text);
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    white-space: nowrap;
-    z-index: ${({ theme }) => theme.zIndex["--z-index-modal"]};
-  }
+  /* Apple Music-style top fade: instead of reserving fixed space under the
+     notch/Dynamic Island, scrolled content fades to transparent as it
+     passes beneath the system UI. The mask is pinned to this element's own
+     box (not to scrolled content), so it stays put as a top "viewport"
+     effect regardless of scroll position. */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent env(safe-area-inset-top, 0px),
+    black calc(env(safe-area-inset-top, 0px) + ${topFadeDistance})
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent env(safe-area-inset-top, 0px),
+    black calc(env(safe-area-inset-top, 0px) + ${topFadeDistance})
+  );
 `;
 
 export default style;
