@@ -83,6 +83,7 @@ const style = (Component) => styled(Component)`
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 44px;
     background: none;
     border: 1px solid
       ${(props) =>

@@ -54,7 +54,7 @@ const style = (Component) => styled(Component)`
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
     color: ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.35)};
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.7)};
     text-transform: uppercase;
     letter-spacing: 0.04em;
     line-height: 1;

@@ -1,6 +1,9 @@
 import { memo, useMemo } from "react";
 
+import { Moon } from "@styled-icons/feather/Moon";
+import { Sun } from "@styled-icons/feather/Sun";
 import { curveCatmullRom, line as d3Line } from "d3-shape";
+import { useShallow } from "zustand/react/shallow";
 
 import { createXScale, createYScale } from "../../helpers/d3.js";
 import useStore, { useProjectedLocation } from "../../store/store.js";
@@ -76,6 +79,12 @@ function markerPosition(contour, index) {
 const Story = memo(function Story({ className }) {
   const gpxData = useStore((state) => state.gpx.data);
   const projectedLocation = useProjectedLocation();
+  const { theme, toggleTheme } = useStore(
+    useShallow((state) => ({
+      theme: state.app.theme,
+      toggleTheme: state.toggleTheme,
+    })),
+  );
 
   const contour = useMemo(() => buildContour(gpxData), [gpxData]);
 
@@ -86,6 +95,22 @@ const Story = memo(function Story({ className }) {
 
   return (
     <div className={className}>
+      {/* why: the only theme control lives at the end of the story
+          (StoryEnd) — with no persistent chrome, that leaves it a very
+          long scroll away for a runner who wants to check readability
+          in bright sun. A small fixed corner control fixes that without
+          competing with the editorial reading experience. */}
+      <button
+        type="button"
+        className="theme-toggle"
+        onClick={toggleTheme}
+        aria-label={
+          theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+        }
+      >
+        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
+
       {contour?.path && (
         <svg
           className="story-contour"

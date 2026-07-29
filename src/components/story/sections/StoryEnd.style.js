@@ -56,16 +56,26 @@ const style = (Component) => styled(Component)`
           0.5,
         )};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+        props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
     }
   }
 
   .room-id {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.5rem;
-    padding: 0 1.25rem;
+    padding: 0.5rem 1.25rem;
+    min-height: 44px;
+    background: none;
+    border: none;
+    cursor: pointer;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    color: inherit;
+
+    &:hover .room-id-value {
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    }
   }
 
   .room-id-label {
@@ -84,6 +94,15 @@ const style = (Component) => styled(Component)`
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
+    transition: color ${(props) => props.theme.transitions["--transition-base"]};
+  }
+
+  .room-id-copied {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
   }
 
   .confirm-row {
@@ -95,6 +114,9 @@ const style = (Component) => styled(Component)`
   }
 
   .confirm-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     background: none;
     border: 1px solid
       ${(props) =>
@@ -103,7 +125,7 @@ const style = (Component) => styled(Component)`
           0.2,
         )};
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
-    padding: 0.375rem 0.75rem;
+    padding: 0.5rem 0.875rem;
     cursor: pointer;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
@@ -115,7 +137,7 @@ const style = (Component) => styled(Component)`
           0.5,
         )};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+        props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
     }
   }
 `;

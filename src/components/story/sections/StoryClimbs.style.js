@@ -12,6 +12,17 @@ const style = (Component) => styled(Component)`
       )};
   }
 
+  .climb-legend-note {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.6,
+      )};
+    margin: 0 0 1.5rem;
+    max-width: 40ch;
+  }
+
   .climb-list {
     display: flex;
     flex-direction: column;

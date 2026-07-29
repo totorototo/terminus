@@ -4,7 +4,7 @@ function LoadingSpinner({ className }) {
   return (
     <div className={className}>
       <div className="spinner" />
-      <p>Loading 3D trail...</p>
+      <p>Loading trail data...</p>
     </div>
   );
 }

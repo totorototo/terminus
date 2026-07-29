@@ -134,6 +134,7 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
     <div className={className}>
       <div className="ep-chart">
         <svg
+          aria-hidden="true"
           viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
           preserveAspectRatio="none"
           width="100%"
