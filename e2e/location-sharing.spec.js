@@ -7,20 +7,21 @@
  *
  * Flow:
  *   1. Runner goes through the wizard ("I'm running").
- *   2. Runner clicks "Share my room code" — a follow URL lands in the clipboard.
+ *   2. Runner clicks "Invite someone to follow" — a follow URL lands in the
+ *      clipboard.
  *   3. Follower goes through the wizard ("I'm following") and enters the code.
- *   4. Runner clicks "Find my current location" — fake GPS at the trail midpoint
- *      triggers spotMe → Zig projection → PartyKit broadcast.
- *   5. Assertions on the follower page (TrailProgression):
- *        - distance % advances from 0% to a non-zero value
- *        - elevation gain advances from 0 m to a non-zero value
- *        - elevation loss advances from 0 m to a non-zero value
+ *   4. Runner clicks "Spot me" — fake GPS at the trail midpoint triggers
+ *      spotMe → Zig projection → PartyKit broadcast.
+ *   5. Assertion on the follower page: the "Right now" km-left stat moves
+ *      from its pre-fix baseline to a real value reflecting the runner's
+ *      broadcast position.
  */
 
 import { expect, test } from "@playwright/test";
 
 import {
   autoShareBtn,
+  heroDistanceKm,
   kmLeft,
   mockClipboard,
   selectFollowerRole,
@@ -30,23 +31,6 @@ import {
 // Near the middle of the grp-160-2026.gpx track (index ~15449 / 30899).
 // findClosestLocation snaps to this point, making distance progress to ~half the route.
 const FAKE_GEOLOCATION = { latitude: 42.9308, longitude: 0.154, accuracy: 10 };
-
-// Runner page: km-left stat in the mobile bottom sheet (confirms GPX loaded).
-const kmLeftValue = kmLeft;
-
-// Follower page: TrailOverview total distance (confirms GPX loaded on follower).
-// .first() scopes to TrailOverview — StageAnalytics and SectionAnalytics also
-// have a "Distance" grid-tile, but they appear later in the DOM.
-const totalDistanceTile = (page) =>
-  page
-    .locator(".grid-tile", { has: page.getByText("Distance") })
-    .locator(".tile-value")
-    .first();
-
-// Follower page: TrailProgression values (location-update assertions).
-const progressionPercent = (page) => page.locator(".progression-value").first();
-const elevationGain = (page) => page.locator(".elevation-value").first();
-const elevationLoss = (page) => page.locator(".elevation-value").nth(1);
 
 test.describe("Location Sharing", () => {
   test(
@@ -68,19 +52,21 @@ test.describe("Location Sharing", () => {
         await runnerPage.goto("/");
         await selectRunnerRole(runnerPage);
 
-        // Canvas visible = Trailer UI mounted
-        await expect(runnerPage.locator("canvas").first()).toBeVisible({
+        // Story hero visible = Trailer UI mounted
+        await expect(runnerPage.locator("h1.name")).toBeVisible({
           timeout: 15_000,
         });
 
-        // Wait for GPX to finish processing on the runner
-        await expect(kmLeftValue(runnerPage)).toHaveText(/^\d+\.\d$/, {
+        // GPX pipeline gate — sections/cumulativeDistances (which spotMe's
+        // findClosestLocation needs) finish after the hero's distance stat
+        // populates, not merely after the trail name renders.
+        await expect(heroDistanceKm(runnerPage)).not.toHaveText("0.0", {
           timeout: 30_000,
         });
 
-        // ── 2. Runner clicks "Share my room code" ─────────────────────────
+        // ── 2. Runner invites someone to follow ───────────────────────────
         await runnerPage
-          .getByRole("button", { name: "Share my room code" })
+          .getByRole("button", { name: "Invite someone to follow" })
           .click();
 
         const capturedUrl = await runnerPage.evaluate(
@@ -95,44 +81,30 @@ test.describe("Location Sharing", () => {
         await followerPage.goto("/");
         await selectFollowerRole(followerPage, roomCode);
 
-        // Wait for follower canvas (Scene lazy-loads behind Suspense)
-        await expect(followerPage.locator("canvas").first()).toBeVisible({
+        // Story hero visible on the follower too
+        await expect(followerPage.locator("h1.name")).toBeVisible({
           timeout: 15_000,
         });
 
-        // Wait for GPX to finish loading on the follower: TrailOverview shows
-        // the total route distance once cumulativeDistances are available.
-        await expect(totalDistanceTile(followerPage)).not.toHaveText("0.0 km", {
+        // Wait for GPX to finish loading on the follower: the hero shows the
+        // total route distance once cumulativeDistances are available.
+        await expect(heroDistanceKm(followerPage)).not.toHaveText("0.0", {
           timeout: 30_000,
         });
 
-        // Baseline: before any location update, progression starts at zero.
-        await expect(progressionPercent(followerPage)).toHaveText("0%");
-        await expect(elevationGain(followerPage)).toHaveText("0 m");
-        await expect(elevationLoss(followerPage)).toHaveText("0 m");
+        // Baseline: before any location update, km-left has no live fix yet.
+        await expect(kmLeft(followerPage)).toHaveText("0");
 
-        // ── 4. Runner broadcasts their location via auto-share ────────────
+        // ── 4. Runner broadcasts their location via "Spot me" ──────────────
         await autoShareBtn(runnerPage).click();
 
-        // ── 5. Assertions on the follower page (TrailProgression) ─────────
-        // Distance % advanced from 0 — the projected position is now at the
-        // trail midpoint, so roughly half the route is marked as done.
-        await expect(progressionPercent(followerPage)).not.toHaveText("0%", {
+        // ── 5. Assertion on the follower page ──────────────────────────────
+        // km-left moved off its pre-fix baseline — the projected position is
+        // now at the trail midpoint, relayed live over the room.
+        await expect(kmLeft(followerPage)).not.toHaveText("0", {
           timeout: 15_000,
         });
-        await expect(progressionPercent(followerPage)).toHaveText(/^\d+%$/);
-
-        // Elevation gain and loss are both non-zero — the cumulative values
-        // at the midpoint are well above 0.
-        await expect(elevationGain(followerPage)).not.toHaveText("0 m", {
-          timeout: 5_000,
-        });
-        await expect(elevationGain(followerPage)).toHaveText(/^\d+ m$/);
-
-        await expect(elevationLoss(followerPage)).not.toHaveText("0 m", {
-          timeout: 5_000,
-        });
-        await expect(elevationLoss(followerPage)).toHaveText(/^\d+ m$/);
+        await expect(kmLeft(followerPage)).toHaveText(/^\d+\.\d$/);
       } finally {
         await runnerCtx.close();
         await followerCtx.close();

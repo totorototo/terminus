@@ -1,9 +1,10 @@
 /**
  * Smoke tests — verify the app boots correctly and key UI is present.
  *
- * Covers both layout paths:
- *  - Mobile  (< 993 px) — TopSheetPanel + BottomSheetPanel
- *  - Desktop (≥ 993 px) — DesktopLayout aside panel
+ * The runner/follower UI is a single scroll-driven story with no separate
+ * mobile/desktop layout components — both viewport sizes render the same
+ * sections, only CSS changes. These tests confirm the story mounts and the
+ * key sections are reachable, at both a mobile and a desktop viewport.
  */
 
 import { expect, test } from "@playwright/test";
@@ -24,27 +25,27 @@ test.describe("Smoke", () => {
     expect(errors).toEqual([]);
   });
 
-  test("mobile: runner flow loads 3D canvas and sheet panels", async ({
-    page,
-  }) => {
+  test("mobile: runner flow loads the story", async ({ page }) => {
+    const errors = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+
     await page.goto("/");
     await selectRunnerRole(page); // forces 390×844
 
-    await expect(page.locator("canvas").first()).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
     await expect(
-      page.getByRole("region", { name: /Navigation panel/i }),
+      page.getByRole("heading", { name: "Where you are" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("region", { name: /Trail data panel/i }),
+      page.getByRole("button", { name: /switch to (light|dark) mode/i }),
     ).toBeVisible();
+    expect(errors).toEqual([]);
   });
 
-  test("desktop: runner flow loads 3D canvas and desktop layout panel", async ({
-    page,
-  }) => {
-    // Use a viewport above the 993 px breakpoint to activate DesktopLayout.
+  test("desktop: runner flow loads the story", async ({ page }) => {
+    const errors = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
 
@@ -54,17 +55,10 @@ test.describe("Smoke", () => {
     await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
     await page.locator(".choice-btn").first().click();
 
-    await expect(page.locator("canvas").first()).toBeVisible({
-      timeout: 15_000,
-    });
-
-    // DesktopLayout renders TrailOverview — its unique header class confirms
-    // the desktop code path is active (mobile renders it inside a bottom sheet).
-    await expect(page.locator(".overview-header")).toBeVisible();
-
-    // Mobile sheet panels must NOT be present in desktop mode
+    await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
     await expect(
-      page.getByRole("region", { name: /Trail data panel/i }),
-    ).not.toBeVisible();
+      page.getByRole("heading", { name: "Where you are" }),
+    ).toBeVisible();
+    expect(errors).toEqual([]);
   });
 });
