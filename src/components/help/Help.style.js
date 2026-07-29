@@ -211,6 +211,10 @@ const style = (Component) => styled(Component)`
       )};
     line-height: 1.72;
     max-width: 640px;
+
+    &.pace-intro {
+      margin-top: 1.75rem;
+    }
   }
 
   .divider {
