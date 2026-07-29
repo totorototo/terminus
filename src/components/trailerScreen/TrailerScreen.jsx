@@ -7,6 +7,7 @@ import { useGPXWorker } from "../../hooks/useGPXWorker.js";
 import useStore from "../../store/store.js";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
 import Story from "../story/Story.jsx";
+import ThemeToggle from "../story/ThemeToggle.jsx";
 
 import style from "./TrailerScreen.style";
 
@@ -48,9 +49,15 @@ function TrailerScreen({ className }) {
   }, [isWorkerReady, resumeAutoShare]);
 
   return (
-    <div className={className}>
-      {!isWorkerReady ? <LoadingSpinner /> : <Story />}
-    </div>
+    <>
+      {/* why: rendered outside the masked, scrolling container below — see
+          ThemeToggle's own why-comment for the fixed-positioning hazard
+          that lives inside it. */}
+      <ThemeToggle />
+      <div className={className}>
+        {!isWorkerReady ? <LoadingSpinner /> : <Story />}
+      </div>
+    </>
   );
 }
 
