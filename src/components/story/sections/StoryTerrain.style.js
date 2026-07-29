@@ -26,7 +26,7 @@ const style = (Component) => styled(Component)`
         )};
   }
 
-  .slope-frame {
+  .stacked-frame {
     margin-top: 1rem;
     padding: 1rem 1.5rem;
   }
