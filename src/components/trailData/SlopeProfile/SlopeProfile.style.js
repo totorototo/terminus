@@ -38,6 +38,12 @@ const style = (Component) => styled(Component)`
       )};
   }
 
+  .sp-done-mask {
+    fill: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-background"]};
+    opacity: 0.78;
+  }
+
   .sp-overlay {
     position: absolute;
     inset: ${overlayInset};

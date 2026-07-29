@@ -3,7 +3,7 @@ import { memo, useMemo } from "react";
 import { area as d3Area, curveLinear } from "d3-shape";
 
 import { createXScale, createYScale } from "../../../helpers/d3.js";
-import useStore from "../../../store/store.js";
+import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./SlopeProfile.style.js";
 
@@ -15,6 +15,8 @@ const MAX_POINTS = 300;
 const SlopeProfile = memo(function SlopeProfile({ className }) {
   const gpxData = useStore((state) => state.gpx.data);
   const slopes = useStore((state) => state.gpx.slopes || []);
+  const projectedLocation = useProjectedLocation();
+  const projectedIndex = projectedLocation?.index ?? null;
 
   const chart = useMemo(() => {
     if (!gpxData?.length || !slopes.length) return null;
@@ -51,18 +53,29 @@ const SlopeProfile = memo(function SlopeProfile({ className }) {
       .y1((g) => scaleY(Math.min(g, 0)))
       .curve(curveLinear)(grades);
 
+    let markerX = null;
+    if (projectedIndex !== null) {
+      const sampledIdx = Math.min(
+        Math.floor(projectedIndex / step),
+        grades.length - 1,
+      );
+      markerX = scaleX(sampledIdx);
+    }
+
     return {
       climbArea,
       descentArea,
       zeroY,
+      markerX,
       maxClimb: Math.round(Math.max(...grades, 0)),
       maxDescent: Math.round(Math.min(...grades, 0)),
     };
-  }, [gpxData, slopes]);
+  }, [gpxData, slopes, projectedIndex]);
 
   if (!chart) return null;
 
-  const { climbArea, descentArea, zeroY, maxClimb, maxDescent } = chart;
+  const { climbArea, descentArea, zeroY, markerX, maxClimb, maxDescent } =
+    chart;
 
   return (
     <div className={className}>
@@ -86,6 +99,15 @@ const SlopeProfile = memo(function SlopeProfile({ className }) {
         )}
         {descentArea && (
           <path className="sp-descent-area" d={descentArea} stroke="none" />
+        )}
+        {markerX !== null && (
+          <rect
+            className="sp-done-mask"
+            x={0}
+            y={-VPAD}
+            width={markerX}
+            height={HEIGHT + VPAD * 2}
+          />
         )}
       </svg>
 
