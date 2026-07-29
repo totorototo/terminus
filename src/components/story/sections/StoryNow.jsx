@@ -16,10 +16,11 @@ const StoryNow = memo(function StoryNow({ className }) {
     (state) => state.gpx.cumulativeDistances || [],
   );
   const sections = useStore((state) => state.sections);
-  const { autoShareEnabled, toggleAutoShare } = useStore(
+  const { autoShareEnabled, toggleAutoShare, isFollower } = useStore(
     useShallow((state) => ({
       autoShareEnabled: state.gps.autoShareEnabled,
       toggleAutoShare: state.toggleAutoShare,
+      isFollower: state.gps.followerConnectionStatus === "connected",
     })),
   );
   const startingDate =
@@ -90,16 +91,22 @@ const StoryNow = memo(function StoryNow({ className }) {
         <p className="now-note">Based on your pace so far against terrain.</p>
 
         {/* why: this is the only control that starts the GPS fix this whole
-            page's live numbers depend on — everything else here is read-only. */}
-        <button
-          type="button"
-          className={autoShareEnabled ? "track-btn on" : "track-btn"}
-          onClick={toggleAutoShare}
-          aria-pressed={autoShareEnabled}
-        >
-          <Radio size={16} />
-          {autoShareEnabled ? "GPS on · spotting every 30 min" : "Spot me"}
-        </button>
+            page's live numbers depend on for a runner — everything else here
+            is read-only. Followers already get live numbers from the
+            runner's own broadcast, so starting their own GPS fix here would
+            be meaningless (and misleading, since it isn't what drives the
+            numbers above). */}
+        {!isFollower && (
+          <button
+            type="button"
+            className={autoShareEnabled ? "track-btn on" : "track-btn"}
+            onClick={toggleAutoShare}
+            aria-pressed={autoShareEnabled}
+          >
+            <Radio size={16} />
+            {autoShareEnabled ? "GPS on · spotting every 30 min" : "Spot me"}
+          </button>
+        )}
       </StorySection>
     </div>
   );

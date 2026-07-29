@@ -28,15 +28,17 @@ const StoryEnd = memo(function StoryEnd({ className }) {
   const stages = useStore((state) => state.stages);
   const stats = useStore((state) => state.stats);
   const metadata = useStore((state) => state.gpx.metadata);
-  const { theme, toggleTheme, shareLocation, flush, roomId } = useStore(
-    useShallow((state) => ({
-      theme: state.app.theme,
-      toggleTheme: state.toggleTheme,
-      shareLocation: state.shareLocation,
-      flush: state.flush,
-      roomId: state.app.followerRoomId ?? state.app.liveSessionId,
-    })),
-  );
+  const { theme, toggleTheme, shareLocation, flush, roomId, isFollower } =
+    useStore(
+      useShallow((state) => ({
+        theme: state.app.theme,
+        toggleTheme: state.toggleTheme,
+        shareLocation: state.shareLocation,
+        flush: state.flush,
+        roomId: state.app.followerRoomId ?? state.app.liveSessionId,
+        isFollower: state.gps.followerConnectionStatus === "connected",
+      })),
+    );
 
   const handleShareCard = async () => {
     if (!stages?.length) return;
@@ -101,10 +103,15 @@ const StoryEnd = memo(function StoryEnd({ className }) {
                 : "Share this trail"}
           </button>
 
-          <button className="action-btn" onClick={shareLocation}>
-            <UserPlus size={16} />
-            Invite someone to follow
-          </button>
+          {/* why: shareLocation() starts a broadcast session tied to this
+              device's own GPS fix — meaningless for a follower, who has
+              nothing of their own to broadcast. */}
+          {!isFollower && (
+            <button className="action-btn" onClick={shareLocation}>
+              <UserPlus size={16} />
+              Invite someone to follow
+            </button>
+          )}
 
           {roomId && (
             <button
@@ -129,34 +136,38 @@ const StoryEnd = memo(function StoryEnd({ className }) {
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </button>
 
-          {confirmingFlush ? (
-            <div className="confirm-row">
-              <span>Erase all saved locations?</span>
+          {/* why: flush() clears this device's own buffered GPS fixes — a
+              follower never accumulates any, so the action is a no-op for
+              them. */}
+          {!isFollower &&
+            (confirmingFlush ? (
+              <div className="confirm-row">
+                <span>Erase all saved locations?</span>
+                <button
+                  className="confirm-btn danger"
+                  onClick={() => {
+                    flush();
+                    setConfirmingFlush(false);
+                  }}
+                >
+                  Yes
+                </button>
+                <button
+                  className="confirm-btn"
+                  onClick={() => setConfirmingFlush(false)}
+                >
+                  No
+                </button>
+              </div>
+            ) : (
               <button
-                className="confirm-btn danger"
-                onClick={() => {
-                  flush();
-                  setConfirmingFlush(false);
-                }}
+                className="action-btn"
+                onClick={() => setConfirmingFlush(true)}
               >
-                Yes
+                <Trash2 size={16} />
+                Flush saved locations
               </button>
-              <button
-                className="confirm-btn"
-                onClick={() => setConfirmingFlush(false)}
-              >
-                No
-              </button>
-            </div>
-          ) : (
-            <button
-              className="action-btn"
-              onClick={() => setConfirmingFlush(true)}
-            >
-              <Trash2 size={16} />
-              Flush saved locations
-            </button>
-          )}
+            ))}
 
           <button className="action-btn" onClick={() => navigate("/help")}>
             <HelpCircle size={16} />
