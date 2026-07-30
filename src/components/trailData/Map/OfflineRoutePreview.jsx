@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { projectPoints, VIEW } from "./offlineRouteProjection.js";
 
 function OfflineRoutePreview({
-  className,
   coordinates,
   runnerPosition,
   routeColor,
@@ -19,7 +18,7 @@ function OfflineRoutePreview({
   }, [coordinates, runnerPosition]);
 
   return (
-    <div className={className}>
+    <>
       <svg
         className="offline-preview"
         viewBox={`0 0 ${VIEW} ${VIEW}`}
@@ -47,7 +46,7 @@ function OfflineRoutePreview({
         )}
       </svg>
       <div className="offline-badge">Offline — map tiles unavailable</div>
-    </div>
+    </>
   );
 }
 
