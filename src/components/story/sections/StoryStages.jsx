@@ -3,6 +3,7 @@ import { memo } from "react";
 import { format } from "date-fns";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
+import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
 import { useStageETAs } from "../../../hooks/useStageETAs.js";
 import useStore from "../../../store/store.js";
@@ -14,7 +15,18 @@ import style from "./StoryStages.style.js";
 
 const StoryStages = memo(function StoryStages({ className }) {
   const { stageETAs } = useStageETAs();
+  const { checkpointETAs } = useCheckpointETAs();
   const stages = useStore((state) => state.stages);
+
+  // why: TimeBarriers only exist as SECTION boundaries — a stage spanning
+  // several of them is blind to any cutoff missed mid-stage and would show
+  // an optimistic finish ignoring it. Arrival is the same physical boundary
+  // in both partitions, so the finish row always defers to the cutoff-aware
+  // section computation StoryHero/StoryCheckpoints already use, instead of
+  // this stage-level list's own (less complete) cutoff tracking.
+  const finishCheckpointETA = checkpointETAs?.length
+    ? checkpointETAs[checkpointETAs.length - 1]
+    : null;
 
   // Collapse to a short preview by default — but never behind the stage
   // that's current or next, so a long route's milestone list doesn't bury
@@ -33,6 +45,19 @@ const StoryStages = memo(function StoryStages({ className }) {
         <p className="lede">Start, life bases, and the finish.</p>
         <ol className="stage-list">
           {stageETAs.slice(0, visibleCount).map((stage, i) => {
+            const isFinish = i === stageETAs.length - 1;
+            const etaMs =
+              isFinish && finishCheckpointETA
+                ? finishCheckpointETA.etaMs
+                : stage.etaMs;
+            const cutoffMs =
+              isFinish && finishCheckpointETA
+                ? finishCheckpointETA.cutoffMs
+                : stage.cutoffMs;
+            const isOverCutoff =
+              isFinish && finishCheckpointETA
+                ? finishCheckpointETA.isOverCutoff
+                : stage.isOverCutoff;
             const raw = stages?.[i];
             const difficultyLabel =
               stage.difficulty > 0
@@ -63,16 +88,16 @@ const StoryStages = memo(function StoryStages({ className }) {
                     <span>
                       {stage.isPast
                         ? "Reached"
-                        : stage.etaMs
-                          ? format(new Date(stage.etaMs), "EEE HH:mm")
+                        : etaMs
+                          ? format(new Date(etaMs), "EEE HH:mm")
                           : "--:--"}
                     </span>
-                    {stage.cutoffMs != null && (
+                    {cutoffMs != null && (
                       <span
-                        className={`stage-cutoff${stage.isOverCutoff ? " over" : ""}`}
+                        className={`stage-cutoff${isOverCutoff ? " over" : ""}`}
                       >
-                        cutoff {format(new Date(stage.cutoffMs), "EEE HH:mm")}
-                        {stage.isOverCutoff ? " · over" : ""}
+                        cutoff {format(new Date(cutoffMs), "EEE HH:mm")}
+                        {isOverCutoff ? " · over" : ""}
                       </span>
                     )}
                   </div>

@@ -2,10 +2,11 @@ import { memo, useMemo } from "react";
 
 import { animated, useSpring } from "@react-spring/web";
 import { Radio } from "@styled-icons/feather/Radio";
+import { format } from "date-fns";
 import { useShallow } from "zustand/react/shallow";
 
+import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
-import { calculateTimeMetrics } from "../../trailData/trailDataHelpers.js";
 import StorySection from "../StorySection.jsx";
 
 import style from "./StoryNow.style.js";
@@ -15,7 +16,7 @@ const StoryNow = memo(function StoryNow({ className }) {
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
   );
-  const sections = useStore((state) => state.sections);
+  const { checkpointETAs, raceStart } = useCheckpointETAs();
   const { autoShareEnabled, toggleAutoShare, isFollower } = useStore(
     useShallow((state) => ({
       autoShareEnabled: state.gps.autoShareEnabled,
@@ -23,43 +24,45 @@ const StoryNow = memo(function StoryNow({ className }) {
       isFollower: state.gps.followerConnectionStatus === "connected",
     })),
   );
-  const startingDate =
-    sections?.length && sections[0].startTime != null
-      ? sections[0].startTime * 1000
-      : null;
 
+  // why: sourced from checkpointETAs (section granularity), the same finish
+  // estimate StoryHero and StoryCheckpoints' last row read — not a
+  // standalone Minetti+paceRatio recompute (the old calculateTimeMetrics
+  // helper skipped both live Zig recalibration and cutoff clamping) and not
+  // stage granularity either, which is blind to any TimeBarrier missed
+  // mid-stage and would show an optimistic finish that ignores it.
   const metrics = useMemo(() => {
+    const finishEtaMs = checkpointETAs?.length
+      ? checkpointETAs[checkpointETAs.length - 1].etaMs
+      : null;
     if (
-      !cumulativeDistances?.length ||
-      !startingDate ||
-      !sections?.length ||
-      projectedLocation.timestamp < startingDate
+      raceStart == null ||
+      finishEtaMs == null ||
+      projectedLocation.timestamp < raceStart
     ) {
-      return { etaDateStr: "--:--", remainingStr: "--", remainingKm: 0 };
+      return { etaDateStr: "--:--", remainingStr: "--" };
     }
-    const { etaDateStr, remainingStr, distanceDone, totalDistance } =
-      calculateTimeMetrics(
-        projectedLocation,
-        cumulativeDistances,
-        startingDate,
-        sections,
-      );
+    const remainingMs = Math.max(0, finishEtaMs - projectedLocation.timestamp);
+    const totalMinutes = Math.floor(remainingMs / 60_000);
     return {
-      etaDateStr,
-      remainingStr,
-      remainingKm: Math.max(0, totalDistance - distanceDone) / 1000,
+      etaDateStr: format(new Date(finishEtaMs), "EEE HH:mm"),
+      remainingStr:
+        remainingMs > 0
+          ? `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`
+          : "--",
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    projectedLocation.index,
-    projectedLocation.timestamp,
-    cumulativeDistances,
-    startingDate,
-    sections,
-  ]);
+  }, [checkpointETAs, raceStart, projectedLocation.timestamp]);
 
-  const { remainingKm } = useSpring({
-    remainingKm: metrics.remainingKm,
+  const remainingKm = useMemo(() => {
+    if (!cumulativeDistances?.length) return 0;
+    const distanceDone = cumulativeDistances[projectedLocation.index || 0] || 0;
+    const totalDistance =
+      cumulativeDistances[cumulativeDistances.length - 1] || 0;
+    return Math.max(0, totalDistance - distanceDone) / 1000;
+  }, [cumulativeDistances, projectedLocation.index]);
+
+  const { remainingKm: animatedRemainingKm } = useSpring({
+    remainingKm,
     config: { tension: 170, friction: 26 },
   });
 
@@ -76,7 +79,7 @@ const StoryNow = memo(function StoryNow({ className }) {
         <div className="now-row" aria-live="polite">
           <div className="now-stat">
             <animated.span className="now-value">
-              {remainingKm.to((n) => n.toFixed(1))}
+              {animatedRemainingKm.to((n) => n.toFixed(1))}
             </animated.span>
             <span className="now-label">km left</span>
           </div>
