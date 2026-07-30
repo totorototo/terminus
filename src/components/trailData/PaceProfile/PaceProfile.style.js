@@ -11,8 +11,10 @@ const style = (Component) => styled(Component)`
 
   .pp-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    row-gap: 0.25rem;
     padding-bottom: 0.4rem;
     border-bottom: 1px solid
       ${({ theme }) =>
@@ -29,10 +31,12 @@ const style = (Component) => styled(Component)`
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.35)};
     letter-spacing: 1.5px;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .pp-legend {
     display: flex;
+    flex-wrap: nowrap;
     gap: 0.6rem;
   }
 
@@ -45,6 +49,7 @@ const style = (Component) => styled(Component)`
     color: ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.35)};
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .pp-legend-swatch {
@@ -199,10 +204,12 @@ const style = (Component) => styled(Component)`
     align-items: flex-start;
     gap: 0;
     flex-shrink: 0;
+    overflow: hidden;
   }
 
   .pp-stat {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -213,7 +220,7 @@ const style = (Component) => styled(Component)`
     align-self: stretch;
     background: ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.07)};
-    margin: 0 0.75rem;
+    margin: 0 0.5rem;
     flex-shrink: 0;
   }
 
@@ -225,6 +232,9 @@ const style = (Component) => styled(Component)`
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.7)};
     line-height: 1;
     letter-spacing: -0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     &.pp-stat-value--tight {
       color: ${({ theme }) =>
@@ -258,6 +268,9 @@ const style = (Component) => styled(Component)`
     text-transform: uppercase;
     letter-spacing: 1px;
     line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .pp-stat-name {
