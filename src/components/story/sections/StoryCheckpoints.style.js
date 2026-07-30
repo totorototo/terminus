@@ -164,6 +164,11 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
 
+  .elevation-value {
+    display: flex;
+    flex-direction: column;
+  }
+
   .difficulty-value {
     display: flex;
     align-items: center;

@@ -7,6 +7,7 @@ import { LogOut } from "@styled-icons/feather/LogOut";
 import { Moon } from "@styled-icons/feather/Moon";
 import { Sun } from "@styled-icons/feather/Sun";
 import { Trash2 } from "@styled-icons/feather/Trash2";
+import { Type } from "@styled-icons/feather/Type";
 import { UserPlus } from "@styled-icons/feather/UserPlus";
 import { useLocation } from "wouter";
 import { useShallow } from "zustand/react/shallow";
@@ -28,17 +29,27 @@ const StoryEnd = memo(function StoryEnd({ className }) {
   const stages = useStore((state) => state.stages);
   const stats = useStore((state) => state.stats);
   const metadata = useStore((state) => state.gpx.metadata);
-  const { theme, toggleTheme, shareLocation, flush, roomId, isFollower } =
-    useStore(
-      useShallow((state) => ({
-        theme: state.app.theme,
-        toggleTheme: state.toggleTheme,
-        shareLocation: state.shareLocation,
-        flush: state.flush,
-        roomId: state.app.followerRoomId ?? state.app.liveSessionId,
-        isFollower: state.gps.followerConnectionStatus === "connected",
-      })),
-    );
+  const {
+    theme,
+    toggleTheme,
+    outdoorMode,
+    toggleOutdoorMode,
+    shareLocation,
+    flush,
+    roomId,
+    isFollower,
+  } = useStore(
+    useShallow((state) => ({
+      theme: state.app.theme,
+      toggleTheme: state.toggleTheme,
+      outdoorMode: state.app.outdoorMode,
+      toggleOutdoorMode: state.toggleOutdoorMode,
+      shareLocation: state.shareLocation,
+      flush: state.flush,
+      roomId: state.app.followerRoomId ?? state.app.liveSessionId,
+      isFollower: state.gps.followerConnectionStatus === "connected",
+    })),
+  );
 
   const handleShareCard = async () => {
     if (!stages?.length) return;
@@ -134,6 +145,15 @@ const StoryEnd = memo(function StoryEnd({ className }) {
           <button className="action-btn" onClick={toggleTheme}>
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             {theme === "dark" ? "Light mode" : "Dark mode"}
+          </button>
+
+          <button
+            className={`action-btn${outdoorMode ? " active" : ""}`}
+            onClick={toggleOutdoorMode}
+            aria-pressed={outdoorMode}
+          >
+            <Type size={16} />
+            Outdoor mode
           </button>
 
           {/* why: flush() clears this device's own buffered GPS fixes — a

@@ -112,8 +112,11 @@ const StoryStages = memo(function StoryStages({ className }) {
                     </div>
                     <div className="stat-cell">
                       <span className="stat-label">Gain / Loss</span>
-                      <span className="stat-value">
-                        {`+${Math.round(raw.totalElevation || 0)} m −${Math.round(raw.totalElevationLoss || 0)} m`}
+                      <span className="stat-value elevation-value">
+                        <span>+{Math.round(raw.totalElevation || 0)} m</span>
+                        <span>
+                          −{Math.round(raw.totalElevationLoss || 0)} m
+                        </span>
                       </span>
                     </div>
                     <div className="stat-cell">

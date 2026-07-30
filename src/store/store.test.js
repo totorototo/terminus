@@ -166,6 +166,7 @@ describe("store", () => {
           "liveSessionId",
           "liveWriteKey",
           "mode",
+          "outdoorMode",
           "paceSettings",
           "pendingUrl",
           "profileMode",

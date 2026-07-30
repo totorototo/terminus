@@ -21,14 +21,16 @@ const style = (Component) => styled(Component)`
   .actions {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 0.75rem;
   }
 
   .action-btn {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 0.625rem;
+    white-space: nowrap;
     background: none;
     border: 1px solid
       ${(props) =>
@@ -70,6 +72,21 @@ const style = (Component) => styled(Component)`
         )};
       color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
+    }
+
+    &.active {
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.6,
+        )};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      background: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.12,
+        )};
     }
   }
 

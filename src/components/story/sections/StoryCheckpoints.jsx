@@ -164,8 +164,13 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                     </div>
                     <div className="stat-cell">
                       <span className="stat-label">Gain / Loss</span>
-                      <span className="stat-value">
-                        {`+${Math.round(section.totalElevation || 0)} m −${Math.round(section.totalElevationLoss || 0)} m`}
+                      <span className="stat-value elevation-value">
+                        <span>
+                          +{Math.round(section.totalElevation || 0)} m
+                        </span>
+                        <span>
+                          −{Math.round(section.totalElevationLoss || 0)} m
+                        </span>
                       </span>
                     </div>
                     <div className="stat-cell">

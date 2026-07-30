@@ -32,6 +32,7 @@ export const createAppSlice = (set, get) => {
         window.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
           : "light",
+      outdoorMode: false,
     },
 
     toggleTrackingMode: () =>
@@ -139,6 +140,20 @@ export const createAppSlice = (set, get) => {
         }),
         undefined,
         "app/toggleTheme",
+      );
+    },
+
+    toggleOutdoorMode: () => {
+      track("toggle-outdoor-mode");
+      set(
+        (state) => ({
+          app: {
+            ...state.app,
+            outdoorMode: !state.app.outdoorMode,
+          },
+        }),
+        undefined,
+        "app/toggleOutdoorMode",
       );
     },
 

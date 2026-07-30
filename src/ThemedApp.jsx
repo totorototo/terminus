@@ -19,6 +19,36 @@ const setFonts = () => {
   return strings.join(";");
 };
 
+// why: presbyopia (age-related loss of near-focus) makes sub-16px text hard
+// to read on a phone at arm's length outdoors, worsened by trail glare. A
+// flat 1.35x scale (not a fixed px bump) keeps the existing size hierarchy
+// intact across xxsmall..xxlarge, and the bolder weight compensates for
+// sunlight washing out thin strokes. Opt-in rather than viewport-detected
+// (matchMedia has no reliable "user has presbyopia" signal) — see
+// OutdoorModeToggle.
+//
+// Scaling happens on the theme object (not just the :root CSS custom
+// properties below) because every *.style.js in this codebase reads sizes
+// via props.theme.font.sizes["--font-size-x"] as a JS value, not var(...) —
+// the CSS custom properties are only consumed by one legacy component.
+const OUTDOOR_FONT_SCALE = 1.35;
+
+const scaleFontSizes = (sizes, scale) =>
+  Object.fromEntries(
+    Object.entries(sizes).map(([rule, value]) => [
+      rule,
+      `${Math.round(parseFloat(value) * scale)}px`,
+    ]),
+  );
+
+const setOutdoorFontOverrides = (enabled) => {
+  if (!enabled) return "";
+  const sizes = Object.entries(
+    scaleFontSizes(THEME.font.sizes, OUTDOOR_FONT_SCALE),
+  ).reduce((accu, [rule, value]) => `${rule}:${value}; ${accu}`, "");
+  return `${sizes}; --font-weight-medium: ${THEME.font.weights["--font-weight-semibold"]};`;
+};
+
 const GlobalStyle = createGlobalStyle`
  :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -30,6 +60,7 @@ const GlobalStyle = createGlobalStyle`
 
   ${(props) => setDefaultColors(props.theme.currentVariant)};
   ${setFonts()};
+  ${(props) => setOutdoorFontOverrides(props.theme.outdoorMode)};
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -105,7 +136,23 @@ body *:after {
 
 function ThemedApp() {
   const themeVariant = useStore((state) => state.app.theme) ?? "dark";
-  const themedTheme = { ...THEME, currentVariant: themeVariant };
+  const outdoorMode = useStore((state) => state.app.outdoorMode);
+  const themedTheme = {
+    ...THEME,
+    currentVariant: themeVariant,
+    outdoorMode,
+    font: outdoorMode
+      ? {
+          ...THEME.font,
+          sizes: scaleFontSizes(THEME.font.sizes, OUTDOOR_FONT_SCALE),
+          weights: {
+            ...THEME.font.weights,
+            "--font-weight-medium":
+              THEME.font.weights["--font-weight-semibold"],
+          },
+        }
+      : THEME.font,
+  };
 
   return (
     <ThemeProvider theme={themedTheme}>

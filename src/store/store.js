@@ -51,6 +51,7 @@ const useStore = create(
             raceId: state.app.raceId,
             currentRoute: state.app.currentRoute,
             theme: state.app.theme,
+            outdoorMode: state.app.outdoorMode,
             installPromptDismissed: state.app.installPromptDismissed,
             paceSettings: state.app.paceSettings,
           },
