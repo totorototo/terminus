@@ -419,6 +419,16 @@ export const createGPSSlice = (set, get) => {
           return;
         }
         if (msg.type === "location" && Array.isArray(msg.coords)) {
+          // broadcastPaceSettings() re-sends the runner's last known fix
+          // unchanged, purely to carry updated pace settings (see its
+          // definition above) — the runner itself never recalibrates from
+          // that resend, only from a genuinely new fix via spotMe(). Mirror
+          // that here so a pace-only update doesn't recompute against a
+          // recalibration formula the runner's own display never used for
+          // this event, which would otherwise disagree with the runner.
+          const isNewFix =
+            msg.timestamp !== get().gps.projectedLocation.timestamp;
+
           get().setProjectedLocation({
             timestamp: msg.timestamp,
             coords: msg.coords,
@@ -426,24 +436,31 @@ export const createGPSSlice = (set, get) => {
           });
           notifyLocationUpdate(msg);
 
-          // Refine ETAs against the runner's broadcast fix (best-effort).
-          get().recalibrate?.();
-
-          // Apply runner's pace settings if they differ — triggers re-processing
-          // so followers see the same ETAs as the trailer. Validate first: even
-          // though only an authorized runner can broadcast, never feed
-          // out-of-range or non-finite values into the pace model.
-          if (isValidPaceSettings(msg.paceSettings)) {
-            const current = get().app.paceSettings;
-            if (
-              msg.paceSettings.basePaceSPerKm !== current.basePaceSPerKm ||
-              msg.paceSettings.kFatigue !== current.kFatigue ||
-              msg.paceSettings.lifeBaseStopS !== current.lifeBaseStopS
-            ) {
-              get().setPaceSettings(msg.paceSettings);
-              get().reprocessGPXFile();
+          (async () => {
+            // Apply runner's pace settings if they differ — triggers re-processing
+            // so followers see the same ETAs as the trailer. Validate first: even
+            // though only an authorized runner can broadcast, never feed
+            // out-of-range or non-finite values into the pace model.
+            if (isValidPaceSettings(msg.paceSettings)) {
+              const current = get().app.paceSettings;
+              if (
+                msg.paceSettings.basePaceSPerKm !== current.basePaceSPerKm ||
+                msg.paceSettings.kFatigue !== current.kFatigue ||
+                msg.paceSettings.lifeBaseStopS !== current.lifeBaseStopS
+              ) {
+                get().setPaceSettings(msg.paceSettings);
+                await get().reprocessGPXFile();
+              }
             }
-          }
+
+            // Refine ETAs against the runner's broadcast fix (best-effort) —
+            // after any pace/section update above, so its worker round-trip
+            // (keyed to the current pace settings) can't resolve out of order
+            // and clobber the freshly reprocessed a-priori ETAs with stale ones.
+            if (isNewFix) {
+              await get().recalibrate?.();
+            }
+          })();
         }
       });
     },

@@ -365,11 +365,12 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       const actualElapsedS = (nowMs - raceStartMs) / 1000;
       if (actualElapsedS <= 0) return; // before the gun, nothing to calibrate
 
+      const paceSettingsAtCall = get().app?.paceSettings;
       const {
         basePaceSPerKm = 500,
         kFatigue = 0.002,
         lifeBaseStopS = 3600,
-      } = get().app?.paceSettings ?? {};
+      } = paceSettingsAtCall ?? {};
       const weatherByCheckpoint = get().weather?.forecasts ?? null;
 
       // No gpxBytes: the worker retained them from PROCESS_GPX_FILE and keeps a
@@ -385,6 +386,16 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
       try {
         const { recalibration } = await messenger.send("RECALIBRATE", payload);
+        // Pace settings or sections changed while this request was in flight
+        // (e.g. a follower receiving two pace updates in quick succession) —
+        // applying it now would overwrite a fresher result with a stale one
+        // computed under inputs that no longer hold.
+        if (
+          get().app?.paceSettings !== paceSettingsAtCall ||
+          get().sections !== sections
+        ) {
+          return;
+        }
         get().setRecalibration("section", recalibration?.section ?? null);
         get().setRecalibration("stage", recalibration?.stage ?? null);
       } catch (error) {

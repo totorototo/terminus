@@ -107,23 +107,61 @@ const checkpointFinishEta = (page) =>
 // that re-render on their own schedule — reading them back-to-back right
 // after the first observed change can catch one mid-update. Poll until both
 // land on the same, new value before treating it as settled.
+//
+// A pace change also isn't a single atomic update — reprocessing and the
+// best-effort recalibration land as separate re-renders, so the finish time
+// visibly passes through several transient values (observed: 3-4, within
+// roughly a second) before its true final one. Polling at Playwright's
+// default backoff (starting at 100ms) can catch one of those transients
+// sitting still for a single tick and mistake it for settled, so poll at a
+// fixed, wider spacing — comfortably past the observed thrash window — and
+// still require two consecutive matches at that spacing.
+const SETTLE_POLL_INTERVALS = [750];
+
 async function waitForAgreement(page, previousValue) {
   let settled;
+  let lastCandidate = null;
   await expect
     .poll(
       async () => {
         const milestone = await readMilestoneFinish(page);
         const checkpoint = await readCheckpointFinish(page);
         if (milestone === checkpoint && milestone !== previousValue) {
-          settled = milestone;
-          return true;
+          if (lastCandidate === milestone) {
+            settled = milestone;
+            return true;
+          }
+          lastCandidate = milestone;
+        } else {
+          lastCandidate = null;
         }
         return false;
       },
-      { timeout: 20_000 },
+      { timeout: 20_000, intervals: SETTLE_POLL_INTERVALS },
     )
     .toBe(true);
   return settled;
+}
+
+// Hero's "est. time" stat is driven by its own independent useCheckpointETAs()
+// call too, so it's just as prone to being read mid-transient as the
+// milestone/checkpoint rows above — poll until the same text shows up twice
+// in a row, at the same wide spacing, before trusting it.
+async function waitForStableText(locator, timeout = 20_000) {
+  let lastValue = null;
+  let text;
+  await expect
+    .poll(
+      async () => {
+        text = await locator.textContent();
+        if (text === lastValue) return true;
+        lastValue = text;
+        return false;
+      },
+      { timeout, intervals: SETTLE_POLL_INTERVALS },
+    )
+    .toBe(true);
+  return text;
 }
 
 test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
@@ -146,7 +184,7 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
 
     // Baseline (a-priori, no GPS fix yet): Milestones and Checkpoints must
     // already agree.
-    const hero0 = await heroEstTime(page).textContent();
+    const hero0 = await waitForStableText(heroEstTime(page));
     const milestone0 = await readMilestoneFinish(page);
     const checkpoint0 = await readCheckpointFinish(page);
     expect(milestone0).toBe(checkpoint0);
@@ -155,21 +193,21 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
     await autoShareBtn(page).click();
 
     const milestone1 = await waitForAgreement(page, milestone0);
-    const hero1 = await heroEstTime(page).textContent();
+    const hero1 = await waitForStableText(heroEstTime(page));
     expect(hero1).not.toBe(hero0);
 
     // ── 2. Pace-settings change (Casual → Elite) ──────────────────────────
     await page.getByRole("radio", { name: "Elite" }).click();
 
     const milestone2 = await waitForAgreement(page, milestone1);
-    const hero2 = await heroEstTime(page).textContent();
+    const hero2 = await waitForStableText(heroEstTime(page));
     expect(hero2).not.toBe(hero1);
 
     // ── 3. Pace-settings change back (Elite → Casual) ─────────────────────
     await page.getByRole("radio", { name: "Casual" }).click();
 
     await waitForAgreement(page, milestone2);
-    const hero3 = await heroEstTime(page).textContent();
+    const hero3 = await waitForStableText(heroEstTime(page));
     expect(hero3).not.toBe(hero2);
   });
 
@@ -227,7 +265,7 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
           runnerPage,
           milestoneRunner0,
         );
-        const heroRunner1 = await heroEstTime(runnerPage).textContent();
+        const heroRunner1 = await waitForStableText(heroEstTime(runnerPage));
 
         await expect
           .poll(() => readMilestoneFinish(followerPage), { timeout: 15_000 })
@@ -246,7 +284,7 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
           runnerPage,
           milestoneRunner1,
         );
-        const heroRunner2 = await heroEstTime(runnerPage).textContent();
+        const heroRunner2 = await waitForStableText(heroEstTime(runnerPage));
 
         await expect
           .poll(() => readMilestoneFinish(followerPage), { timeout: 30_000 })
@@ -265,7 +303,7 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
           runnerPage,
           milestoneRunner2,
         );
-        const heroRunner3 = await heroEstTime(runnerPage).textContent();
+        const heroRunner3 = await waitForStableText(heroEstTime(runnerPage));
 
         await expect
           .poll(() => readMilestoneFinish(followerPage), { timeout: 30_000 })

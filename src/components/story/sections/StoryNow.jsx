@@ -54,12 +54,18 @@ const StoryNow = memo(function StoryNow({ className }) {
   }, [checkpointETAs, raceStart, projectedLocation.timestamp]);
 
   const remainingKm = useMemo(() => {
-    if (!cumulativeDistances?.length) return 0;
+    if (!cumulativeDistances?.length || !projectedLocation.timestamp) {
+      return 0;
+    }
     const distanceDone = cumulativeDistances[projectedLocation.index || 0] || 0;
     const totalDistance =
       cumulativeDistances[cumulativeDistances.length - 1] || 0;
     return Math.max(0, totalDistance - distanceDone) / 1000;
-  }, [cumulativeDistances, projectedLocation.index]);
+  }, [
+    cumulativeDistances,
+    projectedLocation.index,
+    projectedLocation.timestamp,
+  ]);
 
   const { remainingKm: animatedRemainingKm } = useSpring({
     remainingKm,
