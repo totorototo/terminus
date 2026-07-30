@@ -176,18 +176,20 @@ const TrailMap = memo(function TrailMap({ className }) {
   }, [fitToBounds]);
 
   // why: toggling fullscreen resizes the container without firing a window
-  // "resize" event, which mapbox-gl needs to redraw its canvas. Scoped to
-  // isOnline/coordinates (the same inputs that decide whether <Map> is the
-  // branch being rendered) so the observer is torn down the moment that
-  // branch stops being mounted, instead of lingering on a detached container
-  // until the next load event or a full component unmount.
+  // "resize" event, which mapbox-gl needs to redraw its canvas at the new
+  // size. Deliberately keyed on isFullscreen alone, not a ResizeObserver on
+  // the container: on mobile the container's height also shifts on its own
+  // as the browser chrome hides/shows during scroll (the "100vh" quirk), and
+  // an observer-driven resize() firing mid-gesture — while a touch-pan/pinch
+  // is still active — broke mapbox-gl's own two-finger gesture handling.
+  // Fullscreen toggling is the only case that actually needs a forced
+  // resize, so trigger it directly instead of reacting to every resize.
   useEffect(() => {
     const map = mapRef.current?.getMap?.();
-    if (!map || typeof ResizeObserver === "undefined") return undefined;
-    const observer = new ResizeObserver(() => map.resize());
-    observer.observe(map.getContainer());
-    return () => observer.disconnect();
-  }, [isOnline, coordinates]);
+    if (!map) return undefined;
+    const id = requestAnimationFrame(() => map.resize());
+    return () => cancelAnimationFrame(id);
+  }, [isFullscreen]);
 
   const routeColor = theme.colors[theme.currentVariant]["--color-primary"];
   const runnerColor = theme.colors[theme.currentVariant]["--color-accent"];

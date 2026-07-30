@@ -77,6 +77,21 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  /* why: in fullscreen the button sits at the true screen edge, where a
+     notch/status bar (network, battery, clock) can cover it — same problem
+     ThemeToggle solves for its own fixed corner button. Skipped in the
+     embedded card view, where the button isn't near a physical screen edge.
+     The CSS fallback (.is-fullscreen) can't ask the OS to hide its status
+     bar the way native fullscreen can, so env(safe-area-inset-top) isn't
+     guaranteed to report that row's real height there — max() against a
+     generous fixed floor guarantees clearance even when it reports 0. */
+  &:fullscreen .fullscreen-btn,
+  &:-webkit-full-screen .fullscreen-btn,
+  &.is-fullscreen .fullscreen-btn {
+    top: max(calc(env(safe-area-inset-top, 0px) + 0.75rem), 3.25rem);
+    right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+  }
+
   .map-message {
     display: flex;
     align-items: center;
