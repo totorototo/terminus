@@ -2,7 +2,7 @@ import { memo, useCallback } from "react";
 
 import { useShallow } from "zustand/react/shallow";
 
-import useStore from "../../../store/store.js";
+import useStore, { DEFAULT_PACE_SETTINGS } from "../../../store/store.js";
 import PaceProfile from "../../trailData/PaceProfile/PaceProfile.jsx";
 import {
   closestOption,
@@ -23,19 +23,21 @@ function closestProfile(basePaceSPerKm) {
 }
 
 const StoryPace = memo(function StoryPace({ className }) {
-  const { paceSettings, setPaceSettings, reprocessGPXFile, isFollower } =
-    useStore(
-      useShallow((state) => ({
-        paceSettings: state.app?.paceSettings ?? {
-          basePaceSPerKm: 365,
-          kFatigue: 0.003,
-          lifeBaseStopS: 3600,
-        },
-        setPaceSettings: state.setPaceSettings ?? (() => {}),
-        reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
-        isFollower: state.gps?.followerConnectionStatus === "connected",
-      })),
-    );
+  const {
+    paceSettings,
+    setPaceSettings,
+    reprocessGPXFile,
+    broadcastPaceSettings,
+    isFollower,
+  } = useStore(
+    useShallow((state) => ({
+      paceSettings: state.app?.paceSettings ?? DEFAULT_PACE_SETTINGS,
+      setPaceSettings: state.setPaceSettings ?? (() => {}),
+      reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
+      broadcastPaceSettings: state.broadcastPaceSettings ?? (() => {}),
+      isFollower: state.gps?.followerConnectionStatus === "connected",
+    })),
+  );
 
   const selectedProfile = closestProfile(paceSettings.basePaceSPerKm);
   const selectedStop = closestOption(
@@ -50,8 +52,9 @@ const StoryPace = memo(function StoryPace({ className }) {
         kFatigue: profile.kFatigue,
       });
       reprocessGPXFile();
+      broadcastPaceSettings();
     },
-    [setPaceSettings, reprocessGPXFile],
+    [setPaceSettings, reprocessGPXFile, broadcastPaceSettings],
   );
 
   // why: LifeBase stop time (rest planned at major aid stations) was only
@@ -63,15 +66,18 @@ const StoryPace = memo(function StoryPace({ className }) {
     (value) => {
       setPaceSettings({ lifeBaseStopS: value });
       reprocessGPXFile();
+      broadcastPaceSettings();
     },
-    [setPaceSettings, reprocessGPXFile],
+    [setPaceSettings, reprocessGPXFile, broadcastPaceSettings],
   );
 
   return (
     <div className={className}>
       <StorySection eyebrow="The pace" title="Pace">
         <p className="lede">
-          Required pace and effort across the route, for a runner like you.
+          {isFollower
+            ? "Required pace and effort across the route, for a runner like them."
+            : "Required pace and effort across the route, for a runner like you."}
         </p>
         <div className="chart-frame">
           <PaceProfile />

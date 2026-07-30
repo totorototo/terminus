@@ -2,7 +2,7 @@ import { memo, useCallback } from "react";
 
 import { useShallow } from "zustand/react/shallow";
 
-import useStore from "../../../store/store.js";
+import useStore, { DEFAULT_PACE_SETTINGS } from "../../../store/store.js";
 import {
   closestOption,
   LIFE_BASE_STOP_OPTIONS,
@@ -24,11 +24,7 @@ const PaceSettings = memo(function PaceSettings({ className }) {
   const { paceSettings, setPaceSettings, reprocessGPXFile, isFollower } =
     useStore(
       useShallow((state) => ({
-        paceSettings: state.app?.paceSettings ?? {
-          basePaceSPerKm: 365,
-          kFatigue: 0.003,
-          lifeBaseStopS: 3600,
-        },
+        paceSettings: state.app?.paceSettings ?? DEFAULT_PACE_SETTINGS,
         setPaceSettings: state.setPaceSettings ?? (() => {}),
         reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
         isFollower: state.gps?.followerConnectionStatus === "connected",

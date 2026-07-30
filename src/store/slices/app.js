@@ -1,5 +1,14 @@
 import { track } from "../../lib/analytics.js";
 
+// Single source of truth for the pace model's defaults — reused as the
+// store's initial value below, and as the fallback in components that read
+// app.paceSettings before the store has hydrated (e.g. isolated tests).
+export const DEFAULT_PACE_SETTINGS = {
+  basePaceSPerKm: 500, // 8:20/km — ultra-trail default (Moderate preset)
+  kFatigue: 0.002, // cumulative fatigue coefficient (Moderate preset, exponential model)
+  lifeBaseStopS: 3600, // planned stop at each LifeBase in seconds (1 hour default)
+};
+
 export const createAppSlice = (set, get) => {
   return {
     app: {
@@ -16,11 +25,7 @@ export const createAppSlice = (set, get) => {
       currentRoute: "/",
       installPromptDismissed: false,
       highlightedClimbIndex: null,
-      paceSettings: {
-        basePaceSPerKm: 500, // 8:20/km — ultra-trail default (Moderate preset)
-        kFatigue: 0.002, // cumulative fatigue coefficient (Moderate preset, exponential model)
-        lifeBaseStopS: 3600, // planned stop at each LifeBase in seconds (1 hour default)
-      },
+      paceSettings: DEFAULT_PACE_SETTINGS,
       theme:
         typeof window !== "undefined" &&
         typeof window.matchMedia === "function" &&

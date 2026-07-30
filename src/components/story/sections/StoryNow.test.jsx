@@ -127,4 +127,26 @@ describe("StoryNow", () => {
     render(<StoryNow />);
     expect(screen.getByText("--:--")).toBeInTheDocument();
   });
+
+  it("refers to the runner in third person when following", () => {
+    storeModule.default.mockImplementation((selector) =>
+      selector({
+        sections: mockSections,
+        gpx: { cumulativeDistances: mockCumulativeDistances },
+        gps: {
+          autoShareEnabled: false,
+          followerConnectionStatus: "connected",
+        },
+        toggleAutoShare: vi.fn(),
+      }),
+    );
+
+    render(<StoryNow />);
+    expect(
+      screen.getByRole("heading", { name: "Where they are" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Based on their pace so far against terrain."),
+    ).toBeInTheDocument();
+  });
 });
