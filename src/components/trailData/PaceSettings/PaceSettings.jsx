@@ -21,15 +21,21 @@ function closestProfile(basePaceSPerKm) {
 }
 
 const PaceSettings = memo(function PaceSettings({ className }) {
-  const { paceSettings, setPaceSettings, reprocessGPXFile, isFollower } =
-    useStore(
-      useShallow((state) => ({
-        paceSettings: state.app?.paceSettings ?? DEFAULT_PACE_SETTINGS,
-        setPaceSettings: state.setPaceSettings ?? (() => {}),
-        reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
-        isFollower: state.gps?.followerConnectionStatus === "connected",
-      })),
-    );
+  const {
+    paceSettings,
+    setPaceSettings,
+    reprocessGPXFile,
+    broadcastPaceSettings,
+    isFollower,
+  } = useStore(
+    useShallow((state) => ({
+      paceSettings: state.app?.paceSettings ?? DEFAULT_PACE_SETTINGS,
+      setPaceSettings: state.setPaceSettings ?? (() => {}),
+      reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
+      broadcastPaceSettings: state.broadcastPaceSettings ?? (() => {}),
+      isFollower: state.gps?.followerConnectionStatus === "connected",
+    })),
+  );
 
   const { basePaceSPerKm, lifeBaseStopS } = paceSettings;
 
@@ -46,16 +52,18 @@ const PaceSettings = memo(function PaceSettings({ className }) {
         kFatigue: profile.kFatigue,
       });
       reprocessGPXFile();
+      broadcastPaceSettings();
     },
-    [setPaceSettings, reprocessGPXFile],
+    [setPaceSettings, reprocessGPXFile, broadcastPaceSettings],
   );
 
   const handleStopChange = useCallback(
     (value) => {
       setPaceSettings({ lifeBaseStopS: value });
       reprocessGPXFile();
+      broadcastPaceSettings();
     },
-    [setPaceSettings, reprocessGPXFile],
+    [setPaceSettings, reprocessGPXFile, broadcastPaceSettings],
   );
 
   return (
