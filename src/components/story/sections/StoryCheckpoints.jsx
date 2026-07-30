@@ -7,9 +7,11 @@ import { useShallow } from "zustand/react/shallow";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
+import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
 import useStore from "../../../store/store.js";
 import { formatDuration } from "../../trailData/etaLegHelpers.js";
 import WeatherLine from "../../trailData/WeatherLine/WeatherLine.jsx";
+import CollapseToggle from "../CollapseToggle.jsx";
 import StorySection from "../StorySection.jsx";
 
 import style from "./StoryCheckpoints.style.js";
@@ -72,6 +74,15 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [etaFetchKey, fetchWeatherForCheckpoints]);
 
+  // Collapse to a short preview by default — but never behind the checkpoint
+  // that's current or next, so a long route's checkpoint list doesn't bury
+  // the one a runner mid-race actually cares about.
+  const activeCheckpointIndex = checkpointETAs.findIndex((cp) => !cp.isPast);
+  const { visibleCount, hiddenCount, expand } = useCollapsibleList(
+    checkpointETAs.length,
+    { threshold: 6, activeIndex: activeCheckpointIndex },
+  );
+
   if (!checkpointETAs?.length) {
     return (
       <div className={className}>
@@ -86,7 +97,7 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
     <div className={className}>
       <StorySection eyebrow="The checkpoints" title="Checkpoints">
         <ol className="checkpoint-list">
-          {checkpointETAs.map((cp, i) => {
+          {checkpointETAs.slice(0, visibleCount).map((cp, i) => {
             const remaining = formatRemaining(cp.etaMs);
             const section = sections?.[i];
             const difficultyLabel =
@@ -187,6 +198,7 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
             );
           })}
         </ol>
+        <CollapseToggle hiddenCount={hiddenCount} onExpand={expand} />
       </StorySection>
     </div>
   );

@@ -3,9 +3,11 @@ import { memo } from "react";
 import { format } from "date-fns";
 
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
+import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
 import { useStageETAs } from "../../../hooks/useStageETAs.js";
 import useStore from "../../../store/store.js";
 import { formatDuration } from "../../trailData/etaLegHelpers.js";
+import CollapseToggle from "../CollapseToggle.jsx";
 import StorySection from "../StorySection.jsx";
 
 import style from "./StoryStages.style.js";
@@ -14,6 +16,15 @@ const StoryStages = memo(function StoryStages({ className }) {
   const { stageETAs } = useStageETAs();
   const stages = useStore((state) => state.stages);
 
+  // Collapse to a short preview by default — but never behind the stage
+  // that's current or next, so a long route's milestone list doesn't bury
+  // the one a runner mid-race actually cares about.
+  const activeStageIndex = stageETAs?.findIndex((stage) => !stage.isPast) ?? -1;
+  const { visibleCount, hiddenCount, expand } = useCollapsibleList(
+    stageETAs?.length ?? 0,
+    { threshold: 5, activeIndex: activeStageIndex },
+  );
+
   if (!stageETAs?.length) return null;
 
   return (
@@ -21,7 +32,7 @@ const StoryStages = memo(function StoryStages({ className }) {
       <StorySection eyebrow="The stages" title="Milestones">
         <p className="lede">Start, life bases, and the finish.</p>
         <ol className="stage-list">
-          {stageETAs.map((stage, i) => {
+          {stageETAs.slice(0, visibleCount).map((stage, i) => {
             const raw = stages?.[i];
             const difficultyLabel =
               stage.difficulty > 0
@@ -110,6 +121,7 @@ const StoryStages = memo(function StoryStages({ className }) {
             );
           })}
         </ol>
+        <CollapseToggle hiddenCount={hiddenCount} onExpand={expand} />
       </StorySection>
     </div>
   );

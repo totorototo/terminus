@@ -1,7 +1,9 @@
 import { memo } from "react";
 
 import { getClimbCategory } from "../../../helpers/climbCategory.js";
+import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
+import CollapseToggle from "../CollapseToggle.jsx";
 import StorySection from "../StorySection.jsx";
 
 import style from "./StoryClimbs.style.js";
@@ -10,6 +12,17 @@ const StoryClimbs = memo(function StoryClimbs({ className }) {
   const climbs = useStore((state) => state.gpx.climbs);
   const projectedLocation = useProjectedLocation();
   const currentIdx = projectedLocation?.index ?? 0;
+
+  // Collapse to a short preview by default — but never behind the climb
+  // that's current or next, so a long route's climb list doesn't bury the
+  // one a runner mid-race actually cares about.
+  const activeClimbIndex = (climbs ?? []).findIndex(
+    (climb) => currentIdx < climb.endIndex,
+  );
+  const { visibleCount, hiddenCount, expand } = useCollapsibleList(
+    climbs?.length ?? 0,
+    { threshold: 5, activeIndex: activeClimbIndex },
+  );
 
   if (!climbs?.length) {
     return (
@@ -36,7 +49,7 @@ const StoryClimbs = memo(function StoryClimbs({ className }) {
           still — by length and steepness.
         </p>
         <div className="climb-list">
-          {climbs.map((climb, i) => {
+          {climbs.slice(0, visibleCount).map((climb, i) => {
             const isPast = currentIdx >= climb.endIndex;
             const isCurrent = !isPast && i === currentClimbIndex;
             const category = getClimbCategory(climb);
@@ -78,6 +91,7 @@ const StoryClimbs = memo(function StoryClimbs({ className }) {
             );
           })}
         </div>
+        <CollapseToggle hiddenCount={hiddenCount} onExpand={expand} />
       </StorySection>
     </div>
   );
