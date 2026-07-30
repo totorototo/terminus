@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useState } from "react";
 
+import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import useStore, { useStats } from "../../../store/store.js";
 
 import style from "./StoryHero.style.js";
@@ -28,27 +29,21 @@ function formatDurationHours(ms) {
 const StoryHero = memo(function StoryHero({ className }) {
   const stats = useStats();
   const metadata = useStore((state) => state.gpx.metadata);
-  const sections = useStore((state) => state.sections);
-  const stages = useStore((state) => state.stages);
+  const { checkpointETAs, raceStart: raceStartMs } = useCheckpointETAs();
 
-  // why: reuses the same stages.estimatedDuration sum StoryEnd already
-  // computes for the share card — reflects whichever runner profile is
-  // selected in StoryPace, since reprocessGPXFile recalculates stages on
-  // profile change. Picked before the reader scrolls to that picker, so it
-  // starts out showing the default profile's estimate.
+  // why: sourced from checkpointETAs (section granularity) rather than
+  // stages — sections are the only boundary kind that include TimeBarriers,
+  // so this is the only computation aware of every intermediate cutoff.
+  // Stage-level ETAs are blind to a TimeBarrier missed mid-stage and would
+  // show an optimistic finish time that ignores it. Arrival is the same
+  // physical boundary in both partitions, so the last checkpoint IS the
+  // finish — this keeps the Hero stat, Milestones' last row, and
+  // Checkpoints' last row all describing the same real-world estimate.
   const totalEstimatedMs = useMemo(() => {
-    if (!stages?.length) return null;
-    const totalSec = stages.reduce(
-      (sum, stage) => sum + (stage.estimatedDuration || 0),
-      0,
-    );
-    return totalSec > 0 ? totalSec * 1000 : null;
-  }, [stages]);
-
-  const raceStartMs = useMemo(() => {
-    if (!sections?.length || sections[0].startTime == null) return null;
-    return sections[0].startTime * 1000;
-  }, [sections]);
+    if (!checkpointETAs?.length || raceStartMs == null) return null;
+    const finishEtaMs = checkpointETAs[checkpointETAs.length - 1].etaMs;
+    return finishEtaMs != null ? Math.max(0, finishEtaMs - raceStartMs) : null;
+  }, [checkpointETAs, raceStartMs]);
 
   const [now, setNow] = useState(() => Date.now());
 

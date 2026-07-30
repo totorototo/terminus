@@ -6,6 +6,10 @@ import StoryNow from "./StoryNow.jsx";
 
 import "@testing-library/jest-dom/vitest";
 
+vi.mock("zustand/react/shallow", () => ({
+  useShallow: (fn) => fn,
+}));
+
 vi.mock("../../../store/store.js", () => ({
   default: vi.fn(),
   useProjectedLocation: vi.fn(),
@@ -41,6 +45,7 @@ describe("StoryNow", () => {
   const mockCumulativeDistances = [0, 1000, 2000, 3000, 4000, 5000];
   const mockSections = [
     {
+      sectionId: 0,
       startTime: 1000,
       startIndex: 0,
       endIndex: 2,
@@ -48,6 +53,7 @@ describe("StoryNow", () => {
       estimatedDuration: 500,
     },
     {
+      sectionId: 1,
       startTime: 2000,
       startIndex: 2,
       endIndex: 5,
