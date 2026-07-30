@@ -156,7 +156,7 @@ export const createAppSlice = (set, get) => {
         "app/setHighlightedClimb",
       ),
 
-    setPaceSettings: ({ basePaceSPerKm, kFatigue, lifeBaseStopS }) =>
+    setPaceSettings: ({ basePaceSPerKm, kFatigue, lifeBaseStopS }) => {
       set(
         (state) => ({
           app: {
@@ -172,6 +172,15 @@ export const createAppSlice = (set, get) => {
         }),
         undefined,
         "app/setPaceSettings",
-      ),
+      );
+
+      // The cached Zig recalibration was computed under the previous pace
+      // settings and is keyed only by trace index, so recalLookup() would
+      // keep preferring it over the freshly reprocessed a-priori ETAs
+      // (both callers of setPaceSettings immediately call reprocessGPXFile)
+      // until the next GPS fix. Clear it so checkpoint/stage ETAs reflect
+      // the new pace right away instead of showing stale numbers until then.
+      get().clearRecalibration?.();
+    },
   };
 };

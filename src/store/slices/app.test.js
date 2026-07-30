@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { create } from "zustand";
 
 import { createAppSlice } from "./app";
+import { createRecalibrationSlice } from "./recalibration";
 
 describe("appSlice", () => {
   let store;
@@ -87,6 +88,41 @@ describe("appSlice", () => {
 
       toggleProfileMode();
       expect(store.getState().app.profileMode).toBe(false);
+    });
+  });
+
+  describe("setPaceSettings", () => {
+    it("updates only the provided fields, keeping the rest", () => {
+      const { setPaceSettings } = store.getState();
+
+      setPaceSettings({ basePaceSPerKm: 400 });
+
+      expect(store.getState().app.paceSettings).toEqual({
+        basePaceSPerKm: 400,
+        kFatigue: 0.002,
+        lifeBaseStopS: 3600,
+      });
+    });
+
+    it("clears any cached live recalibration so ETAs fall back to the freshly reprocessed a-priori model instead of stale numbers", () => {
+      const recalStore = create((set, get) => ({
+        ...createAppSlice(set, get),
+        ...createRecalibrationSlice(set, get),
+      }));
+
+      recalStore.getState().setRecalibration("section", {
+        etas: [{ endIndex: 100, cumulativeRemainingS: 3600 }],
+      });
+      recalStore.getState().setRecalibration("stage", {
+        etas: [{ endIndex: 500, cumulativeRemainingS: 7200 }],
+      });
+
+      recalStore.getState().setPaceSettings({ basePaceSPerKm: 350 });
+
+      expect(recalStore.getState().recalibration).toEqual({
+        section: null,
+        stage: null,
+      });
     });
   });
 
