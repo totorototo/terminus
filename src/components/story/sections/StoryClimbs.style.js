@@ -71,6 +71,11 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-primary"]};
   }
 
+  .climb-marker.unranked {
+    opacity: 0.35;
+    border-style: dashed;
+  }
+
   .climb-row.current .climb-marker {
     background: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-primary"]};
