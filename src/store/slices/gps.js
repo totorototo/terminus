@@ -272,6 +272,30 @@ export const createGPSSlice = (set, get) => {
       }
     },
 
+    // Push the runner's current pace settings to followers right away.
+    // broadcastLocation is otherwise only called from spotMe(), tied to a
+    // fresh GPS fix — without this, a settings change only reaches followers
+    // whenever the next incidental fix happens to fire, up to the 30 min
+    // auto-share interval away. Re-sends the last known fix unchanged; a
+    // no-op if the runner hasn't broadcast a position yet.
+    broadcastPaceSettings: async () => {
+      const sessionId = get().app.liveSessionId;
+      const projected = get().gps.projectedLocation;
+      if (
+        get().app.mode !== "trailer" ||
+        !sessionId ||
+        !projected?.coords?.length
+      ) {
+        return;
+      }
+      await broadcastLocation(
+        sessionId,
+        projected,
+        get().app.raceId,
+        get().app.paceSettings,
+      );
+    },
+
     // Get all locations from buffer
     getLocationHistory: () => ensureBuffer().dump(),
 
@@ -413,7 +437,8 @@ export const createGPSSlice = (set, get) => {
             const current = get().app.paceSettings;
             if (
               msg.paceSettings.basePaceSPerKm !== current.basePaceSPerKm ||
-              msg.paceSettings.kFatigue !== current.kFatigue
+              msg.paceSettings.kFatigue !== current.kFatigue ||
+              msg.paceSettings.lifeBaseStopS !== current.lifeBaseStopS
             ) {
               get().setPaceSettings(msg.paceSettings);
               get().reprocessGPXFile();

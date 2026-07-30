@@ -1,3 +1,4 @@
+import PartySocket from "partysocket";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { create } from "zustand";
 
@@ -23,6 +24,41 @@ vi.mock("../../helpers/createRingBuffer", () => ({
     };
   }),
 }));
+
+vi.mock("../../helpers/notify", () => ({
+  notifyLocationUpdate: vi.fn(),
+  requestNotificationPermission: vi.fn(),
+  subscribeToPush: vi.fn(),
+}));
+
+// Minimal fake WebSocket-ish PartySocket — exposes the same
+// addEventListener/send/close/readyState surface gps.js relies on, plus a
+// dispatch() helper tests use to simulate an inbound relay message.
+vi.mock("partysocket", () => {
+  class MockPartySocket {
+    constructor(opts) {
+      this.opts = opts;
+      this.readyState = 1; // OPEN
+      this.listeners = {};
+      this.close = vi.fn();
+      this.send = vi.fn();
+      MockPartySocket.instances.push(this);
+    }
+    addEventListener(type, cb) {
+      (this.listeners[type] ??= []).push(cb);
+    }
+    removeEventListener(type, cb) {
+      this.listeners[type] = (this.listeners[type] || []).filter(
+        (l) => l !== cb,
+      );
+    }
+    dispatch(type, event) {
+      (this.listeners[type] || []).forEach((cb) => cb(event));
+    }
+  }
+  MockPartySocket.instances = [];
+  return { default: MockPartySocket };
+});
 
 describe("GPS Slice", () => {
   let store;
@@ -50,7 +86,28 @@ describe("GPS Slice", () => {
         liveWriteKey: null,
         raceId: null,
         mode: null,
+        paceSettings: {
+          basePaceSPerKm: 500,
+          kFatigue: 0.002,
+          lifeBaseStopS: 3600,
+        },
       },
+      recalibrate: vi.fn(),
+      setPaceSettings: vi.fn(({ basePaceSPerKm, kFatigue, lifeBaseStopS }) => {
+        set({
+          app: {
+            ...get().app,
+            paceSettings: {
+              basePaceSPerKm:
+                basePaceSPerKm ?? get().app.paceSettings.basePaceSPerKm,
+              kFatigue: kFatigue ?? get().app.paceSettings.kFatigue,
+              lifeBaseStopS:
+                lifeBaseStopS ?? get().app.paceSettings.lifeBaseStopS,
+            },
+          },
+        });
+      }),
+      reprocessGPXFile: vi.fn(),
       setLiveSessionId: vi.fn((id) => {
         set({ app: { ...get().app, liveSessionId: id } });
       }),
@@ -59,6 +116,9 @@ describe("GPS Slice", () => {
       }),
       setRaceId: vi.fn((id) => {
         set({ app: { ...get().app, raceId: id } });
+      }),
+      setFollowerRoomId: vi.fn((id) => {
+        set({ app: { ...get().app, followerRoomId: id } });
       }),
     }));
   });
@@ -472,6 +532,140 @@ describe("GPS Slice", () => {
       });
 
       await expect(store.getState().shareLocation()).resolves.not.toThrow();
+    });
+  });
+
+  describe("broadcastPaceSettings", () => {
+    beforeEach(() => {
+      store.setState({
+        app: {
+          ...store.getState().app,
+          mode: "trailer",
+          liveSessionId: "session-1",
+          liveWriteKey: "write-key-1",
+        },
+        gps: {
+          ...store.getState().gps,
+          projectedLocation: {
+            timestamp: 123,
+            coords: [45.5, -122.7, 100],
+            index: 4,
+          },
+        },
+      });
+    });
+
+    it("does nothing when there is no active trailer session", async () => {
+      store.setState({ app: { ...store.getState().app, liveSessionId: null } });
+      const countBefore = PartySocket.instances.length;
+      await store.getState().broadcastPaceSettings();
+      expect(PartySocket.instances.length).toBe(countBefore);
+    });
+
+    it("does nothing when not in trailer mode", async () => {
+      store.setState({ app: { ...store.getState().app, mode: null } });
+      const countBefore = PartySocket.instances.length;
+      await store.getState().broadcastPaceSettings();
+      expect(PartySocket.instances.length).toBe(countBefore);
+    });
+
+    it("does nothing when the runner hasn't broadcast a fix yet", async () => {
+      store.setState({
+        gps: {
+          ...store.getState().gps,
+          projectedLocation: { timestamp: 0, coords: [], index: null },
+        },
+      });
+      const countBefore = PartySocket.instances.length;
+      await store.getState().broadcastPaceSettings();
+      expect(PartySocket.instances.length).toBe(countBefore);
+    });
+
+    it("re-sends the last known fix with the current pace settings", async () => {
+      await store.getState().broadcastPaceSettings();
+
+      const socket = PartySocket.instances.at(-1);
+      expect(socket.send).toHaveBeenCalledTimes(1);
+      const sent = JSON.parse(socket.send.mock.calls[0][0]);
+      expect(sent).toMatchObject({
+        type: "location",
+        coords: [45.5, -122.7, 100],
+        paceSettings: {
+          basePaceSPerKm: 500,
+          kFatigue: 0.002,
+          lifeBaseStopS: 3600,
+        },
+        writeKey: "write-key-1",
+      });
+    });
+  });
+
+  describe("connectToFollowerSession — pace settings sync", () => {
+    const runnerPaceSettings = {
+      basePaceSPerKm: 420,
+      kFatigue: 0.003,
+      lifeBaseStopS: 1800,
+    };
+
+    const dispatchLocation = (paceSettings) => {
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("message", {
+        data: JSON.stringify({
+          type: "location",
+          timestamp: 123,
+          coords: [45.5, -122.7, 100],
+          index: 4,
+          paceSettings,
+        }),
+      });
+    };
+
+    it("applies the runner's pace settings on first sync", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+
+      dispatchLocation(runnerPaceSettings);
+
+      expect(store.getState().setPaceSettings).toHaveBeenCalledWith(
+        runnerPaceSettings,
+      );
+      expect(store.getState().reprocessGPXFile).toHaveBeenCalled();
+      expect(store.getState().app.paceSettings).toEqual(runnerPaceSettings);
+    });
+
+    it("syncs a life-base-stop-only change even when pace and fatigue are unchanged", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      dispatchLocation(runnerPaceSettings);
+      store.getState().setPaceSettings.mockClear();
+      store.getState().reprocessGPXFile.mockClear();
+
+      dispatchLocation({ ...runnerPaceSettings, lifeBaseStopS: 7200 });
+
+      expect(store.getState().setPaceSettings).toHaveBeenCalledWith({
+        ...runnerPaceSettings,
+        lifeBaseStopS: 7200,
+      });
+      expect(store.getState().reprocessGPXFile).toHaveBeenCalled();
+      expect(store.getState().app.paceSettings.lifeBaseStopS).toBe(7200);
+    });
+
+    it("skips the sync when pace settings are unchanged", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      dispatchLocation(runnerPaceSettings);
+      store.getState().setPaceSettings.mockClear();
+      store.getState().reprocessGPXFile.mockClear();
+
+      dispatchLocation({ ...runnerPaceSettings });
+
+      expect(store.getState().setPaceSettings).not.toHaveBeenCalled();
+      expect(store.getState().reprocessGPXFile).not.toHaveBeenCalled();
+    });
+
+    it("ignores out-of-range pace settings", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+
+      dispatchLocation({ ...runnerPaceSettings, basePaceSPerKm: 999_999 });
+
+      expect(store.getState().setPaceSettings).not.toHaveBeenCalled();
     });
   });
 });

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools, persist, subscribeWithSelector } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 
-import { createAppSlice } from "./slices/app";
+import { createAppSlice, DEFAULT_PACE_SETTINGS } from "./slices/app";
 import { createGPSSlice } from "./slices/gps";
 import { createGpxSlice } from "./slices/gpx";
 import { createLegsSlice } from "./slices/legs";
@@ -115,5 +115,7 @@ export const useProcessingState = () =>
       error: state.worker.errorMessage,
     })),
   );
+
+export { DEFAULT_PACE_SETTINGS };
 
 export default useStore;

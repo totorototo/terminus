@@ -65,7 +65,10 @@ const StoryNow = memo(function StoryNow({ className }) {
 
   return (
     <div className={className}>
-      <StorySection eyebrow="Right now" title="Where you are">
+      <StorySection
+        eyebrow="Right now"
+        title={isFollower ? "Where they are" : "Where you are"}
+      >
         <div className="live-badge">
           <span className="live-dot" />
           live
@@ -88,7 +91,9 @@ const StoryNow = memo(function StoryNow({ className }) {
             <span className="now-label">remaining</span>
           </div>
         </div>
-        <p className="now-note">Based on your pace so far against terrain.</p>
+        <p className="now-note">
+          Based on {isFollower ? "their" : "your"} pace so far against terrain.
+        </p>
 
         {/* why: this is the only control that starts the GPS fix this whole
             page's live numbers depend on for a runner — everything else here
