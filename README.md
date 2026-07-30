@@ -2,7 +2,7 @@
 
 <p align="left">
 
-<a href="src/"><img src="https://img.shields.io/badge/Frontend-React%20%2B%20Three.js-purple" alt="Frontend React"></a>
+<a href="src/"><img src="https://img.shields.io/badge/Frontend-React%20%2B%20Editorial%20Story%20UI-purple" alt="Frontend React"></a>
 <a href="zig/"><img src="https://img.shields.io/badge/Performance-Zig%200.15.2%20%E2%86%92%20WASM-blue" alt="Zig WASM"></a>
 <a href="https://terminus-beta.netlify.app"><img src="https://img.shields.io/badge/Live%20Demo-terminus--beta.netlify.app-brightgreen" alt="Live Demo"></a>
 
@@ -10,14 +10,14 @@
 
 **[→ Live Demo](https://terminus-beta.netlify.app)**
 
-High-performance GPS route analysis and 3D visualization tool. Process large GPX files with interactive elevation profiles and real-time section analytics. Supports live location sharing between runners and followers via WebSocket relay.
+A scroll-driven editorial trail story: pick a race and scroll through it as a longform narrative — hero stats, terrain, climbs, pace model, checkpoints — with a live position marker during the run. Process large GPX files with real-time section analytics, and share live location between a runner and their followers via WebSocket relay and push notifications.
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        React UI (main thread)                   │
-│  Components · Zustand store · React Three Fiber / Three.js      │
+│  Story sections · Zustand store · d3 for chart geometry         │
 └───────────────────────────┬─────────────────────────────────────┘
                             │ postMessage (plain JS — no proxies)
                             ▼
@@ -36,40 +36,42 @@ High-performance GPS route analysis and 3D visualization tool. Process large GPX
 
 ┌─────────────────────────────────────────────────────────────────┐
 │               PartyKit WebSocket relay (party/)                 │
-│  Runner broadcasts GPS position → followers receive in real time│
+│  Runner broadcasts GPS position → followers receive in real     │
+│  time, plus rate-limited Web Push (VAPID) to subscribed browsers│
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 The Web Worker acts as a hard boundary: the main thread stays at 60 fps while the Worker owns the WASM module and all Zig memory. Results are sanitized to plain JS before crossing back to avoid Zigar proxy leaks inside React state.
 
+The UI has no 3D scene — an earlier React Three Fiber / Three.js route visualization was replaced by a data-story page (`src/components/story/`) built around a single throughline: the route's real elevation profile, rotated 90° and drawn as a contour line behind every section, with a marker at the runner's current position.
+
 ## Features
 
-- **Interactive 3D Elevation Profiles**: Geographic positioning with real-time camera controls
-- **Multiple Visualization Modes**:
-  - Section-based coloring for route segments
-  - Slope gradient coloring (5 difficulty levels)
-- **Section Analytics**: Distance, elevation gain/loss, slope percentages, difficulty rating
-- **Stage Analytics**: Per-stage details including distance, elevation, estimated/max time, cutoff time, difficulty, and slowest required pace
-- **Pace Profile**: Smooth chart of the slowest allowed pace (km/h) over distance, with tightest-cutoff and current-section stats
-- **Live Trail Progression**: Real-time progress bar with cumulative distance percentage, elevation gain and loss based on runner position
-- **ETA Estimation**: Per-section arrival prediction driven by a physiological pace model — Minetti et al. (2002) metabolic slope cost combined with exponential fatigue (`exp(k·d_eff)`, selectable Low/Moderate/High presets), a circadian sleep-deprivation slowdown, an optional weather penalty (temperature/humidity/wind/precipitation), and LifeBase recovery plus planned stop durations
-- **Peak Detection**: Automatic identification and visualization of peaks
-- **Climb Pro**: Automatic climb segment detection (AMPD valley detection + Garmin climb qualification) with a carousel card showing distance, elevation gain, and gradient per climb
-- **Checkpoint Markers**: Location labels along the route with distance-based visibility
-- **Off-Course Detection**: Automatic detection with visual scene alert and 3D label
-- **Runner / Follower Modes**: First-run wizard for role selection — runners broadcast their position, followers track it on the 3D trail
-- **Live GPS Tracking**: Real-time position updates on the 3D trail
-- **Live Location Sharing**: Broadcast your position to followers in real time
-- **PWA**: Installable as a Progressive Web App with offline support (cached routes, 3D analysis, and a basemap-free route preview when map tiles are unavailable) and home screen shortcut
-- **Dark/Light Theme**: Toggle between dark and light modes
+- **Editorial Story UI**: scroll-driven sections — Hero, Now, Climbs, Terrain, Pace, Stages, Checkpoints, Map, End — each revealing on scroll against the shared elevation-contour throughline
+- **Section Analytics**: distance, elevation gain/loss, slope percentages, difficulty rating
+- **Stage Analytics**: per-stage distance, elevation, estimated/max time, cutoff time, difficulty, and slowest required pace, with a collapsible list for long routes
+- **Climb Detection**: automatic climb segment detection (AMPD valley detection + Garmin Climb Pro qualification) with distance, elevation gain, and gradient per climb
+- **Terrain Section**: elevation profile, per-point slope/grade intensity strip, and slope profile chart
+- **Pace Profile**: chart of the slowest allowed pace (km/h) over distance, anchored to route start/end, with tightest-cutoff and current-section stats
+- **ETA Estimation**: per-checkpoint/stage arrival prediction driven by a physiological pace model — Minetti et al. (2002) metabolic slope cost combined with exponential fatigue (`exp(k·d_eff)`, selectable Low/Moderate/High presets), a circadian sleep-deprivation slowdown, an optional weather penalty (temperature/humidity/wind/precipitation), and LifeBase recovery plus planned stop durations
+- **Live Trail Progression**: real-time remaining distance and countdown to next arrival/cutoff based on runner position
+- **Checkpoint Markers**: location cards with distance, planned/live schedule, and per-checkpoint weather forecast
+- **Interactive 3D Map**: Mapbox GL route trace with 3D terrain (DEM exaggeration, 55° pitch) and a fullscreen toggle
+- **Off-Course Detection**: automatic detection when GPS position strays from the route
+- **Runner / Follower Modes**: single-step race picker — runners broadcast their position, followers join a room and track it live, with a third-person follower view
+- **Live Location Sharing**: broadcast position to followers over a PartyKit WebSocket relay, authenticated by a secret write key (room id is derived via SHA-256 so followers can never forge positions)
+- **Push Notifications**: followers can subscribe to Web Push (VAPID) to get a browser notification on runner position updates, rate-limited server-side
+- **Shareable Finish Card**: client-generated PNG invite/summary card (Satori + embedded QR code linking to the follower room)
+- **PWA**: installable as a Progressive Web App with offline support (cached routes and analytics) and home screen shortcut
+- **Dark/Light Theme**: toggle between dark and light modes
 
 ## Tech Stack
 
 - **Frontend**: React 19, Vite, Zustand (state management with DevTools/persist)
-- **3D Graphics**: React Three Fiber, Three.js, Drei helpers
+- **Charts & Map**: d3-scale/d3-shape/d3-array for chart geometry, Mapbox GL (`react-map-gl`) for the 3D terrain map
 - **Performance**: Zig 0.15.2 → WASM via Zigar bindings with zero-copy optimization
-- **Real-time**: PartyKit WebSocket relay for live location sharing
-- **Styling**: Styled-components with glass morphism theme
+- **Real-time**: PartyKit WebSocket relay for live location sharing, Web Push (VAPID) for follower notifications
+- **Styling**: Styled-components, `@react-spring/web` for motion (respects `prefers-reduced-motion`)
 - **PWA**: Vite PWA plugin with service worker and install prompt
 
 ## Prerequisites
@@ -91,7 +93,7 @@ The app will be available at `http://localhost:5173` (or next available port)
 
 ### Simulating GPS on iOS Simulator
 
-To test live GPS tracking features without a physical device, use the included script to simulate movement along the VVX XGTV 2026 route in the iOS Simulator:
+To test live GPS tracking features without a physical device, use the included script to simulate movement along a race route in the iOS Simulator:
 
 ```bash
 node scripts/simulate-location.js                  # default: 2m/s, 70 points, update every 100m
@@ -175,19 +177,35 @@ npm run test:zig      # All Zig tests
 npm run test:all      # Run both Zig and JavaScript tests
 ```
 
+Run end-to-end tests:
+
+```bash
+npm run e2e            # Playwright
+npm run e2e:headed     # Playwright, headed browser
+```
+
 ## Project Structure
 
 ```
 src/
-  components/           # React components for UI and 3D visualization
+  components/
+    story/               # Editorial story UI — Story.jsx orchestrates 9 scroll sections
+      sections/           # Hero, Now, Climbs, Terrain, Pace, Stages, Checkpoints, Map, End
+    trailData/            # Map, ElevationProfile, PaceProfile, SlopeProfile/Intensity, WeatherLine
+    followerScreen/        # Follower route entry (joins a PartyKit room)
+    trailerScreen/         # Runner route entry (renders the Story)
+    wizard/                 # Race picker (single-step entry)
+    help/                    # User guide route
   store/
-    slices/             # Zustand state management slices
-  helpers/              # Utility functions (colors, buffers, throttling)
-  utils/                # Coordinate transformations
-  gpxWorker.js          # Web Worker for background GPS processing
+    slices/               # Zustand state management slices
+  helpers/                 # Utility functions (colors, buffers, throttling, push notify)
+  utils/                   # Coordinate transforms, shareable trail card generation
+  hooks/                   # useGPXWorker, useCheckpointETAs, useStageETAs, etc.
+  gpxWorker.js             # Web Worker for background GPS processing
 
 party/
   server.js             # PartyKit WebSocket relay server for live location sharing
+  webpush.js             # Web Push (RFC 8291/8292) via Web Crypto — no Node deps
 
 zig/
   gpx.zig               # GPX file parsing (readGPXComplete WASM entry point)
@@ -205,7 +223,8 @@ zig/
   segment.zig           # Shared per-point Minetti metrics for sections & stages
   minetti.zig           # Minetti (2002) metabolic-cost slope pace model
   paceModel.zig         # Pace model: fatigue, circadian and weather factors
-  soundscape.zig        # Audio frame generation from elevation/slope/pace data
+  calibration.zig       # Pace model calibration helpers
+  soundscape.zig        # Audio frame generation from elevation/slope/pace data (WASM entry point wired in the worker; not currently exposed in the UI)
 ```
 
 ## Contribute
