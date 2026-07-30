@@ -63,7 +63,9 @@ const StoryClimbs = memo(function StoryClimbs({ className }) {
                   isCurrent ? " current" : ""
                 }`}
               >
-                <div className="climb-marker">{category?.key ?? "—"}</div>
+                <div className={`climb-marker${category ? "" : " unranked"}`}>
+                  {category?.key}
+                </div>
                 <div className="climb-info">
                   <div className="climb-meta-row">
                     <span className="climb-at">
