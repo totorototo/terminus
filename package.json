@@ -25,12 +25,8 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
-    "@react-spring/three": "10.0.3",
     "@react-spring/web": "10.0.3",
-    "@react-three/drei": "10.7.7",
-    "@react-three/fiber": "9.4.2",
     "@styled-icons/feather": "10.47.0",
-    "@uidotdev/usehooks": "^2.4.1",
     "d3-array": "3.2.4",
     "d3-scale": "4.0.2",
     "d3-shape": "3.2.0",
@@ -43,12 +39,8 @@
     "react-dom": "19.2.1",
     "react-helmet-async": "^3.0.0",
     "react-map-gl": "^8.1.1",
-    "react-virtualized-auto-sizer": "1.0.26",
     "satori": "^0.26.0",
     "styled-components": "^6.4.2",
-    "styled-icons": "10.47.1",
-    "three": "0.181.2",
-    "unenv": "^2.0.0-rc.0",
     "wouter": "^3.9.0",
     "zustand": "5.0.9"
   },
@@ -80,7 +72,6 @@
     "lint-staged": "16.2.7",
     "partykit": "^0.0.115",
     "prettier": "3.7.4",
-    "r3f-perf": "7.2.3",
     "rimraf": "6.1.2",
     "rollup-plugin-visualizer": "^6.0.5",
     "rollup-plugin-zigar": "0.15.2",
