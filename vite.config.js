@@ -25,6 +25,8 @@ const BUNDLE_BUDGETS = {
   "d3-vendor": 200 * 1024, // d3-*        minified ≈ 100 KB
   zustand: 80 * 1024, // Zustand     minified ≈  25 KB
   satori: 700 * 1024, // Satori      minified ≈ 400 KB
+  "mapbox-gl": 3_000 * 1024, // mapbox-gl   minified ≈ 1.8 MB
+  gpxWorker: 1_000 * 1024, // GPX worker  minified ≈ 615 KB
   index: 2_000 * 1024, // Main chunk (includes embedded WASM)
 };
 
@@ -98,10 +100,10 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         output: {
-          // Rolldown's advanced chunking. Unlike a manualChunks function,
+          // Rolldown's code splitting groups. Unlike a manualChunks function,
           // these groups are authoritative and are not folded back into their
           // sole importer, so the 3D vendor libs stay split for better caching.
-          advancedChunks: {
+          codeSplitting: {
             groups: [
               // Split Three.js core
               {
@@ -257,6 +259,7 @@ export default defineConfig(({ mode }) => {
           embedWASM: true,
           topLevelAwait: false,
         }),
+        bundleSizePlugin(),
       ],
     },
     preview: {
