@@ -189,11 +189,21 @@ pub fn computeBoundaryStats(
         const end_coord = [3]f64{ end_wpt.lat, end_wpt.lon, 0.0 };
 
         const start_result = trace.findClosestPointAfter(start_coord, search_start) orelse continue;
-        const end_result = trace.findClosestPointAfter(end_coord, start_result.index + 1) orelse continue;
-        search_start = end_result.index;
+
+        // The finish is definitionally the end of the recorded trace. Resolving it via
+        // nearest-neighbor search is unreliable on loop courses where Start and Arrival
+        // share (near-)identical coordinates and no other boundary lies between them:
+        // findClosestPointAfter's early-stop heuristic locks onto a spurious match just
+        // past the start line instead of continuing on to the true finish.
+        const end_index = if (end_wpt.isFinish())
+            trace.points.len - 1
+        else blk: {
+            const end_result = trace.findClosestPointAfter(end_coord, start_result.index + 1) orelse continue;
+            break :blk end_result.index;
+        };
+        search_start = end_index;
 
         const start_index = start_result.index;
-        const end_index = end_result.index;
         if (start_index >= end_index) continue;
 
         const dist = trace.cumulativeDistances[end_index] - trace.cumulativeDistances[start_index];

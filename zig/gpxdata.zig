@@ -44,6 +44,12 @@ pub const Waypoint = struct {
     pub fn isSectionBoundary(self: *const Waypoint) bool {
         return self.wptType != null;
     }
+
+    /// Returns true if this waypoint is the race finish.
+    pub fn isFinish(self: *const Waypoint) bool {
+        const t = self.wptType orelse return false;
+        return std.mem.eql(u8, t, "Arrival");
+    }
 };
 
 test "Waypoint.isStageBoundary: Start, LifeBase, Arrival return true" {

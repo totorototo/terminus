@@ -135,6 +135,42 @@ test "computeStagesFromWaypoints: Start-LifeBase-Arrival produces two stages" {
     try expect(stages.?[0].endIndex <= stages.?[1].startIndex);
 }
 
+test "computeStagesFromWaypoints: loop course with coincident Start/Arrival resolves the true finish" {
+    const allocator = std.testing.allocator;
+    // A loop course: starts at (0,0), runs out to (0.01,0) and back to
+    // (0.0001,0) — a finish point ~11m from the start, same as a real GPX
+    // where Start/Arrival share (near-)identical coordinates.
+    var points = try allocator.alloc([3]f64, 21);
+    defer allocator.free(points);
+    for (0..11) |i| {
+        const t = @as(f64, @floatFromInt(i)) * 0.001;
+        points[i] = [3]f64{ t, 0.0, 100.0 };
+    }
+    for (11..21) |i| {
+        const t = @as(f64, @floatFromInt(20 - i)) * 0.001;
+        points[i] = [3]f64{ t, 0.0, 100.0 };
+    }
+    points[20] = [3]f64{ 0.0001, 0.0, 100.0 };
+    var trace = try Trace.init(allocator, points);
+    defer trace.deinit(allocator);
+
+    // No LifeBase — just Start and Arrival, coordinates ~11m apart.
+    const waypoints = [_]Waypoint{
+        .{ .lat = 0.0000, .lon = 0.0, .name = "Start", .wptType = "Start", .time = null },
+        .{ .lat = 0.0001, .lon = 0.0, .name = "Arrival", .wptType = "Arrival", .time = null },
+    };
+
+    const stages = try computeFromWaypoints(&trace, allocator, &waypoints, paceModel.DEFAULT_BASE_PACE_S_PER_KM, paceModel.K_FATIGUE, paceModel.DEFAULT_LIFE_BASE_STOP_S, paceModel.WeatherLookup.empty);
+    defer if (stages) |s| allocator.free(s);
+
+    try expect(stages != null);
+    try expectEqual(@as(usize, 1), stages.?.len);
+    // Must resolve to the end of the trace (the true finish), not a spurious
+    // near-start match within the first couple of points.
+    try expectEqual(@as(usize, 20), stages.?[0].endIndex);
+    try expect(stages.?[0].totalDistance > 1000.0);
+}
+
 test "stage maxCompletionTime is set from waypoint timestamps" {
     const allocator = std.testing.allocator;
 
