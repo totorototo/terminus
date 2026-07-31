@@ -103,7 +103,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.35,
+        0.85,
       )};
   }
 `;
