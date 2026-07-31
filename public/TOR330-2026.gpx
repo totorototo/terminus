@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" creator="terminus" version="1.1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
   <metadata>
-    <name>TOR330 2025</name>
-    <desc>TOR330 - 330km ultra trail around the Aosta Valley (2025 edition)</desc>
-    <time>2025-09-07T08:00:00Z</time>
+    <name>TOR330 2026</name>
+    <desc>TOR330 - 330km ultra trail around the Aosta Valley (2026 edition)</desc>
+    <time>2026-09-07T08:00:00Z</time>
   </metadata>
   <wpt lat="45.792789570987225" lon="6.971815265715122">
     <ele>1215</ele>
-    <time>2025-09-07T08:00:00Z</time>
+    <time>2026-09-07T08:00:00Z</time>
     <name>Start TOR330 - Tor des Géants</name>
-    <cmt>Départ TOR330 2025</cmt>
-    <desc>Départ TOR330 2025</desc>
+    <cmt>Départ TOR330 2026</cmt>
+    <desc>Départ TOR330 2026</desc>
     <sym>Flag, Green</sym>
     <type>Start</type>
   </wpt>
@@ -27,7 +27,7 @@
   </wpt>
   <wpt lat="45.715356543660164" lon="6.950102280825377">
     <ele>1460</ele>
-    <time>2025-09-08T13:00:00Z</time>
+    <time>2026-09-08T13:00:00Z</time>
     <name>La Thuile</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -72,7 +72,7 @@
   </wpt>
   <wpt lat="45.629992978647351" lon="7.062552971765399">
     <ele>1686.015625</ele>
-    <time>2025-09-09T01:00:00Z</time>
+    <time>2026-09-09T01:00:00Z</time>
     <name>BaseVita-Valgrisenche</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -105,7 +105,7 @@
     <sym>Triangle, Green</sym>
   </wpt>
   <wpt lat="45.567569006234407" lon="7.207719990983605">
-    <time>2025-09-09T16:00:00Z</time>
+    <time>2026-09-09T16:00:00Z</time>
     <name>Eaux Rousses</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -132,7 +132,7 @@
     <sym>Flag, Blue</sym>
   </wpt>
   <wpt lat="45.610961029306054" lon="7.354360967874527">
-    <time>2025-09-10T11:00:00Z</time>
+    <time>2026-09-10T11:00:00Z</time>
     <name>BaseVita-Cogne</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -195,7 +195,7 @@
   </wpt>
   <wpt lat="45.604144027456641" lon="7.7749839797616">
     <ele>319.421875</ele>
-    <time>2025-09-11T07:00:00Z</time>
+    <time>2026-09-11T07:00:00Z</time>
     <name>BaseVita-Donnas</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -276,7 +276,7 @@
   </wpt>
   <wpt lat="45.718532614409924" lon="7.90335944853723">
     <ele>1557.375</ele>
-    <time>2025-09-12T02:00:00Z</time>
+    <time>2026-09-12T02:00:00Z</time>
     <name>Niel - Dortoir La Gruba</name>
     <cmt>Dortoir - Dormitory</cmt>
     <desc>Dortoir - Dormitory</desc>
@@ -298,7 +298,7 @@
   </wpt>
   <wpt lat="45.766415996477008" lon="7.835558988153934">
     <ele>1377.949219000000085</ele>
-    <time>2025-09-12T12:00:00Z</time>
+    <time>2026-09-12T12:00:00Z</time>
     <name>BaseVita-Gressoney</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -327,7 +327,7 @@
   </wpt>
   <wpt lat="45.839775083586574" lon="7.731702765449882">
     <ele>1571.39453125</ele>
-    <time>2025-09-12T21:00:00Z</time>
+    <time>2026-09-12T21:00:00Z</time>
     <name>Champoluc</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -368,7 +368,7 @@
   </wpt>
   <wpt lat="45.875321980565786" lon="7.62355400249362">
     <ele>1500</ele>
-    <time>2025-09-13T08:00:00Z</time>
+    <time>2026-09-13T08:00:00Z</time>
     <name>BaseVita-Valtournenche</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -437,7 +437,7 @@
   </wpt>
   <wpt lat="45.850552031770349" lon="7.381283976137638">
     <ele>1347</ele>
-    <time>2025-09-13T21:00:00Z</time>
+    <time>2026-09-13T21:00:00Z</time>
     <name>Oyace</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -464,7 +464,7 @@
     <sym>Restaurant</sym>
   </wpt>
   <wpt lat="45.85350195877254" lon="7.304641027003527">
-    <time>2025-09-14T09:00:00Z</time>
+    <time>2026-09-14T09:00:00Z</time>
     <name>BaseVita-Ollomont</name>
     <cmt>Base de vie - Life base</cmt>
     <desc>Base de vie - Life base</desc>
@@ -501,7 +501,7 @@
   </wpt>
   <wpt lat="45.821638153865933" lon="7.179051535204053">
     <ele>1521.34765625</ele>
-    <time>2025-09-14T18:00:00Z</time>
+    <time>2026-09-14T18:00:00Z</time>
     <name>Bosses</name>
     <cmt>Ravitaillement - Refreshment point</cmt>
     <desc>Ravitaillement - Refreshment point</desc>
@@ -540,7 +540,7 @@
   </wpt>
   <wpt lat="45.790064865723252" lon="6.973367175087333">
     <ele>1215</ele>
-    <time>2025-09-15T12:00:00Z</time>
+    <time>2026-09-15T12:00:00Z</time>
     <name>TORX Finish Line</name>
     <cmt>Arrivée TOR330 2025</cmt>
     <desc>Arrivée TOR330 2025</desc>
