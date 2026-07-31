@@ -99,7 +99,8 @@ const style = (Component) => styled(Component)`
     display: block;
     margin-top: 1.5rem;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
