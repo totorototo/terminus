@@ -40,23 +40,20 @@ test.describe("A11y — Wizard", () => {
 // ── Keyboard navigation ───────────────────────────────────────────────────────
 
 test.describe("A11y — Keyboard navigation", () => {
-  test("Tab reaches the primary role buttons, and Enter activates them", async ({
+  test("Tab reaches the first race choice, and Enter activates it", async ({
     page,
   }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Terminus" })).toBeVisible({
       timeout: 10_000,
     });
+    await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
 
     await page.keyboard.press("Tab");
-    await expect(
-      page.getByRole("button", { name: "I'm running" }),
-    ).toBeFocused();
+    await expect(page.locator(".choice-btn").first()).toBeFocused();
 
     await page.keyboard.press("Enter");
-    await expect(
-      page.getByRole("heading", { name: "Pick a race" }),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
   });
 
   test("a keyboard-focused control shows a visible focus outline", async ({
@@ -66,37 +63,16 @@ test.describe("A11y — Keyboard navigation", () => {
     await expect(page.getByRole("heading", { name: "Terminus" })).toBeVisible({
       timeout: 10_000,
     });
+    await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
 
     await page.keyboard.press("Tab");
-    const btn = page.getByRole("button", { name: "I'm running" });
+    const btn = page.locator(".choice-btn").first();
     await expect(btn).toBeFocused();
 
     const outlineWidth = await btn.evaluate(
       (el) => getComputedStyle(el).outlineWidth,
     );
     expect(outlineWidth).not.toBe("0px");
-  });
-
-  test("the follower code input is reachable and submittable via keyboard", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await page
-      .getByRole("button", { name: "I'm following" })
-      .click({ timeout: 10_000 });
-    await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
-    await page.locator(".choice-btn").first().click();
-
-    const input = page.locator("input.code-input");
-    await expect(input).toBeFocused();
-
-    await page.keyboard.type("0a1b2c3d4e5f6a7b");
-    await page.keyboard.press("Enter");
-
-    // A valid code + Enter submits the same as clicking "Follow".
-    await expect(page).toHaveURL(/\/follow\/[^/]+\/0a1b2c3d4e5f6a7b$/, {
-      timeout: 10_000,
-    });
   });
 });
 

@@ -1,6 +1,5 @@
 import { memo, useState } from "react";
 
-import { Copy } from "@styled-icons/feather/Copy";
 import { Download } from "@styled-icons/feather/Download";
 import { HelpCircle } from "@styled-icons/feather/HelpCircle";
 import { LogOut } from "@styled-icons/feather/LogOut";
@@ -24,7 +23,6 @@ const StoryEnd = memo(function StoryEnd({ className }) {
   const [confirmingFlush, setConfirmingFlush] = useState(false);
   const [sharingCard, setSharingCard] = useState(false);
   const [cardError, setCardError] = useState(false);
-  const [roomIdCopied, setRoomIdCopied] = useState(false);
 
   const stages = useStore((state) => state.stages);
   const stats = useStore((state) => state.stats);
@@ -36,7 +34,6 @@ const StoryEnd = memo(function StoryEnd({ className }) {
     toggleOutdoorMode,
     shareLocation,
     flush,
-    roomId,
     isFollower,
   } = useStore(
     useShallow((state) => ({
@@ -46,7 +43,6 @@ const StoryEnd = memo(function StoryEnd({ className }) {
       toggleOutdoorMode: state.toggleOutdoorMode,
       shareLocation: state.shareLocation,
       flush: state.flush,
-      roomId: state.app.followerRoomId ?? state.app.liveSessionId,
       isFollower: state.gps.followerConnectionStatus === "connected",
     })),
   );
@@ -121,24 +117,6 @@ const StoryEnd = memo(function StoryEnd({ className }) {
             <button className="action-btn" onClick={shareLocation}>
               <UserPlus size={16} />
               Invite someone to follow
-            </button>
-          )}
-
-          {roomId && (
-            <button
-              type="button"
-              className="room-id"
-              onClick={() => {
-                navigator.clipboard.writeText(roomId);
-                setRoomIdCopied(true);
-                setTimeout(() => setRoomIdCopied(false), 2000);
-              }}
-              aria-label={`Copy room code ${roomId}`}
-            >
-              <span className="room-id-label">Room</span>
-              <span className="room-id-value">{roomId}</span>
-              <Copy size={13} />
-              {roomIdCopied && <span className="room-id-copied">Copied</span>}
             </button>
           )}
 

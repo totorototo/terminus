@@ -55,35 +55,6 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  .progress-dots {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding-bottom: 1rem;
-    flex-shrink: 0;
-  }
-
-  .progress-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.2,
-      )};
-    transition:
-      background ${(props) => props.theme.transitions["--transition-fast"]},
-      transform ${(props) => props.theme.transitions["--transition-fast"]};
-
-    &.active {
-      background: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-text"]};
-      transform: scale(1.4);
-    }
-  }
-
   .error-state {
     display: flex;
     flex-direction: column;
@@ -291,79 +262,6 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  .back-btn {
-    align-self: flex-start;
-    background: none;
-    border: none;
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.35,
-      )};
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 0.8125rem;
-    cursor: pointer;
-    padding: 0;
-    transition: color ${(props) => props.theme.transitions["--transition-fast"]};
-    -webkit-tap-highlight-color: transparent;
-
-    &:hover {
-      color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    }
-  }
-
-  .code-input {
-    width: 100%;
-    padding: 0.875rem 1.25rem;
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
-    border: 1px solid
-      ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.15,
-        )};
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.05,
-      )};
-    color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 1.75rem;
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    letter-spacing: 0.25em;
-    text-align: center;
-    text-transform: uppercase;
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color
-      ${(props) => props.theme.transitions["--transition-fast"]};
-
-    &::placeholder {
-      color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.18,
-        )};
-    }
-
-    &:focus {
-      border-color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.5,
-        )};
-      box-shadow: 0 0 0 1px
-        ${(props) =>
-          rgba(
-            props.theme.colors[props.theme.currentVariant]["--color-primary"],
-            0.15,
-          )};
-    }
-  }
-
   .footer {
     position: absolute;
     bottom: 1.5rem;
@@ -379,60 +277,6 @@ const style = (Component) => styled(Component)`
       )};
     letter-spacing: 0.04em;
     pointer-events: none;
-  }
-
-  .confirm-btn {
-    width: 100%;
-    padding: 1rem;
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
-    border: 1px solid
-      ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.3,
-        )};
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-primary"],
-        0.1,
-      )};
-    color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 0.9375rem;
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    letter-spacing: -0.01em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    transition: all ${(props) => props.theme.transitions["--transition-base"]};
-    -webkit-tap-highlight-color: transparent;
-
-    &:hover:not(:disabled) {
-      background: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.18,
-        )};
-      border-color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.45,
-        )};
-      box-shadow: 0 0 20px
-        ${(props) =>
-          rgba(
-            props.theme.colors[props.theme.currentVariant]["--color-primary"],
-            0.14,
-          )};
-    }
-
-    &:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
   }
 `;
 

@@ -29,42 +29,12 @@ test.describe("Wizard — error states", () => {
     });
 
     await page.goto("/");
-    await page
-      .getByRole("button", { name: "I'm running" })
-      .click({ timeout: 10_000 });
 
     await expect(page.getByText("Could not load races.")).toBeVisible({
       timeout: 10_000,
     });
     const retryBtn = page.getByRole("button", { name: "Try again" });
     await expect(retryBtn).toBeVisible();
-
-    shouldFail = false;
-    await retryBtn.click();
-
-    await expect(page.locator(".choice-btn").first()).toBeVisible({
-      timeout: 10_000,
-    });
-  });
-
-  test("follower flow also recovers from a races.json failure", async ({
-    page,
-  }) => {
-    let shouldFail = true;
-    await page.route("**/races.json", (route) => {
-      if (shouldFail) {
-        return route.fulfill({ status: 500, body: "Internal Server Error" });
-      }
-      return route.continue();
-    });
-
-    await page.goto("/");
-    await page
-      .getByRole("button", { name: "I'm following" })
-      .click({ timeout: 10_000 });
-
-    const retryBtn = page.getByRole("button", { name: "Try again" });
-    await expect(retryBtn).toBeVisible({ timeout: 10_000 });
 
     shouldFail = false;
     await retryBtn.click();

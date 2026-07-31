@@ -33,7 +33,6 @@ import {
   heroDistanceKm,
   MID_TRAIL,
   mockClipboard,
-  selectFollowerRole,
   selectRunnerRole,
 } from "./helpers.js";
 
@@ -241,14 +240,12 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
           () => window.__capturedCode,
         );
         expect(capturedUrl).toMatch(/\/follow\/[^/]+\/[a-f0-9]{16}$/);
-        const roomCode = capturedUrl.split("/").pop();
 
-        // ── Follower joins that room ────────────────────────────────────
+        // ── Follower joins that room via the invite link ─────────────────
         const followerPage = await followerCtx.newPage();
         await followerPage.clock.setFixedTime(RACE_STARTED_AT);
 
-        await followerPage.goto("/");
-        await selectFollowerRole(followerPage, roomCode);
+        await followerPage.goto(capturedUrl);
         await expect(followerPage.locator("h1.name")).toBeVisible({
           timeout: 15_000,
         });

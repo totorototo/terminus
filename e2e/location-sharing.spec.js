@@ -6,10 +6,10 @@
  *   - in CI:   the cloud relay deployed at VITE_PARTYKIT_HOST
  *
  * Flow:
- *   1. Runner goes through the wizard ("I'm running").
+ *   1. Runner goes through the wizard, picking a race.
  *   2. Runner clicks "Invite someone to follow" — a follow URL lands in the
  *      clipboard.
- *   3. Follower goes through the wizard ("I'm following") and enters the code.
+ *   3. Follower opens that URL directly, same as clicking a shared link.
  *   4. Runner clicks "Spot me" — fake GPS at the trail midpoint triggers
  *      spotMe → Zig projection → PartyKit broadcast.
  *   5. Assertion on the follower page: the "Right now" km-left stat moves
@@ -24,7 +24,6 @@ import {
   heroDistanceKm,
   kmLeft,
   mockClipboard,
-  selectFollowerRole,
   selectRunnerRole,
 } from "./helpers.js";
 
@@ -73,13 +72,11 @@ test.describe("Location Sharing", () => {
           () => window.__capturedCode,
         );
         expect(capturedUrl).toMatch(/\/follow\/[^/]+\/[a-f0-9]{16}$/);
-        const roomCode = capturedUrl.split("/").pop();
 
-        // ── 3. Follower goes through the wizard with that code ─────────────
+        // ── 3. Follower opens the invite link directly ──────────────────────
         const followerPage = await followerCtx.newPage();
 
-        await followerPage.goto("/");
-        await selectFollowerRole(followerPage, roomCode);
+        await followerPage.goto(capturedUrl);
 
         // Story hero visible on the follower too
         await expect(followerPage.locator("h1.name")).toBeVisible({

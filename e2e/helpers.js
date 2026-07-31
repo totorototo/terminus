@@ -31,8 +31,7 @@ export const heroDistanceKm = (page) =>
   page.locator(".stat-row .stat").first().locator(".stat-value");
 
 /**
- * Click "I'm running" on the wizard, pick the first available race, and wait
- * for the app to load.
+ * Pick the first available race on the wizard and wait for the app to load.
  * Call this after page.goto("/") in any test that needs the runner (trailer) UI.
  */
 export async function selectRunnerRole(page) {
@@ -40,34 +39,10 @@ export async function selectRunnerRole(page) {
   // Force mobile viewport so Trailer renders TopSheetPanel/BottomSheetPanel
   // instead of DesktopLayout, regardless of how the browser context was created.
   await page.setViewportSize({ width: 390, height: 844 });
-  await page
-    .getByRole("button", { name: "I'm running" })
-    .click({ timeout: 10000 });
 
   // Pick the first race from the list (waits for races to load from /races.json)
   await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
   await page.locator(".choice-btn").first().click();
-}
-
-/**
- * Go through the follower wizard steps: click "I'm following", pick the first
- * available race, enter the provided room code, then click "Follow".
- * Call this after page.goto("/").
- *
- * @param {import("@playwright/test").Page} page
- * @param {string} roomCode - room code (16 lowercase hex chars)
- */
-export async function selectFollowerRole(page, roomCode) {
-  await page
-    .getByRole("button", { name: "I'm following" })
-    .click({ timeout: 10000 });
-
-  // Pick the first race from the list (waits for races to load from /races.json)
-  await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
-  await page.locator(".choice-btn").first().click();
-
-  await page.locator("input.code-input").fill(roomCode);
-  await page.getByRole("button", { name: "Follow" }).click();
 }
 
 /**

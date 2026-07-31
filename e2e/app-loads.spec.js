@@ -21,7 +21,9 @@ test.describe("Smoke", () => {
     await expect(page.getByRole("heading", { name: "Terminus" })).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByText("What are you doing today?")).toBeVisible();
+    await expect(
+      page.getByText("Which race are you running today?"),
+    ).toBeVisible();
     expect(errors).toEqual([]);
   });
 
@@ -49,9 +51,6 @@ test.describe("Smoke", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
 
-    await page
-      .getByRole("button", { name: "I'm running" })
-      .click({ timeout: 10_000 });
     await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
     await page.locator(".choice-btn").first().click();
 
