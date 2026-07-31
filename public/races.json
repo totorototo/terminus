@@ -1,6 +1,30 @@
 [
   {
     "id": "grp-160-2026",
-    "name": "GRP 160 2026"
+    "name": "Ultra Tour"
+  },
+  {
+    "id": "grp-120-2026",
+    "name": "Tour des Cirques"
+  },
+  {
+    "id": "grp-80-2026",
+    "name": "Tour des Lacs"
+  },
+  {
+    "id": "grp-60-2026",
+    "name": "Tour du Moudang"
+  },
+  {
+    "id": "grp-50-2026",
+    "name": "Tour du Bastan"
+  },
+  {
+    "id": "grp-40-gela-2026",
+    "name": "Tour de la Gela"
+  },
+  {
+    "id": "grp-40-neouvielle-2026",
+    "name": "Tour du Néouvielle"
   }
 ]
