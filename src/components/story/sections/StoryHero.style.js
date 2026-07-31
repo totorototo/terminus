@@ -94,6 +94,18 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
+
+  .build-number {
+    display: block;
+    margin-top: 1.5rem;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.35,
+      )};
+  }
 `;
 
 export default style;
