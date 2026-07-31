@@ -4,6 +4,7 @@ import {
   requestNotificationPermission,
   subscribeToPush,
 } from "../../helpers/notify";
+import { showToast } from "../../helpers/toast.js";
 import { track } from "../../lib/analytics.js";
 import { deriveRoomId, generateWriteKey } from "../../lib/roomAuth.js";
 
@@ -371,6 +372,8 @@ export const createGPSSlice = (set, get) => {
       });
 
       followerSocket.addEventListener("open", async () => {
+        const wasDisconnected =
+          get().gps.followerConnectionStatus === "disconnected";
         set(
           (state) => ({
             gps: { ...state.gps, followerConnectionStatus: "connected" },
@@ -378,6 +381,7 @@ export const createGPSSlice = (set, get) => {
           undefined,
           "gps/followerConnectionStatus",
         );
+        if (wasDisconnected) showToast("Back online", { type: "success" });
         if (Notification.permission === "granted") {
           const subscription = await subscribeToPush();
           if (subscription && followerSocket?.readyState === WebSocket.OPEN) {
@@ -391,7 +395,8 @@ export const createGPSSlice = (set, get) => {
         }
       });
 
-      followerSocket.addEventListener("close", () => {
+      const handleFollowerSocketDrop = () => {
+        const wasConnected = get().gps.followerConnectionStatus === "connected";
         set(
           (state) => ({
             gps: { ...state.gps, followerConnectionStatus: "disconnected" },
@@ -399,17 +404,13 @@ export const createGPSSlice = (set, get) => {
           undefined,
           "gps/followerConnectionStatus",
         );
-      });
+        if (wasConnected) {
+          showToast("Connection lost. Reconnecting…", { type: "error" });
+        }
+      };
 
-      followerSocket.addEventListener("error", () => {
-        set(
-          (state) => ({
-            gps: { ...state.gps, followerConnectionStatus: "disconnected" },
-          }),
-          undefined,
-          "gps/followerConnectionStatus",
-        );
-      });
+      followerSocket.addEventListener("close", handleFollowerSocketDrop);
+      followerSocket.addEventListener("error", handleFollowerSocketDrop);
 
       followerSocket.addEventListener("message", (event) => {
         let msg;

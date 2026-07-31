@@ -8,6 +8,7 @@ import InstallPromptOverlay from "./components/installPromptOverlay/InstallPromp
 
 const Help = lazy(() => import("./components/help/Help.jsx"));
 import LandscapeOverlay from "./components/landscapeOverlay/LandscapeOverlay.jsx";
+import ToastContainer from "./components/toast/ToastContainer.jsx";
 import TrailerScreen from "./components/trailerScreen/TrailerScreen.jsx";
 import Wizard from "./components/wizard/Wizard.jsx";
 import { usePageTracking } from "./hooks/usePageTracking.js";
@@ -28,6 +29,7 @@ function App({ className }) {
       </Helmet>
       <LandscapeOverlay />
       <InstallPromptOverlay />
+      <ToastContainer />
       <Switch>
         <Route path="/follow/:raceId/:roomId">
           <FollowerScreen />

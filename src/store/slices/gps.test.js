@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { create } from "zustand";
 
 import createRingBuffer from "../../helpers/createRingBuffer";
+import { showToast } from "../../helpers/toast.js";
 import { createGPSSlice } from "./gps";
 
 // Static mock at top of file (SIMPLEST approach)
@@ -23,6 +24,10 @@ vi.mock("../../helpers/createRingBuffer", () => ({
       isEmpty: vi.fn(() => buffer.length === 0),
     };
   }),
+}));
+
+vi.mock("../../helpers/toast.js", () => ({
+  showToast: vi.fn(),
 }));
 
 vi.mock("../../helpers/notify", () => ({
@@ -68,6 +73,10 @@ describe("GPS Slice", () => {
   beforeEach(() => {
     // Reset all mocks
     vi.clearAllMocks();
+
+    // jsdom does not implement the Notification API; connectToFollowerSession's
+    // "open" handler reads Notification.permission before any push-subscribe logic.
+    global.Notification = { permission: "denied" };
 
     // Create mock geolocation FIRST
     mockGetCurrentPosition = vi.fn();
@@ -666,6 +675,78 @@ describe("GPS Slice", () => {
       dispatchLocation({ ...runnerPaceSettings, basePaceSPerKm: 999_999 });
 
       expect(store.getState().setPaceSettings).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("connectToFollowerSession — connection status toasts", () => {
+    it("does not toast on the initial connect", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+
+      socket.dispatch("open", {});
+
+      expect(showToast).not.toHaveBeenCalled();
+    });
+
+    it("does not toast a drop that happens before ever connecting", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+
+      socket.dispatch("close", {});
+
+      expect(showToast).not.toHaveBeenCalled();
+    });
+
+    it("toasts a connection drop only after having been connected", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("open", {});
+
+      socket.dispatch("close", {});
+
+      expect(showToast).toHaveBeenCalledWith("Connection lost. Reconnecting…", {
+        type: "error",
+      });
+      expect(store.getState().gps.followerConnectionStatus).toBe(
+        "disconnected",
+      );
+    });
+
+    it("does not double-toast when error and close both fire for the same drop", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("open", {});
+
+      socket.dispatch("error", {});
+      socket.dispatch("close", {});
+
+      expect(showToast).toHaveBeenCalledTimes(1);
+    });
+
+    it("toasts reconnection after a drop", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("open", {});
+      socket.dispatch("close", {});
+      showToast.mockClear();
+
+      socket.dispatch("open", {});
+
+      expect(showToast).toHaveBeenCalledWith("Back online", {
+        type: "success",
+      });
+    });
+
+    it("does not toast after an intentional disconnectFollowerSession", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("open", {});
+
+      store.getState().disconnectFollowerSession();
+      showToast.mockClear();
+      socket.dispatch("close", {});
+
+      expect(showToast).not.toHaveBeenCalled();
     });
   });
 });
