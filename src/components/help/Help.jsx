@@ -57,11 +57,12 @@ function Help({ className }) {
         {/* GETTING STARTED */}
         <section id="start" className="section">
           <p className="sec-label">01 — Getting Started</p>
-          <h2 className="sec-title">Choose your role</h2>
+          <h2 className="sec-title">Pick your race</h2>
           <p className="sec-body">
-            When you open Terminus you are greeted by a short wizard. First tell
-            the app who you are, then pick your race — and if you are following,
-            enter the runner&apos;s room code.
+            Open Terminus and pick your race — you are in as the runner.
+            Followers never see this screen: a runner sends them a link from End
+            of Line, and tapping it drops them straight into the same story, no
+            picking or typing required.
           </p>
           <div className="role-grid">
             <div className="role-card rn">
@@ -83,7 +84,7 @@ function Help({ className }) {
               <p>
                 You are on the course. Terminus turns your race into a
                 scroll-driven story — pace, terrain, checkpoints, and a live
-                position feed — and lets you share a room code with your crew.
+                position feed — and lets you invite your crew with a link.
               </p>
             </div>
             <div className="role-card fo">
@@ -104,9 +105,9 @@ function Help({ className }) {
               </div>
               <h3>Follower</h3>
               <p>
-                You are watching from the sidelines. Enter the runner&apos;s
-                room code to join their session and read the exact same story,
-                updated live as they move.
+                You are watching from the sidelines. Tap the link a runner
+                shares with you to join their session and read the exact same
+                story, updated live as they move.
               </p>
             </div>
           </div>
@@ -442,13 +443,9 @@ function Help({ className }) {
               <tr>
                 <td>Invite someone to follow</td>
                 <td>
-                  Runner only. Generates a room code and shares a follow link so
-                  others can track you live.
+                  Runner only. Generates and shares a follow link so others can
+                  track you live.
                 </td>
-              </tr>
-              <tr>
-                <td>Room code</td>
-                <td>Tap to copy the current session&apos;s room code.</td>
               </tr>
               <tr>
                 <td>Switch theme</td>
@@ -489,11 +486,12 @@ function Help({ className }) {
             <div className="feat">
               <h4>
                 <span className="dot t" />
-                Room code
+                Invite link
               </h4>
               <p>
-                The runner shares a room code from &quot;Invite someone to
-                follow&quot;. Enter it in the Following flow to connect.
+                The runner shares a link from &quot;Invite someone to
+                follow&quot;. Opening it connects you straight to their session
+                — no picking a race or entering a code.
               </p>
             </div>
             <div className="feat">
