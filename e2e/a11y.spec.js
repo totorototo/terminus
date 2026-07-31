@@ -2,10 +2,11 @@
  * Accessibility (a11y) tests.
  *
  * Combines automated axe-core WCAG scanning with targeted manual checks:
- *  - axe scans on key app states (wizard, runner story, both themes)
+ *  - axe scans on key app states (wizard, runner story, follower story, both themes)
  *  - Every story section exposes an accessible heading
  *  - The live-tracking toggle exposes aria-pressed
  *  - App survives reduced-motion preference
+ *  - Keyboard navigation reaches primary actions and shows a focus outline
  */
 
 import AxeBuilder from "@axe-core/playwright";
@@ -33,6 +34,69 @@ test.describe("A11y — Wizard", () => {
     });
     const violations = await axeScan(page);
     expect(violations).toEqual([]);
+  });
+});
+
+// ── Keyboard navigation ───────────────────────────────────────────────────────
+
+test.describe("A11y — Keyboard navigation", () => {
+  test("Tab reaches the primary role buttons, and Enter activates them", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Terminus" })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.keyboard.press("Tab");
+    await expect(
+      page.getByRole("button", { name: "I'm running" }),
+    ).toBeFocused();
+
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("heading", { name: "Pick a race" }),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("a keyboard-focused control shows a visible focus outline", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Terminus" })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.keyboard.press("Tab");
+    const btn = page.getByRole("button", { name: "I'm running" });
+    await expect(btn).toBeFocused();
+
+    const outlineWidth = await btn.evaluate(
+      (el) => getComputedStyle(el).outlineWidth,
+    );
+    expect(outlineWidth).not.toBe("0px");
+  });
+
+  test("the follower code input is reachable and submittable via keyboard", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: "I'm following" })
+      .click({ timeout: 10_000 });
+    await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
+    await page.locator(".choice-btn").first().click();
+
+    const input = page.locator("input.code-input");
+    await expect(input).toBeFocused();
+
+    await page.keyboard.type("0a1b2c3d4e5f6a7b");
+    await page.keyboard.press("Enter");
+
+    // A valid code + Enter submits the same as clicking "Follow".
+    await expect(page).toHaveURL(/\/follow\/[^/]+\/0a1b2c3d4e5f6a7b$/, {
+      timeout: 10_000,
+    });
   });
 });
 
@@ -80,6 +144,23 @@ test.describe("A11y — Runner app", () => {
     // Allow one render cycle after preference change
     await expect.poll(() => errors, { timeout: 2_000 }).toHaveLength(0);
     await expect(page.locator("h1.name")).toBeVisible();
+  });
+});
+
+// ── Follower app state ────────────────────────────────────────────────────────
+
+test.describe("A11y — Follower app", () => {
+  test.beforeEach(async ({ page }) => {
+    // A syntactically valid but never-broadcasting room code is enough to
+    // reach the follower's pre-fix story view — the GPX loads independently
+    // of whether a runner is actually connected to the room.
+    await page.goto("/follow/grp-160-2026/0a1b2c3d4e5f6a7b");
+    await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("follower screen has no WCAG 2.1 AA violations", async ({ page }) => {
+    const violations = await axeScan(page);
+    expect(violations).toEqual([]);
   });
 });
 
