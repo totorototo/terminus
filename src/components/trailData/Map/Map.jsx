@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { MapPin } from "@styled-icons/feather/MapPin";
 import { Maximize2 } from "@styled-icons/feather/Maximize2";
 import { Minimize2 } from "@styled-icons/feather/Minimize2";
 import { createPortal } from "react-dom";
@@ -43,6 +44,7 @@ const toCoordinatePairs = (routeLatLonEle) => {
 
 const TrailMap = memo(function TrailMap({ className }) {
   const routeLatLonEle = useStore((state) => state.gpx.routeLatLonEle);
+  const waypoints = useStore((state) => state.waypoints);
   const projectedLocation = useProjectedLocation();
   const theme = useTheme();
   const isOnline = useIsOnline();
@@ -114,6 +116,14 @@ const TrailMap = memo(function TrailMap({ className }) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
     return { longitude: lng, latitude: lat };
   }, [projectedLocation?.coords]);
+
+  const waypointMarkers = useMemo(() => {
+    if (!waypoints || waypoints.length === 0) return null;
+    const markers = waypoints.filter(
+      (wpt) => Number.isFinite(wpt.lat) && Number.isFinite(wpt.lon),
+    );
+    return markers.length > 0 ? markers : null;
+  }, [waypoints]);
 
   const routeGeoJSON = useMemo(() => {
     if (!coordinates) return null;
@@ -193,6 +203,7 @@ const TrailMap = memo(function TrailMap({ className }) {
 
   const routeColor = theme.colors[theme.currentVariant]["--color-primary"];
   const runnerColor = theme.colors[theme.currentVariant]["--color-accent"];
+  const waypointColor = theme.colors[theme.currentVariant]["--color-primary"];
 
   if (!MAPBOX_TOKEN) {
     return (
@@ -272,6 +283,23 @@ const TrailMap = memo(function TrailMap({ className }) {
             />
           </Source>
         )}
+        {waypointMarkers?.map((wpt, index) => (
+          <Marker
+            key={`${wpt.lat}-${wpt.lon}-${index}`}
+            longitude={wpt.lon}
+            latitude={wpt.lat}
+            anchor="bottom"
+          >
+            <MapPin
+              className="waypoint-marker"
+              size={26}
+              style={{ "--waypoint-color": waypointColor }}
+              role="img"
+              aria-label={wpt.name || "Waypoint"}
+              title={wpt.name || undefined}
+            />
+          </Marker>
+        ))}
         {runnerPosition && (
           <Marker
             longitude={runnerPosition.longitude}

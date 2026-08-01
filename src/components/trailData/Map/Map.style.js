@@ -132,6 +132,15 @@ const style = (Component) => styled(Component)`
     white-space: nowrap;
   }
 
+  .waypoint-marker {
+    fill: var(--waypoint-color);
+    stroke: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-background"]};
+    stroke-width: 1.5px;
+    cursor: pointer;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  }
+
   .runner-marker {
     position: relative;
     width: 14px;
