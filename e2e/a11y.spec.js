@@ -49,6 +49,10 @@ test.describe("A11y — Keyboard navigation", () => {
     });
     await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
 
+    // why: ThemeToggle is a fixed sibling rendered ahead of the wizard's own
+    // content (same DOM order as TrailerScreen/FollowerScreen), so it's the
+    // first stop in tab order — the race list is the second.
+    await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     await expect(page.locator(".choice-btn").first()).toBeFocused();
 
@@ -65,6 +69,7 @@ test.describe("A11y — Keyboard navigation", () => {
     });
     await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
 
+    await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     const btn = page.locator(".choice-btn").first();
     await expect(btn).toBeFocused();

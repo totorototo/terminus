@@ -65,10 +65,15 @@ const style = (Component) => styled(Component)`
 
   .subtitle {
     font-size: ${(props) => props.theme.font.sizes["--font-size"]};
+    /* why: this text sits directly on the flat --color-background (no
+       glassMorphism card behind it anymore) — 0.85 is the app's existing
+       floor for that context (see StoryHero's eyebrow/stat-label/
+       build-number), the lowest opacity that still clears WCAG AA 4.5:1
+       against the light-theme background. */
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.6,
+        0.85,
       )};
     margin: 0 0 2.5rem;
     max-width: 32ch;
@@ -126,7 +131,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
+        0.85,
       )};
   }
 
@@ -186,7 +191,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
+        0.85,
       )};
     transition: color ${(props) => props.theme.transitions["--transition-fast"]};
     -webkit-tap-highlight-color: transparent;
@@ -194,10 +199,7 @@ const style = (Component) => styled(Component)`
 
     &:hover {
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.7,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
     }
   }
 
@@ -209,7 +211,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
+        0.85,
       )};
   }
 `;
