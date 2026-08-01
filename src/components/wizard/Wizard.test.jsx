@@ -14,6 +14,10 @@ vi.mock("./Wizard.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
 
+vi.mock("../story/ThemeToggle.jsx", () => ({
+  default: () => <div data-testid="theme-toggle" />,
+}));
+
 const RACES = [{ id: "race1", name: "Race One" }];
 
 const mockNavigate = vi.fn();
