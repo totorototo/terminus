@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 
+import { Coffee } from "@styled-icons/feather/Coffee";
 import { Download } from "@styled-icons/feather/Download";
 import { HelpCircle } from "@styled-icons/feather/HelpCircle";
 import { LogOut } from "@styled-icons/feather/LogOut";
@@ -95,6 +96,19 @@ const StoryEnd = memo(function StoryEnd({ className }) {
   return (
     <div className={className}>
       <StorySection eyebrow="Before you go" title="End of line">
+        <a
+          className="kofi-card"
+          href="https://ko-fi.com/eltototorototo"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Coffee size={20} />
+          <span>
+            <strong>Enjoyed the trail?</strong>
+            <span>Buy me a coffee</span>
+          </span>
+        </a>
+
         <div className="actions">
           <button
             className="action-btn"

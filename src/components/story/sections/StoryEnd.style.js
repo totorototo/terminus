@@ -18,6 +18,59 @@ const style = (Component) => styled(Component)`
       )};
   }
 
+  .kofi-card {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin-bottom: 1.5rem;
+    text-decoration: none;
+    border: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.4,
+        )};
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-base"]};
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-primary"],
+        0.1,
+      )};
+    padding: 1rem 1.25rem;
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    cursor: pointer;
+    transition: all ${(props) => props.theme.transitions["--transition-base"]};
+
+    &:hover {
+      border-color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.7,
+        )};
+      background: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-primary"],
+          0.16,
+        )};
+    }
+
+    strong {
+      display: block;
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    }
+
+    span span {
+      display: block;
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+  }
+
   .actions {
     display: flex;
     flex-direction: column;
@@ -31,6 +84,7 @@ const style = (Component) => styled(Component)`
     justify-content: flex-start;
     gap: 0.625rem;
     white-space: nowrap;
+    text-decoration: none;
     background: none;
     border: 1px solid
       ${(props) =>
