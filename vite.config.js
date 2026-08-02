@@ -76,7 +76,7 @@ export default defineConfig(({ mode }) => {
     "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://cloud.umami.is",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
-    `connect-src 'self'${partykitHost ? ` https://${partykitHost} wss://${partykitHost}` : ""} blob: data: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev https://www.gstatic.com https://api.open-meteo.com`,
+    `connect-src 'self'${partykitHost ? ` https://${partykitHost} wss://${partykitHost}` : ""} blob: data: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev https://www.gstatic.com https://api.open-meteo.com https://api.web3forms.com`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
