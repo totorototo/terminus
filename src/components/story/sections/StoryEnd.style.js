@@ -144,6 +144,82 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border: 1px solid
+      ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.15,
+        )};
+    border-radius: ${(props) =>
+      props.theme.borderRadius["--border-radius-base"]};
+    padding: 1rem 1.25rem;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: 0.75rem;
+      color: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-text"],
+          0.7,
+        )};
+    }
+
+    input,
+    textarea {
+      border: 1px solid
+        ${(props) =>
+          rgba(
+            props.theme.colors[props.theme.currentVariant]["--color-text"],
+            0.2,
+          )};
+      border-radius: ${(props) =>
+        props.theme.borderRadius["--border-radius-sm"]};
+      padding: 0.5rem 0.625rem;
+      background: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-background"]};
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
+      resize: vertical;
+
+      &:focus {
+        outline: 2px solid
+          ${(props) =>
+            props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        outline-offset: 1px;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+      }
+    }
+
+    .contact-status {
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+
+      &.success {
+        color: ${(props) =>
+          props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      }
+
+      &.error {
+        color: ${(props) =>
+          props.theme.colors[props.theme.currentVariant][
+            "--color-accent-text"
+          ]};
+      }
+    }
+  }
+
   .confirm-row {
     display: flex;
     align-items: center;

@@ -4,6 +4,7 @@ import { Coffee } from "@styled-icons/feather/Coffee";
 import { Download } from "@styled-icons/feather/Download";
 import { HelpCircle } from "@styled-icons/feather/HelpCircle";
 import { LogOut } from "@styled-icons/feather/LogOut";
+import { Mail } from "@styled-icons/feather/Mail";
 import { Moon } from "@styled-icons/feather/Moon";
 import { Sun } from "@styled-icons/feather/Sun";
 import { Trash2 } from "@styled-icons/feather/Trash2";
@@ -24,6 +25,10 @@ const StoryEnd = memo(function StoryEnd({ className }) {
   const [confirmingFlush, setConfirmingFlush] = useState(false);
   const [sharingCard, setSharingCard] = useState(false);
   const [cardError, setCardError] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactStatus, setContactStatus] = useState("idle");
 
   const stages = useStore((state) => state.stages);
   const stats = useStore((state) => state.stats);
@@ -90,6 +95,42 @@ const StoryEnd = memo(function StoryEnd({ className }) {
       }
     } finally {
       setSharingCard(false);
+    }
+  };
+
+  const handleContactSubmit = async (event) => {
+    event.preventDefault();
+    const accessKey = import.meta.env.VITE_WEB3FORMS_KEY;
+    if (!accessKey) {
+      console.error("[Contact] VITE_WEB3FORMS_KEY is not set");
+      setContactStatus("error");
+      return;
+    }
+    setContactStatus("sending");
+    try {
+      const formData = new FormData(event.target);
+      formData.append("access_key", accessKey);
+      formData.append("subject", "Terminus contact form");
+      formData.append(
+        "from_name",
+        metadata?.name ? `Terminus — ${metadata.name}` : "Terminus",
+      );
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "submit failed");
+      setContactStatus("sent");
+      setContactEmail("");
+      setContactMessage("");
+      setTimeout(() => {
+        setContactOpen(false);
+        setContactStatus("idle");
+      }, 2500);
+    } catch (err) {
+      console.error("[Contact]", err);
+      setContactStatus("error");
     }
   };
 
@@ -185,6 +226,63 @@ const StoryEnd = memo(function StoryEnd({ className }) {
             <HelpCircle size={16} />
             User guide
           </button>
+
+          {contactOpen ? (
+            <form className="contact-form" onSubmit={handleContactSubmit}>
+              <label>
+                Your email
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  value={contactEmail}
+                  onChange={(event) => setContactEmail(event.target.value)}
+                  disabled={contactStatus === "sending"}
+                />
+              </label>
+              <label>
+                Message
+                <textarea
+                  name="message"
+                  required
+                  rows={3}
+                  value={contactMessage}
+                  onChange={(event) => setContactMessage(event.target.value)}
+                  disabled={contactStatus === "sending"}
+                />
+              </label>
+              {contactStatus === "error" && (
+                <span className="contact-status error">
+                  Couldn&apos;t send — try again.
+                </span>
+              )}
+              {contactStatus === "sent" ? (
+                <span className="contact-status success">Sent — thanks!</span>
+              ) : (
+                <div className="confirm-row">
+                  <button
+                    type="submit"
+                    className="confirm-btn"
+                    disabled={contactStatus === "sending"}
+                  >
+                    {contactStatus === "sending" ? "Sending…" : "Send"}
+                  </button>
+                  <button
+                    type="button"
+                    className="confirm-btn"
+                    onClick={() => setContactOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </form>
+          ) : (
+            <button className="action-btn" onClick={() => setContactOpen(true)}>
+              <Mail size={16} />
+              Contact us
+            </button>
+          )}
 
           {confirmingLeave ? (
             <div className="confirm-row">
