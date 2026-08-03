@@ -38,6 +38,7 @@ function baseTraceFields(overrides = {}) {
     cumulativeElevations: [0, 20, 60, 100, 150, 200],
     cumulativeElevationLoss: [0, 0, 10, 20, 35, 50],
     slopes: [0, 0, 0, 0, 0, 0],
+    paceFactors: [1, 1, 1, 1, 1, 1],
     points: [
       [0.0, 0.0, 100],
       [0.001, 0.0, 120],

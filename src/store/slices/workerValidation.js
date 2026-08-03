@@ -30,6 +30,7 @@ export function validateGPXResults(results) {
   validateArray(trace.peaks, "trace.peaks");
   validateArray(trace.valleys, "trace.valleys");
   validateArray(trace.slopes, "trace.slopes");
+  validateArray(trace.paceFactors, "trace.paceFactors");
   validateArray(trace.cumulativeDistances, "trace.cumulativeDistances");
   validateArray(trace.cumulativeElevations, "trace.cumulativeElevations");
   validateArray(trace.cumulativeElevationLoss, "trace.cumulativeElevationLoss");

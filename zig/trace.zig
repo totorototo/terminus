@@ -10,6 +10,7 @@ const detectClimbs = @import("climbs.zig").detectClimbs;
 pub const ClimbStats = @import("climbs.zig").ClimbStats;
 const douglasPeuckerIndices = @import("simplify.zig").douglasPeuckerIndices;
 const elevation = @import("elevation.zig");
+const minetti = @import("minetti.zig");
 
 // Structure to return both the closest point and its index
 pub const ClosestPointResult = struct {
@@ -23,6 +24,7 @@ pub const Trace = struct {
     cumulativeElevations: []f64, // Cumulative elevation gain in meters
     cumulativeElevationLoss: []f64, // Cumulative elevation loss in meters
     slopes: []f64, // Slope percentages between consecutive points
+    paceFactors: []f64, // Minetti cost-of-transport multiplier vs. flat, per slopes[i]
     points: [][3]f64,
     // Same backing memory as `points`, reinterpreted as a flat [lat, lon, ele, ...]
     // []f64 (stride 3): [3]f64 has no padding, so this is a zero-copy alias, not a
@@ -47,6 +49,7 @@ pub const Trace = struct {
                 .cumulativeElevations = @as([]f64, &.{}),
                 .cumulativeElevationLoss = @as([]f64, &.{}),
                 .slopes = @as([]f64, &.{}),
+                .paceFactors = @as([]f64, &.{}),
                 .peaks = @as([]usize, &.{}),
                 .valleys = @as([]usize, &.{}),
                 .climbs = @as([]ClimbStats, &.{}),
@@ -133,6 +136,15 @@ pub const Trace = struct {
         const slopes = try elevation.computeSlopes(allocator, final_points, cumulativeDistances);
         errdefer allocator.free(slopes);
 
+        // Metabolic cost multiplier vs. flat terrain (Minetti et al. 2002), evaluated
+        // per-point from the already-computed slopes. slopes[] is a percentage;
+        // paceFactor wants a fraction (rise/run).
+        const paceFactors = try allocator.alloc(f64, slopes.len);
+        errdefer allocator.free(paceFactors);
+        for (slopes, 0..) |slope, i| {
+            paceFactors[i] = minetti.paceFactor(slope / 100.0);
+        }
+
         // Find peaks
         const peaks = if (final_points.len >= 3)
             try findPeaks(allocator, elevations)
@@ -160,6 +172,7 @@ pub const Trace = struct {
             .cumulativeElevations = cumulativeElevations,
             .cumulativeElevationLoss = cumulativeElevationLoss,
             .slopes = slopes,
+            .paceFactors = paceFactors,
             .peaks = peaks,
             .valleys = valleys,
             .climbs = climbs,
@@ -175,6 +188,7 @@ pub const Trace = struct {
         if (self.cumulativeElevations.len != 0) allocator.free(self.cumulativeElevations);
         if (self.cumulativeElevationLoss.len != 0) allocator.free(self.cumulativeElevationLoss);
         if (self.slopes.len != 0) allocator.free(self.slopes);
+        if (self.paceFactors.len != 0) allocator.free(self.paceFactors);
         if (self.peaks.len != 0) allocator.free(self.peaks);
         if (self.valleys.len != 0) allocator.free(self.valleys);
         if (self.climbs.len != 0) allocator.free(self.climbs);
@@ -279,6 +293,7 @@ test "Trace initialization with empty points" {
     try std.testing.expectEqual(@as(usize, 0), trace.cumulativeElevationLoss.len);
     try std.testing.expectEqual(@as(f64, 0.0), trace.totalElevationLoss);
     try std.testing.expectEqual(@as(usize, 0), trace.slopes.len);
+    try std.testing.expectEqual(@as(usize, 0), trace.paceFactors.len);
 }
 
 test "Trace initialization and basic properties" {
@@ -458,6 +473,24 @@ test "slope calculations between consecutive points" {
         }
     }
     try expect(has_non_zero);
+}
+
+test "paceFactors: aligned with slopes, flat terrain is 1.0" {
+    const allocator = std.testing.allocator;
+
+    const points = [_][3]f64{
+        [3]f64{ 0.0, 0.0, 100.0 },
+        [3]f64{ 0.0, 0.001, 100.0 },
+        [3]f64{ 0.0, 0.002, 100.0 },
+    };
+
+    var trace = try Trace.init(allocator, points[0..]);
+    defer trace.deinit(allocator);
+
+    try expectEqual(trace.slopes.len, trace.paceFactors.len);
+    for (trace.paceFactors) |pf| {
+        try expectApproxEqAbs(pf, 1.0, 0.05);
+    }
 }
 
 test "slope calculations: edge cases" {

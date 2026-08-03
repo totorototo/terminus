@@ -105,6 +105,7 @@ function validGPXResults() {
       peaks: [],
       valleys: [],
       slopes: [],
+      paceFactors: [],
       cumulativeDistances: [],
       cumulativeElevations: [],
       cumulativeElevationLoss: [],

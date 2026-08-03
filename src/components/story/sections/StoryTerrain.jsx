@@ -1,6 +1,8 @@
 import { memo } from "react";
 
+import DayNightProfile from "../../trailData/DayNightProfile/DayNightProfile.jsx";
 import ElevationProfile from "../../trailData/ElevationProfile/ElevationProfile.jsx";
+import RunnabilityIndex from "../../trailData/RunnabilityIndex/RunnabilityIndex.jsx";
 import SlopeIntensity from "../../trailData/SlopeIntensity/SlopeIntensity.jsx";
 import SlopeProfile from "../../trailData/SlopeProfile/SlopeProfile.jsx";
 import StorySection from "../StorySection.jsx";
@@ -17,8 +19,16 @@ const StoryTerrain = memo(function StoryTerrain({ className }) {
           <ElevationProfile />
         </div>
         <div className="chart-frame stacked-frame">
+          <span className="frame-label">Day / Night</span>
+          <DayNightProfile />
+        </div>
+        <div className="chart-frame stacked-frame">
           <span className="frame-label">Slope</span>
           <SlopeIntensity />
+        </div>
+        <div className="chart-frame stacked-frame">
+          <span className="frame-label">Runnability</span>
+          <RunnabilityIndex />
         </div>
         <div className="chart-frame stacked-frame">
           <span className="frame-label">Effort intensity</span>

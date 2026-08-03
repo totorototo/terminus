@@ -216,6 +216,7 @@ function sanitizeTrace(trace, sanitizedClimbs) {
   return {
     points,
     slopes: trace.slopes.valueOf(),
+    paceFactors: trace.paceFactors.valueOf(),
     cumulativeDistances: trace.cumulativeDistances.valueOf(),
     cumulativeElevations: trace.cumulativeElevations.valueOf(),
     cumulativeElevationLoss: trace.cumulativeElevationLoss.valueOf(),
