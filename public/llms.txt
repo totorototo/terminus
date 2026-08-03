@@ -1,0 +1,10 @@
+# Terminus
+
+> Terminus is a scroll-driven editorial trail story: pick a race and scroll through it as a longform narrative — hero stats, terrain, climbs, pace model, checkpoints — with a live position marker during the run.
+
+Terminus processes GPS trail data (GPX files) with real-time section analytics (distance, elevation, climbs, pace, ETA) and lets runners share live location with followers via WebSocket and push notifications.
+
+## Docs
+
+- [Live Demo](https://terminus-beta.netlify.app/): Homepage — pick a race to view its editorial trail story
+- [Sitemap](https://terminus-beta.netlify.app/sitemap.xml): Full list of indexed pages
