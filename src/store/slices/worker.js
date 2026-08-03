@@ -312,6 +312,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         get().setTraceData({
           data: results.trace.points,
           slopes: results.trace.slopes,
+          paceFactors: results.trace.paceFactors,
           cumulativeDistances: results.trace.cumulativeDistances,
           cumulativeElevations: results.trace.cumulativeElevations,
           cumulativeElevationLoss: results.trace.cumulativeElevationLoss,

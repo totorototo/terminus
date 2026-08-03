@@ -3,6 +3,7 @@ export const createGpxSlice = (set) => ({
     data: [],
     routeLatLonEle: null,
     slopes: [],
+    paceFactors: [],
     peaks: [],
     valleys: [],
     climbs: [],
@@ -18,6 +19,7 @@ export const createGpxSlice = (set) => ({
   setTraceData: ({
     data,
     slopes,
+    paceFactors,
     cumulativeDistances,
     cumulativeElevations,
     cumulativeElevationLoss,
@@ -28,6 +30,7 @@ export const createGpxSlice = (set) => ({
           ...state.gpx,
           data,
           slopes,
+          paceFactors,
           cumulativeDistances,
           cumulativeElevations,
           cumulativeElevationLosses: cumulativeElevationLoss,
