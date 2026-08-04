@@ -83,7 +83,7 @@ const style = (Component) => styled(Component)`
 
   .ep-daynight-low {
     color: ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-primary-text"], 0.55)};
+      theme.colors[theme.currentVariant]["--color-secondary-text"]};
   }
 
   /* Bottom labels row: section names + runner position */

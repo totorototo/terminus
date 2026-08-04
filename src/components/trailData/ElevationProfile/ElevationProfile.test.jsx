@@ -57,7 +57,11 @@ describe("ElevationProfile", () => {
     vi.clearAllMocks();
     useTheme.mockReturnValue({
       colors: {
-        dark: { "--color-background": "#3A3335" },
+        dark: {
+          "--color-background": "#3A3335",
+          "--color-primary": "#f2af29",
+          "--color-secondary": "#6E9075",
+        },
       },
       currentVariant: "dark",
     });
@@ -155,17 +159,18 @@ describe("ElevationProfile", () => {
     expect(screen.queryByText("Checkpoint B")).not.toBeInTheDocument();
   });
 
-  it("does not render a day/night gradient without a race start time", () => {
+  it("renders a single plain-fill area without a race start time", () => {
     setupStore({
       gpxData: GPX_DATA,
       cumulativeDistances: CUMULATIVE_DISTANCES,
       sections: [],
     });
     const { container } = render(<ElevationProfile />);
-    expect(container.querySelector("linearGradient")).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".ep-area")).toHaveLength(1);
+    expect(screen.queryByText("Day")).not.toBeInTheDocument();
   });
 
-  it("renders a day/night gradient fill on the area when a race start time is known", () => {
+  it("renders solid day/night area blocks when a race start time is known", () => {
     setupStore({
       gpxData: GPX_DATA,
       cumulativeDistances: CUMULATIVE_DISTANCES,
@@ -180,11 +185,10 @@ describe("ElevationProfile", () => {
       ],
     });
     const { container } = render(<ElevationProfile />);
-    const gradient = container.querySelector("linearGradient");
-    expect(gradient).toBeInTheDocument();
-    expect(gradient.querySelectorAll("stop").length).toBeGreaterThan(1);
-    expect(container.querySelector(".ep-area")).toHaveStyle({
-      fill: `url(#${gradient.id})`,
+    const segments = container.querySelectorAll(".ep-area");
+    expect(segments.length).toBeGreaterThanOrEqual(1);
+    segments.forEach((segment) => {
+      expect(segment.getAttribute("style")).toMatch(/^fill:\s*rgba\(/);
     });
     expect(screen.getByText("Day")).toBeInTheDocument();
     expect(screen.getByText("Night")).toBeInTheDocument();
