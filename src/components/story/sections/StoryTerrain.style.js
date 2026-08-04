@@ -43,7 +43,6 @@ const style = (Component) => styled(Component)`
 
   .stacked-frame {
     margin-top: 1rem;
-    padding: 1rem 1.5rem;
   }
 `;
 
