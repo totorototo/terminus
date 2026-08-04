@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { useTheme } from "styled-components";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as storeModule from "../../../store/store.js";
@@ -14,6 +15,11 @@ vi.mock("../../../store/store.js", () => ({
 vi.mock("./ElevationProfile.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
+
+vi.mock("styled-components", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, useTheme: vi.fn() };
+});
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -31,12 +37,14 @@ function setupStore({
   gpxData = [],
   cumulativeDistances = [],
   legs = [],
+  sections = [],
   projectedLocation = null,
 } = {}) {
   storeModule.default.mockImplementation((selector) =>
     selector({
       gpx: { data: gpxData, cumulativeDistances },
       legs,
+      sections,
     }),
   );
   storeModule.useProjectedLocation.mockReturnValue(projectedLocation);
@@ -47,6 +55,12 @@ function setupStore({
 describe("ElevationProfile", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useTheme.mockReturnValue({
+      colors: {
+        dark: { "--color-background": "#3A3335" },
+      },
+      currentVariant: "dark",
+    });
   });
 
   it("renders nothing when gpx.data is empty", () => {
@@ -71,15 +85,15 @@ describe("ElevationProfile", () => {
     expect(container.querySelector(".ep-area")).toBeInTheDocument();
   });
 
-  it("shows min/max elevation and total distance labels", () => {
+  it("shows min/max elevation on a single top-left label", () => {
     setupStore({
       gpxData: GPX_DATA,
       cumulativeDistances: CUMULATIVE_DISTANCES,
     });
-    render(<ElevationProfile />);
-    expect(screen.getByText("1000 m")).toBeInTheDocument();
-    expect(screen.getByText("1300 m")).toBeInTheDocument();
-    expect(screen.getByText("15 km")).toBeInTheDocument();
+    const { container } = render(<ElevationProfile />);
+    expect(container.querySelector(".ep-label--tl")).toHaveTextContent(
+      "1000 / 1300 m",
+    );
   });
 
   it("renders a runner marker at the correct position when a location is projected", () => {
@@ -139,5 +153,40 @@ describe("ElevationProfile", () => {
     render(<ElevationProfile />);
     expect(screen.getByText("Checkpoint A")).toBeInTheDocument();
     expect(screen.queryByText("Checkpoint B")).not.toBeInTheDocument();
+  });
+
+  it("does not render a day/night gradient without a race start time", () => {
+    setupStore({
+      gpxData: GPX_DATA,
+      cumulativeDistances: CUMULATIVE_DISTANCES,
+      sections: [],
+    });
+    const { container } = render(<ElevationProfile />);
+    expect(container.querySelector("linearGradient")).not.toBeInTheDocument();
+  });
+
+  it("renders a day/night gradient fill on the area when a race start time is known", () => {
+    setupStore({
+      gpxData: GPX_DATA,
+      cumulativeDistances: CUMULATIVE_DISTANCES,
+      sections: [
+        {
+          startIndex: 0,
+          endIndex: 300,
+          totalDistance: 15000,
+          estimatedDuration: 3600,
+          startTime: 1700000000,
+        },
+      ],
+    });
+    const { container } = render(<ElevationProfile />);
+    const gradient = container.querySelector("linearGradient");
+    expect(gradient).toBeInTheDocument();
+    expect(gradient.querySelectorAll("stop").length).toBeGreaterThan(1);
+    expect(container.querySelector(".ep-area")).toHaveStyle({
+      fill: `url(#${gradient.id})`,
+    });
+    expect(screen.getByText("Day")).toBeInTheDocument();
+    expect(screen.getByText("Night")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,7 @@
-import { memo, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
+
+import { hsl, mix, parseToHsl } from "polished";
+import { useTheme } from "styled-components";
 
 import {
   createXScale,
@@ -6,6 +9,8 @@ import {
   getArea,
   getLine,
 } from "../../../helpers/d3.js";
+import { clockTimeAtIndex } from "../../../helpers/nightOverlay.js";
+import { sunAltitudeDeg } from "../../../helpers/sunTimes.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 
 import style from "./ElevationProfile.style.js";
@@ -16,6 +21,12 @@ const VPAD = 8;
 const MAX_POINTS = 300;
 const MAX_NAME_LEN = 12;
 
+// Civil-twilight band (sun altitude ±6°) is where day visibly bleeds into
+// night — outside it the mix is fully day or fully night, inside it the
+// gradient stop interpolates, so dawn/dusk read as a soft transition rather
+// than a hard edge.
+const TWILIGHT_DEG = 6;
+
 const truncate = (str) =>
   str && str.length > MAX_NAME_LEN ? str.slice(0, MAX_NAME_LEN) + "…" : str;
 
@@ -25,8 +36,29 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
     (state) => state.gpx.cumulativeDistances || [],
   );
   const legs = useStore((state) => state.legs || []);
+  const sections = useStore((state) => state.sections || []);
   const projectedLocation = useProjectedLocation();
   const projectedIndex = projectedLocation?.index ?? null;
+  const theme = useTheme();
+  const gradientId = useId();
+
+  // why: a single-hue ramp (same treatment as SlopeIntensity/RunnabilityIndex)
+  // instead of two clashing theme colors — night is a pale tint of the same
+  // hue as day, not a different hue entirely, so the gradient reads as one
+  // continuous signal rather than two colors fighting for attention.
+  const dayNightColors = useMemo(() => {
+    const colors = theme.colors[theme.currentVariant];
+    const background = parseToHsl(colors["--color-background"]);
+    const tintLightness = Math.min(0.92, background.lightness + 0.35);
+    return {
+      day: colors["--color-background"],
+      night: hsl({
+        hue: background.hue,
+        saturation: background.saturation,
+        lightness: tintLightness,
+      }),
+    };
+  }, [theme]);
 
   const chart = useMemo(() => {
     if (!gpxData?.length) return null;
@@ -38,11 +70,6 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
     const minElev = Math.min(...elevations);
     const maxElev = Math.max(...elevations);
     const elevRange = maxElev - minElev || 1;
-
-    const totalDistanceKm =
-      cumulativeDistances.length > 0
-        ? Math.round(cumulativeDistances[cumulativeDistances.length - 1] / 1000)
-        : null;
 
     const scaleX = createXScale(
       { min: 0, max: sampled.length - 1 },
@@ -60,6 +87,50 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
       scaleY,
       minElev - elevRange * 0.1,
     );
+
+    // Day/night gradient stops, one per sampled point so they line up 1:1
+    // with the elevation area's own x positions. Degrades to `null` (plain
+    // themed fill, no gradient) when there's no GPX start `<time>` to anchor
+    // the sun-position estimate to — same guard DayNightProfile used.
+    let dayNight = null;
+    const raceStartMs =
+      sections?.[0]?.startTime != null ? sections[0].startTime * 1000 : null;
+    if (raceStartMs != null && sampled.length > 1) {
+      const startCoord = gpxData[0];
+      const { day: dayColor, night: nightColor } = dayNightColors;
+
+      const altitudes = sampled.map((_, i) => {
+        const clockMs = clockTimeAtIndex(
+          i * step,
+          sections,
+          cumulativeDistances,
+          raceStartMs,
+        );
+        return clockMs != null
+          ? sunAltitudeDeg(clockMs, startCoord[0], startCoord[1])
+          : null;
+      });
+
+      if (altitudes.every((a) => a != null)) {
+        const stops = altitudes.map((altitude, i) => {
+          const dayWeight = Math.min(
+            1,
+            Math.max(0, (altitude + TWILIGHT_DEG) / (TWILIGHT_DEG * 2)),
+          );
+          return {
+            offset: `${(i / (altitudes.length - 1)) * 100}%`,
+            color: mix(dayWeight, dayColor, nightColor),
+          };
+        });
+        dayNight = {
+          stops,
+          dayColor,
+          nightColor,
+          peakAltitude: Math.round(Math.max(...altitudes)),
+          lowAltitude: Math.round(Math.min(...altitudes)),
+        };
+      }
+    }
 
     let markerX = null;
     let markerY = null;
@@ -104,28 +175,35 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
     return {
       linePath,
       areaPath,
+      dayNight,
       markerX,
       markerY,
       markerPct,
       minElev: Math.round(minElev),
       maxElev: Math.round(maxElev),
-      totalDistanceKm,
       runnerDistanceKm,
       sectionMarkers,
     };
-  }, [gpxData, cumulativeDistances, legs, projectedIndex]);
+  }, [
+    gpxData,
+    cumulativeDistances,
+    legs,
+    sections,
+    dayNightColors,
+    projectedIndex,
+  ]);
 
   if (!chart) return null;
 
   const {
     linePath,
     areaPath,
+    dayNight,
     markerX,
     markerY,
     markerPct,
     minElev,
     maxElev,
-    totalDistanceKm,
     runnerDistanceKm,
     sectionMarkers,
   } = chart;
@@ -140,7 +218,23 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
           width="100%"
           style={{ aspectRatio: `${WIDTH} / ${HEIGHT + VPAD * 2}` }}
         >
-          {areaPath && <path className="ep-area" d={areaPath} stroke="none" />}
+          {dayNight && (
+            <defs>
+              <linearGradient id={gradientId} x1="0" x2="1" y1="0" y2="0">
+                {dayNight.stops.map((s, i) => (
+                  <stop key={i} offset={s.offset} stopColor={s.color} />
+                ))}
+              </linearGradient>
+            </defs>
+          )}
+          {areaPath && (
+            <path
+              className="ep-area"
+              d={areaPath}
+              stroke="none"
+              style={dayNight ? { fill: `url(#${gradientId})` } : undefined}
+            />
+          )}
           {linePath && (
             <path
               className="ep-line"
@@ -185,10 +279,15 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
 
         {/* Axis labels — HTML overlay to avoid SVG text distortion */}
         <div className="ep-overlay">
-          <span className="ep-label ep-label--tl">{maxElev} m</span>
-          <span className="ep-label ep-label--bl">{minElev} m</span>
-          {totalDistanceKm != null && (
-            <span className="ep-label ep-label--br">{totalDistanceKm} km</span>
+          <span className="ep-label ep-label--tl">
+            {minElev} / {maxElev} m
+          </span>
+          {dayNight && (
+            <span className="ep-label ep-label--tr">
+              <span className="ep-daynight-peak">{dayNight.peakAltitude}°</span>
+              {" / "}
+              <span className="ep-daynight-low">{dayNight.lowAltitude}°</span>
+            </span>
           )}
         </div>
       </div>
@@ -216,6 +315,25 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
           </span>
         )}
       </div>
+
+      {dayNight && (
+        <div className="ep-legend">
+          <span className="ep-legend-item">
+            <span
+              className="ep-legend-dot"
+              style={{ background: dayNight.dayColor }}
+            />
+            Day
+          </span>
+          <span className="ep-legend-item">
+            <span
+              className="ep-legend-dot"
+              style={{ background: dayNight.nightColor }}
+            />
+            Night
+          </span>
+        </div>
+      )}
     </div>
   );
 });

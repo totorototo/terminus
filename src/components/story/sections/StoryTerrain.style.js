@@ -16,7 +16,7 @@ const style = (Component) => styled(Component)`
   }
 
   .chart-frame {
-    padding: 2rem 1.5rem;
+    padding: 1rem 1.5rem;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
     border: 1px solid
       ${(props) =>

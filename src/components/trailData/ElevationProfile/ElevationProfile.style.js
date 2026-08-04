@@ -1,6 +1,12 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+const legendItemGap = (props) => `${props.theme.spacing[2]}px`;
+const legendGap = (props) =>
+  `${props.theme.spacing[2]}px ${props.theme.spacing[4]}px`;
+const legendMarginTop = (props) => `${props.theme.spacing[3]}px`;
+const dotSize = (props) => `${props.theme.spacing[3]}px`;
+
 const style = (Component) => styled(Component)`
   width: 100%;
   box-sizing: border-box;
@@ -65,14 +71,19 @@ const style = (Component) => styled(Component)`
     left: 2px;
   }
 
-  .ep-label--bl {
-    bottom: 2px;
-    left: 2px;
+  .ep-label--tr {
+    top: 2px;
+    right: 2px;
   }
 
-  .ep-label--br {
-    bottom: 2px;
-    right: 2px;
+  .ep-daynight-peak {
+    color: ${({ theme }) =>
+      theme.colors[theme.currentVariant]["--color-primary-text"]};
+  }
+
+  .ep-daynight-low {
+    color: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-primary-text"], 0.55)};
   }
 
   /* Bottom labels row: section names + runner position */
@@ -110,6 +121,37 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.04em;
     line-height: 1;
     white-space: nowrap;
+  }
+
+  .ep-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: ${legendGap};
+    margin-top: ${legendMarginTop};
+  }
+
+  .ep-legend-item {
+    display: flex;
+    align-items: center;
+    gap: ${legendItemGap};
+    font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
+    font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
+    color: ${({ theme }) =>
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.5)};
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .ep-legend-dot {
+    display: inline-block;
+    width: ${dotSize};
+    height: ${dotSize};
+    border-radius: ${({ theme }) => theme.borderRadius["--border-radius-full"]};
+    border: 1px solid
+      ${({ theme }) =>
+        rgba(theme.colors[theme.currentVariant]["--color-text"], 0.25)};
+    box-sizing: border-box;
+    flex-shrink: 0;
   }
 `;
 
