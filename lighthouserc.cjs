@@ -11,6 +11,8 @@ module.exports = {
           deviceScaleFactor: 1,
           mobile: false,
         },
+        // CI audit runs shouldn't report as real Umami visitors
+        blockedUrlPatterns: ["https://cloud.umami.is/*"],
       },
     },
     assert: {
