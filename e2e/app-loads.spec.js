@@ -7,9 +7,7 @@
  * key sections are reachable, at both a mobile and a desktop viewport.
  */
 
-import { expect, test } from "@playwright/test";
-
-import { selectRunnerRole } from "./helpers.js";
+import { expect, selectRunnerRole, test } from "./helpers.js";
 
 test.describe("Smoke", () => {
   test("wizard loads without JS errors", async ({ page }) => {

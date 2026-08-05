@@ -1,3 +1,16 @@
+import { expect, test as base } from "@playwright/test";
+
+// e2e runs against a real prod-mode build (see playwright.config.js), so the
+// Umami script actually loads. Abort it here rather than letting CI/local
+// test runs report as real visitors.
+export const test = base.extend({
+  page: async ({ page }, use) => {
+    await page.route("https://cloud.umami.is/**", (route) => route.abort());
+    await use(page);
+  },
+});
+export { expect };
+
 /**
  * Shared GPS fixtures — reused across multiple spec files.
  *

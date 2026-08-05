@@ -5,10 +5,9 @@
  * edge cases (second fix at a different position, off-trail position).
  */
 
-import { expect, test } from "@playwright/test";
-
 import {
   autoShareBtn,
+  expect,
   heroDistanceKm,
   kmLeft,
   MID_TRAIL,
@@ -16,6 +15,7 @@ import {
   NEAR_START,
   OFF_TRAIL,
   selectRunnerRole,
+  test,
 } from "./helpers.js";
 
 test.describe("Live GPS Tracking", () => {

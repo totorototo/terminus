@@ -26,14 +26,14 @@
  * runner's after all three kinds of updates.
  */
 
-import { expect, test } from "@playwright/test";
-
 import {
   autoShareBtn,
+  expect,
   heroDistanceKm,
   MID_TRAIL,
   mockClipboard,
   selectRunnerRole,
+  test,
 } from "./helpers.js";
 
 // grp-160-2026.gpx's race Start waypoint, pinned 2h past it (same fixture as

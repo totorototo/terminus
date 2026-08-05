@@ -14,9 +14,13 @@
  * Live GPS updates are covered separately in gps-tracking.spec.js.
  */
 
-import { expect, test } from "@playwright/test";
-
-import { heroDistanceKm, kmLeft, selectRunnerRole } from "./helpers.js";
+import {
+  expect,
+  heroDistanceKm,
+  kmLeft,
+  selectRunnerRole,
+  test,
+} from "./helpers.js";
 
 test.describe("Story Sections", () => {
   test.beforeEach(async ({ page }) => {

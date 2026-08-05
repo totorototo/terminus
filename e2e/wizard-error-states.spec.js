@@ -6,7 +6,7 @@
  * and recovers once the network call succeeds.
  */
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./helpers.js";
 
 // Block the service worker so its own cache-first fetch handling for
 // /races.json can't shadow the network failures simulated below via page.route.

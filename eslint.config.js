@@ -97,5 +97,9 @@ export default [
         test: "readonly",
       },
     },
+    rules: {
+      // Playwright fixtures take a `use` callback param — not a React hook.
+      "react-hooks/rules-of-hooks": "off",
+    },
   },
 ];

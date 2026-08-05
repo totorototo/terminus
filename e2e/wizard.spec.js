@@ -2,7 +2,7 @@
  * Wizard e2e tests — covers the first-run race selection flow.
  */
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./helpers.js";
 
 test.describe("Wizard", () => {
   test("shows race choice screen on first load", async ({ page }) => {

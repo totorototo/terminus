@@ -17,14 +17,14 @@
  * before the race start would be treated as pre-race and skipped.
  */
 
-import { expect, test } from "@playwright/test";
-
 import {
   autoShareBtn,
+  expect,
   heroDistanceKm,
   MID_TRAIL,
   mockClipboard,
   selectRunnerRole,
+  test,
 } from "./helpers.js";
 
 // Race Start waypoint in grp-160-2026.gpx. The clock is pinned 2h past it: at

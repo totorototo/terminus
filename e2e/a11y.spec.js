@@ -10,10 +10,9 @@
  */
 
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
 
 import THEME from "../src/theme/Theme.js";
-import { selectRunnerRole } from "./helpers.js";
+import { expect, selectRunnerRole, test } from "./helpers.js";
 
 // ── Axe helper ────────────────────────────────────────────────────────────────
 

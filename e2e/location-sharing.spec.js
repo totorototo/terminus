@@ -17,14 +17,14 @@
  *      broadcast position.
  */
 
-import { expect, test } from "@playwright/test";
-
 import {
   autoShareBtn,
+  expect,
   heroDistanceKm,
   kmLeft,
   mockClipboard,
   selectRunnerRole,
+  test,
 } from "./helpers.js";
 
 // Near the middle of the grp-160-2026.gpx track (index ~15449 / 30899).

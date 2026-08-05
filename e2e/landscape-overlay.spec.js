@@ -16,7 +16,7 @@
  * than a silent false positive/negative.
  */
 
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./helpers.js";
 
 const PORTRAIT = { width: 390, height: 844 };
 const LANDSCAPE = { width: 844, height: 390 };
