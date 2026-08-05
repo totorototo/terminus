@@ -1,19 +1,3 @@
-/** Kept for EffortBreakdown backward compatibility. */
-export const PACE_OPTIONS = [
-  { label: "Casual", value: 600 },
-  { label: "Trail", value: 500 },
-  { label: "Athlete", value: 400 },
-  { label: "Elite", value: 300 },
-];
-
-/** Kept for EffortBreakdown backward compatibility. */
-export const FATIGUE_OPTIONS = [
-  { label: "Low", value: 0.001 },
-  { label: "Moderate", value: 0.002 },
-  { label: "High", value: 0.003 },
-  { label: "Very high", value: 0.004 },
-];
-
 /** Runner profiles — each bundles a pace and fatigue value. */
 export const RUNNER_PROFILES = [
   {
