@@ -1,12 +1,30 @@
 import { expect, test as base } from "@playwright/test";
 
+const blockUmami = (context) =>
+  context.route("https://cloud.umami.is/**", (route) => route.abort());
+
 // e2e runs against a real prod-mode build (see playwright.config.js), so the
 // Umami script actually loads. Abort it here rather than letting CI/local
 // test runs report as real visitors.
+//
+// Multiplayer specs (eta-sync, location-sharing, landscape-overlay) open
+// extra contexts via browser.newContext() directly instead of the default
+// `page`/`context` fixtures, so blocking only the `context` fixture misses
+// them — patch browser.newContext() itself to cover every context a test
+// creates, however it creates it.
 export const test = base.extend({
-  page: async ({ page }, use) => {
-    await page.route("https://cloud.umami.is/**", (route) => route.abort());
-    await use(page);
+  context: async ({ context }, use) => {
+    await blockUmami(context);
+    await use(context);
+  },
+  browser: async ({ browser }, use) => {
+    const newContext = browser.newContext.bind(browser);
+    browser.newContext = async (...args) => {
+      const context = await newContext(...args);
+      await blockUmami(context);
+      return context;
+    };
+    await use(browser);
   },
 });
 export { expect };
