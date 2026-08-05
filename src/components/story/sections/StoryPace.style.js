@@ -68,7 +68,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.6,
+        0.65,
       )};
     cursor: pointer;
     transition: all ${(props) => props.theme.transitions["--transition-base"]};

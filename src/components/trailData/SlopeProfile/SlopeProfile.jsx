@@ -77,10 +77,13 @@ const SlopeProfile = memo(function SlopeProfile({ className }) {
   const { climbArea, descentArea, zeroY, markerX, maxClimb, maxDescent } =
     chart;
 
+  const ariaLabel = `Slope profile: steepest climb ${maxClimb}%, steepest descent ${maxDescent}%.`;
+
   return (
     <div className={className}>
       <svg
-        aria-hidden="true"
+        role="img"
+        aria-label={ariaLabel}
         viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
         preserveAspectRatio="none"
         width="100%"

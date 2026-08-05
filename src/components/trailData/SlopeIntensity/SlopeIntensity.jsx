@@ -78,17 +78,23 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
       doneWidth = sampledIdx * segWidth;
     }
 
-    return { bands, doneWidth };
+    const steepestBandLabel =
+      GRADE_BANDS[Math.max(...grades.map((g) => bandIndex(Math.abs(g))))].label;
+    const ariaLabel = `Slope intensity strip: grade distribution across the route, steepest band ${steepestBandLabel}.`;
+
+    return { bands, doneWidth, ariaLabel };
   }, [gpxData, slopes, bandColors, projectedIndex]);
 
   if (!chart) return null;
 
-  const { bands, doneWidth } = chart;
+  const { bands, doneWidth, ariaLabel } = chart;
 
   return (
     <div className={className}>
       <svg
         className="si-strip"
+        role="img"
+        aria-label={ariaLabel}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         preserveAspectRatio="none"
         width="100%"

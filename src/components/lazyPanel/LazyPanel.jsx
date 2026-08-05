@@ -14,7 +14,14 @@ function LazyPanel({ className, children, rootMargin = "200px" }) {
   return (
     <div className={className} ref={ref}>
       {inView ? (
-        <Suspense fallback={<div className="lazy-panel-placeholder" />}>
+        <Suspense
+          fallback={
+            <div className="lazy-panel-placeholder" role="status">
+              <div className="lazy-panel-spinner" />
+              <span className="lazy-panel-sr-only">Loading…</span>
+            </div>
+          }
+        >
           {children}
         </Suspense>
       ) : (

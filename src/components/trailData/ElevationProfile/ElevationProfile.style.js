@@ -106,7 +106,7 @@ const style = (Component) => styled(Component)`
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
     color: ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.3)};
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.65)};
     letter-spacing: 0.03em;
     line-height: 1;
     white-space: nowrap;
@@ -137,7 +137,7 @@ const style = (Component) => styled(Component)`
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
     color: ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.5)};
+      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.65)};
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }

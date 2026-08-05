@@ -181,6 +181,13 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
         return true;
       });
 
+    const roundedMinElev = Math.round(minElev);
+    const roundedMaxElev = Math.round(maxElev);
+    const ariaLabel =
+      runnerDistanceKm != null
+        ? `Elevation profile ranging from ${roundedMinElev} to ${roundedMaxElev} meters. Runner currently at ${runnerDistanceKm} km, ${Math.round(gpxData[projectedIndex][2])} meters elevation.`
+        : `Elevation profile ranging from ${roundedMinElev} to ${roundedMaxElev} meters.`;
+
     return {
       linePath,
       areaPath,
@@ -188,10 +195,11 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
       markerX,
       markerY,
       markerPct,
-      minElev: Math.round(minElev),
-      maxElev: Math.round(maxElev),
+      minElev: roundedMinElev,
+      maxElev: roundedMaxElev,
       runnerDistanceKm,
       sectionMarkers,
+      ariaLabel,
     };
   }, [
     gpxData,
@@ -215,13 +223,15 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
     maxElev,
     runnerDistanceKm,
     sectionMarkers,
+    ariaLabel,
   } = chart;
 
   return (
     <div className={className}>
       <div className="ep-chart">
         <svg
-          aria-hidden="true"
+          role="img"
+          aria-label={ariaLabel}
           viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
           preserveAspectRatio="none"
           width="100%"

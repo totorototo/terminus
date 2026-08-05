@@ -208,7 +208,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
+        0.85,
       )};
     text-transform: uppercase;
     letter-spacing: 0.05em;

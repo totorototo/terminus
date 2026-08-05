@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import styled from "styled-components";
 
@@ -54,6 +54,8 @@ export default function LandscapeOverlay() {
     () => window.matchMedia(LANDSCAPE_QUERY).matches,
   );
   const [dismissed, setDismissed] = useState(false);
+  const dismissButtonRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(LANDSCAPE_QUERY);
@@ -67,11 +69,35 @@ export default function LandscapeOverlay() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  if (!isLandscape || dismissed) return null;
+  const visible = isLandscape && !dismissed;
+
+  // why: dismiss button is the overlay's only focusable element, so trapping
+  // focus is just refusing to let Tab move it elsewhere — no focus-trap
+  // library needed.
+  useEffect(() => {
+    if (!visible) return;
+    previouslyFocusedRef.current = document.activeElement;
+    dismissButtonRef.current?.focus();
+    return () => {
+      previouslyFocusedRef.current?.focus?.();
+    };
+  }, [visible]);
+
+  if (!visible) return null;
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Tab") event.preventDefault();
+  };
 
   return (
-    <Overlay>
+    <Overlay
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="landscape-overlay-message"
+      onKeyDown={handleKeyDown}
+    >
       <svg
+        aria-hidden="true"
         width="48"
         height="48"
         viewBox="0 0 24 24"
@@ -90,8 +116,10 @@ export default function LandscapeOverlay() {
         <path d="M16 22 Q12 24 8 22" />
         <path d="M9 22 l-1 2 l-1 -2" />
       </svg>
-      <p>Please rotate your device to portrait mode</p>
-      <DismissButton onClick={() => setDismissed(true)}>
+      <p id="landscape-overlay-message">
+        Please rotate your device to portrait mode
+      </p>
+      <DismissButton ref={dismissButtonRef} onClick={() => setDismissed(true)}>
         Continue in landscape
       </DismissButton>
     </Overlay>

@@ -267,6 +267,10 @@ const PaceProfile = memo(function PaceProfile({ className }) {
   const displayLabel = currentBar ? "current" : "avg required";
   const displayEffort = currentBar?.effort ?? avgEffort;
 
+  const ariaLabel = currentBar
+    ? `Pace profile: required pace ranges from ${minPace.toFixed(1)} to ${maxPace.toFixed(1)} km/h. Currently in ${truncate(currentBar.startLocation) || "an unnamed section"} at ${currentBar.pace.toFixed(1)} km/h. Tightest section is ${truncate(tightestBar.startLocation) || "unnamed"} at ${tightestBar.pace.toFixed(1)} km/h.`
+    : `Pace profile: required pace ranges from ${minPace.toFixed(1)} to ${maxPace.toFixed(1)} km/h. Tightest section is ${truncate(tightestBar.startLocation) || "unnamed"} at ${tightestBar.pace.toFixed(1)} km/h.`;
+
   return (
     <div className={className}>
       <div className="pp-header">
@@ -286,7 +290,8 @@ const PaceProfile = memo(function PaceProfile({ className }) {
 
       <div className="pp-chart">
         <svg
-          aria-hidden="true"
+          role="img"
+          aria-label={ariaLabel}
           viewBox={`0 -${VPAD} ${WIDTH} ${HEIGHT + VPAD * 2}`}
           preserveAspectRatio="none"
           width="100%"

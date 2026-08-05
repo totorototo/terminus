@@ -75,17 +75,23 @@ const RunnabilityIndex = memo(function RunnabilityIndex({ className }) {
       doneWidth = sampledIdx * segWidth;
     }
 
-    return { bands, doneWidth };
+    const worstBandLabel =
+      RUNNABILITY_BANDS[Math.max(...factors.map((pf) => bandIndex(pf)))].label;
+    const ariaLabel = `Runnability index strip: terrain runnability across the route, worst rating ${worstBandLabel}.`;
+
+    return { bands, doneWidth, ariaLabel };
   }, [gpxData, paceFactors, bandColors, projectedIndex]);
 
   if (!chart) return null;
 
-  const { bands, doneWidth } = chart;
+  const { bands, doneWidth, ariaLabel } = chart;
 
   return (
     <div className={className}>
       <svg
         className="ri-strip"
+        role="img"
+        aria-label={ariaLabel}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         preserveAspectRatio="none"
         width="100%"
