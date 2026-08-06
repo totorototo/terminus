@@ -2,7 +2,10 @@
  * Accessibility (a11y) tests.
  *
  * Combines automated axe-core WCAG scanning with targeted manual checks:
- *  - axe scans on key app states (wizard, runner story, follower story, both themes)
+ *  - axe scans on key app states (wizard, runner story, follower story, help, both themes)
+ *  - axe scan on a direct /run/:raceId link (default desktop viewport, no wizard)
+ *  - axe scan after expanding collapsed climb/stage/checkpoint lists (their
+ *    rows aren't in the DOM until expanded, so the default scan misses them)
  *  - Every story section exposes an accessible heading
  *  - The live-tracking toggle exposes aria-pressed
  *  - App survives reduced-motion preference
@@ -31,6 +34,25 @@ test.describe("A11y — Wizard", () => {
     await expect(page.getByRole("heading", { name: "Terminus" })).toBeVisible({
       timeout: 10_000,
     });
+    const violations = await axeScan(page);
+    expect(violations).toEqual([]);
+  });
+});
+
+// ── Help page ─────────────────────────────────────────────────────────────────
+
+test.describe("A11y — Help", () => {
+  test("help screen has no WCAG 2.1 AA violations", async ({ page }) => {
+    await page.goto("/help");
+    await expect(
+      page.getByRole("heading", { name: "Terminus", level: 1 }),
+    ).toBeVisible({ timeout: 10_000 });
+
+    // Sections fade in via CSS animation — scanning mid-fade catches
+    // transiently low-opacity (and thus low-contrast) text as a false
+    // positive, so settle to the reduced-motion end state first.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+
     const violations = await axeScan(page);
     expect(violations).toEqual([]);
   });
@@ -94,6 +116,23 @@ test.describe("A11y — Runner app", () => {
     expect(violations).toEqual([]);
   });
 
+  test("expanding collapsed climb/stage/checkpoint lists introduces no WCAG 2.1 AA violations", async ({
+    page,
+  }) => {
+    // Climbs, stages and checkpoints collapse behind a "Show N more" toggle —
+    // the extra rows aren't rendered into the DOM until expanded, so a scan
+    // taken beforehand never sees them.
+    let toggle = page.getByRole("button", { name: /^Show \d+ more$/ });
+    while (await toggle.count()) {
+      await toggle.first().click();
+      toggle = page.getByRole("button", { name: /^Show \d+ more$/ });
+    }
+    await expect(toggle).toHaveCount(0);
+
+    const violations = await axeScan(page);
+    expect(violations).toEqual([]);
+  });
+
   test("every story section has an accessible heading", async ({ page }) => {
     for (const name of [
       "Where this happens",
@@ -124,6 +163,24 @@ test.describe("A11y — Runner app", () => {
     // Allow one render cycle after preference change
     await expect.poll(() => errors, { timeout: 2_000 }).toHaveLength(0);
     await expect(page.locator("h1.name")).toBeVisible();
+  });
+});
+
+// ── Runner app state, direct link ─────────────────────────────────────────────
+
+test.describe("A11y — Runner app (direct link)", () => {
+  // Unlike the describe block above, this skips the wizard/selectRunnerRole
+  // flow (and its forced mobile viewport) to cover /run/:raceId as its own
+  // entry point — e.g. a bookmarked or shared link — at the default desktop
+  // viewport.
+  test("/run/:raceId loads with no WCAG 2.1 AA violations", async ({
+    page,
+  }) => {
+    await page.goto("/run/grp-160-2026");
+    await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
+
+    const violations = await axeScan(page);
+    expect(violations).toEqual([]);
   });
 });
 

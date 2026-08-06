@@ -50,7 +50,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
+        0.85,
       )};
     padding: 0;
     transition: color ${(props) => props.theme.transitions["--transition-fast"]};
@@ -100,7 +100,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.45,
+        0.85,
       )};
     transition: all ${(props) => props.theme.transitions["--transition-fast"]};
     -webkit-tap-highlight-color: transparent;
@@ -140,7 +140,7 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-secondary-text"]};
     margin-bottom: 1rem;
   }
 
@@ -160,7 +160,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
+        0.85,
       )};
     max-width: 400px;
     margin: 0 auto;
@@ -182,12 +182,14 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
     margin-bottom: 0.4rem;
 
     &.secondary {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-secondary-text"
+        ]};
     }
   }
 
@@ -207,7 +209,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.55,
+        0.85,
       )};
     line-height: 1.72;
     max-width: 640px;
@@ -324,7 +326,7 @@ const style = (Component) => styled(Component)`
       color: ${(props) =>
         rgba(
           props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.5,
+          0.85,
         )};
       line-height: 1.6;
     }

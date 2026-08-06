@@ -66,9 +66,9 @@ export const heroDistanceKm = (page) =>
  * Call this after page.goto("/") in any test that needs the runner (trailer) UI.
  */
 export async function selectRunnerRole(page) {
-  // Runner tests were written for the mobile layout (sheet panels, inline FAB).
-  // Force mobile viewport so Trailer renders TopSheetPanel/BottomSheetPanel
-  // instead of DesktopLayout, regardless of how the browser context was created.
+  // Terminus is primarily a mobile app — force a small viewport so these
+  // tests exercise the same layout most real users see, regardless of how
+  // the browser context was created.
   await page.setViewportSize({ width: 390, height: 844 });
 
   // Pick the first race from the list (waits for races to load from /races.json)
