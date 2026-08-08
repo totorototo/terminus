@@ -3,8 +3,8 @@ import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
   position: fixed;
-  top: calc(env(safe-area-inset-top) + 1.25rem);
-  right: calc(env(safe-area-inset-right) + 1.25rem);
+  top: calc(env(safe-area-inset-top, 0px) + 1.25rem);
+  right: calc(env(safe-area-inset-right, 0px) + 1.25rem);
   z-index: ${(props) => props.theme.zIndex["--z-index-overlay"]};
   display: flex;
   align-items: center;

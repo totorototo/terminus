@@ -1,31 +1,52 @@
 import { memo, useRef, useState } from "react";
 
-import useStore from "../../store/store.js";
 import { STORY_SECTIONS } from "./storySections.js";
 
 import style from "./StoryDotNav.style.js";
 
-const StoryDotNav = memo(function StoryDotNav({ className }) {
-  const activeIndex = useStore((state) => state.storyNav.activeIndex);
+// why: set/releasePointerCapture can both throw (e.g. no real active pointer
+// behind the event) — neither failure should block the rest of the gesture
+// handling, so both call sites share one silent-fail wrapper instead of
+// each carrying their own try/catch.
+function safePointerCall(fn) {
+  try {
+    fn();
+  } catch {
+    // capture/release is an optimization; its failure doesn't block the drag.
+  }
+}
+
+const StoryDotNav = memo(function StoryDotNav({
+  className,
+  activeIndex,
+  onJump,
+}) {
   const navRef = useRef(null);
-  const draggingRef = useRef(false);
+  // why: keyed by pointerId (not a bare boolean) so a second finger landing
+  // mid-drag on a touch device can't steal/fight the first one's gesture.
+  const activePointerIdRef = useRef(null);
+  // why: cached once per gesture instead of read on every pointermove — the
+  // nav's box doesn't change mid-drag, and getBoundingClientRect forces a
+  // layout flush, which is wasteful on a 60fps-sensitive drag path.
+  const navRectRef = useRef(null);
   const [dragIndex, setDragIndex] = useState(null);
 
-  // why: reads the scroll handler imperatively at jump time instead of
-  // subscribing to it — it's an escape hatch into Story's subtree (see
-  // storyNav.js), not reactive UI state, so there's nothing to re-render on.
-  const jumpTo = (index) => {
-    useStore.getState().storyNav.scrollHandler?.(index);
-  };
-
   const indexFromClientY = (clientY) => {
-    const rect = navRef.current?.getBoundingClientRect();
+    const rect = navRectRef.current;
     if (!rect || rect.height === 0) return null;
     const bandHeight = rect.height / STORY_SECTIONS.length;
     return Math.min(
       STORY_SECTIONS.length - 1,
       Math.max(0, Math.floor((clientY - rect.top) / bandHeight)),
     );
+  };
+
+  const moveTo = (clientY) => {
+    const index = indexFromClientY(clientY);
+    if (index != null && index !== dragIndex) {
+      setDragIndex(index);
+      onJump(index);
+    }
   };
 
   // why: pointer capture is set on the whole nav, not the individual dot —
@@ -37,45 +58,33 @@ const StoryDotNav = memo(function StoryDotNav({ className }) {
   // handler instead of letting the browser try to scroll/select from it.
   const onPointerDown = (event) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    draggingRef.current = true;
-    // why: can throw (e.g. no real active pointer behind the event) — that
-    // must not skip the jump below, or a press that fails to capture would
-    // silently do nothing instead of still acting as a plain tap.
-    try {
-      navRef.current?.setPointerCapture?.(event.pointerId);
-    } catch {
-      // capture is an optimization (keeps the drag tracking even if the
-      // pointer leaves the nav's bounds) — its absence doesn't block the rest.
-    }
-    const index = indexFromClientY(event.clientY);
-    if (index != null) {
-      setDragIndex(index);
-      jumpTo(index);
-    }
+    if (activePointerIdRef.current != null) return;
+    activePointerIdRef.current = event.pointerId;
+    navRectRef.current = navRef.current?.getBoundingClientRect() ?? null;
+    // why: can throw — that must not skip the jump below, or a press that
+    // fails to capture would silently do nothing instead of still acting
+    // as a plain tap.
+    safePointerCall(() => navRef.current?.setPointerCapture?.(event.pointerId));
+    moveTo(event.clientY);
   };
 
   const onPointerMove = (event) => {
-    if (!draggingRef.current) return;
+    if (event.pointerId !== activePointerIdRef.current) return;
     event.preventDefault();
-    const index = indexFromClientY(event.clientY);
-    if (index != null && index !== dragIndex) {
-      setDragIndex(index);
-      jumpTo(index);
-    }
+    moveTo(event.clientY);
   };
 
   const endDrag = (event) => {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
+    if (event.pointerId !== activePointerIdRef.current) return;
+    activePointerIdRef.current = null;
+    navRectRef.current = null;
     // why: clear the callout unconditionally first — releasePointerCapture
     // throws if the pointer was never actually captured (see onPointerDown),
     // and that must not leave the callout stuck on screen after release.
     setDragIndex(null);
-    try {
-      navRef.current?.releasePointerCapture?.(event.pointerId);
-    } catch {
-      // nothing was captured, nothing to release
-    }
+    safePointerCall(() =>
+      navRef.current?.releasePointerCapture?.(event.pointerId),
+    );
   };
 
   return (
@@ -106,7 +115,7 @@ const StoryDotNav = memo(function StoryDotNav({ className }) {
           className={index === activeIndex ? "dot active" : "dot"}
           aria-label={`Jump to ${label}`}
           aria-current={index === activeIndex ? "true" : undefined}
-          onClick={() => jumpTo(index)}
+          onClick={() => onJump(index)}
         />
       ))}
     </nav>

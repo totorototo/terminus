@@ -10,7 +10,7 @@ import StoryTerrain from "./sections/StoryTerrain.jsx";
 
 // Single source of truth for which sections exist, in order — shared by
 // Story.jsx (renders + observes them) and StoryDotNav.jsx (renders the jump
-// list), which live in different subtrees (see storyNav.js's why-comment).
+// list), which Story.jsx portals to <body> (see its own why-comment).
 export const STORY_SECTIONS = [
   { id: "hero", label: "Overview", Component: StoryHero },
   { id: "map", label: "Map", Component: StoryMap },
