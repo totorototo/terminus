@@ -7,6 +7,7 @@ import { useGPXWorker } from "../../hooks/useGPXWorker.js";
 import useStore from "../../store/store.js";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner.jsx";
 import Story from "../story/Story.jsx";
+import StoryDotNav from "../story/StoryDotNav.jsx";
 import ThemeToggle from "../story/ThemeToggle.jsx";
 
 import style from "./TrailerScreen.style";
@@ -54,6 +55,7 @@ function TrailerScreen({ className }) {
           ThemeToggle's own why-comment for the fixed-positioning hazard
           that lives inside it. */}
       <ThemeToggle />
+      {!isWorkerReady ? null : <StoryDotNav />}
       <div className={className}>
         {!isWorkerReady ? <LoadingSpinner /> : <Story />}
       </div>
