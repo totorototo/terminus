@@ -1,10 +1,11 @@
 /**
  * Story dot-nav e2e tests.
  *
- * StoryDotNav renders outside Story's scrolling container (see
- * storyNav.js's why-comment for why) but drives it via a registered scroll
- * handler, and tracks which section is current via an IntersectionObserver
- * scrollspy in Story.jsx. Both directions of that bridge are exercised here.
+ * StoryDotNav is portaled to document.body by Story.jsx to escape its
+ * scrolling container (position: fixed doesn't survive iOS Safari's
+ * compositing of an overflow:auto + mask-image ancestor), but stays a real
+ * child in the React tree — jump/scroll and activeIndex flow as plain
+ * props/closures. Both directions of that bridge are exercised here.
  */
 import { expect, selectRunnerRole, test } from "./helpers.js";
 

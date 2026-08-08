@@ -10,7 +10,6 @@ import { createRecalibrationSlice } from "./slices/recalibration";
 import { createSectionsSlice } from "./slices/sections";
 import { createStagesSlice } from "./slices/stages";
 import { createStatsSlice } from "./slices/stats";
-import { createStoryNavSlice } from "./slices/storyNav";
 import { createWayPointsSlice } from "./slices/wayPoints";
 import { createWeatherSlice } from "./slices/weather";
 import { createWorkerSlice } from "./slices/worker";
@@ -30,7 +29,6 @@ const useStore = create(
         ...createRecalibrationSlice(...a),
         ...createGPSSlice(...a),
         ...createWeatherSlice(...a),
-        ...createStoryNavSlice(...a),
       })),
       {
         name: "terminus-storage",

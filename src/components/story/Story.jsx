@@ -1,9 +1,11 @@
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 
 import { curveCatmullRom, line as d3Line } from "d3-shape";
+import { createPortal } from "react-dom";
 
 import { createXScale, createYScale } from "../../helpers/d3.js";
 import useStore, { useProjectedLocation } from "../../store/store.js";
+import StoryDotNav from "./StoryDotNav.jsx";
 import { STORY_SECTIONS } from "./storySections.js";
 
 import style from "./Story.style.js";
@@ -68,11 +70,8 @@ function markerPosition(contour, index) {
 const Story = memo(function Story({ className }) {
   const gpxData = useStore((state) => state.gpx.data);
   const projectedLocation = useProjectedLocation();
-  const setStoryActiveIndex = useStore((state) => state.setStoryActiveIndex);
-  const setStoryScrollHandler = useStore(
-    (state) => state.setStoryScrollHandler,
-  );
   const sectionRefs = useRef([]);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const contour = useMemo(() => buildContour(gpxData), [gpxData]);
 
@@ -81,18 +80,12 @@ const Story = memo(function Story({ className }) {
       ? markerPosition(contour, projectedLocation.index)
       : null;
 
-  // why: StoryDotNav lives outside this scrolling container (see
-  // storyNav.js) and can't hold refs into this subtree — registering a
-  // scroll-to-index function here is the bridge it calls through instead.
-  useEffect(() => {
-    setStoryScrollHandler((index) => {
-      sectionRefs.current[index]?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+  const jumpToIndex = (index) => {
+    sectionRefs.current[index]?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
     });
-    return () => setStoryScrollHandler(null);
-  }, [setStoryScrollHandler]);
+  };
 
   // why: a thin band near the top of the viewport (not the full viewport)
   // is the standard scrollspy trick — whichever section's boundary is
@@ -104,52 +97,72 @@ const Story = memo(function Story({ className }) {
     if (typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const index = sectionRefs.current.indexOf(entry.target);
-          if (index !== -1) setStoryActiveIndex(index);
-        });
+        // why: near a section boundary, both neighbors can sit inside the
+        // thin band in the same callback batch — entries[] order isn't
+        // guaranteed to match scroll order, so picking "whichever came
+        // last" flips the active dot depending on iteration order rather
+        // than position. The topmost intersecting entry is the one the
+        // reader is actually at.
+        const visible = entries.filter((entry) => entry.isIntersecting);
+        if (!visible.length) return;
+        const topmost = visible.reduce((a, b) =>
+          a.boundingClientRect.top <= b.boundingClientRect.top ? a : b,
+        );
+        const index = sectionRefs.current.indexOf(topmost.target);
+        if (index !== -1) setActiveIndex(index);
       },
       { rootMargin: "-15% 0px -80% 0px", threshold: 0 },
     );
     sectionRefs.current.forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
-  }, [setStoryActiveIndex]);
+  }, []);
 
   return (
-    <div className={className}>
-      {contour?.path && (
-        <svg
-          className="story-contour"
-          viewBox={`0 0 ${CONTOUR_WIDTH} ${CONTOUR_HEIGHT}`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path d={contour.path} className="contour-line" fill="none" />
-        </svg>
+    <>
+      {/* why: position: fixed inside this scrolling container doesn't
+          reliably survive iOS Safari's compositing of an overflow:auto +
+          mask-image ancestor (see ThemeToggle's own why-comment for the
+          same constraint) — portal straight to <body> so the nav is a
+          proper viewport-fixed control. Portaling (not a separate sibling
+          mount) keeps activeIndex/jumpToIndex as plain props instead of a
+          cross-tree bridge. */}
+      {createPortal(
+        <StoryDotNav activeIndex={activeIndex} onJump={jumpToIndex} />,
+        document.body,
       )}
-      {marker && (
-        <div
-          className="story-marker"
-          style={{ left: `${marker.leftPct}%`, top: `${marker.topPct}%` }}
-          aria-hidden="true"
-        />
-      )}
-
-      <div className="story-content">
-        {STORY_SECTIONS.map(({ id, Component }, index) => (
-          <div
-            key={id}
-            id={`story-section-${id}`}
-            ref={(el) => {
-              sectionRefs.current[index] = el;
-            }}
+      <div className={className}>
+        {contour?.path && (
+          <svg
+            className="story-contour"
+            viewBox={`0 0 ${CONTOUR_WIDTH} ${CONTOUR_HEIGHT}`}
+            preserveAspectRatio="none"
+            aria-hidden="true"
           >
-            <Component />
-          </div>
-        ))}
+            <path d={contour.path} className="contour-line" fill="none" />
+          </svg>
+        )}
+        {marker && (
+          <div
+            className="story-marker"
+            style={{ left: `${marker.leftPct}%`, top: `${marker.topPct}%` }}
+            aria-hidden="true"
+          />
+        )}
+
+        <div className="story-content">
+          {STORY_SECTIONS.map(({ id, Component }, index) => (
+            <div
+              key={id}
+              ref={(el) => {
+                sectionRefs.current[index] = el;
+              }}
+            >
+              <Component />
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 });
 

@@ -15,6 +15,12 @@ vi.mock("./Story.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
 
+vi.mock("./StoryDotNav.jsx", () => ({
+  default: ({ activeIndex }) => (
+    <div data-testid="story-dot-nav" data-active-index={activeIndex} />
+  ),
+}));
+
 vi.mock("./sections/StoryHero.jsx", () => ({
   default: () => <div data-testid="story-hero">StoryHero</div>,
 }));
@@ -53,11 +59,7 @@ describe("Story", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     storeModule.default.mockImplementation((selector) =>
-      selector({
-        gpx: { data: gpxData },
-        setStoryActiveIndex: vi.fn(),
-        setStoryScrollHandler: vi.fn(),
-      }),
+      selector({ gpx: { data: gpxData } }),
     );
     storeModule.useProjectedLocation.mockReturnValue({ index: 5 });
   });
@@ -75,13 +77,17 @@ describe("Story", () => {
     expect(screen.getByTestId("story-end")).toBeInTheDocument();
   });
 
+  it("portals the dot nav to the document body with the initial active index", () => {
+    render(<Story />);
+    const dotNav = screen.getByTestId("story-dot-nav");
+    expect(dotNav).toBeInTheDocument();
+    expect(document.body).toContainElement(dotNav);
+    expect(dotNav).toHaveAttribute("data-active-index", "0");
+  });
+
   it("renders without a route loaded yet", () => {
     storeModule.default.mockImplementation((selector) =>
-      selector({
-        gpx: { data: null },
-        setStoryActiveIndex: vi.fn(),
-        setStoryScrollHandler: vi.fn(),
-      }),
+      selector({ gpx: { data: null } }),
     );
     storeModule.useProjectedLocation.mockReturnValue({ index: null });
 
