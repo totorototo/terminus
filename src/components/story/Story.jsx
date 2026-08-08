@@ -1,18 +1,10 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 
 import { curveCatmullRom, line as d3Line } from "d3-shape";
 
 import { createXScale, createYScale } from "../../helpers/d3.js";
 import useStore, { useProjectedLocation } from "../../store/store.js";
-import StoryCheckpoints from "./sections/StoryCheckpoints.jsx";
-import StoryClimbs from "./sections/StoryClimbs.jsx";
-import StoryEnd from "./sections/StoryEnd.jsx";
-import StoryHero from "./sections/StoryHero.jsx";
-import StoryMap from "./sections/StoryMap.jsx";
-import StoryNow from "./sections/StoryNow.jsx";
-import StoryPace from "./sections/StoryPace.jsx";
-import StoryStages from "./sections/StoryStages.jsx";
-import StoryTerrain from "./sections/StoryTerrain.jsx";
+import { STORY_SECTIONS } from "./storySections.js";
 
 import style from "./Story.style.js";
 
@@ -76,6 +68,11 @@ function markerPosition(contour, index) {
 const Story = memo(function Story({ className }) {
   const gpxData = useStore((state) => state.gpx.data);
   const projectedLocation = useProjectedLocation();
+  const setStoryActiveIndex = useStore((state) => state.setStoryActiveIndex);
+  const setStoryScrollHandler = useStore(
+    (state) => state.setStoryScrollHandler,
+  );
+  const sectionRefs = useRef([]);
 
   const contour = useMemo(() => buildContour(gpxData), [gpxData]);
 
@@ -83,6 +80,41 @@ const Story = memo(function Story({ className }) {
     contour && projectedLocation?.index != null
       ? markerPosition(contour, projectedLocation.index)
       : null;
+
+  // why: StoryDotNav lives outside this scrolling container (see
+  // storyNav.js) and can't hold refs into this subtree — registering a
+  // scroll-to-index function here is the bridge it calls through instead.
+  useEffect(() => {
+    setStoryScrollHandler((index) => {
+      sectionRefs.current[index]?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+    return () => setStoryScrollHandler(null);
+  }, [setStoryScrollHandler]);
+
+  // why: a thin band near the top of the viewport (not the full viewport)
+  // is the standard scrollspy trick — whichever section's boundary is
+  // crossing that band is "current". Observing the whole viewport instead
+  // would make the nav track whichever section happens to be tallest/most
+  // visible, jumping past short sections a reader is actually scrolling
+  // through.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const index = sectionRefs.current.indexOf(entry.target);
+          if (index !== -1) setStoryActiveIndex(index);
+        });
+      },
+      { rootMargin: "-15% 0px -80% 0px", threshold: 0 },
+    );
+    sectionRefs.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, [setStoryActiveIndex]);
 
   return (
     <div className={className}>
@@ -105,15 +137,17 @@ const Story = memo(function Story({ className }) {
       )}
 
       <div className="story-content">
-        <StoryHero />
-        <StoryMap />
-        <StoryNow />
-        <StoryClimbs />
-        <StoryTerrain />
-        <StoryPace />
-        <StoryStages />
-        <StoryCheckpoints />
-        <StoryEnd />
+        {STORY_SECTIONS.map(({ id, Component }, index) => (
+          <div
+            key={id}
+            id={`story-section-${id}`}
+            ref={(el) => {
+              sectionRefs.current[index] = el;
+            }}
+          >
+            <Component />
+          </div>
+        ))}
       </div>
     </div>
   );

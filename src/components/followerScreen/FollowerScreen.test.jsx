@@ -36,6 +36,10 @@ vi.mock("../story/ThemeToggle.jsx", () => ({
   default: () => <div data-testid="theme-toggle" />,
 }));
 
+vi.mock("../story/StoryDotNav.jsx", () => ({
+  default: () => <div data-testid="story-dot-nav" />,
+}));
+
 vi.mock("./FollowerScreen.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
