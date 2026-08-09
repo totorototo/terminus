@@ -16,6 +16,10 @@ vi.mock("./RunnabilityIndex.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
 
+vi.mock("../StripReadout/StripReadout.style.js", () => ({
+  default: (Component) => (props) => <Component {...props} />,
+}));
+
 vi.mock("styled-components", async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, useTheme: vi.fn() };
@@ -103,5 +107,35 @@ describe("RunnabilityIndex", () => {
     });
     const { container } = render(<RunnabilityIndex />);
     expect(container.querySelector(".ri-done-mask")).not.toBeInTheDocument();
+  });
+
+  it("renders a live runnability readout at the projected location", () => {
+    setupStore({
+      gpxData: GPX_DATA,
+      paceFactors: PACE_FACTORS,
+      projectedLocation: { index: 4, timestamp: 0 },
+    });
+    const { container } = render(<RunnabilityIndex />);
+    // "Hike-only" also appears in the always-rendered legend, so scope the
+    // query to the readout to avoid an ambiguous multi-match.
+    expect(container.querySelector(".strip-readout-value")).toHaveTextContent(
+      "Hike-only",
+    );
+  });
+
+  it("clamps a projected index past the end of paceFactors instead of showing a stale label", () => {
+    // Last factor is Hike-only-worthy so an unclamped `paceFactors[999]`
+    // (undefined, falling back to 1 → "Runnable") is distinguishable from
+    // the correctly-clamped read.
+    const factorsWithHikeTail = [...PACE_FACTORS.slice(0, -1), 3.0];
+    setupStore({
+      gpxData: GPX_DATA,
+      paceFactors: factorsWithHikeTail,
+      projectedLocation: { index: 999, timestamp: 0 },
+    });
+    const { container } = render(<RunnabilityIndex />);
+    expect(container.querySelector(".strip-readout-value")).toHaveTextContent(
+      "Hike-only",
+    );
   });
 });

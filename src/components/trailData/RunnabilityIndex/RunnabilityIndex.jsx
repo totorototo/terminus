@@ -4,6 +4,7 @@ import { hsl, parseToHsl } from "polished";
 import { useTheme } from "styled-components";
 
 import useStore, { useProjectedLocation } from "../../../store/store.js";
+import StripReadout from "../StripReadout/StripReadout.jsx";
 
 import style from "./RunnabilityIndex.style.js";
 
@@ -82,7 +83,10 @@ const RunnabilityIndex = memo(function RunnabilityIndex({ className }) {
       currentPct = (doneWidth / WIDTH) * 100;
       // why: label rather than raw pace factor — "Marginal" reads faster
       // at a glance than "1.8x" and matches what the legend already teaches.
-      const currentFactor = paceFactors[projectedIndex] || 1;
+      // Index clamped like sampledIdx above — projectedIndex can momentarily
+      // outlive a shorter paceFactors array on a route swap.
+      const clampedIndex = Math.min(projectedIndex, paceFactors.length - 1);
+      const currentFactor = paceFactors[clampedIndex] || 1;
       currentLabel = RUNNABILITY_BANDS[bandIndex(currentFactor)].label;
     }
 
@@ -131,19 +135,11 @@ const RunnabilityIndex = memo(function RunnabilityIndex({ className }) {
         )}
       </svg>
 
-      {currentPct !== null && (
-        <div className="ri-readout">
-          <span
-            className="ri-readout-value"
-            style={{
-              left: `clamp(28px, ${currentPct}%, calc(100% - 28px))`,
-              transform: "translateX(-50%)",
-            }}
-          >
-            {currentLabel}
-          </span>
-        </div>
-      )}
+      <StripReadout
+        pct={currentPct}
+        value={currentLabel}
+        color={theme.colors[theme.currentVariant]["--color-primary"]}
+      />
 
       <div className="ri-legend">
         {RUNNABILITY_BANDS.map((band, i) => (

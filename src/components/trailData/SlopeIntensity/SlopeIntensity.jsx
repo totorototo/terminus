@@ -4,6 +4,7 @@ import { hsl, parseToHsl } from "polished";
 import { useTheme } from "styled-components";
 
 import useStore, { useProjectedLocation } from "../../../store/store.js";
+import StripReadout from "../StripReadout/StripReadout.jsx";
 
 import style from "./SlopeIntensity.style.js";
 
@@ -86,8 +87,11 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
       currentPct = (doneWidth / WIDTH) * 100;
       // why: read the full-resolution slope at the runner's exact index
       // rather than the downsampled band value, so the number matches
-      // reality even where MAX_POINTS smooths the strip.
-      currentGrade = Math.round(Math.abs(slopes[projectedIndex] || 0));
+      // reality even where MAX_POINTS smooths the strip. Clamped like
+      // sampledIdx above — projectedIndex can momentarily outlive a
+      // shorter gpxData/slopes array on a route swap.
+      const clampedIndex = Math.min(projectedIndex, slopes.length - 1);
+      currentGrade = Math.round(Math.abs(slopes[clampedIndex] || 0));
     }
 
     const steepestBandLabel =
@@ -136,19 +140,11 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
         )}
       </svg>
 
-      {currentPct !== null && (
-        <div className="si-readout">
-          <span
-            className="si-readout-value"
-            style={{
-              left: `clamp(28px, ${currentPct}%, calc(100% - 28px))`,
-              transform: "translateX(-50%)",
-            }}
-          >
-            {currentGrade}% grade
-          </span>
-        </div>
-      )}
+      <StripReadout
+        pct={currentPct}
+        value={currentGrade !== null ? `${currentGrade}% grade` : null}
+        color={theme.colors[theme.currentVariant]["--color-accent"]}
+      />
 
       <div className="si-legend">
         {GRADE_BANDS.map((band, i) => (

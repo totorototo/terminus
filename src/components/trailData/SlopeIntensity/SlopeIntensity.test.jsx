@@ -16,6 +16,10 @@ vi.mock("./SlopeIntensity.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
 
+vi.mock("../StripReadout/StripReadout.style.js", () => ({
+  default: (Component) => (props) => <Component {...props} />,
+}));
+
 vi.mock("styled-components", async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, useTheme: vi.fn() };
@@ -101,5 +105,28 @@ describe("SlopeIntensity", () => {
     setupStore({ gpxData: GPX_DATA, slopes: SLOPES, projectedLocation: null });
     const { container } = render(<SlopeIntensity />);
     expect(container.querySelector(".si-done-mask")).not.toBeInTheDocument();
+  });
+
+  it("renders a live grade readout at the projected location", () => {
+    setupStore({
+      gpxData: GPX_DATA,
+      slopes: SLOPES,
+      projectedLocation: { index: 2, timestamp: 0 },
+    });
+    render(<SlopeIntensity />);
+    expect(screen.getByText("12% grade")).toBeInTheDocument();
+  });
+
+  it("clamps a projected index past the end of slopes instead of showing a stale zero", () => {
+    // Last slope is non-zero so an unclamped `slopes[999]` (undefined,
+    // falling back to 0) is distinguishable from the correctly-clamped read.
+    const slopesWithSteepTail = [...SLOPES.slice(0, -1), 9];
+    setupStore({
+      gpxData: GPX_DATA,
+      slopes: slopesWithSteepTail,
+      projectedLocation: { index: 999, timestamp: 0 },
+    });
+    render(<SlopeIntensity />);
+    expect(screen.getByText("9% grade")).toBeInTheDocument();
   });
 });
