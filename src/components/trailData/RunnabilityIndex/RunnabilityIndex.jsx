@@ -8,7 +8,9 @@ import useStore, { useProjectedLocation } from "../../../store/store.js";
 import style from "./RunnabilityIndex.style.js";
 
 const WIDTH = 300;
-const HEIGHT = 8;
+// why: matches SlopeIntensity's bump — 8px was a color-only sliver, hard to
+// separate from itself on a phone in daylight.
+const HEIGHT = 14;
 const MAX_POINTS = 300;
 
 // Bands on Minetti pace factor (cost of transport relative to flat) — chosen to
@@ -38,7 +40,9 @@ const RunnabilityIndex = memo(function RunnabilityIndex({ className }) {
   const bandColors = useMemo(() => {
     const colors = theme.colors[theme.currentVariant];
     const primary = parseToHsl(colors["--color-primary"]);
-    const tintLightness = Math.min(0.92, primary.lightness + 0.35);
+    // why: widened from +0.35, same rationale as SlopeIntensity — more
+    // lightness spread between bands for outdoor legibility.
+    const tintLightness = Math.min(0.92, primary.lightness + 0.48);
 
     return RUNNABILITY_BANDS.map((_, i) => {
       const t = i / (RUNNABILITY_BANDS.length - 1);
@@ -67,24 +71,33 @@ const RunnabilityIndex = memo(function RunnabilityIndex({ className }) {
     }));
 
     let doneWidth = null;
+    let currentPct = null;
+    let currentLabel = null;
     if (projectedIndex !== null) {
       const sampledIdx = Math.min(
         Math.floor(projectedIndex / step),
         factors.length - 1,
       );
       doneWidth = sampledIdx * segWidth;
+      currentPct = (doneWidth / WIDTH) * 100;
+      // why: label rather than raw pace factor — "Marginal" reads faster
+      // at a glance than "1.8x" and matches what the legend already teaches.
+      const currentFactor = paceFactors[projectedIndex] || 1;
+      currentLabel = RUNNABILITY_BANDS[bandIndex(currentFactor)].label;
     }
 
     const worstBandLabel =
       RUNNABILITY_BANDS[Math.max(...factors.map((pf) => bandIndex(pf)))].label;
-    const ariaLabel = `Runnability index strip: terrain runnability across the route, worst rating ${worstBandLabel}.`;
+    const ariaLabel = currentLabel
+      ? `Runnability index strip: terrain runnability across the route, worst rating ${worstBandLabel}. Currently ${currentLabel}.`
+      : `Runnability index strip: terrain runnability across the route, worst rating ${worstBandLabel}.`;
 
-    return { bands, doneWidth, ariaLabel };
+    return { bands, doneWidth, currentPct, currentLabel, ariaLabel };
   }, [gpxData, paceFactors, bandColors, projectedIndex]);
 
   if (!chart) return null;
 
-  const { bands, doneWidth, ariaLabel } = chart;
+  const { bands, doneWidth, currentPct, currentLabel, ariaLabel } = chart;
 
   return (
     <div className={className}>
@@ -117,6 +130,20 @@ const RunnabilityIndex = memo(function RunnabilityIndex({ className }) {
           />
         )}
       </svg>
+
+      {currentPct !== null && (
+        <div className="ri-readout">
+          <span
+            className="ri-readout-value"
+            style={{
+              left: `clamp(28px, ${currentPct}%, calc(100% - 28px))`,
+              transform: "translateX(-50%)",
+            }}
+          >
+            {currentLabel}
+          </span>
+        </div>
+      )}
 
       <div className="ri-legend">
         {RUNNABILITY_BANDS.map((band, i) => (
