@@ -8,7 +8,9 @@ import useStore, { useProjectedLocation } from "../../../store/store.js";
 import style from "./SlopeIntensity.style.js";
 
 const WIDTH = 300;
-const HEIGHT = 8;
+// why: 8px read as a color-only sliver in daylight; taller bands plus the
+// live readout below give a glance-while-moving reader two independent cues.
+const HEIGHT = 14;
 const MAX_POINTS = 300;
 
 const GRADE_BANDS = [
@@ -38,7 +40,10 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
   const bandColors = useMemo(() => {
     const colors = theme.colors[theme.currentVariant];
     const accent = parseToHsl(colors["--color-accent"]);
-    const tintLightness = Math.min(0.92, accent.lightness + 0.35);
+    // why: widened from +0.35 so adjacent bands sit further apart in
+    // lightness — the original spread was too subtle to tell bands apart
+    // on a phone screen outdoors.
+    const tintLightness = Math.min(0.92, accent.lightness + 0.48);
 
     return GRADE_BANDS.map((_, i) => {
       const t = i / (GRADE_BANDS.length - 1);
@@ -70,24 +75,34 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
     // vertical axis for a dot to sit on. An opacity mask over the
     // already-run portion doubles as an implicit progress indicator instead.
     let doneWidth = null;
+    let currentPct = null;
+    let currentGrade = null;
     if (projectedIndex !== null) {
       const sampledIdx = Math.min(
         Math.floor(projectedIndex / step),
         grades.length - 1,
       );
       doneWidth = sampledIdx * segWidth;
+      currentPct = (doneWidth / WIDTH) * 100;
+      // why: read the full-resolution slope at the runner's exact index
+      // rather than the downsampled band value, so the number matches
+      // reality even where MAX_POINTS smooths the strip.
+      currentGrade = Math.round(Math.abs(slopes[projectedIndex] || 0));
     }
 
     const steepestBandLabel =
       GRADE_BANDS[Math.max(...grades.map((g) => bandIndex(Math.abs(g))))].label;
-    const ariaLabel = `Slope intensity strip: grade distribution across the route, steepest band ${steepestBandLabel}.`;
+    const ariaLabel =
+      currentGrade !== null
+        ? `Slope intensity strip: grade distribution across the route, steepest band ${steepestBandLabel}. Currently at ${currentGrade}% grade.`
+        : `Slope intensity strip: grade distribution across the route, steepest band ${steepestBandLabel}.`;
 
-    return { bands, doneWidth, ariaLabel };
+    return { bands, doneWidth, currentPct, currentGrade, ariaLabel };
   }, [gpxData, slopes, bandColors, projectedIndex]);
 
   if (!chart) return null;
 
-  const { bands, doneWidth, ariaLabel } = chart;
+  const { bands, doneWidth, currentPct, currentGrade, ariaLabel } = chart;
 
   return (
     <div className={className}>
@@ -120,6 +135,20 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
           />
         )}
       </svg>
+
+      {currentPct !== null && (
+        <div className="si-readout">
+          <span
+            className="si-readout-value"
+            style={{
+              left: `clamp(28px, ${currentPct}%, calc(100% - 28px))`,
+              transform: "translateX(-50%)",
+            }}
+          >
+            {currentGrade}% grade
+          </span>
+        </div>
+      )}
 
       <div className="si-legend">
         {GRADE_BANDS.map((band, i) => (
