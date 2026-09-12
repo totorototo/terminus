@@ -7,6 +7,15 @@ const FLAT_GRADE_THRESHOLD_PCT = 2;
 // that reads Hike-only there is exactly what lands in walkTimeS here.
 const HIKE_ONLY_PACE_FACTOR = 2.3;
 
+// Mirrors RunnabilityIndex's own RUNNABILITY_BANDS exactly (same Minetti
+// pace-factor cutoffs, including HIKE_ONLY_PACE_FACTOR above), so a segment
+// that reads "Marginal" there lands in the same bucket here.
+const RUNNABILITY_BANDS = [
+  { max: 1.5, label: "Runnable" },
+  { max: HIKE_ONLY_PACE_FACTOR, label: "Marginal" },
+  { max: Infinity, label: "Hike-only" },
+];
+
 // why: there's no separate walking-fitness profile in the app, so the walk
 // pace is derived from the selected Runner profile's flat run pace rather
 // than picked independently — a fixed extra cost per km, not a multiplier,
@@ -57,6 +66,7 @@ export function computeRouteStats({
   let runTimeS = 0;
   let walkTimeS = 0;
   const uphillBandDist = UPHILL_GRADE_BANDS.map(() => 0);
+  const runnabilityBandDist = RUNNABILITY_BANDS.map(() => 0);
 
   const runSpeedMPerS = 1000 / runBasePaceSPerKm;
   const walkSpeedMPerS = 1000 / (runBasePaceSPerKm + WALK_PACE_OFFSET_S_PER_KM);
@@ -93,6 +103,11 @@ export function computeRouteStats({
     } else {
       runTimeS += (segDist * paceFactor) / runSpeedMPerS;
     }
+
+    const runnabilityIndex = RUNNABILITY_BANDS.findIndex(
+      (band) => paceFactor < band.max,
+    );
+    runnabilityBandDist[runnabilityIndex] += segDist;
   }
 
   const totalDist = uphillDist + downhillDist + flatDist;
@@ -110,6 +125,10 @@ export function computeRouteStats({
     uphillGradientDistribution: UPHILL_GRADE_BANDS.map((band, i) => ({
       label: band.label,
       distanceM: uphillBandDist[i],
+    })),
+    runnabilityDistribution: RUNNABILITY_BANDS.map((band, i) => ({
+      label: band.label,
+      distanceM: runnabilityBandDist[i],
     })),
     walkTimeS,
     runTimeS,

@@ -1,8 +1,8 @@
 import { memo, useMemo } from "react";
 
-import { hsl, parseToHsl } from "polished";
 import { useTheme } from "styled-components";
 
+import { gradeBandColors } from "../../../helpers/gradeBandColors.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 import StripReadout from "../StripReadout/StripReadout.jsx";
 
@@ -34,26 +34,14 @@ const RunnabilityIndex = memo(function RunnabilityIndex({ className }) {
   const projectedIndex = projectedLocation?.index ?? null;
   const theme = useTheme();
 
-  // why: same single-hue ramp treatment as SlopeIntensity (mono, not a 3-color
-  // traffic light) for visual consistency between the two strips — stepping off
-  // --color-primary here instead of --color-accent so the two derived charts
-  // read as a matched pair rather than duplicating the same hue.
-  const bandColors = useMemo(() => {
-    const colors = theme.colors[theme.currentVariant];
-    const primary = parseToHsl(colors["--color-primary"]);
-    // why: widened from +0.35, same rationale as SlopeIntensity — more
-    // lightness spread between bands for outdoor legibility.
-    const tintLightness = Math.min(0.92, primary.lightness + 0.48);
-
-    return RUNNABILITY_BANDS.map((_, i) => {
-      const t = i / (RUNNABILITY_BANDS.length - 1);
-      return hsl({
-        hue: primary.hue,
-        saturation: primary.saturation,
-        lightness: tintLightness + (primary.lightness - tintLightness) * t,
-      });
-    });
-  }, [theme]);
+  // why: same single-hue ramp treatment as SlopeIntensity (mono, not a
+  // 3-color traffic light) for visual consistency between the two strips —
+  // keyed off --color-primary instead of --color-accent so the two derived
+  // charts read as a matched pair rather than duplicating the same hue.
+  const bandColors = useMemo(
+    () => gradeBandColors(theme, RUNNABILITY_BANDS.length, "--color-primary"),
+    [theme],
+  );
 
   const chart = useMemo(() => {
     if (!gpxData?.length || !paceFactors.length) return null;

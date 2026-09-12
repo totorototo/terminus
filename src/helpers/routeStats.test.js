@@ -54,6 +54,26 @@ describe("computeRouteStats", () => {
     expect(byLabel["5–10%"]).toBe(0);
   });
 
+  it("buckets distance into the matching runnability band", () => {
+    const cumulativeDistances = [0, 1000, 2000, 3000];
+    const slopes = [0, 0, 0, 0];
+    const paceFactors = [1, 1, 1.8, 2.5];
+
+    const stats = computeRouteStats({
+      slopes,
+      paceFactors,
+      cumulativeDistances,
+      runBasePaceSPerKm: 490,
+    });
+
+    const byLabel = Object.fromEntries(
+      stats.runnabilityDistribution.map((b) => [b.label, b.distanceM]),
+    );
+    expect(byLabel["Runnable"]).toBe(1000);
+    expect(byLabel["Marginal"]).toBe(1000);
+    expect(byLabel["Hike-only"]).toBe(1000);
+  });
+
   it("routes a segment to walkTimeS once its paceFactor crosses the hike-only cutoff", () => {
     // One easy km (paceFactor 1, runnable) then one brutal km (paceFactor
     // 2.5, matches RunnabilityIndex's "Hike-only" band) — the two segments

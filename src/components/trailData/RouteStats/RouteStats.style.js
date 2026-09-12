@@ -117,6 +117,10 @@ const style = (Component) => styled(Component)`
     gap: ${(props) => props.theme.spacing[2]}px;
   }
 
+  .rs-grade-distribution + .rs-grade-distribution {
+    margin-top: ${(props) => props.theme.spacing[5]}px;
+  }
+
   .rs-gd-title {
     display: block;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};

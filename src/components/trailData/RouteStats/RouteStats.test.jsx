@@ -39,7 +39,9 @@ describe("RouteStats", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useTheme.mockReturnValue({
-      colors: { dark: { "--color-accent": "#3388ff" } },
+      colors: {
+        dark: { "--color-accent": "#3388ff", "--color-primary": "#ff8833" },
+      },
       currentVariant: "dark",
     });
   });
