@@ -1,8 +1,8 @@
 import { memo, useMemo } from "react";
 
-import { hsl, parseToHsl } from "polished";
 import { useTheme } from "styled-components";
 
+import { gradeBandColors } from "../../../helpers/gradeBandColors.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 import StripReadout from "../StripReadout/StripReadout.jsx";
 
@@ -32,29 +32,10 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
   const projectedIndex = projectedLocation?.index ?? null;
   const theme = useTheme();
 
-  // why: a single-hue sequential ramp (same hue/saturation as the theme's
-  // "accent" token, lightness stepping from a pale tint down to the accent
-  // color itself) reads severity ordering more directly than a hue-rotating
-  // rainbow, and stays consistent with the app's mostly monochrome palette.
-  // The most severe band lands exactly on --color-accent, so it still means
-  // the same thing here as everywhere else it's used.
-  const bandColors = useMemo(() => {
-    const colors = theme.colors[theme.currentVariant];
-    const accent = parseToHsl(colors["--color-accent"]);
-    // why: widened from +0.35 so adjacent bands sit further apart in
-    // lightness — the original spread was too subtle to tell bands apart
-    // on a phone screen outdoors.
-    const tintLightness = Math.min(0.92, accent.lightness + 0.48);
-
-    return GRADE_BANDS.map((_, i) => {
-      const t = i / (GRADE_BANDS.length - 1);
-      return hsl({
-        hue: accent.hue,
-        saturation: accent.saturation,
-        lightness: tintLightness + (accent.lightness - tintLightness) * t,
-      });
-    });
-  }, [theme]);
+  const bandColors = useMemo(
+    () => gradeBandColors(theme, GRADE_BANDS.length),
+    [theme],
+  );
 
   const chart = useMemo(() => {
     if (!gpxData?.length || !slopes.length) return null;

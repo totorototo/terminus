@@ -171,8 +171,6 @@ const style = (Component) => styled(Component)`
   .rs-gd-fill {
     display: block;
     height: 100%;
-    background: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-accent"]};
   }
 `;
 
