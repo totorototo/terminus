@@ -155,10 +155,10 @@ const style = (Component) => styled(Component)`
 
   .rs-gd-track {
     display: block;
-    /* why: same 14px height as the terrain-breakdown bar above and the
-       sibling strips elsewhere in this section — one bar height per
-       section, not three. */
-    height: 14px;
+    /* why: shorter than the single terrain-breakdown bar above — this one
+       repeats 5x in a list, so the full 14px strip height reads too heavy
+       stacked. */
+    height: ${(props) => props.theme.spacing[3]}px;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
     background: ${(props) =>
       rgba(
