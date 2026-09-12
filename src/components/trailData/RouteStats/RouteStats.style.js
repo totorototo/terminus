@@ -47,7 +47,9 @@ const style = (Component) => styled(Component)`
   .rs-tb-bar {
     display: flex;
     width: 100%;
-    height: ${(props) => props.theme.spacing[4]}px;
+    /* why: matches the 14px strip height SlopeIntensity/RunnabilityIndex
+       settled on above this component, in the same Terrain section. */
+    height: 14px;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
     overflow: hidden;
   }
@@ -56,9 +58,13 @@ const style = (Component) => styled(Component)`
     height: 100%;
   }
 
+  /* why: matches SlopeProfile's own climb/descent pairing (primary =
+     uphill, secondary = downhill) directly above this chart in the same
+     Terrain section — accent is RunnabilityIndex/SlopeIntensity's severity
+     ramp, not a direction color. */
   .rs-tb-uphill {
     background: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
   }
 
   .rs-tb-flat {
@@ -71,7 +77,7 @@ const style = (Component) => styled(Component)`
 
   .rs-tb-downhill {
     background: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
   }
 
   .rs-tb-legend {
@@ -149,7 +155,10 @@ const style = (Component) => styled(Component)`
 
   .rs-gd-track {
     display: block;
-    height: ${(props) => props.theme.spacing[3]}px;
+    /* why: same 14px height as the terrain-breakdown bar above and the
+       sibling strips elsewhere in this section — one bar height per
+       section, not three. */
+    height: 14px;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
     background: ${(props) =>
       rgba(
