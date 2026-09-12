@@ -72,7 +72,7 @@ pub fn douglasPeuckerIndices(
     keep[points.len - 1] = true;
 
     const Segment = struct { lo: usize, hi: usize };
-    var stack = std.ArrayList(Segment){};
+    var stack = std.ArrayList(Segment).empty;
     defer stack.deinit(allocator);
     try stack.append(allocator, .{ .lo = 0, .hi = points.len - 1 });
 
@@ -103,7 +103,7 @@ pub fn douglasPeuckerIndices(
         }
     }
 
-    var indices = std.ArrayList(usize){};
+    var indices = std.ArrayList(usize).empty;
     defer indices.deinit(allocator);
     for (0..points.len) |idx| {
         if (keep[idx]) try indices.append(allocator, idx);
@@ -400,14 +400,17 @@ test "bench: douglasPeuckerSimplify 10K points completes within 2s" {
     const points = try makeSyntheticTrace(allocator, n);
     defer allocator.free(points);
 
-    var timer = try std.time.Timer.start();
+    // why: Zig 0.16 removed std.time.Timer (I/O overhaul); wall time now comes
+    // from an Io clock instance, and std.testing.io is the one tests get for free.
+    const io = std.testing.io;
+    const start = std.Io.Clock.Timestamp.now(io, .awake);
     const simplified = try douglasPeuckerSimplify(allocator, points, 10.0);
-    const elapsed_ns = timer.read();
+    const elapsed_ns = start.untilNow(io).raw.nanoseconds;
     defer allocator.free(simplified);
 
     std.debug.print(
         "\n[bench] douglasPeuckerSimplify {d}K points: {d}ms  ({d} → {d} pts)\n",
-        .{ n / 1000, elapsed_ns / std.time.ns_per_ms, n, simplified.len },
+        .{ n / 1000, @divTrunc(elapsed_ns, std.time.ns_per_ms), n, simplified.len },
     );
 
     try expect(simplified.len >= 2);
@@ -423,14 +426,15 @@ test "bench: douglasPeuckerSimplify 50K points completes within 10s" {
     const points = try makeSyntheticTrace(allocator, n);
     defer allocator.free(points);
 
-    var timer = try std.time.Timer.start();
+    const io = std.testing.io;
+    const start = std.Io.Clock.Timestamp.now(io, .awake);
     const simplified = try douglasPeuckerSimplify(allocator, points, 10.0);
-    const elapsed_ns = timer.read();
+    const elapsed_ns = start.untilNow(io).raw.nanoseconds;
     defer allocator.free(simplified);
 
     std.debug.print(
         "\n[bench] douglasPeuckerSimplify {d}K points: {d}ms  ({d} → {d} pts)\n",
-        .{ n / 1000, elapsed_ns / std.time.ns_per_ms, n, simplified.len },
+        .{ n / 1000, @divTrunc(elapsed_ns, std.time.ns_per_ms), n, simplified.len },
     );
 
     try expect(simplified.len >= 2);
@@ -446,14 +450,17 @@ test "bench: douglasPeuckerSimplify 100K points completes within 30s" {
     const points = try makeSyntheticTrace(allocator, n);
     defer allocator.free(points);
 
-    var timer = try std.time.Timer.start();
+    // why: Zig 0.16 removed std.time.Timer (I/O overhaul); wall time now comes
+    // from an Io clock instance, and std.testing.io is the one tests get for free.
+    const io = std.testing.io;
+    const start = std.Io.Clock.Timestamp.now(io, .awake);
     const simplified = try douglasPeuckerSimplify(allocator, points, 10.0);
-    const elapsed_ns = timer.read();
+    const elapsed_ns = start.untilNow(io).raw.nanoseconds;
     defer allocator.free(simplified);
 
     std.debug.print(
         "\n[bench] douglasPeuckerSimplify {d}K points: {d}ms  ({d} → {d} pts)\n",
-        .{ n / 1000, elapsed_ns / std.time.ns_per_ms, n, simplified.len },
+        .{ n / 1000, @divTrunc(elapsed_ns, std.time.ns_per_ms), n, simplified.len },
     );
 
     try expect(simplified.len >= 2);

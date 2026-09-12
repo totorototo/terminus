@@ -3,7 +3,7 @@
 <p align="left">
 
 <a href="src/"><img src="https://img.shields.io/badge/Frontend-React%20%2B%20Editorial%20Story%20UI-purple" alt="Frontend React"></a>
-<a href="zig/"><img src="https://img.shields.io/badge/Performance-Zig%200.15.2%20%E2%86%92%20WASM-blue" alt="Zig WASM"></a>
+<a href="zig/"><img src="https://img.shields.io/badge/Performance-Zig%200.16.0%20%E2%86%92%20WASM-blue" alt="Zig WASM"></a>
 <a href="https://terminus-beta.netlify.app"><img src="https://img.shields.io/badge/Live%20Demo-terminus--beta.netlify.app-brightgreen" alt="Live Demo"></a>
 
 </p>
@@ -69,7 +69,7 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 
 - **Frontend**: React 19, Vite, Zustand (state management with DevTools/persist)
 - **Charts & Map**: d3-scale/d3-shape/d3-array for chart geometry, Mapbox GL (`react-map-gl`) for the 3D terrain map
-- **Performance**: Zig 0.15.2 → WASM via Zigar bindings with zero-copy optimization
+- **Performance**: Zig 0.16.0 → WASM via Zigar bindings with zero-copy optimization
 - **Real-time**: PartyKit WebSocket relay for live location sharing, Web Push (VAPID) for follower notifications
 - **Styling**: Styled-components, `@react-spring/web` for motion (respects `prefers-reduced-motion`)
 - **PWA**: Vite PWA plugin with service worker and install prompt
@@ -77,7 +77,7 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 ## Prerequisites
 
 - **Node.js**: v18+ (recommended v20+)
-- **Zig**: v0.15.2 for WASM compilation
+- **Zig**: v0.16.0 for WASM compilation
 - **npm**: Latest version
 
 Install Zig from [ziglang.org](https://ziglang.org/download/)
@@ -152,7 +152,7 @@ Zig was chosen over AssemblyScript or hand-written C for three reasons:
 2. **Algorithm clarity** — Zig's comptime, tagged unions, and explicit error sets make it easier to implement and review numerically sensitive code (e.g. the AMPD scalogram) than equivalent TypeScript.
 3. **Compile-time safety** — unreachable enum branches and integer overflow are caught at build time, not at runtime in a user's browser.
 
-The tradeoff is toolchain complexity: contributors need Zig 0.15.2 on `PATH` and the `rollup-plugin-zigar` Vite plugin bridges the module boundary. For pure UI changes, Zig is never touched.
+The tradeoff is toolchain complexity: contributors need Zig 0.16.0 on `PATH` and the `rollup-plugin-zigar` Vite plugin bridges the module boundary. For pure UI changes, Zig is never touched.
 
 ## Building
 

@@ -59,7 +59,7 @@ pub fn detectClimbs(
         for (1..valleys.len) |i| std.debug.assert(valleys[i] >= valleys[i - 1]);
     }
 
-    var climbs = std.ArrayList(ClimbStats){};
+    var climbs = std.ArrayList(ClimbStats).empty;
     defer climbs.deinit(allocator);
 
     // Walk both sorted slices together: for each peak, advance valley_cursor

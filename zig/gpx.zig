@@ -15,7 +15,7 @@ const paceModel = @import("paceModel.zig");
 const calibration = @import("calibration.zig");
 
 pub fn readTracePoints(allocator: std.mem.Allocator, bytes: []const u8) ![][3]f64 {
-    var points = std.ArrayList([3]f64){};
+    var points = std.ArrayList([3]f64).empty;
     defer points.deinit(allocator);
 
     var pos: usize = 0;
@@ -67,7 +67,7 @@ fn parseTagContent(
 }
 
 pub fn readWaypoints(allocator: std.mem.Allocator, bytes: []const u8) ![]Waypoint {
-    var waypoints = std.ArrayList(Waypoint){};
+    var waypoints = std.ArrayList(Waypoint).empty;
     errdefer {
         for (waypoints.items) |*wpt| wpt.deinit(allocator);
         waypoints.deinit(allocator);

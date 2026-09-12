@@ -38,7 +38,7 @@ pub fn computeFromWaypoints(trace: *const Trace, allocator: std.mem.Allocator, w
     }
 
     const num_legs = waypoints.len - 1;
-    var legs = std.ArrayList(LegStats){};
+    var legs = std.ArrayList(LegStats).empty;
     errdefer legs.deinit(allocator);
 
     // Track the search floor so each waypoint is found after the previous one.

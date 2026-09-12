@@ -73,14 +73,24 @@ const CommonIntervalStats = struct {
 fn WithIds(comptime Ids: type) type {
     const id_fields = @typeInfo(Ids).@"struct".fields;
     const common_fields = @typeInfo(CommonIntervalStats).@"struct".fields;
-    return @Type(.{
-        .@"struct" = .{
-            .layout = .auto,
-            .fields = id_fields ++ common_fields,
-            .decls = &.{},
-            .is_tuple = false,
-        },
-    });
+    const all_fields = id_fields ++ common_fields;
+
+    // why: Zig 0.16 split @Type into per-kind builtins; @Struct takes parallel
+    // name/type/attribute arrays instead of a single []StructField slice.
+    comptime var names: [all_fields.len][:0]const u8 = undefined;
+    comptime var types: [all_fields.len]type = undefined;
+    comptime var attrs: [all_fields.len]std.builtin.Type.StructField.Attributes = undefined;
+    inline for (all_fields, 0..) |f, i| {
+        names[i] = f.name;
+        types[i] = f.type;
+        attrs[i] = .{
+            .@"comptime" = f.is_comptime,
+            .@"align" = f.alignment,
+            .default_value_ptr = f.default_value_ptr,
+        };
+    }
+
+    return @Struct(.auto, null, &names, &types, &attrs);
 }
 
 /// Interval between two consecutive section-boundary waypoints
@@ -143,7 +153,7 @@ pub fn computeBoundaryStats(
     life_base_stop_s: u32,
     weather: paceModel.WeatherLookup,
 ) !?[]Stats {
-    var boundary_wpts = std.ArrayList(Waypoint){};
+    var boundary_wpts = std.ArrayList(Waypoint).empty;
     defer boundary_wpts.deinit(allocator);
     for (waypoints) |wpt| {
         if (isBoundary(wpt, kind)) try boundary_wpts.append(allocator, wpt);
@@ -151,7 +161,7 @@ pub fn computeBoundaryStats(
     if (boundary_wpts.items.len < 2) return null;
 
     const num_intervals = boundary_wpts.items.len - 1;
-    var stats = std.ArrayList(Stats){};
+    var stats = std.ArrayList(Stats).empty;
     errdefer stats.deinit(allocator);
 
     // Search floor so each boundary resolves after the previous one — loop
@@ -378,7 +388,7 @@ pub fn recalibrateFromCurrent(
     weather: paceModel.WeatherLookup,
 ) !?Recalibration {
     // ── Resolve boundary waypoints onto trace index ranges ─────────────────────
-    var boundary_wpts = std.ArrayList(Waypoint){};
+    var boundary_wpts = std.ArrayList(Waypoint).empty;
     defer boundary_wpts.deinit(allocator);
     for (waypoints) |wpt| {
         if (isBoundary(wpt, kind)) try boundary_wpts.append(allocator, wpt);
@@ -386,7 +396,7 @@ pub fn recalibrateFromCurrent(
     if (boundary_wpts.items.len < 2) return null;
 
     const num_ranges = boundary_wpts.items.len - 1;
-    var resolved = std.ArrayList(ResolvedRange){};
+    var resolved = std.ArrayList(ResolvedRange).empty;
     defer resolved.deinit(allocator);
 
     var search_start: usize = 0;

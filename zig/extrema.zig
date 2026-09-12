@@ -20,7 +20,7 @@ const SIMD_CHUNK: usize = 8;
 fn clusterExtrema(allocator: std.mem.Allocator, extrema_raw: []const usize, signal: []const f32, comptime find_peaks: bool) ![]usize {
     if (extrema_raw.len == 0) return &.{};
 
-    var clustered = std.ArrayList(usize){};
+    var clustered = std.ArrayList(usize).empty;
     defer clustered.deinit(allocator);
 
     var best_idx = extrema_raw[0];
@@ -103,7 +103,7 @@ fn ampd_core_extrema(
         }
     }
 
-    var extrema = std.ArrayList(usize){};
+    var extrema = std.ArrayList(usize).empty;
     defer extrema.deinit(allocator);
 
     const thresh_u8: u8 = @intCast(@min(threshold, std.math.maxInt(u8)));
@@ -176,7 +176,7 @@ fn filterByProminence(
         return allocator.dupe(usize, candidates);
     }
 
-    var kept = std.ArrayList(usize){};
+    var kept = std.ArrayList(usize).empty;
     defer kept.deinit(allocator);
 
     for (candidates) |idx| {

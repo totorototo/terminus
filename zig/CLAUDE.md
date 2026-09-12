@@ -1,4 +1,4 @@
-# Zig Codebase (0.15.2)
+# Zig Codebase (0.16.0)
 
 ## Module Map
 
@@ -72,7 +72,7 @@ errdefer {
 **toOwnedSlice + defer deinit** — safe because `toOwnedSlice` empties the list:
 
 ```zig
-var list = std.ArrayList(usize){};
+var list: std.ArrayList(usize) = .empty;
 defer list.deinit(allocator);
 // ... append items ...
 return try list.toOwnedSlice(allocator);
