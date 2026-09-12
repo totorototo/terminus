@@ -54,10 +54,13 @@ describe("computeRouteStats", () => {
     expect(byLabel["5–10%"]).toBe(0);
   });
 
-  it("weights walk/run time by paceFactor, walking slower than running on the same terrain", () => {
-    const cumulativeDistances = [0, 1000];
-    const slopes = [0, 0];
-    const paceFactors = [1, 1];
+  it("routes a segment to walkTimeS once its paceFactor crosses the hike-only cutoff", () => {
+    // One easy km (paceFactor 1, runnable) then one brutal km (paceFactor
+    // 2.5, matches RunnabilityIndex's "Hike-only" band) — the two segments
+    // must land in different buckets, not both count as run.
+    const cumulativeDistances = [0, 1000, 2000];
+    const slopes = [0, 0, 25];
+    const paceFactors = [1, 1, 2.5];
 
     const stats = computeRouteStats({
       slopes,
@@ -66,7 +69,12 @@ describe("computeRouteStats", () => {
       runBasePaceSPerKm: 490,
     });
 
-    expect(stats.walkTimeS).toBeGreaterThan(stats.runTimeS);
+    expect(stats.runTimeS).toBeGreaterThan(0);
+    expect(stats.walkTimeS).toBeGreaterThan(0);
+    expect(stats.estimatedTotalTimeS).toBeCloseTo(
+      stats.runTimeS + stats.walkTimeS,
+      10,
+    );
   });
 
   it("returns null for a single-point route (nothing to sum)", () => {
@@ -128,10 +136,11 @@ describe("computeRouteStats", () => {
     expect(stats.terrainBreakdown.flatPct).toBeCloseTo(100, 5);
   });
 
-  it("scales the run estimate with the selected runner profile's pace", () => {
-    const cumulativeDistances = [0, 1000];
-    const slopes = [0, 0];
-    const paceFactors = [1, 1];
+  it("scales both the run and walk estimates with the selected runner profile's pace", () => {
+    const cumulativeDistances = [0, 1000, 2000];
+    // one runnable km, one hike-only km
+    const slopes = [0, 0, 25];
+    const paceFactors = [1, 1, 2.5];
 
     const eliteStats = computeRouteStats({
       slopes,
@@ -147,7 +156,29 @@ describe("computeRouteStats", () => {
     });
 
     expect(eliteStats.runTimeS).toBeLessThan(casualStats.runTimeS);
-    // walk estimate is independent of the runner profile
-    expect(eliteStats.walkTimeS).toBe(casualStats.walkTimeS);
+    // walk pace is derived from the run profile (a fixed offset), so a
+    // faster runner also gets a faster hike-only estimate — not a shared,
+    // profile-independent constant like before.
+    expect(eliteStats.walkTimeS).toBeLessThan(casualStats.walkTimeS);
+  });
+
+  it("sums run and walk time into estimatedTotalTimeS", () => {
+    const cumulativeDistances = [0, 1000, 2000, 3000];
+    const slopes = [0, 0, 25, 0];
+    const paceFactors = [1, 1, 2.5, 1];
+
+    const stats = computeRouteStats({
+      slopes,
+      paceFactors,
+      cumulativeDistances,
+      runBasePaceSPerKm: 490,
+    });
+
+    expect(stats.estimatedTotalTimeS).toBeCloseTo(
+      stats.runTimeS + stats.walkTimeS,
+      10,
+    );
+    expect(stats.estimatedTotalTimeS).toBeGreaterThan(stats.runTimeS);
+    expect(stats.estimatedTotalTimeS).toBeGreaterThan(stats.walkTimeS);
   });
 });

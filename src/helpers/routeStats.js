@@ -2,11 +2,18 @@
 // noise from GPS/elevation jitter out of the gradient stats.
 const FLAT_GRADE_THRESHOLD_PCT = 2;
 
-// why: there's no walking-fitness profile anywhere else in the app, so unlike
-// the run estimate (which uses whichever Runner profile the user picked in
-// the Pace section), walking pace stays a single generic hiking reference —
-// 12:00/km on flat ground.
-const WALK_FLAT_PACE_S_PER_KM = 720;
+// Segments at/above this Minetti paceFactor count as "walk" rather than
+// "run" — same cutoff as RunnabilityIndex's "Hike-only" band, so a stretch
+// that reads Hike-only there is exactly what lands in walkTimeS here.
+const HIKE_ONLY_PACE_FACTOR = 2.3;
+
+// why: there's no separate walking-fitness profile in the app, so the walk
+// pace is derived from the selected Runner profile's flat run pace rather
+// than picked independently — a fixed extra cost per km, not a multiplier,
+// since the gap between running and walking a flat km is roughly constant
+// in absolute terms across ability levels (unlike run paces, which vary
+// ~2x between Casual and Elite).
+const WALK_PACE_OFFSET_S_PER_KM = 300;
 
 const UPHILL_GRADE_BANDS = [
   { max: 5, label: "2–5%" },
@@ -22,12 +29,15 @@ const UPHILL_GRADE_BANDS = [
  * Zig/worker round-trip needed.
  *
  * `paceFactors` (Minetti cost-of-transport multiplier, same values
- * RunnabilityIndex renders) drives both time estimates so a segment that
- * reads "Hike-only" there is exactly what slows the walk/run totals here.
+ * RunnabilityIndex renders) both picks walk-vs-run per segment and scales
+ * its time, so a segment that reads "Hike-only" there is exactly what lands
+ * in walkTimeS here. walkTimeS and runTimeS are therefore two disjoint
+ * pieces of the same route, not two alternate whole-route hypotheticals —
+ * they sum to this runner's total estimated time on the route.
  *
  * `runBasePaceSPerKm` is the currently selected Runner profile's flat-ground
- * pace (app.paceSettings.basePaceSPerKm) — the run estimate scales with
- * whichever profile the user picked, same as the rest of the app.
+ * pace (app.paceSettings.basePaceSPerKm) — both the run and (derived) walk
+ * estimates scale with whichever profile the user picked.
  */
 export function computeRouteStats({
   slopes,
@@ -49,7 +59,7 @@ export function computeRouteStats({
   const uphillBandDist = UPHILL_GRADE_BANDS.map(() => 0);
 
   const runSpeedMPerS = 1000 / runBasePaceSPerKm;
-  const walkSpeedMPerS = 1000 / WALK_FLAT_PACE_S_PER_KM;
+  const walkSpeedMPerS = 1000 / (runBasePaceSPerKm + WALK_PACE_OFFSET_S_PER_KM);
 
   const n = Math.min(
     slopes.length,
@@ -78,8 +88,11 @@ export function computeRouteStats({
       flatDist += segDist;
     }
 
-    runTimeS += (segDist * paceFactor) / runSpeedMPerS;
-    walkTimeS += (segDist * paceFactor) / walkSpeedMPerS;
+    if (paceFactor >= HIKE_ONLY_PACE_FACTOR) {
+      walkTimeS += (segDist * paceFactor) / walkSpeedMPerS;
+    } else {
+      runTimeS += (segDist * paceFactor) / runSpeedMPerS;
+    }
   }
 
   const totalDist = uphillDist + downhillDist + flatDist;
@@ -100,5 +113,6 @@ export function computeRouteStats({
     })),
     walkTimeS,
     runTimeS,
+    estimatedTotalTimeS: walkTimeS + runTimeS,
   };
 }
