@@ -51,7 +51,7 @@ describe("RouteStats", () => {
 
     expect(screen.getByText("+12.0%")).toBeInTheDocument();
     expect(screen.getByText("-18.0%")).toBeInTheDocument();
-    expect(screen.getByText("est. finish time")).toBeInTheDocument();
+    expect(screen.getByText("hike time (Casual)")).toBeInTheDocument();
     expect(screen.getByText("10–15%")).toBeInTheDocument();
   });
 
@@ -88,24 +88,5 @@ describe("RouteStats", () => {
     // diff 100) among the RUNNER_PROFILES presets (Trail 365, Athlete 330,
     // Elite 300 are all further away).
     expect(screen.getByText("run time (Casual)")).toBeInTheDocument();
-  });
-
-  it("shows a finish time equal to the run and hike times combined", () => {
-    setupStore({
-      cumulativeDistances: [0, 1000, 2000],
-      slopes: [0, 0, 25],
-      paceFactors: [1, 1, 2.5], // one runnable km, one hike-only km
-      basePaceSPerKm: 490,
-    });
-
-    render(<RouteStats />);
-
-    // 490 s/km run pace over 1km ≈ 8m10s; walk pace is 490+300=790 s/km,
-    // scaled by paceFactor 2.5 over 1km ≈ 32m55s. Total ≈ 41m5s -> rounds
-    // to 41m.
-    expect(screen.getByText("est. finish time")).toBeInTheDocument();
-    expect(
-      screen.getByText("est. finish time").previousSibling.textContent,
-    ).toBe("0h 41m");
   });
 });

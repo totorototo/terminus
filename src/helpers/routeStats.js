@@ -113,6 +113,5 @@ export function computeRouteStats({
     })),
     walkTimeS,
     runTimeS,
-    estimatedTotalTimeS: walkTimeS + runTimeS,
   };
 }

@@ -58,7 +58,6 @@ const RouteStats = memo(function RouteStats({ className }) {
     uphillGradientDistribution,
     walkTimeS,
     runTimeS,
-    estimatedTotalTimeS,
   } = routeStats;
 
   const maxBandDistanceM = Math.max(
@@ -93,12 +92,6 @@ const RouteStats = memo(function RouteStats({ className }) {
           <span className="rs-stat-label">
             hike time ({runnerProfileLabel})
           </span>
-        </div>
-        <div className="rs-stat">
-          <span className="rs-stat-value">
-            {formatHoursMinutes(estimatedTotalTimeS)}
-          </span>
-          <span className="rs-stat-label">est. finish time</span>
         </div>
       </div>
 
