@@ -40,10 +40,6 @@ const style = (Component) => styled(Component)`
       )};
   }
 
-  .rs-terrain-breakdown {
-    margin-bottom: ${(props) => props.theme.spacing[5]}px;
-  }
-
   .rs-tb-bar {
     display: flex;
     width: 100%;
@@ -109,72 +105,6 @@ const style = (Component) => styled(Component)`
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-full"]};
     flex-shrink: 0;
-  }
-
-  .rs-grade-distribution {
-    display: flex;
-    flex-direction: column;
-    gap: ${(props) => props.theme.spacing[2]}px;
-  }
-
-  .rs-grade-distribution + .rs-grade-distribution {
-    margin-top: ${(props) => props.theme.spacing[5]}px;
-  }
-
-  .rs-gd-title {
-    display: block;
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
-      )};
-    margin-bottom: ${(props) => props.theme.spacing[2]}px;
-  }
-
-  .rs-gd-row {
-    display: grid;
-    grid-template-columns: 4.5rem 1fr 3.5rem;
-    align-items: center;
-    gap: ${(props) => props.theme.spacing[3]}px;
-  }
-
-  .rs-gd-label,
-  .rs-gd-value {
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.65,
-      )};
-  }
-
-  .rs-gd-value {
-    text-align: right;
-  }
-
-  .rs-gd-track {
-    display: block;
-    /* why: shorter than the single terrain-breakdown bar above — this one
-       repeats 5x in a list, so the full 14px strip height reads too heavy
-       stacked. */
-    height: ${(props) => props.theme.spacing[3]}px;
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
-    background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.08,
-      )};
-    overflow: hidden;
-  }
-
-  .rs-gd-fill {
-    display: block;
-    height: 100%;
   }
 `;
 

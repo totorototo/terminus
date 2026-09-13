@@ -65,8 +65,6 @@ export function computeRouteStats({
   let downhillGradeWeighted = 0;
   let runTimeS = 0;
   let walkTimeS = 0;
-  const uphillBandDist = UPHILL_GRADE_BANDS.map(() => 0);
-  const runnabilityBandDist = RUNNABILITY_BANDS.map(() => 0);
 
   const runSpeedMPerS = 1000 / runBasePaceSPerKm;
   const walkSpeedMPerS = 1000 / (runBasePaceSPerKm + WALK_PACE_OFFSET_S_PER_KM);
@@ -87,10 +85,6 @@ export function computeRouteStats({
     if (grade > FLAT_GRADE_THRESHOLD_PCT) {
       uphillDist += segDist;
       uphillGradeWeighted += grade * segDist;
-      const bandIndex = UPHILL_GRADE_BANDS.findIndex(
-        (band) => grade < band.max,
-      );
-      uphillBandDist[bandIndex] += segDist;
     } else if (grade < -FLAT_GRADE_THRESHOLD_PCT) {
       downhillDist += segDist;
       downhillGradeWeighted += grade * segDist;
@@ -103,11 +97,6 @@ export function computeRouteStats({
     } else {
       runTimeS += (segDist * paceFactor) / runSpeedMPerS;
     }
-
-    const runnabilityIndex = RUNNABILITY_BANDS.findIndex(
-      (band) => paceFactor < band.max,
-    );
-    runnabilityBandDist[runnabilityIndex] += segDist;
   }
 
   const totalDist = uphillDist + downhillDist + flatDist;
@@ -122,15 +111,80 @@ export function computeRouteStats({
       flatPct: (flatDist / totalDist) * 100,
       downhillPct: (downhillDist / totalDist) * 100,
     },
-    uphillGradientDistribution: UPHILL_GRADE_BANDS.map((band, i) => ({
-      label: band.label,
-      distanceM: uphillBandDist[i],
-    })),
-    runnabilityDistribution: RUNNABILITY_BANDS.map((band, i) => ({
-      label: band.label,
-      distanceM: runnabilityBandDist[i],
-    })),
     walkTimeS,
     runTimeS,
   };
+}
+
+/**
+ * Buckets uphill route distance into UPHILL_GRADE_BANDS (2–5% .. 20%+),
+ * mirroring SlopeIntensity's own grade bands. Split out from
+ * computeRouteStats so a caller displaying this next to SlopeIntensity's
+ * strip (the natural place for it — "where" vs. "how much") doesn't need
+ * the runner-profile pace or the runnability/time stats that function also
+ * computes.
+ */
+export function computeUphillGradientDistribution({
+  slopes,
+  cumulativeDistances,
+}) {
+  if (!slopes?.length || !cumulativeDistances?.length) return null;
+
+  const bandDist = UPHILL_GRADE_BANDS.map(() => 0);
+  const n = Math.min(slopes.length, cumulativeDistances.length);
+
+  for (let i = 1; i < n; i++) {
+    const segDist = cumulativeDistances[i] - cumulativeDistances[i - 1];
+    if (!(segDist > 0)) continue;
+
+    const grade = slopes[i] || 0;
+    if (grade <= FLAT_GRADE_THRESHOLD_PCT) continue;
+
+    const bandIndex = UPHILL_GRADE_BANDS.findIndex((band) => grade < band.max);
+    bandDist[bandIndex] += segDist;
+  }
+
+  const totalDist = bandDist.reduce((a, b) => a + b, 0);
+  if (totalDist <= 0) return null;
+
+  return UPHILL_GRADE_BANDS.map((band, i) => ({
+    label: band.label,
+    distanceM: bandDist[i],
+  }));
+}
+
+/**
+ * Buckets route distance into RunnabilityIndex's own pace-factor bands
+ * (Runnable/Marginal/Hike-only). Split out from computeRouteStats so a
+ * caller displaying this next to RunnabilityIndex's strip (the natural
+ * place for it — "where" vs. "how much") doesn't need the runner-profile
+ * pace or the gradient stats that function also computes.
+ */
+export function computeRunnabilityDistribution({
+  paceFactors,
+  cumulativeDistances,
+}) {
+  if (!paceFactors?.length || !cumulativeDistances?.length) return null;
+
+  const bandDist = RUNNABILITY_BANDS.map(() => 0);
+  const n = Math.min(paceFactors.length, cumulativeDistances.length);
+
+  for (let i = 1; i < n; i++) {
+    const segDist = cumulativeDistances[i] - cumulativeDistances[i - 1];
+    if (!(segDist > 0)) continue;
+
+    const paceFactor = paceFactors[i] || 1;
+    const bandIndex = RUNNABILITY_BANDS.findIndex(
+      (band) => paceFactor < band.max,
+    );
+    bandDist[bandIndex] += segDist;
+  }
+
+  const totalDist = bandDist.reduce((a, b) => a + b, 0);
+  if (totalDist <= 0) return null;
+
+  return RUNNABILITY_BANDS.map((band, i) => ({
+    label: band.label,
+    distanceM: bandDist[i],
+  }));
 }

@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import { useTheme } from "styled-components";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as storeModule from "../../../store/store.js";
@@ -15,11 +14,6 @@ vi.mock("../../../store/store.js", () => ({
 vi.mock("./RouteStats.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
-
-vi.mock("styled-components", async (importOriginal) => {
-  const actual = await importOriginal();
-  return { ...actual, useTheme: vi.fn() };
-});
 
 function setupStore({
   slopes = [],
@@ -38,12 +32,6 @@ function setupStore({
 describe("RouteStats", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useTheme.mockReturnValue({
-      colors: {
-        dark: { "--color-accent": "#3388ff", "--color-primary": "#ff8833" },
-      },
-      currentVariant: "dark",
-    });
   });
 
   it("renders nothing when route data is empty", () => {
@@ -64,7 +52,6 @@ describe("RouteStats", () => {
     expect(screen.getByText("+12.0%")).toBeInTheDocument();
     expect(screen.getByText("-18.0%")).toBeInTheDocument();
     expect(screen.getByText("hike time (Casual)")).toBeInTheDocument();
-    expect(screen.getByText("10–15%")).toBeInTheDocument();
   });
 
   it("labels both run and hike estimates with the currently selected runner profile", () => {

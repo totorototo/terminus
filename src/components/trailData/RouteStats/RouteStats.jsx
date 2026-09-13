@@ -1,8 +1,5 @@
 import { memo, useMemo } from "react";
 
-import { useTheme } from "styled-components";
-
-import { gradeBandColors } from "../../../helpers/gradeBandColors.js";
 import { computeRouteStats } from "../../../helpers/routeStats.js";
 import useStore, { DEFAULT_PACE_SETTINGS } from "../../../store/store.js";
 import { RUNNER_PROFILES } from "../PaceSettings/PaceSettings.constants.js";
@@ -40,7 +37,6 @@ const RouteStats = memo(function RouteStats({ className }) {
       state.app?.paceSettings?.basePaceSPerKm ??
       DEFAULT_PACE_SETTINGS.basePaceSPerKm,
   );
-  const theme = useTheme();
 
   const routeStats = useMemo(
     () =>
@@ -59,32 +55,9 @@ const RouteStats = memo(function RouteStats({ className }) {
     avgUphillGradePct,
     avgDownhillGradePct,
     terrainBreakdown,
-    uphillGradientDistribution,
-    runnabilityDistribution,
     walkTimeS,
     runTimeS,
   } = routeStats;
-
-  const maxBandDistanceM = Math.max(
-    ...uphillGradientDistribution.map((band) => band.distanceM),
-    1,
-  );
-  const maxRunnabilityDistanceM = Math.max(
-    ...runnabilityDistribution.map((band) => band.distanceM),
-    1,
-  );
-
-  // why: same severity ramp as SlopeIntensity, keyed to the same 5 grade
-  // bands, so a band reads as the same color everywhere it appears.
-  const bandColors = gradeBandColors(theme, uphillGradientDistribution.length);
-  // why: --color-primary, matching RunnabilityIndex's own ramp — keeps this
-  // list a matched pair with that strip instead of blending into the
-  // accent-colored gradient distribution above it.
-  const runnabilityColors = gradeBandColors(
-    theme,
-    runnabilityDistribution.length,
-    "--color-primary",
-  );
 
   const terrainAriaLabel = `Terrain breakdown: ${terrainBreakdown.uphillPct.toFixed(0)}% uphill, ${terrainBreakdown.flatPct.toFixed(0)}% flat, ${terrainBreakdown.downhillPct.toFixed(0)}% downhill.`;
   const runnerProfileLabel = closestProfile(basePaceSPerKm).label;
@@ -149,48 +122,6 @@ const RouteStats = memo(function RouteStats({ className }) {
             {terrainBreakdown.downhillPct.toFixed(1)}% downhill
           </span>
         </div>
-      </div>
-
-      <div className="rs-grade-distribution">
-        <span className="rs-gd-title">Uphill gradient distribution</span>
-        {uphillGradientDistribution.map((band, i) => (
-          <div className="rs-gd-row" key={band.label}>
-            <span className="rs-gd-label">{band.label}</span>
-            <span className="rs-gd-track">
-              <span
-                className="rs-gd-fill"
-                style={{
-                  width: `${(band.distanceM / maxBandDistanceM) * 100}%`,
-                  background: bandColors[i],
-                }}
-              />
-            </span>
-            <span className="rs-gd-value">
-              {(band.distanceM / 1000).toFixed(1)} km
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="rs-grade-distribution">
-        <span className="rs-gd-title">Runnability breakdown</span>
-        {runnabilityDistribution.map((band, i) => (
-          <div className="rs-gd-row" key={band.label}>
-            <span className="rs-gd-label">{band.label}</span>
-            <span className="rs-gd-track">
-              <span
-                className="rs-gd-fill"
-                style={{
-                  width: `${(band.distanceM / maxRunnabilityDistanceM) * 100}%`,
-                  background: runnabilityColors[i],
-                }}
-              />
-            </span>
-            <span className="rs-gd-value">
-              {(band.distanceM / 1000).toFixed(1)} km
-            </span>
-          </div>
-        ))}
       </div>
     </div>
   );
