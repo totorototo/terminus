@@ -124,6 +124,16 @@ const style = (Component) => styled(Component)`
     flex-direction: column;
   }
 
+  .cutoff-value {
+    display: flex;
+    flex-direction: column;
+
+    &.over {
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
+    }
+  }
+
   .difficulty-value {
     display: flex;
     align-items: center;

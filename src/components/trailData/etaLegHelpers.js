@@ -12,3 +12,22 @@ export function formatDuration(sec) {
   if (h > 0) return `${h}h`;
   return `${m}m`;
 }
+
+/**
+ * Cutoff margin from a section/stage's pre-race `cutoffRatio` (Zig's
+ * estimatedDuration / maxCompletionTime — see calibration.zig) — how much of
+ * the allowed completion time the plan is expected to use, and the buffer
+ * (or overage) in seconds. Returns null when the boundary has no cutoff.
+ */
+export function computeCutoffMargin({
+  cutoffRatio,
+  estimatedDuration,
+  maxCompletionTime,
+}) {
+  if (cutoffRatio == null || maxCompletionTime == null) return null;
+  return {
+    pctUsed: cutoffRatio * 100,
+    marginS: maxCompletionTime - estimatedDuration,
+    isOver: cutoffRatio > 1,
+  };
+}

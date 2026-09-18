@@ -9,7 +9,10 @@ import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
 import useStore from "../../../store/store.js";
-import { formatDuration } from "../../trailData/etaLegHelpers.js";
+import {
+  computeCutoffMargin,
+  formatDuration,
+} from "../../trailData/etaLegHelpers.js";
 import WeatherLine from "../../trailData/WeatherLine/WeatherLine.jsx";
 import CollapseToggle from "../CollapseToggle.jsx";
 import StorySection from "../StorySection.jsx";
@@ -105,6 +108,7 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
             const difficultyColor =
               cp.difficulty > 0 ? DIFFICULTY_COLORS[cp.difficulty - 1] : null;
             const weather = forecasts[cp.endLocation] ?? null;
+            const cutoffMargin = section ? computeCutoffMargin(section) : null;
 
             return (
               <li
@@ -185,6 +189,21 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                         {formatDuration(section.maxCompletionTime)}
                       </span>
                     </div>
+                    {cutoffMargin && (
+                      <div className="stat-cell">
+                        <span className="stat-label">Cutoff margin</span>
+                        <span
+                          className={`stat-value cutoff-value${cutoffMargin.isOver ? " over" : ""}`}
+                        >
+                          <span>{Math.round(cutoffMargin.pctUsed)}% used</span>
+                          <span>
+                            {cutoffMargin.isOver
+                              ? `${formatDuration(-cutoffMargin.marginS)} over`
+                              : `+${formatDuration(cutoffMargin.marginS)} buffer`}
+                          </span>
+                        </span>
+                      </div>
+                    )}
                     <div className="stat-cell wide">
                       <span className="stat-label">Difficulty</span>
                       <span className="stat-value difficulty-value">
