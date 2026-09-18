@@ -23,7 +23,10 @@ const style = (Component) => styled(Component)`
 
   .gd-row {
     display: grid;
-    grid-template-columns: 4.5rem 1fr 3.5rem;
+    grid-template-columns: minmax(4.5rem, max-content) 1fr minmax(
+        3.5rem,
+        max-content
+      );
     align-items: center;
     gap: ${(props) => props.theme.spacing[3]}px;
   }
@@ -37,6 +40,7 @@ const style = (Component) => styled(Component)`
         props.theme.colors[props.theme.currentVariant]["--color-text"],
         0.65,
       )};
+    white-space: nowrap;
   }
 
   .gd-value {
