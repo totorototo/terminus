@@ -24,7 +24,10 @@ const RUNNABILITY_BANDS = [
 // ~2x between Casual and Elite).
 const WALK_PACE_OFFSET_S_PER_KM = 300;
 
-const UPHILL_GRADE_BANDS = [
+// Shared by both grade-distribution functions below — uphill and downhill
+// segments are bucketed by the same |grade| cutoffs, mirroring SlopeIntensity's
+// own bands (which also key off Math.abs(grade)).
+const GRADE_MAGNITUDE_BANDS = [
   { max: 5, label: "2–5%" },
   { max: 10, label: "5–10%" },
   { max: 15, label: "10–15%" },
@@ -117,7 +120,7 @@ export function computeRouteStats({
 }
 
 /**
- * Buckets uphill route distance into UPHILL_GRADE_BANDS (2–5% .. 20%+),
+ * Buckets uphill route distance into GRADE_MAGNITUDE_BANDS (2–5% .. 20%+),
  * mirroring SlopeIntensity's own grade bands. Split out from
  * computeRouteStats so a caller displaying this next to SlopeIntensity's
  * strip (the natural place for it — "where" vs. "how much") doesn't need
@@ -130,7 +133,7 @@ export function computeUphillGradientDistribution({
 }) {
   if (!slopes?.length || !cumulativeDistances?.length) return null;
 
-  const bandDist = UPHILL_GRADE_BANDS.map(() => 0);
+  const bandDist = GRADE_MAGNITUDE_BANDS.map(() => 0);
   const n = Math.min(slopes.length, cumulativeDistances.length);
 
   for (let i = 1; i < n; i++) {
@@ -140,14 +143,54 @@ export function computeUphillGradientDistribution({
     const grade = slopes[i] || 0;
     if (grade <= FLAT_GRADE_THRESHOLD_PCT) continue;
 
-    const bandIndex = UPHILL_GRADE_BANDS.findIndex((band) => grade < band.max);
+    const bandIndex = GRADE_MAGNITUDE_BANDS.findIndex(
+      (band) => grade < band.max,
+    );
     bandDist[bandIndex] += segDist;
   }
 
   const totalDist = bandDist.reduce((a, b) => a + b, 0);
   if (totalDist <= 0) return null;
 
-  return UPHILL_GRADE_BANDS.map((band, i) => ({
+  return GRADE_MAGNITUDE_BANDS.map((band, i) => ({
+    label: band.label,
+    distanceM: bandDist[i],
+  }));
+}
+
+/**
+ * Downhill counterpart to computeUphillGradientDistribution — same
+ * GRADE_MAGNITUDE_BANDS, bucketed by |grade| on segments steeper than
+ * -FLAT_GRADE_THRESHOLD_PCT. Kept as a separate function (rather than a
+ * signed-direction flag) so callers only pull in the direction they render.
+ */
+export function computeDownhillGradientDistribution({
+  slopes,
+  cumulativeDistances,
+}) {
+  if (!slopes?.length || !cumulativeDistances?.length) return null;
+
+  const bandDist = GRADE_MAGNITUDE_BANDS.map(() => 0);
+  const n = Math.min(slopes.length, cumulativeDistances.length);
+
+  for (let i = 1; i < n; i++) {
+    const segDist = cumulativeDistances[i] - cumulativeDistances[i - 1];
+    if (!(segDist > 0)) continue;
+
+    const grade = slopes[i] || 0;
+    if (grade >= -FLAT_GRADE_THRESHOLD_PCT) continue;
+
+    const absGrade = -grade;
+    const bandIndex = GRADE_MAGNITUDE_BANDS.findIndex(
+      (band) => absGrade < band.max,
+    );
+    bandDist[bandIndex] += segDist;
+  }
+
+  const totalDist = bandDist.reduce((a, b) => a + b, 0);
+  if (totalDist <= 0) return null;
+
+  return GRADE_MAGNITUDE_BANDS.map((band, i) => ({
     label: band.label,
     distanceM: bandDist[i],
   }));

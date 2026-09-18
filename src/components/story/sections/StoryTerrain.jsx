@@ -1,5 +1,6 @@
 import { memo } from "react";
 
+import DownhillGradientBreakdown from "../../trailData/DownhillGradientBreakdown/DownhillGradientBreakdown.jsx";
 import ElevationProfile from "../../trailData/ElevationProfile/ElevationProfile.jsx";
 import RouteStats from "../../trailData/RouteStats/RouteStats.jsx";
 import RunnabilityBreakdown from "../../trailData/RunnabilityBreakdown/RunnabilityBreakdown.jsx";
@@ -24,6 +25,7 @@ const StoryTerrain = memo(function StoryTerrain({ className }) {
           <span className="frame-label">Slope</span>
           <SlopeIntensity />
           <UphillGradientBreakdown />
+          <DownhillGradientBreakdown />
         </div>
         <div className="chart-frame stacked-frame">
           <span className="frame-label">Runnability</span>
