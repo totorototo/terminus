@@ -56,11 +56,17 @@ const SECTION_2 = {
   difficulty: 2,
 };
 
-function setup(sections, projectedLocation, coords = COORDINATES) {
+function setup(
+  sections,
+  projectedLocation,
+  coords = COORDINATES,
+  recalibration = { section: null, stage: null },
+) {
   storeModule.default.mockImplementation((selector) =>
     selector({
       sections,
       gpx: { cumulativeDistances: CUMULATIVE_DISTANCES, data: coords },
+      recalibration,
     }),
   );
   storeModule.useProjectedLocation.mockReturnValue(projectedLocation);
@@ -235,5 +241,31 @@ describe("useCheckpointETAs", () => {
     const { result } = renderHook(() => useCheckpointETAs());
     expect(result.current.checkpointETAs[0].lat).toBeNull();
     expect(result.current.checkpointETAs[0].lon).toBeNull();
+  });
+
+  // ── paceDivergence ───────────────────────────────────────────────────────
+
+  it("paceDivergence defaults to 1.0 with no distance covered", () => {
+    setup([SECTION_1, SECTION_2], { index: 0, timestamp: START_MS });
+    const { result } = renderHook(() => useCheckpointETAs());
+    expect(result.current.paceDivergence).toBe(1.0);
+  });
+
+  it("paceDivergence falls back to the Minetti pace ratio without a live recalibration", () => {
+    const sections = [{ ...SECTION_1, endTime: START_TIME + 3500 }, SECTION_2];
+    setup(sections, { index: 150, timestamp: START_MS + 5_000_000 });
+    const { result } = renderHook(() => useCheckpointETAs());
+    expect(result.current.paceDivergence).toBeCloseTo(5_000_000 / 5_400_000, 5);
+  });
+
+  it("paceDivergence prefers the Zig live-recalibration calibrationFactor when available", () => {
+    setup(
+      [SECTION_1, SECTION_2],
+      { index: 150, timestamp: START_MS + 5_000_000 },
+      COORDINATES,
+      { section: { calibrationFactor: 1.23, etas: [] }, stage: null },
+    );
+    const { result } = renderHook(() => useCheckpointETAs());
+    expect(result.current.paceDivergence).toBe(1.23);
   });
 });

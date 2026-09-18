@@ -22,6 +22,10 @@ import useStore, { useProjectedLocation } from "../store/store.js";
  *     difficulty,
  *     lat, lon,
  *   }
+ *   paceDivergence: number — actual pace / planned pace so far (>1 slower,
+ *     <1 faster, 1 = on plan). Prefers Zig's live-recalibration
+ *     calibrationFactor (same number driving zigCumulativeRemainingS above)
+ *     once available, falling back to this hook's own Minetti-ratio estimate.
  */
 export function useStageETAs() {
   const projectedLocation = useProjectedLocation();
@@ -186,5 +190,13 @@ export function useStageETAs() {
 
   const hasGPSLock = (projectedLocation?.timestamp ?? 0) > 0;
 
-  return { raceStart, stageETAs, isPreRace, hasGPSLock };
+  const paceDivergence = recalStage?.calibrationFactor ?? paceRatio;
+
+  return {
+    raceStart,
+    stageETAs,
+    isPreRace,
+    hasGPSLock,
+    paceDivergence,
+  };
 }

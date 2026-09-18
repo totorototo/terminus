@@ -84,11 +84,23 @@ describe("StoryNow", () => {
     expect(container).toBeInTheDocument();
   });
 
-  it("shows km left, eta, and remaining labels", () => {
+  it("shows km left, eta, remaining, and vs plan labels", () => {
     render(<StoryNow />);
     expect(screen.getByText("km left")).toBeInTheDocument();
     expect(screen.getByText("eta")).toBeInTheDocument();
     expect(screen.getByText("remaining")).toBeInTheDocument();
+    expect(screen.getByText("vs plan")).toBeInTheDocument();
+  });
+
+  it("shows a placeholder for vs plan before the race has started", () => {
+    storeModule.useProjectedLocation.mockReturnValue({
+      index: 0,
+      timestamp: 0,
+    });
+
+    render(<StoryNow />);
+    const vsPlanValue = screen.getByText("vs plan").previousSibling;
+    expect(vsPlanValue).toHaveTextContent("--");
   });
 
   it("shows a spot-me control that calls toggleAutoShare", () => {

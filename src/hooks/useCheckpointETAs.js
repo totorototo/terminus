@@ -21,6 +21,10 @@ import useStore, { useProjectedLocation } from "../store/store.js";
  *     difficulty,
  *     lat, lon,
  *   }
+ *   paceDivergence: number — actual pace / planned pace so far (>1 slower,
+ *     <1 faster, 1 = on plan). Prefers Zig's live-recalibration
+ *     calibrationFactor (same number driving zigCumulativeRemainingS above)
+ *     once available, falling back to this hook's own Minetti-ratio estimate.
  */
 export function useCheckpointETAs() {
   const projectedLocation = useProjectedLocation();
@@ -191,5 +195,13 @@ export function useCheckpointETAs() {
 
   const hasGPSLock = (projectedLocation?.timestamp ?? 0) > 0;
 
-  return { raceStart, checkpointETAs, isPreRace, hasGPSLock };
+  const paceDivergence = recalSection?.calibrationFactor ?? paceRatio;
+
+  return {
+    raceStart,
+    checkpointETAs,
+    isPreRace,
+    hasGPSLock,
+    paceDivergence,
+  };
 }

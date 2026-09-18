@@ -11,12 +11,23 @@ import StorySection from "../StorySection.jsx";
 
 import style from "./StoryNow.style.js";
 
+// why: paceDivergence is actual/planned pace (>1 slower, <1 faster) — flip to
+// a runner-facing signed percent where "+" always means behind plan,
+// regardless of which direction the underlying ratio moves.
+function formatPaceDivergence(ratio) {
+  if (!Number.isFinite(ratio)) return "--";
+  const pct = Math.round((ratio - 1) * 100);
+  if (pct === 0) return "even";
+  return pct > 0 ? `+${pct}%` : `${pct}%`;
+}
+
 const StoryNow = memo(function StoryNow({ className }) {
   const projectedLocation = useProjectedLocation();
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
   );
-  const { checkpointETAs, raceStart } = useCheckpointETAs();
+  const { checkpointETAs, raceStart, hasGPSLock, paceDivergence } =
+    useCheckpointETAs();
   const { autoShareEnabled, toggleAutoShare, isFollower } = useStore(
     useShallow((state) => ({
       autoShareEnabled: state.gps.autoShareEnabled,
@@ -98,6 +109,14 @@ const StoryNow = memo(function StoryNow({ className }) {
           <div className="now-stat">
             <span className="now-value">{metrics.remainingStr}</span>
             <span className="now-label">remaining</span>
+          </div>
+          <div className="now-stat">
+            <span className="now-value">
+              {raceStart && hasGPSLock
+                ? formatPaceDivergence(paceDivergence)
+                : "--"}
+            </span>
+            <span className="now-label">vs plan</span>
           </div>
         </div>
         <p className="now-note">

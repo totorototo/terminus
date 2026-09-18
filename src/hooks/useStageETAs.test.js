@@ -56,11 +56,17 @@ const STAGE_2 = {
   difficulty: 2,
 };
 
-function setup(stages, projectedLocation, coords = COORDINATES) {
+function setup(
+  stages,
+  projectedLocation,
+  coords = COORDINATES,
+  recalibration = { section: null, stage: null },
+) {
   storeModule.default.mockImplementation((selector) =>
     selector({
       stages,
       gpx: { cumulativeDistances: CUMULATIVE_DISTANCES, data: coords },
+      recalibration,
     }),
   );
   storeModule.useProjectedLocation.mockReturnValue(projectedLocation);
@@ -211,5 +217,24 @@ describe("useStageETAs", () => {
     const { result } = renderHook(() => useStageETAs());
     expect(result.current.stageETAs[0].lat).toBeNull();
     expect(result.current.stageETAs[0].lon).toBeNull();
+  });
+
+  // ── paceDivergence ───────────────────────────────────────────────────────
+
+  it("paceDivergence defaults to 1.0 with no distance covered", () => {
+    setup([STAGE_1, STAGE_2], { index: 0, timestamp: START_MS });
+    const { result } = renderHook(() => useStageETAs());
+    expect(result.current.paceDivergence).toBe(1.0);
+  });
+
+  it("paceDivergence prefers the Zig live-recalibration calibrationFactor when available", () => {
+    setup(
+      [STAGE_1, STAGE_2],
+      { index: 150, timestamp: START_MS + 5_000_000 },
+      COORDINATES,
+      { section: null, stage: { calibrationFactor: 0.87, etas: [] } },
+    );
+    const { result } = renderHook(() => useStageETAs());
+    expect(result.current.paceDivergence).toBe(0.87);
   });
 });
