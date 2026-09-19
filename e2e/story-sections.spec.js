@@ -83,6 +83,12 @@ test.describe("Story Sections", () => {
     ).toBeVisible();
     const lastStage = page.locator(".stage-row").last();
     await expect(lastStage).toBeVisible();
+    // Secondary stats sit behind a per-row "Details" disclosure, collapsed
+    // by default unless the row is the current stage.
+    const toggle = lastStage.locator(".stage-details-toggle");
+    if ((await toggle.getAttribute("aria-expanded")) !== "true") {
+      await toggle.click();
+    }
     await expect(
       lastStage.locator(".stage-stats-grid .stat-value").first(),
     ).toContainText(/\d/);
@@ -99,6 +105,12 @@ test.describe("Story Sections", () => {
     const firstCheckpoint = page.locator(".checkpoint-row").first();
     await expect(firstCheckpoint).toBeVisible();
     await expect(firstCheckpoint.locator(".checkpoint-km")).toContainText(/\d/);
+    // Secondary stats sit behind a per-row "Details" disclosure, collapsed
+    // by default unless the row is the current checkpoint.
+    const toggle = firstCheckpoint.locator(".checkpoint-details-toggle");
+    if ((await toggle.getAttribute("aria-expanded")) !== "true") {
+      await toggle.click();
+    }
     await expect(
       firstCheckpoint.locator(".checkpoint-stats-grid .stat-value").first(),
     ).toContainText(/\d/);

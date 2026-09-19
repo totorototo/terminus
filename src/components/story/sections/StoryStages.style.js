@@ -62,6 +62,7 @@ const style = (Component) => styled(Component)`
   }
 
   .stage-name {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
   }
 
@@ -71,7 +72,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.6,
+        0.7,
       )};
     margin-top: 0.25rem;
   }
@@ -101,13 +102,13 @@ const style = (Component) => styled(Component)`
 
   .stat-label {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.55,
+        0.7,
       )};
   }
 
@@ -119,9 +120,18 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
 
-  .elevation-value {
+  .stacked-value {
     display: flex;
     flex-direction: column;
+  }
+
+  .stat-sub {
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.7,
+      )};
   }
 
   .cutoff-value {
@@ -132,6 +142,15 @@ const style = (Component) => styled(Component)`
       color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
     }
+  }
+
+  .cutoff-time {
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
+    color: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.7,
+      )};
   }
 
   .difficulty-value {
@@ -152,27 +171,76 @@ const style = (Component) => styled(Component)`
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    gap: 0.375rem;
     text-align: right;
     white-space: nowrap;
   }
 
-  .stage-cutoff {
+  .stage-eta-time {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.85,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+  }
+
+  .stage-badge {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
-    margin-top: 0.25rem;
+    padding: 0.1875rem 0.5rem;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
 
-    &.over {
+    &.tier-ok {
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-success"]};
+      background: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-success"],
+          0.14,
+        )};
+    }
+
+    &.tier-tight {
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
+      background: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant][
+            "--color-primary-text"
+          ],
+          0.14,
+        )};
+    }
+
+    &.tier-over {
       color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
-      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+      background: ${(props) =>
+        rgba(
+          props.theme.colors[props.theme.currentVariant]["--color-accent-text"],
+          0.14,
+        )};
+    }
+  }
+
+  .stage-details-toggle {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    font-weight: ${(props) =>
+      props.theme.font.weights["--font-weight-semibold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
     }
   }
 `;

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 
 import { format } from "date-fns";
 
@@ -40,7 +40,24 @@ const StoryStages = memo(function StoryStages({ className }) {
     { threshold: 5, activeIndex: activeStageIndex },
   );
 
+  // why: on trail, only the stage you're mid-leg on needs its full breakdown
+  // open by default — everything else stays a one-line glance until tapped,
+  // so the list doesn't force a wall of dense stats in front of you at once.
+  // Stored as a toggle-from-default set (XOR'd against isCurrent below)
+  // rather than an expanded-ids set, so the open row tracks the race's
+  // current stage live without an effect re-syncing state on every tick.
+  const [toggledIds, setToggledIds] = useState(() => new Set());
+
   if (!stageETAs?.length) return null;
+
+  const toggleExpanded = (stageId) => {
+    setToggledIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(stageId)) next.delete(stageId);
+      else next.add(stageId);
+      return next;
+    });
+  };
 
   return (
     <div className={className}>
@@ -72,6 +89,30 @@ const StoryStages = memo(function StoryStages({ className }) {
                 ? DIFFICULTY_COLORS[stage.difficulty - 1]
                 : null;
 
+            // why: on trail you need a status you can read at a glance, not a
+            // percentage to do math on — a bold word carries in direct sun
+            // and while moving where a thin bar or "73% used" doesn't.
+            const cutoffTier =
+              cutoffMs == null
+                ? null
+                : isOverCutoff
+                  ? "over"
+                  : cutoffMargin && cutoffMargin.pctUsed >= 85
+                    ? "tight"
+                    : "ok";
+            const cutoffBadge =
+              cutoffTier === "over"
+                ? "Over"
+                : cutoffTier === "tight"
+                  ? "Tight"
+                  : cutoffTier === "ok"
+                    ? "On pace"
+                    : null;
+
+            const isExpanded =
+              stage.isCurrent !== toggledIds.has(stage.stageId);
+            const detailsId = `stage-details-${stage.stageId}`;
+
             return (
               <li
                 key={stage.stageId}
@@ -89,80 +130,88 @@ const StoryStages = memo(function StoryStages({ className }) {
                     </span>
                   </div>
                   <div className="stage-eta">
-                    <span>
+                    <span className="stage-eta-time">
                       {stage.isPast
                         ? "Reached"
                         : etaMs
                           ? format(new Date(etaMs), "EEE HH:mm")
                           : "--:--"}
                     </span>
-                    {cutoffMs != null && (
-                      <span
-                        className={`stage-cutoff${isOverCutoff ? " over" : ""}`}
-                      >
-                        cutoff {format(new Date(cutoffMs), "EEE HH:mm")}
-                        {isOverCutoff ? " · over" : ""}
+                    {cutoffBadge && (
+                      <span className={`stage-badge tier-${cutoffTier}`}>
+                        {cutoffBadge}
                       </span>
                     )}
                   </div>
                 </div>
                 {raw && (
-                  <div className="stage-stats-grid">
-                    <div className="stat-cell">
-                      <span className="stat-label">Distance</span>
-                      <span className="stat-value">
-                        {((raw.totalDistance || 0) / 1000).toFixed(1)} km
-                      </span>
-                    </div>
-                    <div className="stat-cell">
-                      <span className="stat-label">Gain / Loss</span>
-                      <span className="stat-value elevation-value">
-                        <span>+{Math.round(raw.totalElevation || 0)} m</span>
-                        <span>
-                          −{Math.round(raw.totalElevationLoss || 0)} m
-                        </span>
-                      </span>
-                    </div>
-                    <div className="stat-cell">
-                      <span className="stat-label">Time</span>
-                      <span className="stat-value">
-                        {formatDuration(raw.estimatedDuration)}
-                      </span>
-                    </div>
-                    <div className="stat-cell">
-                      <span className="stat-label">Max time</span>
-                      <span className="stat-value">
-                        {formatDuration(raw.maxCompletionTime)}
-                      </span>
-                    </div>
-                    {cutoffMargin && (
-                      <div className="stat-cell">
-                        <span className="stat-label">Cutoff margin</span>
-                        <span
-                          className={`stat-value cutoff-value${cutoffMargin.isOver ? " over" : ""}`}
-                        >
-                          <span>{Math.round(cutoffMargin.pctUsed)}% used</span>
-                          <span>
-                            {cutoffMargin.isOver
-                              ? `${formatDuration(-cutoffMargin.marginS)} over`
-                              : `+${formatDuration(cutoffMargin.marginS)} buffer`}
+                  <>
+                    <button
+                      type="button"
+                      className="stage-details-toggle"
+                      aria-expanded={isExpanded}
+                      aria-controls={detailsId}
+                      onClick={() => toggleExpanded(stage.stageId)}
+                    >
+                      {isExpanded ? "Hide details" : "Details"}
+                    </button>
+                    {isExpanded && (
+                      <div className="stage-stats-grid" id={detailsId}>
+                        {cutoffMs != null && (
+                          <div className="stat-cell wide">
+                            <span className="stat-label">Cutoff</span>
+                            <span
+                              className={`stat-value cutoff-value${isOverCutoff ? " over" : ""}`}
+                            >
+                              {cutoffMargin && (
+                                <span>
+                                  {cutoffMargin.isOver
+                                    ? `${formatDuration(-cutoffMargin.marginS)} over`
+                                    : `+${formatDuration(cutoffMargin.marginS)} buffer`}
+                                </span>
+                              )}
+                              <span className="cutoff-time">
+                                {format(new Date(cutoffMs), "EEE HH:mm")}
+                                {isOverCutoff ? " · over" : ""}
+                              </span>
+                            </span>
+                          </div>
+                        )}
+                        <div className="stat-cell">
+                          <span className="stat-label">Gain / Loss</span>
+                          <span className="stat-value stacked-value">
+                            <span>
+                              +{Math.round(raw.totalElevation || 0)} m
+                            </span>
+                            <span>
+                              −{Math.round(raw.totalElevationLoss || 0)} m
+                            </span>
                           </span>
-                        </span>
+                        </div>
+                        <div className="stat-cell">
+                          <span className="stat-label">Time</span>
+                          <span className="stat-value stacked-value">
+                            <span>{formatDuration(raw.estimatedDuration)}</span>
+                            <span className="stat-sub">
+                              max {formatDuration(raw.maxCompletionTime)}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="stat-cell wide">
+                          <span className="stat-label">Difficulty</span>
+                          <span className="stat-value difficulty-value">
+                            {difficultyColor && (
+                              <span
+                                className="difficulty-dot"
+                                style={{ background: difficultyColor }}
+                              />
+                            )}
+                            {difficultyLabel || "--"}
+                          </span>
+                        </div>
                       </div>
                     )}
-                    <div className="stat-cell wide">
-                      <span className="stat-label">Difficulty</span>
-                      <span className="stat-value difficulty-value">
-                        {difficultyColor && (
-                          <span
-                            className="difficulty-dot"
-                            style={{ background: difficultyColor }}
-                          />
-                        )}
-                        {difficultyLabel || "--"}
-                      </span>
-                    </div>
-                  </div>
+                  </>
                 )}
               </li>
             );

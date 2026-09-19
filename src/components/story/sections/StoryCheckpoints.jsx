@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 
 import { format } from "date-fns";
 import { rgba } from "polished";
@@ -86,6 +86,22 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
     { threshold: 6, activeIndex: activeCheckpointIndex },
   );
 
+  // why: on trail, only the checkpoint you're mid-leg on needs its full
+  // breakdown open by default — everything else stays a one-line glance
+  // until tapped. Stored as a toggle-from-default set (XOR'd against
+  // isCurrent below) so the open row tracks the current checkpoint live
+  // without an effect re-syncing state on every tick.
+  const [toggledIds, setToggledIds] = useState(() => new Set());
+
+  const toggleExpanded = (sectionId) => {
+    setToggledIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) next.delete(sectionId);
+      else next.add(sectionId);
+      return next;
+    });
+  };
+
   if (!checkpointETAs?.length) {
     return (
       <div className={className}>
@@ -110,6 +126,28 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
             const weather = forecasts[cp.endLocation] ?? null;
             const cutoffMargin = section ? computeCutoffMargin(section) : null;
 
+            // why: a bold word carries in direct sun and while moving, where
+            // a percentage or a thin bar doesn't — see StoryStages' badge.
+            const cutoffTier =
+              cp.cutoffMs == null
+                ? null
+                : cp.isOverCutoff
+                  ? "over"
+                  : cutoffMargin && cutoffMargin.pctUsed >= 85
+                    ? "tight"
+                    : "ok";
+            const cutoffBadge =
+              cutoffTier === "over"
+                ? "Over"
+                : cutoffTier === "tight"
+                  ? "Tight"
+                  : cutoffTier === "ok"
+                    ? "On pace"
+                    : null;
+
+            const isExpanded = cp.isCurrent !== toggledIds.has(cp.sectionId);
+            const detailsId = `checkpoint-details-${cp.sectionId}`;
+
             return (
               <li
                 key={cp.sectionId}
@@ -127,25 +165,21 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                     </span>
                   </div>
                   <div className="checkpoint-eta">
-                    {cp.isPast ? (
-                      <span className="checkpoint-reached">Reached</span>
-                    ) : (
-                      <>
-                        <span>
-                          {cp.etaMs
-                            ? format(new Date(cp.etaMs), "EEE HH:mm")
-                            : "--:--"}
-                        </span>
-                        {remaining && <span className="sep">·</span>}
-                        {remaining && <span>in {remaining}</span>}
-                      </>
+                    <span className="checkpoint-eta-time">
+                      {cp.isPast
+                        ? "Reached"
+                        : cp.etaMs
+                          ? format(new Date(cp.etaMs), "EEE HH:mm")
+                          : "--:--"}
+                    </span>
+                    {!cp.isPast && remaining && (
+                      <span className="checkpoint-remaining">
+                        in {remaining}
+                      </span>
                     )}
-                    {cp.cutoffMs != null && (
-                      <span
-                        className={`checkpoint-cutoff${cp.isOverCutoff ? " over" : ""}`}
-                      >
-                        cutoff {format(new Date(cp.cutoffMs), "EEE HH:mm")}
-                        {cp.isOverCutoff ? " · over" : ""}
+                    {cutoffBadge && (
+                      <span className={`checkpoint-badge tier-${cutoffTier}`}>
+                        {cutoffBadge}
                       </span>
                     )}
                   </div>
@@ -159,64 +193,75 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                   />
                 )}
                 {section && (
-                  <div className="checkpoint-stats-grid">
-                    <div className="stat-cell">
-                      <span className="stat-label">Distance</span>
-                      <span className="stat-value">
-                        {((section.totalDistance || 0) / 1000).toFixed(1)} km
-                      </span>
-                    </div>
-                    <div className="stat-cell">
-                      <span className="stat-label">Gain / Loss</span>
-                      <span className="stat-value elevation-value">
-                        <span>
-                          +{Math.round(section.totalElevation || 0)} m
-                        </span>
-                        <span>
-                          −{Math.round(section.totalElevationLoss || 0)} m
-                        </span>
-                      </span>
-                    </div>
-                    <div className="stat-cell">
-                      <span className="stat-label">Time</span>
-                      <span className="stat-value">
-                        {formatDuration(section.estimatedDuration)}
-                      </span>
-                    </div>
-                    <div className="stat-cell">
-                      <span className="stat-label">Max time</span>
-                      <span className="stat-value">
-                        {formatDuration(section.maxCompletionTime)}
-                      </span>
-                    </div>
-                    {cutoffMargin && (
-                      <div className="stat-cell">
-                        <span className="stat-label">Cutoff margin</span>
-                        <span
-                          className={`stat-value cutoff-value${cutoffMargin.isOver ? " over" : ""}`}
-                        >
-                          <span>{Math.round(cutoffMargin.pctUsed)}% used</span>
-                          <span>
-                            {cutoffMargin.isOver
-                              ? `${formatDuration(-cutoffMargin.marginS)} over`
-                              : `+${formatDuration(cutoffMargin.marginS)} buffer`}
+                  <>
+                    <button
+                      type="button"
+                      className="checkpoint-details-toggle"
+                      aria-expanded={isExpanded}
+                      aria-controls={detailsId}
+                      onClick={() => toggleExpanded(cp.sectionId)}
+                    >
+                      {isExpanded ? "Hide details" : "Details"}
+                    </button>
+                    {isExpanded && (
+                      <div className="checkpoint-stats-grid" id={detailsId}>
+                        {cp.cutoffMs != null && (
+                          <div className="stat-cell wide">
+                            <span className="stat-label">Cutoff</span>
+                            <span
+                              className={`stat-value cutoff-value${cp.isOverCutoff ? " over" : ""}`}
+                            >
+                              {cutoffMargin && (
+                                <span>
+                                  {cutoffMargin.isOver
+                                    ? `${formatDuration(-cutoffMargin.marginS)} over`
+                                    : `+${formatDuration(cutoffMargin.marginS)} buffer`}
+                                </span>
+                              )}
+                              <span className="cutoff-time">
+                                {format(new Date(cp.cutoffMs), "EEE HH:mm")}
+                                {cp.isOverCutoff ? " · over" : ""}
+                              </span>
+                            </span>
+                          </div>
+                        )}
+                        <div className="stat-cell">
+                          <span className="stat-label">Gain / Loss</span>
+                          <span className="stat-value stacked-value">
+                            <span>
+                              +{Math.round(section.totalElevation || 0)} m
+                            </span>
+                            <span>
+                              −{Math.round(section.totalElevationLoss || 0)} m
+                            </span>
                           </span>
-                        </span>
+                        </div>
+                        <div className="stat-cell">
+                          <span className="stat-label">Time</span>
+                          <span className="stat-value stacked-value">
+                            <span>
+                              {formatDuration(section.estimatedDuration)}
+                            </span>
+                            <span className="stat-sub">
+                              max {formatDuration(section.maxCompletionTime)}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="stat-cell wide">
+                          <span className="stat-label">Difficulty</span>
+                          <span className="stat-value difficulty-value">
+                            {difficultyColor && (
+                              <span
+                                className="difficulty-dot"
+                                style={{ background: difficultyColor }}
+                              />
+                            )}
+                            {difficultyLabel || "--"}
+                          </span>
+                        </div>
                       </div>
                     )}
-                    <div className="stat-cell wide">
-                      <span className="stat-label">Difficulty</span>
-                      <span className="stat-value difficulty-value">
-                        {difficultyColor && (
-                          <span
-                            className="difficulty-dot"
-                            style={{ background: difficultyColor }}
-                          />
-                        )}
-                        {difficultyLabel || "--"}
-                      </span>
-                    </div>
-                  </div>
+                  </>
                 )}
               </li>
             );
