@@ -85,6 +85,16 @@ const StoryHero = memo(function StoryHero({ className }) {
           </span>
           <span className="stat-label">m loss</span>
         </div>
+        {stats.distance > 0 && (
+          <div className="stat">
+            <span className="stat-value">
+              {((stats.elevationGain || 0) / (stats.distance / 1000)).toFixed(
+                0,
+              )}
+            </span>
+            <span className="stat-label">m/km D+</span>
+          </div>
+        )}
         {totalEstimatedMs != null && (
           <div className="stat">
             <span className="stat-value">

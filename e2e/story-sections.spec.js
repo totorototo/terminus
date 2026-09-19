@@ -36,12 +36,12 @@ test.describe("Story Sections", () => {
 
   // ── StoryHero ────────────────────────────────────────────────────────────
 
-  test("Hero: shows total distance, elevation gain/loss, and est. time", async ({
+  test("Hero: shows total distance, elevation gain/loss, D+/km, and est. time", async ({
     page,
   }) => {
     const stats = page.locator(".stat-row .stat");
-    await expect(stats).toHaveCount(4);
-    for (let i = 0; i < 4; i++) {
+    await expect(stats).toHaveCount(5);
+    for (let i = 0; i < 5; i++) {
       await expect(stats.nth(i).locator(".stat-value")).toContainText(/\d/);
     }
   });
