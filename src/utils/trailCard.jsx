@@ -139,7 +139,7 @@ function qrElement(url, size = 72) {
   );
 }
 
-// DEFAULT_BASE_PACE_S_PER_KM from zig/minetti.zig — flat terrain reference
+// DEFAULT_BASE_PACE_S_PER_KM from gpxz's minetti.zig — flat terrain reference
 const FLAT_PACE_S_PER_KM = 490;
 
 function buildElement({

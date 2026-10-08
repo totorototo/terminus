@@ -67,6 +67,16 @@ function bundleSizePlugin() {
   };
 }
 
+// ignoreBuildFile: zig/build.zig is the native test build; Zigar uses its own
+// build.zig and picks up the gpxz dependency from zig/build.zig.zon +
+// zig/build.extra.zig.
+const zigarOptions = {
+  optimize: "ReleaseSmall",
+  embedWASM: true,
+  topLevelAwait: false,
+  ignoreBuildFile: true,
+};
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -244,23 +254,12 @@ export default defineConfig(({ mode }) => {
           ],
         },
       }),
-      zigar({
-        optimize: "ReleaseSmall",
-        embedWASM: true,
-        topLevelAwait: false,
-      }),
+      zigar(zigarOptions),
       bundleSizePlugin(),
     ].filter(Boolean),
     worker: {
       format: "es", // Enable ES modules in workers
-      plugins: () => [
-        zigar({
-          optimize: "ReleaseSmall",
-          embedWASM: true,
-          topLevelAwait: false,
-        }),
-        bundleSizePlugin(),
-      ],
+      plugins: () => [zigar(zigarOptions), bundleSizePlugin()],
     },
     preview: {
       headers: {

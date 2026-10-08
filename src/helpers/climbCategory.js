@@ -1,5 +1,5 @@
 // Strava/Tour de France style climb categorization: score = distance(m) × avg gradient(%).
-// why: reuses the same score shape as zig/climbs.zig's Garmin qualification score
+// why: reuses the same score shape as gpxz's climbs.zig's Garmin qualification score
 // (climbDistM × avgGradient) so category and "does this even count as a climb" share
 // one mental model. Thresholds mirror Strava's published category cutoffs.
 const CATEGORIES = [

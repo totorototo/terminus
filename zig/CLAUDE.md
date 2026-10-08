@@ -1,125 +1,34 @@
-# Zig Codebase (0.16.0)
+# Zig (0.16.0): the WASM boundary over gpxz
 
-## Module Map
+The computation lives in [gpxz](https://github.com/totorototo/gpxz), pinned by commit in
+`build.zig.zon`. This directory only holds the boundary Zigar compiles to WASM:
 
 ```
-gpx.zig        ── GPX parsing (manual std.mem scanning, no XML lib)
-trace.zig      ── Trace struct: core computation (distances, elevations, slopes, peaks)
-extrema.zig    ── AMPD peak & valley detection algorithm
-climbs.zig     ── Climb segment detection (Garmin-style qualification)
-simplify.zig   ── Douglas-Peucker simplification
-elevation.zig  ── Denoised D+/D- (distance-windowed median + hysteresis deadband) + windowed slope
-gpspoint.zig   ── Pure math on [3]f64 (Haversine, bearing, elevation)
-gpxdata.zig    ── Data structs: GPXData, Waypoint, Metadata
-leg.zig        ── LegStats: per-waypoint-pair intervals (Naismith)
-section.zig    ── SectionStats struct (camelCase fields — maps to JS); thin
-                  wrappers over calibration.zig's boundary-kind generics
-stage.zig      ── StageStats: LifeBase-to-LifeBase groupings; same thin-wrapper
-                  pattern as section.zig
-calibration.zig ── Boundary-kind (section/stage) shared logic: a-priori interval
-                  stats (computeBoundaryStats) + live recalibration
-segment.zig    ── Shared per-point Minetti metrics for sections & stages
-minetti.zig    ── Metabolic-cost slope model (Minetti et al. 2002): cmet, paceFactor
-paceModel.zig  ── Full pace model: folds minetti's slope factor together with
-                  fatigue, circadian and weather into one combined multiplier
-                  (computeFactors)
-soundscape.zig ── Audio frame generation from trace arrays
-time.zig       ── ISO 8601 → epoch parsing
+terminus.zig     ── What the worker imports: readGPXComplete, recalibrate,
+                    generateAudioFrames, and the Trace / Route / WeatherLookup types
+build.zig.zon    ── Pins gpxz (same commit as retrace when possible)
+build.zig        ── Native test build: `zig build test` (Zigar ignores it)
+build.extra.zig  ── Zigar hook: gives the WASM build the `gpxz` import
 ```
 
-`readGPXComplete` → `GPXData { trace, waypoints, sections, metadata }` is the main WASM entry point.
+## Rules
 
-## Core Data Model
+- **No algorithms here.** A fix or feature in parsing, trace, climbs, sections, stages, pace
+  model or soundscape goes into gpxz; then bump the pin from `zig/`:
+  `zig fetch --save git+https://github.com/totorototo/gpxz#<commit>`.
+- **Validate before gpxz asserts.** gpxz asserts its preconditions, and in ReleaseSmall a
+  failed assert is undefined behavior, not a trap. Every value JavaScript passes in is
+  checked in `terminus.zig` (settings, elapsed time, index range, slice lengths) and turned
+  into an error the worker posts as `ERROR`.
+- **Exports are camelCase** (they are the JavaScript API); implementation and gpxz are
+  snake_case, TIGER_STYLE.
+- **gpxz's structs cross the boundary as they are**, not as JSON (unlike retrace): the worker
+  reads `points_flat` and `points_full_resolution` as zero-copy Float64Array views. The worker
+  (`src/gpxWorker.js`) is the only place that renames gpxz's snake_case fields to the store's
+  camelCase shapes.
+- Every struct returned holds WASM memory: the worker frees it with `.deinit()`.
 
-Coordinates are `[3]f64` with index constants from `gpspoint.zig`:
+## Tests
 
-```zig
-IDX_LAT = 0, IDX_LON = 1, IDX_ELEV = 2
-```
-
-`Trace` holds parallel arrays (same length as `points`): `cumulativeDistances`, `cumulativeElevations`, `cumulativeElevationLoss`, `slopes`, `peaks`.
-
-## Function Signature Pattern
-
-Allocating functions take `allocator` as first arg, return `![]T`. Caller owns the result:
-
-```zig
-pub fn douglasPeuckerSimplify(allocator, points: []const [3]f64, epsilon: f64) ![][3]f64
-pub fn findPeaks(allocator, signal: []const f32) ![]usize
-pub fn readTracePoints(allocator, bytes: []const u8) ![][3]f64
-```
-
-## Memory Patterns
-
-**errdefer stacking** — each allocation gets its own `errdefer` as you go:
-
-```zig
-const distances = try allocator.alloc(f64, len);
-errdefer allocator.free(distances);
-const elevations = try allocator.alloc(f64, len);
-errdefer allocator.free(elevations);
-```
-
-**errdefer for slice-of-structs** — free each element then the container:
-
-```zig
-errdefer {
-    for (waypoints.items) |*wpt| wpt.deinit(allocator);
-    waypoints.deinit(allocator);
-}
-```
-
-**toOwnedSlice + defer deinit** — safe because `toOwnedSlice` empties the list:
-
-```zig
-var list: std.ArrayList(usize) = .empty;
-defer list.deinit(allocator);
-// ... append items ...
-return try list.toOwnedSlice(allocator);
-```
-
-**Temp buffers** — allocated and freed within the same function via plain `defer`:
-
-```zig
-const elevations = try allocator.alloc(f32, len);
-defer allocator.free(elevations);
-```
-
-**deinit guards** against zero-length slices (from empty input):
-
-```zig
-if (self.points.len != 0) allocator.free(self.points);
-```
-
-## GPX Parsing Idiom
-
-Manual scanning with `std.mem.indexOfPos`. Named blocks (`blk:`) for optional extraction — `orelse break` skips the element silently:
-
-```zig
-const lat = blk: {
-    const lat_pos = std.mem.indexOfPos(u8, bytes[start..end], 0, "lat=\"") orelse break;
-    break :blk std.fmt.parseFloat(f64, bytes[s..e]) catch break;
-};
-```
-
-Strings are always `allocator.dupe(u8, slice)` — never store references into the input buffer.
-
-## Testing
-
-Co-located in each file. Named `"<subject>: <scenario>"`. Always use `std.testing.allocator`.
-
-```zig
-test "distance: known coordinates (Paris to London)" { ... }
-test "Trace with large dataset applies simplification" { ... }
-```
-
-Use `@as` for type-explicit expectations:
-
-```zig
-try testing.expectEqual(@as(usize, 3), points.len);
-try testing.expectApproxEqAbs(expected, actual, tolerance);
-```
-
-## WASM
-
-Compiled via `rollup-plugin-zigar` with `ReleaseSmall`. All `pub` declarations are exported. Return types must be Zigar-marshalable: `f64`, `f32`, `i64`, `[]u8`, slices, flat structs.
+`npm run test:zig` (= `cd zig && zig build test --summary all`). Use `std.testing.allocator`
+so leaks fail the test. gpxz's own tests run in gpxz.
