@@ -5,10 +5,12 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [
     react(),
+    // ignoreBuildFile: zig/build.zig is the native test build (see vite.config.js).
     zigar({
       optimize: "ReleaseSmall",
       embedWASM: true,
       topLevelAwait: false,
+      ignoreBuildFile: true,
     }),
   ],
   test: {

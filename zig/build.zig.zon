@@ -1,0 +1,18 @@
+.{
+    .name = .terminus,
+    .version = "0.1.0",
+    .fingerprint = 0x2cddcfe104902adb,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .gpxz = .{
+            .url = "git+https://github.com/totorototo/gpxz#f2119d7c31ebd96c446894fb39914f4572f38e46",
+            .hash = "gpxz-0.1.0-euMO4pXGBACmjz76H-WXBAmUXv0IQo52FZhWTDHelSrp",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "build.extra.zig",
+        "terminus.zig",
+    },
+}

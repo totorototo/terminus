@@ -4,9 +4,18 @@
 // handlers share one resident Trace (see getResidentTrace); only traces created
 // outside the cache (getRouteSection, readGPXComplete results) are freed per call.
 
-import { readGPXComplete, Route } from "../zig/gpx.zig";
-import { generateAudioFrames } from "../zig/soundscape.zig";
-import { __zigar, Trace } from "../zig/trace.zig";
+// zig/terminus.zig is a thin boundary over the gpxz library. gpxz's structs
+// use snake_case, unit-suffixed fields (distance_m, epoch_s_start, ...); the
+// sanitizers below rename them to the camelCase shapes the store expects, so
+// this file is the only place that knows gpxz's field names.
+import {
+  __zigar,
+  generateAudioFrames,
+  readGPXComplete,
+  recalibrate as recalibrateRoute,
+  Route,
+  Trace,
+} from "../zig/terminus.zig";
 
 // Initialize Zig/WASM in worker context
 let isInitialized = false;
@@ -168,7 +177,7 @@ function measureMs(label) {
 // Trace.points is [][3]f64 in Zig — an array of fixed-size structs. Walking it
 // with Zigar's generic .valueOf() pays one proxy trap per field per point
 // (3 traps * N points) to build a nested JS array. Trace also exposes the same
-// backing memory flattened as pointsFlat ([]f64, stride 3), so its `.typedArray`
+// backing memory flattened as points_flat ([]f64, stride 3), so its `.typedArray`
 // is a single zero-copy Float64Array view — reshaping that with a flat loop is
 // far cheaper than the proxy-recursive path, for the same [[lat,lon,ele], ...]
 // output shape callers already expect.
@@ -191,13 +200,13 @@ function sanitizeClimbs(traceClimbs) {
     for (let i = 0; i < traceClimbs.length; i++) {
       const c = traceClimbs[i].valueOf();
       sanitizedClimbs.push({
-        startIndex: Number(c.startIndex),
-        endIndex: Number(c.endIndex),
-        startDistM: c.startDistM,
-        climbDistM: c.climbDistM,
-        elevationGain: c.elevationGain,
-        summitElev: c.summitElev,
-        avgGradient: c.avgGradient,
+        startIndex: Number(c.index_start),
+        endIndex: Number(c.index_end),
+        startDistM: c.distance_m_start,
+        climbDistM: c.distance_m,
+        elevationGain: c.elevation_gain_m,
+        summitElev: c.elevation_m_summit,
+        avgGradient: c.gradient_percent_average,
       });
     }
   }
@@ -210,22 +219,61 @@ function sanitizeClimbs(traceClimbs) {
  * climbs data to reuse instead of re-deriving it from the proxy.
  */
 function sanitizeTrace(trace, sanitizedClimbs) {
-  const flat = trace.pointsFlat;
+  const flat = trace.points_flat;
   const points = flat ? flattenToTriples(flat.typedArray ?? flat) : [];
 
   return {
     points,
-    slopes: trace.slopes.valueOf(),
-    paceFactors: trace.paceFactors.valueOf(),
-    cumulativeDistances: trace.cumulativeDistances.valueOf(),
-    cumulativeElevations: trace.cumulativeElevations.valueOf(),
-    cumulativeElevationLoss: trace.cumulativeElevationLoss.valueOf(),
+    slopes: trace.slopes_percent.valueOf(),
+    paceFactors: trace.pace_factors.valueOf(),
+    cumulativeDistances: trace.distances_m_cumulative.valueOf(),
+    cumulativeElevations: trace.elevation_gains_m_cumulative.valueOf(),
+    cumulativeElevationLoss: trace.elevation_losses_m_cumulative.valueOf(),
     peaks: trace.peaks.valueOf(),
     valleys: trace.valleys.valueOf(),
     climbs: sanitizedClimbs ?? sanitizeClimbs(trace.climbs),
-    totalDistance: trace.totalDistance,
-    totalElevation: trace.totalElevation,
-    totalElevationLoss: trace.totalElevationLoss,
+    totalDistance: trace.distance_m,
+    totalElevation: trace.elevation_gain_m,
+    totalElevationLoss: trace.elevation_loss_m,
+  };
+}
+
+/** `Number()` for a nullable Zig i64 (a BigInt in JS), keeping null. */
+function epochOrNull(value) {
+  return value !== null ? Number(value) : null;
+}
+
+/** The fields legs, sections and stages share, from an already-copied valueOf(). */
+function sanitizeIntervalCommon(d) {
+  return {
+    startIndex: d.index_start,
+    endIndex: d.index_end,
+    pointCount: d.point_count,
+    startPoint: d.point_start,
+    endPoint: d.point_end,
+    totalDistance: d.distance_m,
+    totalElevation: d.elevation_gain_m,
+    totalElevationLoss: d.elevation_loss_m,
+    avgSlope: d.slope_percent_average,
+    maxSlope: d.slope_percent_max,
+    minElevation: d.elevation_m_min,
+    maxElevation: d.elevation_m_max,
+    bearing: d.bearing_degrees,
+    difficulty: d.difficulty,
+    estimatedDuration: d.duration_s_estimated,
+  };
+}
+
+/** The cutoff and pace fields sections and stages add over legs. */
+function sanitizeIntervalTiming(d) {
+  return {
+    startTime: epochOrNull(d.epoch_s_start),
+    endTime: epochOrNull(d.epoch_s_end),
+    paceFactor: d.pace_factor,
+    effortFactor: d.effort_factor,
+    maxCompletionTime: epochOrNull(d.duration_s_cutoff),
+    cutoffRatio: d.cutoff_ratio,
+    stopDuration: d.stop_s,
   };
 }
 
@@ -233,7 +281,7 @@ function sanitizeTrace(trace, sanitizedClimbs) {
  * Build a Zig `WeatherLookup` (parallel name/value arrays) from a forecast map
  * keyed by checkpoint name. The values are converted from the store's forecast
  * shape ({ temp, humidity, wind, precipitation }) to the Zig field names
- * ({ temperature_c, humidity_pct, wind_kmh, precip_prob_pct }).
+ * ({ temperature_c, humidity_percent, wind_kmh, precipitation_probability_percent }).
  *
  * Returns the neutral (empty) lookup when no forecasts are provided, so the
  * estimate is unchanged. Entries missing a field fall back to neutral-ish
@@ -248,9 +296,9 @@ function buildWeatherLookup(weatherByCheckpoint) {
       names.push(name);
       values.push({
         temperature_c: Number.isFinite(f.temp) ? f.temp : 12.0,
-        humidity_pct: Number.isFinite(f.humidity) ? f.humidity : 50.0,
+        humidity_percent: Number.isFinite(f.humidity) ? f.humidity : 50.0,
         wind_kmh: Number.isFinite(f.wind) ? f.wind : 0.0,
-        precip_prob_pct: Number.isFinite(f.precipitation)
+        precipitation_probability_percent: Number.isFinite(f.precipitation)
           ? f.precipitation
           : 0.0,
       });
@@ -349,11 +397,13 @@ async function sanitizeAndPostGPXResults(gpxData, requestId) {
     for (let i = 0; i < gpxData.legs.length; i++) {
       const leg = gpxData.legs[i];
       const legData = leg.valueOf();
-      const startLocation = leg.startLocation.string;
-      const endLocation = leg.endLocation.string;
+      const startLocation = leg.location_start.string;
+      const endLocation = leg.location_end.string;
       sanitizedLegs.push({
-        ...legData,
-        segmentId: `leg-${legData.sectionIdx}-${startLocation}-${endLocation}`,
+        legId: legData.leg_index,
+        sectionIdx: legData.section_index,
+        ...sanitizeIntervalCommon(legData),
+        segmentId: `leg-${legData.section_index}-${startLocation}-${endLocation}`,
         startLocation,
         endLocation,
       });
@@ -366,21 +416,15 @@ async function sanitizeAndPostGPXResults(gpxData, requestId) {
     for (let i = 0; i < gpxData.sections.length; i++) {
       const section = gpxData.sections[i];
       const sectionData = section.valueOf();
-      const startLocation = section.startLocation.string;
-      const endLocation = section.endLocation.string;
+      const startLocation = section.location_start.string;
+      const endLocation = section.location_end.string;
       sanitizedSections.push({
-        ...sectionData,
-        sectionId: `section-${sectionData.stageIdx}-${startLocation}-${endLocation}`,
+        stageIdx: sectionData.stage_index,
+        ...sanitizeIntervalCommon(sectionData),
+        ...sanitizeIntervalTiming(sectionData),
+        sectionId: `section-${sectionData.stage_index}-${startLocation}-${endLocation}`,
         startLocation,
         endLocation,
-        startTime:
-          sectionData.startTime !== null ? Number(sectionData.startTime) : null,
-        endTime:
-          sectionData.endTime !== null ? Number(sectionData.endTime) : null,
-        maxCompletionTime:
-          sectionData.maxCompletionTime !== null
-            ? Number(sectionData.maxCompletionTime)
-            : null,
       });
     }
   }
@@ -391,20 +435,14 @@ async function sanitizeAndPostGPXResults(gpxData, requestId) {
     for (let i = 0; i < gpxData.stages.length; i++) {
       const stage = gpxData.stages[i];
       const stageData = stage.valueOf();
-      const startLocation = stage.startLocation.string;
-      const endLocation = stage.endLocation.string;
+      const startLocation = stage.location_start.string;
+      const endLocation = stage.location_end.string;
       sanitizedStages.push({
-        ...stageData,
+        ...sanitizeIntervalCommon(stageData),
+        ...sanitizeIntervalTiming(stageData),
         stageId: `stage-${startLocation}-${endLocation}`,
         startLocation,
         endLocation,
-        startTime:
-          stageData.startTime !== null ? Number(stageData.startTime) : null,
-        endTime: stageData.endTime !== null ? Number(stageData.endTime) : null,
-        maxCompletionTime:
-          stageData.maxCompletionTime !== null
-            ? Number(stageData.maxCompletionTime)
-            : null,
       });
     }
   }
@@ -414,15 +452,15 @@ async function sanitizeAndPostGPXResults(gpxData, requestId) {
   for (let i = 0; i < gpxData.waypoints.length; i++) {
     const wpt = gpxData.waypoints[i];
     sanitizedWaypoints.push({
-      lat: wpt.lat,
-      lon: wpt.lon,
-      ele: wpt.ele !== null ? wpt.ele : null,
+      lat: wpt.latitude,
+      lon: wpt.longitude,
+      ele: wpt.elevation_m !== null ? wpt.elevation_m : null,
       name: wpt.name.string,
-      desc: wpt.desc ? wpt.desc.string : null,
-      cmt: wpt.cmt ? wpt.cmt.string : null,
-      sym: wpt.sym ? wpt.sym.string : null,
-      wptType: wpt.wptType ? wpt.wptType.string : null,
-      time: wpt.time ? Number(wpt.time) : null,
+      desc: wpt.description ? wpt.description.string : null,
+      cmt: wpt.comment ? wpt.comment.string : null,
+      sym: wpt.symbol ? wpt.symbol.string : null,
+      wptType: wpt.type_name ? wpt.type_name.string : null,
+      time: wpt.epoch_s ? Number(wpt.epoch_s) : null,
     });
   }
 
@@ -439,7 +477,7 @@ async function sanitizeAndPostGPXResults(gpxData, requestId) {
   // the only copy — into a fresh transferable buffer (the WASM view itself
   // must never be transferred or WASM memory would be detached). The map swaps
   // to [lng, lat] at read time, and the store never holds the raw XML string.
-  const fullResPoints = gpxData.fullResPoints;
+  const fullResPoints = gpxData.points_full_resolution;
   const routeLatLonEle = fullResPoints
     ? new Float64Array(fullResPoints.typedArray ?? fullResPoints)
     : new Float64Array(0);
@@ -479,7 +517,7 @@ async function findPointsAtDistances(data, requestId) {
 
   const points = distances
     .map((distance) => {
-      const point = trace.pointAtDistance(distance);
+      const point = trace.point_at_distance(distance);
       return {
         distance,
         // Read directly from WASM instead of calling .valueOf()
@@ -516,9 +554,9 @@ async function getRouteSection(data, requestId) {
       type: "ROUTE_SECTION_READY",
       id: requestId,
       section: {
-        totalDistance: trace.totalDistance,
-        totalElevation: trace.totalElevation,
-        totalElevationLoss: trace.totalElevationLoss,
+        totalDistance: trace.distance_m,
+        totalElevation: trace.elevation_gain_m,
+        totalElevationLoss: trace.elevation_loss_m,
       },
     });
   } finally {
@@ -560,13 +598,13 @@ async function generateSoundscapeFrames(data, requestId) {
   for (let i = 0; i < zigFrames.length; i++) {
     const f = zigFrames[i].valueOf();
     frames.push({
-      t: f.t,
-      distance: f.distance,
+      t: f.position,
+      distance: f.distance_normalized,
       pitch: f.pitch,
       intensity: f.intensity,
       timbre: f.timbre,
-      bearing: f.bearing,
-      pace: f.pace,
+      bearing: f.bearing_degrees,
+      pace: f.pace_normalized,
     });
   }
 
@@ -605,7 +643,8 @@ async function recalibrate(data, requestId) {
   }
   const route = await getResidentRoute(bytes);
 
-  const result = await route.recalibrateBoth(
+  const result = await recalibrateRoute(
+    route,
     currentIndex,
     actualElapsedS,
     basePaceSPerKm,
@@ -622,18 +661,18 @@ async function recalibrate(data, requestId) {
     for (let index = 0; index < recalibration.etas.length; index++) {
       const eta = recalibration.etas[index].valueOf();
       etas.push({
-        id: Number(eta.id),
-        endIndex: Number(eta.endIndex),
-        remainingDurationS: eta.remainingDurationS,
-        cumulativeRemainingS: eta.cumulativeRemainingS,
+        id: Number(eta.index),
+        endIndex: Number(eta.index_end),
+        remainingDurationS: eta.duration_s_remaining,
+        cumulativeRemainingS: eta.duration_s_remaining_cumulative,
       });
     }
     return {
       kind,
-      calibrationFactor: recalibration.calibrationFactor,
-      calibratedBasePaceSPerKm: recalibration.calibratedBasePaceSPerKm,
-      predictedSoFarS: recalibration.predictedSoFarS,
-      actualElapsedS: recalibration.actualElapsedS,
+      calibrationFactor: recalibration.calibration_factor,
+      calibratedBasePaceSPerKm: recalibration.pace_base_s_per_km_calibrated,
+      predictedSoFarS: recalibration.duration_s_predicted,
+      actualElapsedS: recalibration.duration_s_actual,
       etas,
     };
   };
@@ -669,7 +708,7 @@ async function findClosestLocation(data, requestId) {
   const trace = getResidentTrace(coordinates, routeVersion);
 
   // Null on an empty trace — report "nothing found" instead of crashing.
-  const closest = trace.findClosestPoint(target);
+  const closest = trace.closest_point(target);
 
   self.postMessage({
     type: "CLOSEST_POINT_FOUND",
@@ -679,6 +718,6 @@ async function findClosestLocation(data, requestId) {
       ? [closest.point[0], closest.point[1], closest.point[2]]
       : null,
     closestIndex: closest?.index ?? null,
-    deviationDistance: closest?.distance ?? 0,
+    deviationDistance: closest?.distance_m ?? 0,
   });
 }

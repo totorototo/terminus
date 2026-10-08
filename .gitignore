@@ -32,6 +32,9 @@ screenshots
 *.sw?
 
 zig/.zig-cache
+zig/zig-out
+zig/zig-pkg
+.zigar-cache
 zig/test/
 
 # Playwright

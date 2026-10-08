@@ -1,19 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // vi.mock calls are hoisted above all imports by Vitest
-vi.mock("../zig/gpx.zig", () => ({
-  readGPXComplete: vi.fn(),
-  Route: { init: vi.fn() },
-}));
-vi.mock("../zig/trace.zig", () => ({
+vi.mock("../zig/terminus.zig", () => ({
   __zigar: { init: vi.fn().mockResolvedValue(undefined) },
+  generateAudioFrames: vi.fn(),
+  readGPXComplete: vi.fn(),
+  recalibrate: vi.fn(),
+  Route: { init: vi.fn() },
   Trace: { init: vi.fn() },
 }));
-vi.mock("../zig/soundscape.zig", () => ({ generateAudioFrames: vi.fn() }));
 
-import { readGPXComplete, Route } from "../zig/gpx.zig";
-import { generateAudioFrames } from "../zig/soundscape.zig";
-import { Trace } from "../zig/trace.zig";
+import {
+  generateAudioFrames,
+  readGPXComplete,
+  recalibrate,
+  Route,
+  Trace,
+} from "../zig/terminus.zig";
 // Import worker — executes self.onmessage = async function(e){...}
 import { __resetWorkerCachesForTests } from "./gpxWorker.js";
 
@@ -24,21 +27,21 @@ function zigStr(value) {
 }
 
 /**
- * Shared default fields for a Trace proxy mock. Real Zigar Trace exposes
- * pointsFlat as the same backing memory as points, reinterpreted as a flat
- * [lat, lon, ele, ...] slice (see trace.zig); a plain array here exercises
+ * Shared default fields for a gpxz Trace proxy mock. Real Zigar Trace exposes
+ * points_flat as the same backing memory as points, reinterpreted as a flat
+ * [lat, lon, ele, ...] slice (see gpxz's trace.zig); a plain array here exercises
  * gpxWorker.js's `flat.typedArray ?? flat` fallback path.
  */
 function baseTraceFields(overrides = {}) {
   return {
-    totalDistance: 5000,
-    totalElevation: 200,
-    totalElevationLoss: 50,
-    cumulativeDistances: [0, 1000, 2000, 3000, 4000, 5000],
-    cumulativeElevations: [0, 20, 60, 100, 150, 200],
-    cumulativeElevationLoss: [0, 0, 10, 20, 35, 50],
-    slopes: [0, 0, 0, 0, 0, 0],
-    paceFactors: [1, 1, 1, 1, 1, 1],
+    distance_m: 5000,
+    elevation_gain_m: 200,
+    elevation_loss_m: 50,
+    distances_m_cumulative: [0, 1000, 2000, 3000, 4000, 5000],
+    elevation_gains_m_cumulative: [0, 20, 60, 100, 150, 200],
+    elevation_losses_m_cumulative: [0, 0, 10, 20, 35, 50],
+    slopes_percent: [0, 0, 0, 0, 0, 0],
+    pace_factors: [1, 1, 1, 1, 1, 1],
     points: [
       [0.0, 0.0, 100],
       [0.001, 0.0, 120],
@@ -47,7 +50,7 @@ function baseTraceFields(overrides = {}) {
       [0.004, 0.0, 250],
       [0.005, 0.0, 300],
     ],
-    pointsFlat: [
+    points_flat: [
       0.0, 0.0, 100, 0.001, 0.0, 120, 0.002, 0.0, 160, 0.003, 0.0, 200, 0.004,
       0.0, 250, 0.005, 0.0, 300,
     ],
@@ -69,25 +72,25 @@ function makeTrace(overrides = {}) {
 function makeLeg(startLocation = "Start", endLocation = "End", overrides = {}) {
   return {
     valueOf: () => ({
-      legId: 0,
-      sectionIdx: 0,
-      startIndex: 0,
-      endIndex: 5,
-      pointCount: 6,
-      totalDistance: 1000,
-      totalElevation: 50,
-      totalElevationLoss: 10,
-      avgSlope: 5,
-      maxSlope: 15,
-      minElevation: 100,
-      maxElevation: 150,
-      bearing: 45,
+      leg_index: 0,
+      section_index: 0,
+      index_start: 0,
+      index_end: 5,
+      point_count: 6,
+      distance_m: 1000,
+      elevation_gain_m: 50,
+      elevation_loss_m: 10,
+      slope_percent_average: 5,
+      slope_percent_max: 15,
+      elevation_m_min: 100,
+      elevation_m_max: 150,
+      bearing_degrees: 45,
       difficulty: 2,
-      estimatedDuration: 1200,
+      duration_s_estimated: 1200,
       ...overrides,
     }),
-    startLocation: zigStr(startLocation),
-    endLocation: zigStr(endLocation),
+    location_start: zigStr(startLocation),
+    location_end: zigStr(endLocation),
   };
 }
 
@@ -98,28 +101,28 @@ function makeSection(
 ) {
   return {
     valueOf: () => ({
-      sectionId: 0,
-      stageIdx: 0,
-      startIndex: 0,
-      endIndex: 5,
-      pointCount: 6,
-      totalDistance: 1000,
-      totalElevation: 50,
-      totalElevationLoss: 10,
-      avgSlope: 5,
-      maxSlope: 15,
-      minElevation: 100,
-      maxElevation: 150,
-      bearing: 90,
+      section_index: 0,
+      stage_index: 0,
+      index_start: 0,
+      index_end: 5,
+      point_count: 6,
+      distance_m: 1000,
+      elevation_gain_m: 50,
+      elevation_loss_m: 10,
+      slope_percent_average: 5,
+      slope_percent_max: 15,
+      elevation_m_min: 100,
+      elevation_m_max: 150,
+      bearing_degrees: 90,
       difficulty: 2,
-      estimatedDuration: 1200,
-      maxCompletionTime: BigInt(7200),
-      startTime: BigInt(1_000_000),
-      endTime: BigInt(1_007_200),
+      duration_s_estimated: 1200,
+      duration_s_cutoff: BigInt(7200),
+      epoch_s_start: BigInt(1_000_000),
+      epoch_s_end: BigInt(1_007_200),
       ...overrides,
     }),
-    startLocation: zigStr(startLocation),
-    endLocation: zigStr(endLocation),
+    location_start: zigStr(startLocation),
+    location_end: zigStr(endLocation),
   };
 }
 
@@ -130,40 +133,40 @@ function makeStage(
 ) {
   return {
     valueOf: () => ({
-      stageId: 0,
-      startIndex: 0,
-      endIndex: 5,
-      pointCount: 6,
-      totalDistance: 5000,
-      totalElevation: 200,
-      totalElevationLoss: 50,
-      avgSlope: 4,
-      maxSlope: 20,
-      minElevation: 100,
-      maxElevation: 300,
-      bearing: 45,
+      stage_index: 0,
+      index_start: 0,
+      index_end: 5,
+      point_count: 6,
+      distance_m: 5000,
+      elevation_gain_m: 200,
+      elevation_loss_m: 50,
+      slope_percent_average: 4,
+      slope_percent_max: 20,
+      elevation_m_min: 100,
+      elevation_m_max: 300,
+      bearing_degrees: 45,
       difficulty: 3,
-      estimatedDuration: 7200,
-      maxCompletionTime: BigInt(14400),
-      startTime: BigInt(1_000_000),
-      endTime: BigInt(1_014_400),
+      duration_s_estimated: 7200,
+      duration_s_cutoff: BigInt(14400),
+      epoch_s_start: BigInt(1_000_000),
+      epoch_s_end: BigInt(1_014_400),
       ...overrides,
     }),
-    startLocation: zigStr(startLocation),
-    endLocation: zigStr(endLocation),
+    location_start: zigStr(startLocation),
+    location_end: zigStr(endLocation),
   };
 }
 
 function makeClimb(overrides = {}) {
   return {
     valueOf: () => ({
-      startIndex: BigInt(2),
-      endIndex: BigInt(5),
-      startDistM: 2000,
-      climbDistM: 3000,
-      elevationGain: 150,
-      summitElev: 300,
-      avgGradient: 5,
+      index_start: BigInt(2),
+      index_end: BigInt(5),
+      distance_m_start: 2000,
+      distance_m: 3000,
+      elevation_gain_m: 150,
+      elevation_m_summit: 300,
+      gradient_percent_average: 5,
       ...overrides,
     }),
   };
@@ -185,18 +188,18 @@ function makeGpxData(overrides = {}) {
     // Flat [lat, lon, ele, ...] (stride 3), as the Zig side now returns.
     // Real Zigar slices expose `.typedArray`; a plain array exercises the
     // fallback path in the worker.
-    fullResPoints: [0.0, 0.0, 100, 0.001, 0.002, 120, 0.003, 0.004, 160],
+    points_full_resolution: [
+      0.0, 0.0, 100, 0.001, 0.002, 120, 0.003, 0.004, 160,
+    ],
     deinit: vi.fn(),
     ...overrides,
   };
 }
 
-/** Resident parsed route: recalibrateBoth resolves the given RecalibrationPair. */
+/** Resident parsed route; recalibrate() on it resolves the given RecalibrationPair. */
 function makeRoute(pair) {
-  return {
-    recalibrateBoth: vi.fn().mockResolvedValue(pair),
-    deinit: vi.fn(),
-  };
+  recalibrate.mockResolvedValue(pair);
+  return { deinit: vi.fn() };
 }
 
 async function dispatch(type, data = {}, id = "req-1") {
@@ -268,9 +271,9 @@ describe("message routing", () => {
     expect(weatherArg.names).toEqual(["Summit"]);
     expect(weatherArg.values[0]).toEqual({
       temperature_c: 28,
-      humidity_pct: 80,
+      humidity_percent: 80,
       wind_kmh: 35,
-      precip_prob_pct: 60,
+      precipitation_probability_percent: 60,
     });
   });
 
@@ -290,19 +293,19 @@ describe("message routing", () => {
     const weatherArg = readGPXComplete.mock.calls[0][4];
     expect(weatherArg.values[0]).toEqual({
       temperature_c: 12.0,
-      humidity_pct: 50.0,
+      humidity_percent: 50.0,
       wind_kmh: 0.0,
-      precip_prob_pct: 0.0,
+      precipitation_probability_percent: 0.0,
     });
   });
 
   it("routes FIND_CLOSEST_LOCATION and posts CLOSEST_POINT_FOUND", async () => {
     Trace.init.mockReturnValue({
       ...makeTrace(),
-      findClosestPoint: vi.fn().mockReturnValue({
+      closest_point: vi.fn().mockReturnValue({
         point: [1, 2, 3],
         index: 0,
-        distance: 10,
+        distance_m: 10,
       }),
     });
     await dispatch("FIND_CLOSEST_LOCATION", {
@@ -317,7 +320,7 @@ describe("message routing", () => {
   it("posts null closest location instead of crashing when the trace is empty", async () => {
     Trace.init.mockReturnValue({
       ...makeTrace(),
-      findClosestPoint: vi.fn().mockReturnValue(null),
+      closest_point: vi.fn().mockReturnValue(null),
     });
     await dispatch("FIND_CLOSEST_LOCATION", {
       coordinates: [[0, 0, 0]],
@@ -350,41 +353,41 @@ describe("message routing", () => {
   it("routes RECALIBRATE and posts a sanitized RECALIBRATED payload", async () => {
     const deinit = vi.fn();
     const sectionRecal = {
-      calibrationFactor: 1.25,
-      calibratedBasePaceSPerKm: 625,
-      predictedSoFarS: 800,
-      actualElapsedS: 1000,
+      calibration_factor: 1.25,
+      pace_base_s_per_km_calibrated: 625,
+      duration_s_predicted: 800,
+      duration_s_actual: 1000,
       etas: [
         {
           valueOf: () => ({
-            id: 0n,
-            endIndex: 10n,
-            remainingDurationS: 1200,
-            cumulativeRemainingS: 1200,
+            index: 0n,
+            index_end: 10n,
+            duration_s_remaining: 1200,
+            duration_s_remaining_cumulative: 1200,
           }),
         },
         {
           valueOf: () => ({
-            id: 1n,
-            endIndex: 20n,
-            remainingDurationS: 1500,
-            cumulativeRemainingS: 2700,
+            index: 1n,
+            index_end: 20n,
+            duration_s_remaining: 1500,
+            duration_s_remaining_cumulative: 2700,
           }),
         },
       ],
     };
     const stageRecal = {
-      calibrationFactor: 1.1,
-      calibratedBasePaceSPerKm: 550,
-      predictedSoFarS: 900,
-      actualElapsedS: 1000,
+      calibration_factor: 1.1,
+      pace_base_s_per_km_calibrated: 550,
+      duration_s_predicted: 900,
+      duration_s_actual: 1000,
       etas: [
         {
           valueOf: () => ({
-            id: 0n,
-            endIndex: 20n,
-            remainingDurationS: 2600,
-            cumulativeRemainingS: 2600,
+            index: 0n,
+            index_end: 20n,
+            duration_s_remaining: 2600,
+            duration_s_remaining_cumulative: 2600,
           }),
         },
       ],
@@ -448,15 +451,24 @@ describe("message routing", () => {
     expect(deinit).toHaveBeenCalledTimes(1);
   });
 
-  it("computes both kinds from a single recalibrateBoth call", async () => {
+  it("computes both kinds from a single recalibrate call on the resident route", async () => {
     const route = makeRoute({ section: null, stage: null, deinit: vi.fn() });
     Route.init.mockResolvedValue(route);
     await dispatch("RECALIBRATE", {
       gpxBytes: new ArrayBuffer(0),
-      currentIndex: 0,
-      actualElapsedS: 0,
+      currentIndex: 7,
+      actualElapsedS: 1800,
     });
-    expect(route.recalibrateBoth).toHaveBeenCalledTimes(1);
+    expect(recalibrate).toHaveBeenCalledTimes(1);
+    expect(recalibrate).toHaveBeenCalledWith(
+      route,
+      7,
+      1800,
+      500.0,
+      0.002,
+      3600,
+      { names: [], values: [] },
+    );
   });
 
   it("posts null kinds when the route lacks two boundaries", async () => {
@@ -487,13 +499,13 @@ describe("resident trace cache", () => {
   function makeClosestTrace(result) {
     return {
       ...makeTrace(),
-      findClosestPoint: vi.fn().mockReturnValue(result),
+      closest_point: vi.fn().mockReturnValue(result),
     };
   }
 
   it("reuses the cached Trace for repeated queries on the same coordinates", async () => {
     Trace.init.mockReturnValue(
-      makeClosestTrace({ point: [1, 2, 3], index: 0, distance: 10 }),
+      makeClosestTrace({ point: [1, 2, 3], index: 0, distance_m: 10 }),
     );
     const coordinates = [
       [0.0, 0.0, 100],
@@ -516,11 +528,15 @@ describe("resident trace cache", () => {
   });
 
   it("frees the previous Trace and rebuilds when coordinates change", async () => {
-    const first = makeClosestTrace({ point: [1, 2, 3], index: 0, distance: 1 });
+    const first = makeClosestTrace({
+      point: [1, 2, 3],
+      index: 0,
+      distance_m: 1,
+    });
     const second = makeClosestTrace({
       point: [4, 5, 6],
       index: 1,
-      distance: 2,
+      distance_m: 2,
     });
     Trace.init.mockReturnValueOnce(first).mockReturnValueOnce(second);
 
@@ -542,10 +558,10 @@ describe("resident trace cache", () => {
   it("shares the cached Trace across different query message types", async () => {
     const trace = {
       ...makeTrace(),
-      findClosestPoint: vi
+      closest_point: vi
         .fn()
-        .mockReturnValue({ point: [1, 2, 3], index: 0, distance: 10 }),
-      pointAtDistance: vi.fn().mockReturnValue([0.001, 0.0, 120]),
+        .mockReturnValue({ point: [1, 2, 3], index: 0, distance_m: 10 }),
+      point_at_distance: vi.fn().mockReturnValue([0.001, 0.0, 120]),
     };
     Trace.init.mockReturnValue(trace);
     const coordinates = [
@@ -572,14 +588,14 @@ describe("resident route cache (recalibration)", () => {
 
   it("parses the route once and reuses it across recalibration ticks", async () => {
     const route = makeRoute(nullPair());
-    route.recalibrateBoth.mockImplementation(() => Promise.resolve(nullPair()));
+    recalibrate.mockImplementation(() => Promise.resolve(nullPair()));
     Route.init.mockResolvedValue(route);
 
     await dispatch("RECALIBRATE", { gpxBytes: new ArrayBuffer(0) });
     await dispatch("RECALIBRATE", { gpxBytes: new ArrayBuffer(0) }, "req-2");
 
     expect(Route.init).toHaveBeenCalledTimes(1);
-    expect(route.recalibrateBoth).toHaveBeenCalledTimes(2);
+    expect(recalibrate).toHaveBeenCalledTimes(2);
   });
 
   it("recalibrates from bytes retained by PROCESS_GPX_FILE without gpxBytes in the payload", async () => {
@@ -693,15 +709,15 @@ describe("processGPXFile sanitization", () => {
     const gpxData = makeGpxData({
       waypoints: [
         {
-          lat: 48.85,
-          lon: 2.35,
-          ele: 100,
+          latitude: 48.85,
+          longitude: 2.35,
+          elevation_m: 100,
           name: zigStr("Col du Bonhomme"),
-          desc: zigStr("A mountain pass"),
-          cmt: null,
-          sym: zigStr("Flag"),
-          wptType: zigStr("TimeBarrier"),
-          time: null,
+          description: zigStr("A mountain pass"),
+          comment: null,
+          symbol: zigStr("Flag"),
+          type_name: zigStr("TimeBarrier"),
+          epoch_s: null,
         },
       ],
     });
@@ -720,15 +736,15 @@ describe("processGPXFile sanitization", () => {
     const gpxData = makeGpxData({
       waypoints: [
         {
-          lat: 0,
-          lon: 0,
-          ele: null,
+          latitude: 0,
+          longitude: 0,
+          elevation_m: null,
           name: zigStr("Plain"),
-          desc: null,
-          cmt: null,
-          sym: null,
-          wptType: null,
-          time: null,
+          description: null,
+          comment: null,
+          symbol: null,
+          type_name: null,
+          epoch_s: null,
         },
       ],
     });
@@ -766,9 +782,9 @@ describe("processGPXFile sanitization", () => {
     const gpxData = makeGpxData({
       sections: [
         makeSection("A", "B", {
-          startTime: null,
-          endTime: null,
-          maxCompletionTime: null,
+          epoch_s_start: null,
+          epoch_s_end: null,
+          duration_s_cutoff: null,
         }),
       ],
     });
@@ -833,6 +849,61 @@ describe("processGPXFile sanitization", () => {
     expect(results.stages[0].stageId).toBe("stage-Start-Finish");
   });
 
+  it("maps gpxz's snake_case interval fields to the store's camelCase shape", async () => {
+    const gpxData = makeGpxData({
+      legs: [makeLeg("Start", "CP1")],
+      sections: [
+        makeSection("Start", "CP1", {
+          pace_factor: 1.3,
+          effort_factor: 1.5,
+          cutoff_ratio: 0.8,
+          stop_s: 600,
+          point_start: [45, 7, 300],
+          point_end: [45.01, 7.01, 600],
+        }),
+      ],
+    });
+    readGPXComplete.mockResolvedValue(gpxData);
+    await dispatch("PROCESS_GPX_FILE", { gpxBytes: new ArrayBuffer(0) });
+
+    const { results } = postMessage.mock.calls[0][0];
+    expect(results.sections[0]).toEqual({
+      sectionId: "section-0-Start-CP1",
+      stageIdx: 0,
+      startIndex: 0,
+      endIndex: 5,
+      pointCount: 6,
+      startPoint: [45, 7, 300],
+      endPoint: [45.01, 7.01, 600],
+      startLocation: "Start",
+      endLocation: "CP1",
+      totalDistance: 1000,
+      totalElevation: 50,
+      totalElevationLoss: 10,
+      avgSlope: 5,
+      maxSlope: 15,
+      minElevation: 100,
+      maxElevation: 150,
+      bearing: 90,
+      difficulty: 2,
+      estimatedDuration: 1200,
+      startTime: 1_000_000,
+      endTime: 1_007_200,
+      paceFactor: 1.3,
+      effortFactor: 1.5,
+      maxCompletionTime: 7200,
+      cutoffRatio: 0.8,
+      stopDuration: 600,
+    });
+    expect(results.legs[0]).toMatchObject({
+      legId: 0,
+      sectionIdx: 0,
+      totalDistance: 1000,
+      bearing: 45,
+      estimatedDuration: 1200,
+    });
+  });
+
   it("converts metadata Zig strings", async () => {
     const gpxData = makeGpxData({
       metadata: {
@@ -872,7 +943,15 @@ describe("WASM cleanup on error paths", () => {
   it("frees gpxData when sanitization throws mid-processGPXFile", async () => {
     // A waypoint with a null name makes `wpt.name.string` throw during sanitization.
     const gpxData = makeGpxData({
-      waypoints: [{ lat: 0, lon: 0, ele: null, name: null, time: null }],
+      waypoints: [
+        {
+          latitude: 0,
+          longitude: 0,
+          elevation_m: null,
+          name: null,
+          epoch_s: null,
+        },
+      ],
     });
     readGPXComplete.mockResolvedValue(gpxData);
 
@@ -906,7 +985,7 @@ describe("WASM cleanup on error paths", () => {
   it("frees the ephemeral trace when getRouteSection fails after init", async () => {
     const trace = {
       deinit: vi.fn(),
-      get totalDistance() {
+      get distance_m() {
         throw new Error("boom");
       },
     };
@@ -980,22 +1059,22 @@ describe("generateSoundscapeFrames bearing/pace assignment", () => {
       Object.assign(
         [
           {
-            t: 0,
-            distance: 0,
+            position: 0,
+            distance_normalized: 0,
             pitch: 0.5,
             intensity: 0.3,
             timbre: 0.4,
-            bearing: 90,
-            pace: 0.1,
+            bearing_degrees: 90,
+            pace_normalized: 0.1,
           },
           {
-            t: 1,
-            distance: 400,
+            position: 1,
+            distance_normalized: 1,
             pitch: 0.8,
             intensity: 0.6,
             timbre: 0.7,
-            bearing: 180,
-            pace: 0.2,
+            bearing_degrees: 180,
+            pace_normalized: 0.2,
           },
         ],
         { deinit: vi.fn() },

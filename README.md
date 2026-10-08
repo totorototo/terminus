@@ -28,7 +28,7 @@ A scroll-driven editorial trail story: pick a race and scroll through it as a lo
                             │ Zigar JS↔Zig bindings
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Zig → WebAssembly (zig/)                     │
+│         Zig → WebAssembly (zig/terminus.zig over gpxz)          │
 │  GPX parsing · Haversine · Douglas-Peucker · AMPD peak          │
 │  detection · Garmin Climb Pro qualification · Minetti pace      │
 │  model (slope · fatigue · circadian · weather)                  │
@@ -208,24 +208,18 @@ party/
   webpush.js             # Web Push (RFC 8291/8292) via Web Crypto — no Node deps
 
 zig/
-  gpx.zig               # GPX file parsing (readGPXComplete WASM entry point)
-  gpxdata.zig           # GPX data structures
-  trace.zig             # Core GPS algorithms (distance, elevation)
-  simplify.zig          # Douglas-Peucker simplification
-  climbs.zig            # Climb segment detection (AMPD + Garmin qualification)
-  extrema.zig           # AMPD peak/valley detection algorithm
-  gpspoint.zig          # Haversine distance calculations
-  elevation.zig         # Denoised elevation gain/loss (median + hysteresis)
-  time.zig              # Time/duration calculations
-  section.zig           # Section statistics structure
-  leg.zig               # Leg data structure (stage sub-segments)
-  stage.zig             # Stage data structure and analytics
-  segment.zig           # Shared per-point Minetti metrics for sections & stages
-  minetti.zig           # Minetti (2002) metabolic-cost slope pace model
-  paceModel.zig         # Pace model: fatigue, circadian and weather factors
-  calibration.zig       # Pace model calibration helpers
-  soundscape.zig        # Audio frame generation from elevation/slope/pace data (WASM entry point wired in the worker; not currently exposed in the UI)
+  terminus.zig          # WASM boundary: the functions and types the worker calls, over gpxz
+  build.zig.zon         # Pins the gpxz dependency (github.com/totorototo/gpxz)
+  build.zig             # Native test build (`npm run test:zig`)
+  build.extra.zig       # Zigar hook: gives the WASM build the gpxz import
 ```
+
+The GPX parsing, trace algorithms (Douglas-Peucker, AMPD, climbs, denoised D+/D-),
+sections, stages, pace model and soundscape live in
+[gpxz](https://github.com/totorototo/gpxz), a standalone Zig library also used by
+[retrace](https://github.com/totorototo/retrace). To change them, change gpxz, then bump
+the commit in `zig/build.zig.zon` (`zig fetch --save git+https://github.com/totorototo/gpxz#<commit>`
+from `zig/`).
 
 ## Contribute
 
