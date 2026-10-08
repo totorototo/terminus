@@ -1,4 +1,4 @@
-# Zig (0.16.0): the WASM boundary over gpxz
+# Zig (0.17.0): the WASM boundary over gpxz
 
 The computation lives in [gpxz](https://github.com/totorototo/gpxz), pinned by commit in
 `build.zig.zon`. This directory only holds the boundary Zigar compiles to WASM:
