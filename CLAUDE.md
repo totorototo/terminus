@@ -55,7 +55,7 @@ Zig tests run the WASM boundary's tests against the pinned gpxz: `cd zig && zig 
 - `src/store/` — Zustand store with slice pattern (7 slices in `slices/`)
 - `src/helpers/` — Pure utilities (colors, geometry, throttle)
 - `src/utils/` — Coordinate transforms (geo → 3D scene space)
-- `zig/` — `terminus.zig`, the WASM boundary over the [gpxz](https://github.com/totorototo/gpxz) library (GPX parsing, route calculations, peaks, climbs, pace model, soundscape), pinned in `zig/build.zig.zon`
+- `zig/` — `terminus.zig`, the WASM boundary over the [gpxz](https://github.com/totorototo/gpxz) library (GPX parsing, route calculations, peaks, climbs, pace model), pinned in `zig/build.zig.zon`
 
 See `src/CLAUDE.md` for frontend conventions and `zig/CLAUDE.md` for Zig/WASM conventions.
 

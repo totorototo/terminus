@@ -215,7 +215,7 @@ zig/
 ```
 
 The GPX parsing, trace algorithms (Douglas-Peucker, AMPD, climbs, denoised D+/D-),
-sections, stages, pace model and soundscape live in
+sections, stages and pace model live in
 [gpxz](https://github.com/totorototo/gpxz), a standalone Zig library also used by
 [retrace](https://github.com/totorototo/retrace). To change them, change gpxz, then bump
 the commit in `zig/build.zig.zon` (`zig fetch --save git+https://github.com/totorototo/gpxz#<commit>`

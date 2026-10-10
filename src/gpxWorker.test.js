@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // vi.mock calls are hoisted above all imports by Vitest
 vi.mock("../zig/terminus.zig", () => ({
   __zigar: { init: vi.fn().mockResolvedValue(undefined) },
-  generateAudioFrames: vi.fn(),
   readGPXComplete: vi.fn(),
   recalibrate: vi.fn(),
   Route: { init: vi.fn() },
@@ -11,7 +10,6 @@ vi.mock("../zig/terminus.zig", () => ({
 }));
 
 import {
-  generateAudioFrames,
   readGPXComplete,
   recalibrate,
   Route,
@@ -333,20 +331,6 @@ describe("message routing", () => {
         closestIndex: null,
         deviationDistance: 0,
       }),
-    );
-  });
-
-  it("routes GENERATE_AUDIO_FRAMES and posts AUDIO_FRAMES_READY", async () => {
-    generateAudioFrames.mockResolvedValue(
-      Object.assign([], { deinit: vi.fn() }),
-    );
-    await dispatch("GENERATE_AUDIO_FRAMES", {
-      elevations: [100],
-      distances: [0],
-      slopes: [0],
-    });
-    expect(postMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "AUDIO_FRAMES_READY" }),
     );
   });
 
@@ -1004,99 +988,5 @@ describe("WASM cleanup on error paths", () => {
       expect.objectContaining({ type: "ERROR", id: "req-1" }),
     );
     expect(trace.deinit).toHaveBeenCalledOnce();
-  });
-});
-
-describe("generateSoundscapeFrames bearing/pace assignment", () => {
-  const elevations = [100, 120, 140, 160, 180];
-  const distances = [0, 100, 200, 300, 400];
-  const slopes = [0, 2, 2, 2, 0];
-
-  it("assigns section bearing and pace to points within range", async () => {
-    generateAudioFrames.mockResolvedValue([]);
-    await dispatch("GENERATE_AUDIO_FRAMES", {
-      elevations,
-      distances,
-      slopes,
-      sections: [
-        {
-          startIndex: 1,
-          endIndex: 3,
-          bearing: 270,
-          estimatedDuration: 600,
-          totalDistance: 300,
-        },
-      ],
-    });
-
-    const [_bearings, , , passedBearings, passedPaces] =
-      generateAudioFrames.mock.calls[0];
-    expect(passedBearings[0]).toBe(0); // outside section
-    expect(passedBearings[1]).toBe(270); // inside
-    expect(passedBearings[2]).toBe(270); // inside
-    expect(passedBearings[3]).toBe(270); // inside
-    expect(passedBearings[4]).toBe(0); // outside section
-    expect(passedPaces[1]).toBeCloseTo(600 / 300);
-  });
-
-  it("leaves all bearings and paces at 0 when sections is empty", async () => {
-    generateAudioFrames.mockResolvedValue([]);
-    await dispatch("GENERATE_AUDIO_FRAMES", {
-      elevations,
-      distances,
-      slopes,
-      sections: [],
-    });
-
-    const [, , , passedBearings, passedPaces] =
-      generateAudioFrames.mock.calls[0];
-    expect(Array.from(passedBearings).every((v) => v === 0)).toBe(true);
-    expect(Array.from(passedPaces).every((v) => v === 0)).toBe(true);
-  });
-
-  it("extracts frame fields from Zigar proxy objects", async () => {
-    generateAudioFrames.mockResolvedValue(
-      Object.assign(
-        [
-          {
-            position: 0,
-            distance_normalized: 0,
-            pitch: 0.5,
-            intensity: 0.3,
-            timbre: 0.4,
-            bearing_degrees: 90,
-            pace_normalized: 0.1,
-          },
-          {
-            position: 1,
-            distance_normalized: 1,
-            pitch: 0.8,
-            intensity: 0.6,
-            timbre: 0.7,
-            bearing_degrees: 180,
-            pace_normalized: 0.2,
-          },
-        ],
-        { deinit: vi.fn() },
-      ),
-    );
-    await dispatch("GENERATE_AUDIO_FRAMES", {
-      elevations,
-      distances,
-      slopes,
-    });
-
-    const { frames } = postMessage.mock.calls[0][0].results;
-    expect(frames).toHaveLength(2);
-    expect(frames[0]).toEqual({
-      t: 0,
-      distance: 0,
-      pitch: 0.5,
-      intensity: 0.3,
-      timbre: 0.4,
-      bearing: 90,
-      pace: 0.1,
-    });
-    expect(frames[1].bearing).toBe(180);
   });
 });

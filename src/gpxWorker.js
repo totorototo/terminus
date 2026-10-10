@@ -10,7 +10,6 @@
 // this file is the only place that knows gpxz's field names.
 import {
   __zigar,
-  generateAudioFrames,
   readGPXComplete,
   recalibrate as recalibrateRoute,
   Route,
@@ -335,10 +334,6 @@ self.onmessage = async function (e) {
         await recalibrate(data, id);
         break;
 
-      case "GENERATE_AUDIO_FRAMES":
-        await generateSoundscapeFrames(data, id);
-        break;
-
       default:
         throw new Error(`Unknown message type: ${type}`);
     }
@@ -562,60 +557,6 @@ async function getRouteSection(data, requestId) {
   } finally {
     trace.deinit();
   }
-}
-
-// Generate soundscape AudioFrame[] from pre-computed trace arrays
-async function generateSoundscapeFrames(data, requestId) {
-  markStart("generateAudioFrames");
-  const { elevations, distances, slopes, sections = [] } = data;
-  const n = elevations.length;
-
-  // Build per-point bearing and pace arrays from section data.
-  // Each point gets the bearing/pace of the section it falls in.
-  // Points not covered by any section default to 0 (handled gracefully in Zig).
-  const bearings = new Float64Array(n);
-  const paces = new Float64Array(n);
-  for (const section of sections) {
-    const { startIndex, endIndex, bearing, estimatedDuration, totalDistance } =
-      section;
-    const pace = totalDistance > 0 ? estimatedDuration / totalDistance : 0;
-    for (let i = startIndex; i <= endIndex && i < n; i++) {
-      bearings[i] = bearing;
-      paces[i] = pace;
-    }
-  }
-
-  const zigFrames = await generateAudioFrames(
-    elevations,
-    distances,
-    slopes,
-    bearings,
-    paces,
-  );
-
-  // Copy Zigar proxy structs to plain JS before postMessage
-  const frames = [];
-  for (let i = 0; i < zigFrames.length; i++) {
-    const f = zigFrames[i].valueOf();
-    frames.push({
-      t: f.position,
-      distance: f.distance_normalized,
-      pitch: f.pitch,
-      intensity: f.intensity,
-      timbre: f.timbre,
-      bearing: f.bearing_degrees,
-      pace: f.pace_normalized,
-    });
-  }
-
-  markEnd("generateAudioFrames");
-
-  self.postMessage({
-    type: "AUDIO_FRAMES_READY",
-    id: requestId,
-    results: { frames },
-    timingMs: { audioFrames: measureMs("generateAudioFrames") },
-  });
 }
 
 // Recalibrate section and stage ETAs against the resident parsed route. Either

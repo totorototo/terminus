@@ -4,8 +4,8 @@ The computation lives in [gpxz](https://github.com/totorototo/gpxz), pinned by c
 `build.zig.zon`. This directory only holds the boundary Zigar compiles to WASM:
 
 ```
-terminus.zig     ── What the worker imports: readGPXComplete, recalibrate,
-                    generateAudioFrames, and the Trace / Route / WeatherLookup types
+terminus.zig     ── What the worker imports: readGPXComplete, recalibrate, and the
+                    Trace / Route / WeatherLookup types
 build.zig.zon    ── Pins gpxz (same commit as retrace when possible)
 build.zig        ── Native test build: `zig build test` (Zigar ignores it)
 build.extra.zig  ── Zigar hook: gives the WASM build the `gpxz` import
@@ -13,8 +13,8 @@ build.extra.zig  ── Zigar hook: gives the WASM build the `gpxz` import
 
 ## Rules
 
-- **No algorithms here.** A fix or feature in parsing, trace, climbs, sections, stages, pace
-  model or soundscape goes into gpxz; then bump the pin from `zig/`:
+- **No algorithms here.** A fix or feature in parsing, trace, climbs, sections, stages or pace
+  model goes into gpxz; then bump the pin from `zig/`:
   `zig fetch --save git+https://github.com/totorototo/gpxz#<commit>`.
 - **Validate before gpxz asserts.** gpxz asserts its preconditions, and in ReleaseSmall a
   failed assert is undefined behavior, not a trap. Every value JavaScript passes in is

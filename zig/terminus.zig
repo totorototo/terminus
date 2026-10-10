@@ -54,33 +54,6 @@ pub fn recalibrate(
     return route.recalibrate(allocator, index, elapsed_s_actual, &settings);
 }
 
-/// One audio frame per point. Inputs of unequal length are cut to the shortest. The caller
-/// owns the result.
-pub fn generateAudioFrames(
-    allocator: std.mem.Allocator,
-    elevations_m: []const f64,
-    distances_m: []const f64,
-    slopes_percent: []const f64,
-    bearings_degrees: []const f64,
-    paces_s_per_m: []const f64,
-) ![]gpxz.soundscape.AudioFrame {
-    const count = @min(
-        elevations_m.len,
-        distances_m.len,
-        slopes_percent.len,
-        bearings_degrees.len,
-        paces_s_per_m.len,
-    );
-    const inputs: gpxz.soundscape.Inputs = .{
-        .elevations_m = elevations_m[0..count],
-        .distances_m = distances_m[0..count],
-        .slopes_percent = slopes_percent[0..count],
-        .bearings_degrees = bearings_degrees[0..count],
-        .paces_s_per_m = paces_s_per_m[0..count],
-    };
-    return gpxz.soundscape.audio_frames_generate(allocator, &inputs);
-}
-
 // ── Implementation ───────────────────────────────────────────────────────────────────────
 
 fn settings_make(
@@ -175,26 +148,4 @@ test "recalibrate: clamps an index past the end and rejects a bad elapsed time" 
         error.ElapsedInvalid,
         recalibrate(testing.allocator, &route, 0, std.math.nan(f64), 500, 0.002, 3600, .empty),
     );
-}
-
-test "generateAudioFrames: cuts unequal inputs to the shortest" {
-    const elevations = [_]f64{ 100, 200, 300 };
-    const distances = [_]f64{ 0, 100, 200 };
-    const slopes = [_]f64{ 0, 10, 10 };
-    const bearings = [_]f64{ 0, 0 };
-    const paces = [_]f64{ 0.5, 0.5, 0.5 };
-    const frames = try generateAudioFrames(
-        testing.allocator,
-        &elevations,
-        &distances,
-        &slopes,
-        &bearings,
-        &paces,
-    );
-    defer testing.allocator.free(frames);
-    try testing.expectEqual(@as(usize, 2), frames.len);
-
-    const empty = try generateAudioFrames(testing.allocator, &.{}, &.{}, &.{}, &.{}, &.{});
-    defer testing.allocator.free(empty);
-    try testing.expectEqual(@as(usize, 0), empty.len);
 }
