@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useParams } from "wouter";
+import { useLocation } from "wouter";
 
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
 import useStore from "../../store/store.js";
@@ -9,7 +9,7 @@ import TrailerScreen from "./TrailerScreen.jsx";
 import "@testing-library/jest-dom/vitest";
 
 vi.mock("wouter", () => ({
-  useParams: vi.fn(),
+  useLocation: vi.fn(),
 }));
 
 vi.mock("zustand/react/shallow", () => ({
@@ -43,15 +43,14 @@ vi.mock("./TrailerScreen.style", () => ({
 describe("TrailerScreen", () => {
   const disconnectTrailerSession = vi.fn();
   const setMode = vi.fn();
-  const setRaceId = vi.fn();
   const resumeAutoShare = vi.fn();
+  const navigate = vi.fn();
 
   function setupStore(autoShareEnabled) {
     useStore.mockImplementation((selector) =>
       selector({
         disconnectTrailerSession,
         setMode,
-        setRaceId,
         resumeAutoShare,
       }),
     );
@@ -64,7 +63,7 @@ describe("TrailerScreen", () => {
     vi.clearAllMocks();
     setupStore(false);
     useGPXWorker.mockReturnValue({ isWorkerReady: false });
-    useParams.mockReturnValue({ raceId: undefined });
+    useLocation.mockReturnValue(["/run", navigate]);
   });
 
   afterEach(() => {
@@ -83,15 +82,16 @@ describe("TrailerScreen", () => {
     expect(setMode).toHaveBeenCalledWith(null);
   });
 
-  it("calls setRaceId with raceId when present", () => {
-    useParams.mockReturnValue({ raceId: "race1" });
+  it("sends the runner back to the wizard when no GPX is stored", () => {
+    useGPXWorker.mockReturnValue({ isWorkerReady: true, missing: true });
     render(<TrailerScreen />);
-    expect(setRaceId).toHaveBeenCalledWith("race1");
+    expect(navigate).toHaveBeenCalledWith("/", { replace: true });
   });
 
-  it("does not call setRaceId when raceId is absent", () => {
+  it("stays on /run while a GPX is stored", () => {
+    useGPXWorker.mockReturnValue({ isWorkerReady: true, missing: false });
     render(<TrailerScreen />);
-    expect(setRaceId).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it("calls resumeAutoShare once the worker is ready if autoShareEnabled was true at mount", () => {

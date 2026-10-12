@@ -17,11 +17,7 @@ export const createAppSlice = (set, get) => {
       profileMode: false,
       locations: [],
       pendingUrl: null,
-      liveSessionId: null,
-      liveWriteKey: null,
       mode: null,
-      followerRoomId: null,
-      raceId: null,
       currentRoute: "/",
       installPromptDismissed: false,
       highlightedClimbIndex: null,
@@ -81,45 +77,11 @@ export const createAppSlice = (set, get) => {
         "app/setPendingUrl",
       ),
 
-    setLiveSessionId: (id) =>
-      set(
-        (state) => ({ app: { ...state.app, liveSessionId: id } }),
-        undefined,
-        "app/setLiveSessionId",
-      ),
-
-    setLiveWriteKey: (key) =>
-      set(
-        (state) => ({ app: { ...state.app, liveWriteKey: key } }),
-        undefined,
-        "app/setLiveWriteKey",
-      ),
-
-    setMode: (mode) => {
+    setMode: (mode) =>
       set(
         (state) => ({ app: { ...state.app, mode } }),
         undefined,
         "app/setMode",
-      );
-      // Clear follower room when returning to the wizard so the app
-      // doesn't auto-reconnect to the previous session on next cold start
-      if (mode === null) {
-        get().setFollowerRoomId(null);
-      }
-    },
-
-    setFollowerRoomId: (id) =>
-      set(
-        (state) => ({ app: { ...state.app, followerRoomId: id } }),
-        undefined,
-        "app/setFollowerRoomId",
-      ),
-
-    setRaceId: (id) =>
-      set(
-        (state) => ({ app: { ...state.app, raceId: id } }),
-        undefined,
-        "app/setRaceId",
       ),
 
     setCurrentRoute: (route) =>

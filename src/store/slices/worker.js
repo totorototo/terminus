@@ -1,3 +1,4 @@
+import { trailNameFromFileName } from "../../lib/localGpx.js";
 import { createWorkerMessenger } from "./workerMessenger.js";
 import {
   validateGPXResults,
@@ -33,6 +34,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
   let worker = null;
   let messenger = null;
   let rawGpxBytes = null; // stored so we can re-process with updated pace settings
+  let rawGpxFileName = null; // the opened file's name, the fallback trail name
 
   // Route-identity handshake for findClosestLocation, which fires on every GPS
   // fix: `routeVersion` bumps whenever a route is (re)loaded, and
@@ -261,7 +263,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       );
     },
 
-    processGPXFile: async (gpxBytes, onProgress) => {
+    processGPXFile: async (gpxBytes, { onProgress, fileName } = {}) => {
       try {
         if (!messenger) {
           throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
@@ -275,6 +277,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
         }
 
         rawGpxBytes = gpxBytes;
+        rawGpxFileName = fileName ?? null;
         const {
           basePaceSPerKm = 500,
           kFatigue = 0.002,
@@ -315,7 +318,13 @@ export const createWorkerSlice = (set, get, workerFactory) => {
           cumulativeElevations: results.trace.cumulativeElevations,
           cumulativeElevationLoss: results.trace.cumulativeElevationLoss,
         });
-        get().setMetadata(results.metadata);
+        // Many race directors' files carry no <name>: fall back to the file's.
+        get().setMetadata({
+          ...results.metadata,
+          name:
+            results.metadata.name?.trim() ||
+            trailNameFromFileName(rawGpxFileName),
+        });
         get().setPeaks(results.trace.peaks);
         get().setValleys(results.trace.valleys);
         get().setClimbs(results.climbs ?? []);
@@ -341,7 +350,7 @@ export const createWorkerSlice = (set, get, workerFactory) => {
 
     reprocessGPXFile: async () => {
       if (!rawGpxBytes || !messenger) return;
-      await get().processGPXFile(rawGpxBytes);
+      await get().processGPXFile(rawGpxBytes, { fileName: rawGpxFileName });
     },
 
     // Recalibrate section and stage ETAs against the runner's current trace index

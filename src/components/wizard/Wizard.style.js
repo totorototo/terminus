@@ -13,9 +13,9 @@ const style = (Component) => styled(Component)`
   overflow-x: hidden;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 
-  /* why: same Apple Music-style top fade as TrailerScreen/FollowerScreen —
+  /* why: same Apple Music-style top fade as TrailerScreen —
      the wizard is just another full-bleed screen now, not a modal, so it
-     shares their masking so the transition into either doesn't jump. */
+     shares its masking so the transition into it doesn't jump. */
   mask-image: linear-gradient(
     to bottom,
     transparent 0,
@@ -125,9 +125,30 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  .choice-index {
-    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
+  .choice-label {
+    letter-spacing: -0.01em;
+  }
+
+  .choice-btn {
+    align-items: center;
+
+    &:disabled {
+      cursor: progress;
+      opacity: 0.7;
+    }
+  }
+
+  &.dragging .choices {
+    outline: 2px dashed
+      ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    outline-offset: 0.75rem;
+  }
+
+  .drop-hint,
+  .note {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: 0.75rem;
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
@@ -135,46 +156,21 @@ const style = (Component) => styled(Component)`
       )};
   }
 
-  .choice-label {
-    letter-spacing: -0.01em;
+  .drop-hint {
+    margin: 0.75rem 0 0;
   }
 
-  .error-state {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.625rem;
-  }
-
-  .retry-btn {
-    background: none;
-    border: 1px solid
-      ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.15,
-        )};
-    border-radius: ${(props) =>
-      props.theme.borderRadius["--border-radius-base"]};
-    padding: 0.625rem 1.25rem;
-    cursor: pointer;
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+  .error {
+    margin: 0.75rem 0 0;
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    transition: all ${(props) => props.theme.transitions["--transition-base"]};
-    -webkit-tap-highlight-color: transparent;
+      props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
+  }
 
-    &:hover {
-      border-color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-primary"],
-          0.4,
-        )};
-      color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
-    }
+  .note {
+    margin: 2rem 0 0;
+    max-width: 40ch;
+    line-height: 1.5;
   }
 
   .help-link {

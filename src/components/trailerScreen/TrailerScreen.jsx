@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { useParams } from "wouter";
+import { useLocation } from "wouter";
 import { useShallow } from "zustand/react/shallow";
 
 import { useGPXWorker } from "../../hooks/useGPXWorker.js";
@@ -12,17 +12,15 @@ import ThemeToggle from "../story/ThemeToggle.jsx";
 import style from "./TrailerScreen.style";
 
 function TrailerScreen({ className }) {
-  const { raceId } = useParams();
-  const { isWorkerReady } = useGPXWorker(raceId);
-  const { disconnectTrailerSession, setMode, setRaceId, resumeAutoShare } =
-    useStore(
-      useShallow((state) => ({
-        disconnectTrailerSession: state.disconnectTrailerSession,
-        setMode: state.setMode,
-        setRaceId: state.setRaceId,
-        resumeAutoShare: state.resumeAutoShare,
-      })),
-    );
+  const { isWorkerReady, missing } = useGPXWorker();
+  const [, navigate] = useLocation();
+  const { disconnectTrailerSession, setMode, resumeAutoShare } = useStore(
+    useShallow((state) => ({
+      disconnectTrailerSession: state.disconnectTrailerSession,
+      setMode: state.setMode,
+      resumeAutoShare: state.resumeAutoShare,
+    })),
+  );
 
   // Capture the persisted auto-share intent once, before any effect (notably
   // disconnectTrailerSession on StrictMode unmount) can flip the live flag.
@@ -36,12 +34,13 @@ function TrailerScreen({ className }) {
     };
   }, [setMode, disconnectTrailerSession]);
 
+  // No GPX stored on this device: the wizard is where one gets opened.
   useEffect(() => {
-    if (raceId) setRaceId(raceId);
-  }, [raceId, setRaceId]);
+    if (missing) navigate("/", { replace: true });
+  }, [missing, navigate]);
 
-  // Resume broadcasting once the worker (and thus GPX/raceId) is ready, if the
-  // user had auto-share enabled before reload. resumeAutoShare is idempotent.
+  // Resume periodic GPS fixes once the worker is ready, if the user had them
+  // on before reload. resumeAutoShare is idempotent.
   useEffect(() => {
     if (wasAutoSharing.current && isWorkerReady) {
       resumeAutoShare();

@@ -636,7 +636,7 @@ describe("Worker Slice", () => {
 
       const processPromise = store
         .getState()
-        .processGPXFile(gpxData, onProgress);
+        .processGPXFile(gpxData, { onProgress });
 
       await new Promise((resolve) => setImmediate(resolve));
 
@@ -767,6 +767,83 @@ describe("Worker Slice", () => {
       });
 
       await expect(processPromise).rejects.toThrow();
+    });
+
+    describe("trail name", () => {
+      const resultsNamed = (name) => ({
+        trace: {
+          points: [[1, 2, 3]],
+          peaks: [],
+          valleys: [],
+          slopes: [],
+          paceFactors: [],
+          cumulativeDistances: [],
+          cumulativeElevations: [],
+          cumulativeElevationLoss: [],
+          totalDistance: 100,
+          totalElevation: 50,
+          totalElevationLoss: 20,
+        },
+        legs: [],
+        sections: [],
+        stages: [],
+        waypoints: [],
+        climbs: [],
+        metadata: { name, description: null },
+      });
+
+      // Answers the next PROCESS_GPX_FILE message the store sends.
+      const answer = async (results) => {
+        await new Promise((resolve) => setImmediate(resolve));
+        const message = mockWorkerInstance.postMessage.mock.calls.at(-1)[0];
+        mockWorkerInstance.onmessage({
+          data: { type: "GPX_FILE_PROCESSED", id: message.id, results },
+        });
+      };
+
+      it("keeps the GPX's own name", async () => {
+        const done = store
+          .getState()
+          .processGPXFile(new ArrayBuffer(1), { fileName: "file.gpx" });
+        await answer(resultsNamed("GRP Ultra Tour"));
+        await done;
+
+        expect(store.getState().gpx.metadata.name).toBe("GRP Ultra Tour");
+      });
+
+      it("falls back to the file name when the GPX has none", async () => {
+        const done = store.getState().processGPXFile(new ArrayBuffer(1), {
+          fileName: "trail-passion-79697.gpx",
+        });
+        await answer(resultsNamed(null));
+        await done;
+
+        expect(store.getState().gpx.metadata.name).toBe("trail-passion-79697");
+      });
+
+      it("treats a blank GPX name as none", async () => {
+        const done = store
+          .getState()
+          .processGPXFile(new ArrayBuffer(1), { fileName: "race.gpx" });
+        await answer(resultsNamed("   "));
+        await done;
+
+        expect(store.getState().gpx.metadata.name).toBe("race");
+      });
+
+      it("keeps the file-name fallback across a reprocess", async () => {
+        const first = store
+          .getState()
+          .processGPXFile(new ArrayBuffer(1), { fileName: "race.gpx" });
+        await answer(resultsNamed(null));
+        await first;
+
+        const again = store.getState().reprocessGPXFile();
+        await answer(resultsNamed(null));
+        await again;
+
+        expect(store.getState().gpx.metadata.name).toBe("race");
+      });
     });
   });
 

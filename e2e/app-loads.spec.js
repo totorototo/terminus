@@ -1,13 +1,13 @@
 /**
  * Smoke tests — verify the app boots correctly and key UI is present.
  *
- * The runner/follower UI is a single scroll-driven story with no separate
+ * The runner UI is a single scroll-driven story with no separate
  * mobile/desktop layout components — both viewport sizes render the same
  * sections, only CSS changes. These tests confirm the story mounts and the
  * key sections are reachable, at both a mobile and a desktop viewport.
  */
 
-import { expect, selectRunnerRole, test } from "./helpers.js";
+import { expect, GPX_FIXTURE, selectRunnerRole, test } from "./helpers.js";
 
 test.describe("Smoke", () => {
   test("wizard loads without JS errors", async ({ page }) => {
@@ -20,7 +20,7 @@ test.describe("Smoke", () => {
       timeout: 10_000,
     });
     await expect(
-      page.getByText("Which race are you running today?"),
+      page.getByText("Open the GPX of the race you're running today."),
     ).toBeVisible();
     expect(errors).toEqual([]);
   });
@@ -49,8 +49,7 @@ test.describe("Smoke", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
 
-    await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
-    await page.locator(".choice-btn").first().click();
+    await page.getByTestId("gpx-input").setInputFiles(GPX_FIXTURE);
 
     await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
     await expect(

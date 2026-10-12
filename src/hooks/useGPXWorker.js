@@ -1,11 +1,15 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 
 import { useShallow } from "zustand/react/shallow";
 
+import { loadLocalGpx } from "../lib/localGpx.js";
 import useStore from "../store/store.js";
 
-export function useGPXWorker(raceId) {
-  const prevRaceIdRef = useRef(null);
+// Starts the worker and feeds it the GPX opened from the wizard. `missing`
+// turns true when this device has no stored file (cleared site data, or /run
+// opened directly), so the screen can send the runner back to the wizard.
+export function useGPXWorker() {
+  const [missing, setMissing] = useState(false);
   const {
     initGPXWorker,
     terminateGPXWorker,
@@ -13,7 +17,6 @@ export function useGPXWorker(raceId) {
     processGPXFile,
     setSections,
     setLegs,
-    flush,
   } = useStore(
     useShallow((state) => ({
       initGPXWorker: state.initGPXWorker,
@@ -22,7 +25,6 @@ export function useGPXWorker(raceId) {
       processGPXFile: state.processGPXFile,
       setSections: state.setSections,
       setLegs: state.setLegs,
-      flush: state.flush,
     })),
   );
 
@@ -32,45 +34,34 @@ export function useGPXWorker(raceId) {
   }, [initGPXWorker, terminateGPXWorker]);
 
   useEffect(() => {
-    if (!isWorkerReady || !raceId) return;
+    if (!isWorkerReady) return;
 
     // Clear legs and sections immediately so EnhancedProfile renders nothing
-    // during the transition — prevents stale legs from being transformed with
-    // the new race's coordinateScales before fresh legs arrive.
+    // until the route's own legs arrive.
     setSections([]);
     setLegs([]);
-    // Only flush GPS state on trail switch, not on initial load, so that
-    // rehydrated GPS positions are preserved across page reloads.
-    if (prevRaceIdRef.current !== null && prevRaceIdRef.current !== raceId) {
-      flush();
-    }
-    prevRaceIdRef.current = raceId;
 
-    const controller = new AbortController();
+    let cancelled = false;
 
     async function loadAndProcessGPX() {
-      if (!/^[a-zA-Z0-9_-]+$/.test(raceId) || raceId.length > 64)
-        throw new Error(`Invalid race ID: ${raceId}`);
-      const response = await fetch(`/${raceId}.gpx`, {
-        signal: controller.signal,
-      });
-      if (!response.ok) throw new Error(`GPX not found: ${raceId}`);
-      const gpxArrayBuffer = await response.arrayBuffer();
-      if (gpxArrayBuffer.byteLength > 50 * 1024 * 1024)
-        throw new Error("GPX file too large");
-      if (controller.signal.aborted) return;
+      const stored = await loadLocalGpx();
+      if (cancelled) return;
+      if (!stored) {
+        setMissing(true);
+        return;
+      }
       // The worker parses the GPX in Zig and returns the full-resolution route
       // coordinates, so the map renders the original trackpoints without the
       // store ever holding the raw XML or re-parsing it on the main thread.
-      await processGPXFile(gpxArrayBuffer);
+      await processGPXFile(stored.bytes, { fileName: stored.name });
     }
 
-    loadAndProcessGPX().catch((err) => {
-      if (err.name !== "AbortError") console.error("GPX load failed:", err);
-    });
+    loadAndProcessGPX().catch((err) => console.error("GPX load failed:", err));
 
-    return () => controller.abort();
-  }, [isWorkerReady, raceId, processGPXFile, setSections, setLegs, flush]);
+    return () => {
+      cancelled = true;
+    };
+  }, [isWorkerReady, processGPXFile, setSections, setLegs]);
 
-  return { isWorkerReady };
+  return { isWorkerReady, missing };
 }
