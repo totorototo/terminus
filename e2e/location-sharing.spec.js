@@ -3,8 +3,10 @@
  *
  * No WebSocket or fetch mocking — the route and positions flow through a
  * real PartyKit relay:
- *   - locally: `partykit dev --port 1999` (started by playwright.config.js)
- *   - in CI:   the cloud relay deployed at VITE_PARTYKIT_HOST
+ *   - by default (locally and in CI): `partykit dev` on port 1999, started by
+ *     playwright.config.js from this checkout
+ *   - with E2E_BASE_URL (CI's post-deploy smoke test): the deployed site and
+ *     its relay
  *
  * Flow:
  *   1. Runner opens a GPX from the wizard.
