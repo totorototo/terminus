@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // Replay a GPX route as live location updates sent to a PartyKit room.
-// Usage: node scripts/simulate-partykit.js <gpx-file> <write-key> <race-id> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
+// The GPX is first uploaded to the room, as an invite from the app does, so
+// a follower opening the printed link reads the same route.
+// Usage: node scripts/simulate-partykit.js <gpx-file> <write-key> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
 //   gpx-file         - path to the GPX file (absolute or relative to cwd)
 //   write-key        - secret room write key (e.g. "ABC123"); the public room
 //                      id followers use is derived as SHA-256(write-key) and
 //                      printed on startup
-//   race-id          - race identifier sent in each message (e.g. "vvx-xgtv-2026")
 //   speed_m_per_s    - simulated running speed in m/s (default: 2)
 //   update_every_m   - send a position update every N metres travelled (default: 100)
 //   base_pace_s_per_km - flat-terrain pace in s/km used for ETA estimates (default: 490 = 8:10/km)
@@ -15,29 +16,21 @@
 //   PARTYKIT_HOST - PartyKit host (default: localhost:1999)
 
 import { readFileSync } from "fs";
-import { webcrypto } from "node:crypto";
-import { resolve } from "path";
+import { createHash, webcrypto } from "node:crypto";
+import { gzipSync } from "node:zlib";
+import { basename, resolve } from "path";
 
 // Web Crypto is a global in browsers and the PartyKit worker; on Node 18 it is
 // not, so expose it before importing the shared room-auth helper.
 globalThis.crypto ??= webcrypto;
 const { deriveRoomId } = await import("../src/lib/roomAuth.js");
 
-const [
-  ,
-  ,
-  gpxArg,
-  writeKey,
-  raceId,
-  speedArg,
-  intervalArg,
-  paceArg,
-  fatigueArg,
-] = process.argv;
+const [, , gpxArg, writeKey, speedArg, intervalArg, paceArg, fatigueArg] =
+  process.argv;
 
-if (!gpxArg || !writeKey || !raceId) {
+if (!gpxArg || !writeKey) {
   console.error(
-    "Usage: node scripts/simulate-partykit.js <gpx-file> <write-key> <race-id> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]",
+    "Usage: node scripts/simulate-partykit.js <gpx-file> <write-key> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]",
   );
   process.exit(1);
 }
@@ -141,14 +134,38 @@ console.log(
   `Speed: ${speed} m/s  ·  update every: ${updateEvery} m  ·  ETA: ${formatDuration(totalDist / speed)}`,
 );
 console.log(`Pace: ${formatPace(basePaceSPerKm)}  ·  fatigue k: ${kFatigue}`);
-console.log(`Room: ${roomId}  ·  Race: ${raceId}`);
-console.log(`Follow at: /follow/${raceId}/${roomId}`);
+console.log(`Room: ${roomId}`);
+console.log(`Follow at: /follow/${roomId}`);
 
-// ── PartyKit WebSocket connection ─────────────────────────────────────────────
+// ── Route upload ──────────────────────────────────────────────────────────────
 
 const host = process.env.PARTYKIT_HOST ?? "localhost:1999";
 const isLocal = host.startsWith("localhost") || host.startsWith("127.");
+const roomUrl = `${isLocal ? "http" : "https"}://${host}/parties/main/${roomId}`;
 const wsUrl = `${isLocal ? "ws" : "wss"}://${host}/parties/main/${roomId}`;
+
+// Same request as the app's uploadRoute (src/lib/sharedRoute.js).
+const gpxBytes = readFileSync(gpxPath);
+const upload = await fetch(`${roomUrl}/route`, {
+  method: "POST",
+  headers: {
+    "content-type": "application/octet-stream",
+    "x-write-key": writeKey,
+    "x-route-hash": createHash("sha256").update(gpxBytes).digest("hex"),
+    "x-route-name": encodeURIComponent(basename(gpxPath)),
+  },
+  body: gzipSync(gpxBytes),
+}).catch((error) => {
+  console.error(`Error: cannot reach ${roomUrl}: ${error.message}`);
+  process.exit(1);
+});
+if (!upload.ok) {
+  console.error(`Error: route upload refused (${upload.status})`);
+  process.exit(1);
+}
+console.log("Route uploaded.");
+
+// ── PartyKit WebSocket connection ─────────────────────────────────────────────
 
 console.log(`\nConnecting to ${wsUrl} …`);
 
@@ -191,7 +208,6 @@ function runReplay() {
       timestamp: simTimestamp,
       coords: [wp.lat, wp.lon, wp.ele],
       index: wp.index,
-      raceId,
       paceSettings: { basePaceSPerKm, kFatigue },
       writeKey,
     });
