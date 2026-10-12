@@ -9,7 +9,6 @@ const SECTIONS = [
   { id: "terrain", label: "Terrain & Pace" },
   { id: "checkpoints", label: "Checkpoints" },
   { id: "end", label: "End of Line" },
-  { id: "follower", label: "Follower" },
   { id: "install", label: "Install" },
 ];
 
@@ -49,20 +48,19 @@ function Help({ className }) {
         <div className="hero">
           <p className="hero-eyebrow">Documentation</p>
           <h1 className="hero-title">Terminus</h1>
-          <p className="hero-sub">
-            GPS trail visualization for runners and their crew.
-          </p>
+          <p className="hero-sub">GPS trail visualization for trail runners.</p>
         </div>
 
         {/* GETTING STARTED */}
         <section id="start" className="section">
           <p className="sec-label">01 — Getting Started</p>
-          <h2 className="sec-title">Pick your race</h2>
+          <h2 className="sec-title">Open your race&apos;s GPX</h2>
           <p className="sec-body">
-            Open Terminus and pick your race — you are in as the runner.
-            Followers never see this screen: a runner sends them a link from End
-            of Line, and tapping it drops them straight into the same story, no
-            picking or typing required.
+            Tap &quot;Open GPX&quot; on the start screen, or drop the file
+            anywhere on it. The file stays on this device — nothing is uploaded
+            — and Terminus reopens it after a reload. Opening another file
+            starts a new race and erases the GPS positions saved for the
+            previous one.
           </p>
           <div className="role-grid">
             <div className="role-card rn">
@@ -77,14 +75,15 @@ function Help({ className }) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
                 </svg>
               </div>
-              <h3>Runner</h3>
+              <h3>The race director&apos;s file</h3>
               <p>
-                You are on the course. Terminus turns your race into a
-                scroll-driven story — pace, terrain, checkpoints, and a live
-                position feed — and lets you invite your crew with a link.
+                A plain GPX of the course gives you the route, the map, the
+                climbs, the profile, and the pace. Without waypoints there are
+                no checkpoints, cutoffs, or ETAs.
               </p>
             </div>
             <div className="role-card fo">
@@ -99,15 +98,16 @@ function Help({ className }) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
                 </svg>
               </div>
-              <h3>Follower</h3>
+              <h3>A file annotated in Waymark</h3>
               <p>
-                You are watching from the sidelines. Tap the link a runner
-                shares with you to join their session and read the exact same
-                story, updated live as they move.
+                Add the start, time barriers, life bases, and the arrival — with
+                their cutoffs — in Waymark, then open the exported file here.
+                That unlocks stages, checkpoints, ETAs, and the weather forecast
+                for each stop.
               </p>
             </div>
           </div>
@@ -209,10 +209,7 @@ function Help({ className }) {
                 <span className="dot g" />
                 End of line
               </h4>
-              <p>
-                Share a trail card, invite someone to follow, switch theme, and
-                leave.
-              </p>
+              <p>Share a trail card, switch theme, and leave.</p>
             </div>
           </div>
         </section>
@@ -229,24 +226,11 @@ function Help({ className }) {
             pace run so far against the terrain ahead. The map above it traces
             the course on an interactive, lazy-loaded map.
           </p>
-          <div className="role-grid">
-            <div className="role-card rn">
-              <h3>Runner</h3>
-              <p>
-                A &quot;Spot me&quot; button starts your device&apos;s GPS fix
-                and broadcasts your position to anyone following every 30
-                minutes — it is the only control that starts the live numbers
-                this whole page depends on.
-              </p>
-            </div>
-            <div className="role-card fo">
-              <h3>Follower</h3>
-              <p>
-                No &quot;Spot me&quot; button — there is nothing of your own to
-                broadcast. The numbers instead update automatically from the
-                runner&apos;s own GPS broadcast.
-              </p>
-            </div>
+          <div className="info-box">
+            <strong>Spot me</strong> — starts your device&apos;s GPS and takes a
+            fix right away, then every 30 minutes. It is the only control that
+            starts the live numbers this whole page depends on. Your positions
+            stay on this device.
           </div>
         </section>
 
@@ -341,24 +325,11 @@ function Help({ className }) {
             on the course, and the effort multiplier it represents. Two controls
             beneath it drive every ETA, cutoff, and estimate on the page:
           </p>
-          <div className="role-grid">
-            <div className="role-card rn">
-              <h3>Runner profile &amp; life base stops</h3>
-              <p>
-                Pick a runner profile (Casual, Trail, Athlete, Elite) and how
-                long you plan to rest at each life base (none, 30 min, 1 hour, 2
-                hours). Changing either instantly recalculates every estimate on
-                the page.
-              </p>
-            </div>
-            <div className="role-card fo">
-              <h3>Synced from the runner</h3>
-              <p>
-                Followers see the same two pickers, disabled, with a
-                &quot;Synced from the runner you&apos;re following&quot; note —
-                they update automatically whenever the runner changes theirs.
-              </p>
-            </div>
+          <div className="info-box">
+            <strong>Runner profile &amp; life base stops</strong> — pick a
+            runner profile (Casual, Trail, Athlete, Elite) and how long you plan
+            to rest at each life base (none, 30 min, 1 hour, 2 hours). Changing
+            either instantly recalculates every estimate on the page.
           </div>
         </section>
 
@@ -373,6 +344,8 @@ function Help({ className }) {
             finish. The checkpoints list is the detailed one: every named
             waypoint, in order, each with distance, ETA, and cutoff. A
             checkpoint whose ETA is past its cutoff is flagged in accent colour.
+            Both lists come from the GPX&apos;s waypoints, so a file without
+            them shows neither.
           </p>
           <div className="feat-grid">
             <div className="feat">
@@ -441,21 +414,12 @@ function Help({ className }) {
                 </td>
               </tr>
               <tr>
-                <td>Invite someone to follow</td>
-                <td>
-                  Runner only. Generates and shares a follow link so others can
-                  track you live.
-                </td>
-              </tr>
-              <tr>
                 <td>Switch theme</td>
                 <td>Toggle between light and dark mode.</td>
               </tr>
               <tr>
                 <td>Flush saved locations</td>
-                <td>
-                  Runner only. Erases this device&apos;s buffered GPS fixes.
-                </td>
+                <td>Erases this device&apos;s buffered GPS fixes.</td>
               </tr>
               <tr>
                 <td>User guide</td>
@@ -474,72 +438,9 @@ function Help({ className }) {
 
         <hr className="divider" />
 
-        {/* FOLLOWER */}
-        <section id="follower" className="section">
-          <p className="sec-label secondary">07 — Follower Mode</p>
-          <h2 className="sec-title">Follow a runner live</h2>
-          <p className="sec-body">
-            Follower mode lets crew, family, or fans read a runner&apos;s story
-            in real time from any device — no GPS permission needed.
-          </p>
-          <div className="feat-grid">
-            <div className="feat">
-              <h4>
-                <span className="dot t" />
-                Invite link
-              </h4>
-              <p>
-                The runner shares a link from &quot;Invite someone to
-                follow&quot;. Opening it connects you straight to their session
-                — no picking a race or entering a code.
-              </p>
-            </div>
-            <div className="feat">
-              <h4>
-                <span className="dot t" />
-                Live sync
-              </h4>
-              <p>
-                The runner&apos;s position, pace profile, and life base settings
-                are pushed to every connected follower in real time.
-              </p>
-            </div>
-            <div className="feat">
-              <h4>
-                <span className="dot t" />
-                Same story
-              </h4>
-              <p>
-                Followers read the identical scroll — hero, map, climbs,
-                terrain, pace, checkpoints — locked to the runner&apos;s live
-                position.
-              </p>
-            </div>
-            <div className="feat">
-              <h4>
-                <span className="dot t" />
-                Read-only
-              </h4>
-              <p>
-                Spot me, invite-to-follow, the runner profile / life base
-                pickers, and flush saved locations are hidden or disabled —
-                nothing here can change what the runner set.
-              </p>
-            </div>
-          </div>
-          <div className="info-box">
-            <strong>Runner vs. Follower</strong> — the runner&apos;s device
-            holds the GPS fix and broadcasts position and pace settings over the
-            room; the follower&apos;s device only receives them. Both read the
-            same story, but only the runner&apos;s actions are active.
-          </div>
-        </section>
-
-        <hr className="divider" />
-
         {/* INSTALL */}
         <section id="install" className="section">
-          <p className="sec-label">08 — Install</p>
+          <p className="sec-label">07 — Install</p>
           <h2 className="sec-title">Add to Home Screen</h2>
           <p className="sec-body">
             Terminus is a Progressive Web App (PWA). You can install it on your
@@ -579,7 +480,7 @@ function Help({ className }) {
           </div>
         </section>
 
-        <footer className="help-footer">© 2026 Terminus — La Vallée</footer>
+        <footer className="help-footer">© 2026 Terminus</footer>
       </main>
     </div>
   );
