@@ -9,7 +9,6 @@ import { Moon } from "@styled-icons/feather/Moon";
 import { Sun } from "@styled-icons/feather/Sun";
 import { Trash2 } from "@styled-icons/feather/Trash2";
 import { Type } from "@styled-icons/feather/Type";
-import { UserPlus } from "@styled-icons/feather/UserPlus";
 import { useLocation } from "wouter";
 import { useShallow } from "zustand/react/shallow";
 
@@ -33,25 +32,16 @@ const StoryEnd = memo(function StoryEnd({ className }) {
   const stages = useStore((state) => state.stages);
   const stats = useStore((state) => state.stats);
   const metadata = useStore((state) => state.gpx.metadata);
-  const {
-    theme,
-    toggleTheme,
-    outdoorMode,
-    toggleOutdoorMode,
-    shareLocation,
-    flush,
-    isFollower,
-  } = useStore(
-    useShallow((state) => ({
-      theme: state.app.theme,
-      toggleTheme: state.toggleTheme,
-      outdoorMode: state.app.outdoorMode,
-      toggleOutdoorMode: state.toggleOutdoorMode,
-      shareLocation: state.shareLocation,
-      flush: state.flush,
-      isFollower: state.gps.followerConnectionStatus === "connected",
-    })),
-  );
+  const { theme, toggleTheme, outdoorMode, toggleOutdoorMode, flush } =
+    useStore(
+      useShallow((state) => ({
+        theme: state.app.theme,
+        toggleTheme: state.toggleTheme,
+        outdoorMode: state.app.outdoorMode,
+        toggleOutdoorMode: state.toggleOutdoorMode,
+        flush: state.flush,
+      })),
+    );
 
   const handleShareCard = async () => {
     if (!stages?.length) return;
@@ -165,16 +155,6 @@ const StoryEnd = memo(function StoryEnd({ className }) {
                 : "Share this trail"}
           </button>
 
-          {/* why: shareLocation() starts a broadcast session tied to this
-              device's own GPS fix — meaningless for a follower, who has
-              nothing of their own to broadcast. */}
-          {!isFollower && (
-            <button className="action-btn" onClick={shareLocation}>
-              <UserPlus size={16} />
-              Invite someone to follow
-            </button>
-          )}
-
           <button className="action-btn" onClick={toggleTheme}>
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             {theme === "dark" ? "Light mode" : "Dark mode"}
@@ -189,38 +169,34 @@ const StoryEnd = memo(function StoryEnd({ className }) {
             Outdoor mode
           </button>
 
-          {/* why: flush() clears this device's own buffered GPS fixes — a
-              follower never accumulates any, so the action is a no-op for
-              them. */}
-          {!isFollower &&
-            (confirmingFlush ? (
-              <div className="confirm-row">
-                <span>Erase all saved locations?</span>
-                <button
-                  className="confirm-btn danger"
-                  onClick={() => {
-                    flush();
-                    setConfirmingFlush(false);
-                  }}
-                >
-                  Yes
-                </button>
-                <button
-                  className="confirm-btn"
-                  onClick={() => setConfirmingFlush(false)}
-                >
-                  No
-                </button>
-              </div>
-            ) : (
+          {confirmingFlush ? (
+            <div className="confirm-row">
+              <span>Erase all saved locations?</span>
               <button
-                className="action-btn"
-                onClick={() => setConfirmingFlush(true)}
+                className="confirm-btn danger"
+                onClick={() => {
+                  flush();
+                  setConfirmingFlush(false);
+                }}
               >
-                <Trash2 size={16} />
-                Flush saved locations
+                Yes
               </button>
-            ))}
+              <button
+                className="confirm-btn"
+                onClick={() => setConfirmingFlush(false)}
+              >
+                No
+              </button>
+            </div>
+          ) : (
+            <button
+              className="action-btn"
+              onClick={() => setConfirmingFlush(true)}
+            >
+              <Trash2 size={16} />
+              Flush saved locations
+            </button>
+          )}
 
           <button className="action-btn" onClick={() => navigate("/help")}>
             <HelpCircle size={16} />

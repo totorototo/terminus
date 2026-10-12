@@ -44,11 +44,7 @@ const useStore = create(
             displaySlopes: state.app.displaySlopes,
             profileMode: state.app.profileMode,
             pendingUrl: state.app.pendingUrl,
-            liveSessionId: state.app.liveSessionId,
-            liveWriteKey: state.app.liveWriteKey,
             mode: state.app.mode,
-            followerRoomId: state.app.followerRoomId,
-            raceId: state.app.raceId,
             currentRoute: state.app.currentRoute,
             theme: state.app.theme,
             outdoorMode: state.app.outdoorMode,
@@ -68,19 +64,8 @@ const useStore = create(
             state.initLocationBuffer();
           }
           // Note: auto-share is resumed by TrailerScreen on mount (not here),
-          // where geolocation/worker/raceId are ready and the StrictMode
+          // where geolocation and the worker are ready and the StrictMode
           // mount/unmount cycle won't tear down the interval we'd create.
-          // Re-sync notificationPermission lost by shallow merge during rehydration
-          if (
-            state?.gps &&
-            typeof window !== "undefined" &&
-            "Notification" in window
-          ) {
-            state.gps.notificationPermission =
-              Notification.permission === "default"
-                ? null
-                : Notification.permission;
-          }
         },
       },
     ),

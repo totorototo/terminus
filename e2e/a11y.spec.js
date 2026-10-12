@@ -2,8 +2,7 @@
  * Accessibility (a11y) tests.
  *
  * Combines automated axe-core WCAG scanning with targeted manual checks:
- *  - axe scans on key app states (wizard, runner story, follower story, help, both themes)
- *  - axe scan on a direct /run/:raceId link (default desktop viewport, no wizard)
+ *  - axe scans on key app states (wizard, runner story, help, both themes)
  *  - axe scan after expanding collapsed climb/stage/checkpoint lists (their
  *    rows aren't in the DOM until expanded, so the default scan misses them)
  *  - Every story section exposes an accessible heading
@@ -15,7 +14,7 @@
 import AxeBuilder from "@axe-core/playwright";
 
 import THEME from "../src/theme/Theme.js";
-import { expect, selectRunnerRole, test } from "./helpers.js";
+import { expect, GPX_FIXTURE, selectRunnerRole, test } from "./helpers.js";
 
 // ── Axe helper ────────────────────────────────────────────────────────────────
 
@@ -61,7 +60,7 @@ test.describe("A11y — Help", () => {
 // ── Keyboard navigation ───────────────────────────────────────────────────────
 
 test.describe("A11y — Keyboard navigation", () => {
-  test("Tab reaches the first race choice, and Enter activates it", async ({
+  test("Tab reaches Open GPX, and Enter opens the file chooser", async ({
     page,
   }) => {
     await page.goto("/");
@@ -71,13 +70,15 @@ test.describe("A11y — Keyboard navigation", () => {
     await page.locator(".choice-btn").first().waitFor({ timeout: 10_000 });
 
     // why: ThemeToggle is a fixed sibling rendered ahead of the wizard's own
-    // content (same DOM order as TrailerScreen/FollowerScreen), so it's the
-    // first stop in tab order — the race list is the second.
+    // content (same DOM order as TrailerScreen), so it's the
+    // first stop in tab order — Open GPX is the second.
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     await expect(page.locator(".choice-btn").first()).toBeFocused();
 
+    const chooser = page.waitForEvent("filechooser");
     await page.keyboard.press("Enter");
+    await (await chooser).setFiles(GPX_FIXTURE);
     await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
   });
 
@@ -163,41 +164,6 @@ test.describe("A11y — Runner app", () => {
     // Allow one render cycle after preference change
     await expect.poll(() => errors, { timeout: 2_000 }).toHaveLength(0);
     await expect(page.locator("h1.name")).toBeVisible();
-  });
-});
-
-// ── Runner app state, direct link ─────────────────────────────────────────────
-
-test.describe("A11y — Runner app (direct link)", () => {
-  // Unlike the describe block above, this skips the wizard/selectRunnerRole
-  // flow (and its forced mobile viewport) to cover /run/:raceId as its own
-  // entry point — e.g. a bookmarked or shared link — at the default desktop
-  // viewport.
-  test("/run/:raceId loads with no WCAG 2.1 AA violations", async ({
-    page,
-  }) => {
-    await page.goto("/run/grp-160-2026");
-    await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
-
-    const violations = await axeScan(page);
-    expect(violations).toEqual([]);
-  });
-});
-
-// ── Follower app state ────────────────────────────────────────────────────────
-
-test.describe("A11y — Follower app", () => {
-  test.beforeEach(async ({ page }) => {
-    // A syntactically valid but never-broadcasting room code is enough to
-    // reach the follower's pre-fix story view — the GPX loads independently
-    // of whether a runner is actually connected to the room.
-    await page.goto("/follow/grp-160-2026/0a1b2c3d4e5f6a7b");
-    await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
-  });
-
-  test("follower screen has no WCAG 2.1 AA violations", async ({ page }) => {
-    const violations = await axeScan(page);
-    expect(violations).toEqual([]);
   });
 });
 

@@ -1,4 +1,5 @@
 import { expect, test as base } from "@playwright/test";
+import { fileURLToPath } from "node:url";
 
 const blockUmami = (context) =>
   context.route("https://cloud.umami.is/**", (route) => route.abort());
@@ -7,7 +8,7 @@ const blockUmami = (context) =>
 // Umami script actually loads. Abort it here rather than letting CI/local
 // test runs report as real visitors.
 //
-// Multiplayer specs (eta-sync, location-sharing, landscape-overlay) open
+// Multi-context specs (landscape-overlay) open
 // extra contexts via browser.newContext() directly instead of the default
 // `page`/`context` fixtures, so blocking only the `context` fixture misses
 // them — patch browser.newContext() itself to cover every context a test
@@ -28,6 +29,11 @@ export const test = base.extend({
   },
 });
 export { expect };
+
+/** The route every runner spec opens (the former GRP 160 race file). */
+export const GPX_FIXTURE = fileURLToPath(
+  new URL("./fixtures/grp-160-2026.gpx", import.meta.url),
+);
 
 /**
  * Shared GPS fixtures — reused across multiple spec files.
@@ -62,7 +68,7 @@ export const heroDistanceKm = (page) =>
   page.locator(".stat-row .stat").first().locator(".stat-value");
 
 /**
- * Pick the first available race on the wizard and wait for the app to load.
+ * Open the fixture GPX from the wizard, landing on /run.
  * Call this after page.goto("/") in any test that needs the runner (trailer) UI.
  */
 export async function selectRunnerRole(page) {
@@ -71,14 +77,14 @@ export async function selectRunnerRole(page) {
   // the browser context was created.
   await page.setViewportSize({ width: 390, height: 844 });
 
-  // Pick the first race from the list (waits for races to load from /races.json)
-  await page.locator(".choice-btn").first().waitFor({ timeout: 10000 });
-  await page.locator(".choice-btn").first().click();
+  // Open the fixture GPX through the wizard's file input.
+  await page.getByTestId("gpx-input").setInputFiles(GPX_FIXTURE);
+  await page.waitForURL("**/run");
 }
 
 /**
  * Install a clipboard mock on the page (before page.goto) that:
- *  - disables navigator.share so shareLocation falls back to the clipboard path
+ *  - disables navigator.share so the trail card falls back to the clipboard path
  *  - captures the text written to the clipboard in window.__capturedCode
  *
  * @param {import("@playwright/test").Page} page

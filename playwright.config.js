@@ -28,19 +28,6 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 180_000, // 3 minutes for build + startup
     },
-    // Local dev: spin up a PartyKit relay on the default port.
-    // In CI the cloud relay (VITE_PARTYKIT_HOST) is already deployed and reachable.
-    // The health-check URL hits party/server.js onRequest() which returns 200.
-    ...(!process.env.CI
-      ? [
-          {
-            command: "npm run party",
-            url: "http://localhost:1999/parties/main/health",
-            reuseExistingServer: true,
-            timeout: 60_000,
-          },
-        ]
-      : []),
   ],
   projects: [
     {
