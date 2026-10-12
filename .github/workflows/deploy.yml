@@ -87,6 +87,21 @@ jobs:
           path: dist/
           retention-days: 1
 
+      # The end-to-end tests run against a relay started from this commit, not the deployed
+      # one. The relay host is compiled into the bundle, so they get their own build; only
+      # the host (a shell value wins over .env) differs from the dist above.
+      - name: Build for end-to-end tests (local relay)
+        run: |
+          rm -rf dist
+          VITE_PARTYKIT_HOST=localhost:1999 npm run build
+
+      - name: Upload end-to-end build artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: dist-e2e
+          path: dist/
+          retention-days: 1
+
   lighthouse:
     needs: deploy
     runs-on: ubuntu-latest
@@ -146,15 +161,13 @@ jobs:
         if: steps.cache-playwright.outputs.cache-hit == 'true'
         run: npx playwright install-deps
 
-      - name: Download build artifact
+      - name: Download end-to-end build artifact
         uses: actions/download-artifact@v5
         with:
-          name: dist
+          name: dist-e2e
           path: dist/
 
-      - name: Write env for preview server
-        run: echo "VITE_PARTYKIT_HOST=terminus.${{ secrets.PARTYKIT_LOGIN }}.partykit.dev" > .env
-
+      # playwright.config.js starts the preview server and a `partykit dev` relay.
       - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
@@ -252,3 +265,50 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: netlify deploy --dir=dist --prod
+
+  # The end-to-end tests above use a local relay, so they cannot see the deployment: the
+  # Netlify CSP, the relay host compiled into dist, CORS through Cloudflare. One sharing spec
+  # against the live site and relay checks those. A failure here means production is already
+  # broken: it alerts, it does not gate the deploy (as with Lighthouse).
+  smoke:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+
+      - name: Cache node_modules
+        uses: actions/cache@v5
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: cache-playwright
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+
+      - name: Install Playwright system dependencies
+        if: steps.cache-playwright.outputs.cache-hit == 'true'
+        run: npx playwright install-deps
+
+      - name: Run sharing smoke test against production
+        run: npx playwright test e2e/location-sharing.spec.js --reporter=github
+        env:
+          E2E_BASE_URL: ${{ vars.NETLIFY_SITE_URL }}
