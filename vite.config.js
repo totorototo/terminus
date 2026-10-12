@@ -206,7 +206,7 @@ export default defineConfig(({ mode }) => {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
         },
         includeAssets: [
-          "favicon.ico",
+          "favicon.svg",
           "logo150.png",
           "logo512.png",
           "apple-touch-icon.png",
@@ -216,8 +216,8 @@ export default defineConfig(({ mode }) => {
           short_name: "Terminus",
           description:
             "High-performance GPS route analysis tool with interactive 3D elevation profiles, live tracking, and real-time section analytics for hiking and cycling routes.",
-          theme_color: "#262424",
-          background_color: "#262424",
+          theme_color: "#3A3335",
+          background_color: "#3A3335",
           display: "standalone",
           start_url: "/",
           scope: "/",
@@ -226,17 +226,6 @@ export default defineConfig(({ mode }) => {
           lang: "en",
           dir: "ltr",
           icons: [
-            {
-              src: "favicon.ico",
-              sizes: "64x64 32x32 24x24 16x16",
-              type: "image/x-icon",
-            },
-            {
-              src: "logo150.png",
-              type: "image/png",
-              sizes: "150x150",
-              purpose: "any",
-            },
             {
               src: "logo192.png",
               type: "image/png",

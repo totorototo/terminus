@@ -11,6 +11,7 @@
     "prepare": "husky",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "icons": "node scripts/make-icons.mjs",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
     "e2e:debug": "playwright test --debug",
