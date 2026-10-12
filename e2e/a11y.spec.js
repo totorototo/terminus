@@ -2,7 +2,7 @@
  * Accessibility (a11y) tests.
  *
  * Combines automated axe-core WCAG scanning with targeted manual checks:
- *  - axe scans on key app states (wizard, runner story, help, both themes)
+ *  - axe scans on key app states (wizard, runner story, follower story, help, both themes)
  *  - axe scan after expanding collapsed climb/stage/checkpoint lists (their
  *    rows aren't in the DOM until expanded, so the default scan misses them)
  *  - Every story section exposes an accessible heading
@@ -14,7 +14,14 @@
 import AxeBuilder from "@axe-core/playwright";
 
 import THEME from "../src/theme/Theme.js";
-import { expect, GPX_FIXTURE, selectRunnerRole, test } from "./helpers.js";
+import {
+  expect,
+  GPX_FIXTURE,
+  inviteFollower,
+  mockClipboard,
+  selectRunnerRole,
+  test,
+} from "./helpers.js";
 
 // ── Axe helper ────────────────────────────────────────────────────────────────
 
@@ -164,6 +171,37 @@ test.describe("A11y — Runner app", () => {
     // Allow one render cycle after preference change
     await expect.poll(() => errors, { timeout: 2_000 }).toHaveLength(0);
     await expect(page.locator("h1.name")).toBeVisible();
+  });
+});
+
+// ── Follower app state ────────────────────────────────────────────────────────
+
+test.describe("A11y — Follower app", () => {
+  test("follower screen has no WCAG 2.1 AA violations", async ({
+    browser,
+    page,
+  }) => {
+    // A room only holds a route once a runner invites someone, so a runner
+    // in its own context opens the race and shares it first.
+    const runnerCtx = await browser.newContext();
+    try {
+      const runnerPage = await runnerCtx.newPage();
+      await mockClipboard(runnerPage);
+      await runnerPage.goto("/");
+      await selectRunnerRole(runnerPage);
+      await expect(runnerPage.locator("h1.name")).toBeVisible({
+        timeout: 15_000,
+      });
+      const followUrl = await inviteFollower(runnerPage);
+
+      await page.goto(followUrl);
+      await expect(page.locator("h1.name")).toBeVisible({ timeout: 30_000 });
+
+      const violations = await axeScan(page);
+      expect(violations).toEqual([]);
+    } finally {
+      await runnerCtx.close();
+    }
   });
 });
 

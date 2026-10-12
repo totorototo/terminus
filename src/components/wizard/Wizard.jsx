@@ -17,6 +17,7 @@ function Wizard({ className }) {
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState(null);
   const flush = useStore((state) => state.flush);
+  const forgetLiveSession = useStore((state) => state.forgetLiveSession);
   const [, navigate] = useLocation();
 
   const openFile = async (file) => {
@@ -30,8 +31,10 @@ function Wizard({ className }) {
     try {
       await saveLocalGpx({ name: file.name, bytes: await file.arrayBuffer() });
       // A new file is a new race: fixes saved against the previous route
-      // would project onto the wrong trace.
+      // would project onto the wrong trace, and its followers' room holds
+      // the previous file.
       flush();
+      forgetLiveSession();
       track("gpx-opened");
       navigate("/run");
     } catch {

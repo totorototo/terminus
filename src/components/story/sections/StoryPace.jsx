@@ -23,11 +23,19 @@ function closestProfile(basePaceSPerKm) {
 }
 
 const StoryPace = memo(function StoryPace({ className }) {
-  const { paceSettings, setPaceSettings, reprocessGPXFile } = useStore(
+  const {
+    paceSettings,
+    setPaceSettings,
+    reprocessGPXFile,
+    broadcastPaceSettings,
+    isFollower,
+  } = useStore(
     useShallow((state) => ({
       paceSettings: state.app?.paceSettings ?? DEFAULT_PACE_SETTINGS,
       setPaceSettings: state.setPaceSettings ?? (() => {}),
       reprocessGPXFile: state.reprocessGPXFile ?? (() => {}),
+      broadcastPaceSettings: state.broadcastPaceSettings ?? (() => {}),
+      isFollower: state.gps?.followerConnectionStatus === "connected",
     })),
   );
 
@@ -44,8 +52,9 @@ const StoryPace = memo(function StoryPace({ className }) {
         kFatigue: profile.kFatigue,
       });
       reprocessGPXFile();
+      broadcastPaceSettings();
     },
-    [setPaceSettings, reprocessGPXFile],
+    [setPaceSettings, reprocessGPXFile, broadcastPaceSettings],
   );
 
   // why: LifeBase stop time (rest planned at major aid stations) was only
@@ -57,15 +66,18 @@ const StoryPace = memo(function StoryPace({ className }) {
     (value) => {
       setPaceSettings({ lifeBaseStopS: value });
       reprocessGPXFile();
+      broadcastPaceSettings();
     },
-    [setPaceSettings, reprocessGPXFile],
+    [setPaceSettings, reprocessGPXFile, broadcastPaceSettings],
   );
 
   return (
     <div className={className}>
       <StorySection eyebrow="The pace" title="Pace">
         <p className="lede">
-          Required pace and effort across the route, for a runner like you.
+          {isFollower
+            ? "Required pace and effort across the route, for a runner like them."
+            : "Required pace and effort across the route, for a runner like you."}
         </p>
         <div className="chart-frame">
           <PaceProfile />
@@ -89,6 +101,7 @@ const StoryPace = memo(function StoryPace({ className }) {
                   : "profile-btn"
               }
               onClick={() => handleProfileChange(profile)}
+              disabled={isFollower}
             >
               {profile.label}
             </button>
@@ -113,12 +126,19 @@ const StoryPace = memo(function StoryPace({ className }) {
                   : "profile-btn"
               }
               onClick={() => handleStopChange(opt.value)}
+              disabled={isFollower}
             >
               {opt.label}
             </button>
           ))}
         </div>
         <p className="synced-note">{selectedStop.sub}</p>
+
+        {isFollower && (
+          <p className="synced-note">
+            Synced from the runner you&apos;re following.
+          </p>
+        )}
       </StorySection>
     </div>
   );

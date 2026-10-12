@@ -1,7 +1,11 @@
+import PartySocket from "partysocket";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { create } from "zustand";
 
 import createRingBuffer from "../../helpers/createRingBuffer";
+import { showToast } from "../../helpers/toast.js";
+import { loadLocalGpx } from "../../lib/localGpx.js";
+import { deleteRoute, uploadRoute } from "../../lib/sharedRoute.js";
 import { createGPSSlice } from "./gps";
 
 // Static mock at top of file (SIMPLEST approach)
@@ -24,6 +28,55 @@ vi.mock("../../helpers/createRingBuffer", () => ({
   }),
 }));
 
+vi.mock("../../helpers/toast.js", () => ({
+  showToast: vi.fn(),
+}));
+
+vi.mock("../../lib/localGpx.js", () => ({
+  loadLocalGpx: vi.fn(),
+}));
+
+vi.mock("../../lib/sharedRoute.js", () => ({
+  PARTYKIT_HOST: "localhost:1999",
+  uploadRoute: vi.fn(),
+  deleteRoute: vi.fn(),
+}));
+
+vi.mock("../../helpers/notify", () => ({
+  notifyLocationUpdate: vi.fn(),
+  requestNotificationPermission: vi.fn(),
+  subscribeToPush: vi.fn(),
+}));
+
+// Minimal fake WebSocket-ish PartySocket — exposes the same
+// addEventListener/send/close/readyState surface gps.js relies on, plus a
+// dispatch() helper tests use to simulate an inbound relay message.
+vi.mock("partysocket", () => {
+  class MockPartySocket {
+    constructor(opts) {
+      this.opts = opts;
+      this.readyState = 1; // OPEN
+      this.listeners = {};
+      this.close = vi.fn();
+      this.send = vi.fn();
+      MockPartySocket.instances.push(this);
+    }
+    addEventListener(type, cb) {
+      (this.listeners[type] ??= []).push(cb);
+    }
+    removeEventListener(type, cb) {
+      this.listeners[type] = (this.listeners[type] || []).filter(
+        (l) => l !== cb,
+      );
+    }
+    dispatch(type, event) {
+      (this.listeners[type] || []).forEach((cb) => cb(event));
+    }
+  }
+  MockPartySocket.instances = [];
+  return { default: MockPartySocket };
+});
+
 describe("GPS Slice", () => {
   let store;
   let mockFindClosestLocation;
@@ -32,6 +85,10 @@ describe("GPS Slice", () => {
   beforeEach(() => {
     // Reset all mocks
     vi.clearAllMocks();
+
+    // jsdom does not implement the Notification API; connectToFollowerSession's
+    // "open" handler reads Notification.permission before any push-subscribe logic.
+    global.Notification = { permission: "denied" };
 
     // Create mock geolocation FIRST
     mockGetCurrentPosition = vi.fn();
@@ -46,6 +103,8 @@ describe("GPS Slice", () => {
       ...createGPSSlice(set, get),
       findClosestLocation: mockFindClosestLocation,
       app: {
+        liveSessionId: null,
+        liveWriteKey: null,
         mode: null,
         paceSettings: {
           basePaceSPerKm: 500,
@@ -54,6 +113,27 @@ describe("GPS Slice", () => {
         },
       },
       recalibrate: vi.fn(),
+      setPaceSettings: vi.fn(({ basePaceSPerKm, kFatigue, lifeBaseStopS }) => {
+        set({
+          app: {
+            ...get().app,
+            paceSettings: {
+              basePaceSPerKm:
+                basePaceSPerKm ?? get().app.paceSettings.basePaceSPerKm,
+              kFatigue: kFatigue ?? get().app.paceSettings.kFatigue,
+              lifeBaseStopS:
+                lifeBaseStopS ?? get().app.paceSettings.lifeBaseStopS,
+            },
+          },
+        });
+      }),
+      reprocessGPXFile: vi.fn(),
+      setLiveSessionId: vi.fn((id) => {
+        set({ app: { ...get().app, liveSessionId: id } });
+      }),
+      setLiveWriteKey: vi.fn((key) => {
+        set({ app: { ...get().app, liveWriteKey: key } });
+      }),
     }));
   });
 
@@ -340,6 +420,210 @@ describe("GPS Slice", () => {
     });
   });
 
+  describe("shareLocation", () => {
+    const RACE = { name: "race.gpx", bytes: new ArrayBuffer(8) };
+    let mockShare;
+
+    beforeEach(() => {
+      mockShare = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "share", {
+        value: mockShare,
+        writable: true,
+        configurable: true,
+      });
+      loadLocalGpx.mockResolvedValue(RACE);
+      uploadRoute.mockResolvedValue(undefined);
+    });
+
+    it("opens a room, uploads the race into it, and shares its link", async () => {
+      await store.getState().shareLocation();
+
+      const { liveSessionId, liveWriteKey } = store.getState().app;
+      expect(liveSessionId).toMatch(/^[a-f0-9]{16}$/);
+      expect(mockShare).toHaveBeenCalledWith({
+        title: "Follow my run",
+        url: expect.stringMatching(new RegExp(`/follow/${liveSessionId}$`)),
+      });
+      expect(uploadRoute).toHaveBeenCalledWith({
+        roomId: liveSessionId,
+        writeKey: liveWriteKey,
+        name: "race.gpx",
+        bytes: RACE.bytes,
+      });
+      expect(showToast).not.toHaveBeenCalled();
+    });
+
+    it("reuses the room on a second invite", async () => {
+      await store.getState().shareLocation();
+      const first = store.getState().app.liveSessionId;
+      await store.getState().shareLocation();
+
+      expect(store.getState().app.liveSessionId).toBe(first);
+      expect(store.getState().setLiveSessionId).toHaveBeenCalledOnce();
+    });
+
+    it("warns the runner when the upload fails", async () => {
+      uploadRoute.mockRejectedValue(new Error("Route upload failed (500)"));
+
+      await store.getState().shareLocation();
+
+      expect(mockShare).toHaveBeenCalled();
+      expect(showToast).toHaveBeenCalledWith(
+        "Could not share this race with followers. Try again.",
+        { type: "error" },
+      );
+    });
+
+    it("warns the runner when no race is stored", async () => {
+      loadLocalGpx.mockResolvedValue(null);
+
+      await store.getState().shareLocation();
+
+      expect(uploadRoute).not.toHaveBeenCalled();
+      expect(showToast).toHaveBeenCalledWith(
+        "Could not share this race with followers. Try again.",
+        { type: "error" },
+      );
+    });
+
+    it("still uploads when the share sheet is dismissed", async () => {
+      const abortError = new Error("User cancelled");
+      abortError.name = "AbortError";
+      mockShare.mockRejectedValue(abortError);
+
+      await expect(store.getState().shareLocation()).resolves.not.toThrow();
+      expect(uploadRoute).toHaveBeenCalled();
+    });
+
+    it("falls back to the clipboard when navigator.share is not available", async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "share", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        writable: true,
+        configurable: true,
+      });
+
+      await store.getState().shareLocation();
+
+      expect(writeText).toHaveBeenCalledWith(
+        expect.stringMatching(/\/follow\/[a-f0-9]{16}$/),
+      );
+    });
+
+    it("handles a clipboard error gracefully", async () => {
+      Object.defineProperty(navigator, "share", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        value: {
+          writeText: vi.fn().mockRejectedValue(new Error("Clipboard denied")),
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      await expect(store.getState().shareLocation()).resolves.not.toThrow();
+    });
+  });
+
+  describe("stopSharing", () => {
+    beforeEach(() => {
+      store.setState({
+        app: {
+          ...store.getState().app,
+          liveSessionId: "0a1b2c3d4e5f6a7b",
+          liveWriteKey: "secret",
+        },
+      });
+    });
+
+    it("deletes the room's route and forgets the room", async () => {
+      deleteRoute.mockResolvedValue(undefined);
+
+      await store.getState().stopSharing();
+
+      expect(deleteRoute).toHaveBeenCalledWith({
+        roomId: "0a1b2c3d4e5f6a7b",
+        writeKey: "secret",
+      });
+      expect(store.getState().app.liveSessionId).toBeNull();
+      expect(store.getState().app.liveWriteKey).toBeNull();
+    });
+
+    it("keeps the room when the delete fails, so the runner can retry", async () => {
+      deleteRoute.mockRejectedValue(new Error("offline"));
+
+      await store.getState().stopSharing();
+
+      expect(store.getState().app.liveSessionId).toBe("0a1b2c3d4e5f6a7b");
+      expect(showToast).toHaveBeenCalledWith(
+        "Could not stop sharing. Try again.",
+        { type: "error" },
+      );
+    });
+
+    it("waits for an invite's upload, so it cannot land after the delete", async () => {
+      let finishUpload;
+      uploadRoute.mockReturnValue(new Promise((r) => (finishUpload = r)));
+      loadLocalGpx.mockResolvedValue({
+        name: "r.gpx",
+        bytes: new ArrayBuffer(1),
+      });
+      Object.defineProperty(navigator, "share", {
+        value: vi.fn().mockResolvedValue(undefined),
+        writable: true,
+        configurable: true,
+      });
+      deleteRoute.mockResolvedValue(undefined);
+
+      const sharing = store.getState().shareLocation();
+      await vi.waitFor(() => expect(uploadRoute).toHaveBeenCalled());
+      const stopping = store.getState().stopSharing();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(deleteRoute).not.toHaveBeenCalled();
+
+      finishUpload();
+      await Promise.all([sharing, stopping]);
+      expect(deleteRoute).toHaveBeenCalledOnce();
+    });
+
+    it("does nothing without a room", async () => {
+      store.setState({
+        app: { ...store.getState().app, liveSessionId: null },
+      });
+
+      await store.getState().stopSharing();
+
+      expect(deleteRoute).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("forgetLiveSession", () => {
+    it("forgets the room even when the delete fails", async () => {
+      deleteRoute.mockRejectedValue(new Error("offline"));
+      store.setState({
+        app: {
+          ...store.getState().app,
+          liveSessionId: "0a1b2c3d4e5f6a7b",
+          liveWriteKey: "secret",
+        },
+      });
+
+      store.getState().forgetLiveSession();
+
+      await vi.waitFor(() => expect(deleteRoute).toHaveBeenCalledOnce());
+      expect(store.getState().app.liveSessionId).toBeNull();
+      expect(store.getState().app.liveWriteKey).toBeNull();
+    });
+  });
+
   describe("toggleAutoShare", () => {
     beforeEach(() => {
       vi.useFakeTimers();
@@ -363,6 +647,13 @@ describe("GPS Slice", () => {
       expect(mockGetCurrentPosition).toHaveBeenCalledTimes(2);
     });
 
+    it("does not open a room: sharing starts only from an invite", async () => {
+      await store.getState().toggleAutoShare();
+
+      expect(store.getState().app.liveSessionId).toBeNull();
+      expect(uploadRoute).not.toHaveBeenCalled();
+    });
+
     it("stops the fixes when toggled off", async () => {
       await store.getState().toggleAutoShare();
       await store.getState().toggleAutoShare();
@@ -370,6 +661,212 @@ describe("GPS Slice", () => {
 
       await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
       expect(mockGetCurrentPosition).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("broadcastPaceSettings", () => {
+    beforeEach(() => {
+      store.setState({
+        app: {
+          ...store.getState().app,
+          mode: "trailer",
+          liveSessionId: "session-1",
+          liveWriteKey: "write-key-1",
+        },
+        gps: {
+          ...store.getState().gps,
+          projectedLocation: {
+            timestamp: 123,
+            coords: [45.5, -122.7, 100],
+            index: 4,
+          },
+        },
+      });
+    });
+
+    it("does nothing when there is no active trailer session", async () => {
+      store.setState({ app: { ...store.getState().app, liveSessionId: null } });
+      const countBefore = PartySocket.instances.length;
+      await store.getState().broadcastPaceSettings();
+      expect(PartySocket.instances.length).toBe(countBefore);
+    });
+
+    it("does nothing when not in trailer mode", async () => {
+      store.setState({ app: { ...store.getState().app, mode: null } });
+      const countBefore = PartySocket.instances.length;
+      await store.getState().broadcastPaceSettings();
+      expect(PartySocket.instances.length).toBe(countBefore);
+    });
+
+    it("does nothing when the runner hasn't broadcast a fix yet", async () => {
+      store.setState({
+        gps: {
+          ...store.getState().gps,
+          projectedLocation: { timestamp: 0, coords: [], index: null },
+        },
+      });
+      const countBefore = PartySocket.instances.length;
+      await store.getState().broadcastPaceSettings();
+      expect(PartySocket.instances.length).toBe(countBefore);
+    });
+
+    it("re-sends the last known fix with the current pace settings", async () => {
+      await store.getState().broadcastPaceSettings();
+
+      const socket = PartySocket.instances.at(-1);
+      expect(socket.send).toHaveBeenCalledTimes(1);
+      const sent = JSON.parse(socket.send.mock.calls[0][0]);
+      expect(sent).toMatchObject({
+        type: "location",
+        coords: [45.5, -122.7, 100],
+        paceSettings: {
+          basePaceSPerKm: 500,
+          kFatigue: 0.002,
+          lifeBaseStopS: 3600,
+        },
+        writeKey: "write-key-1",
+      });
+    });
+  });
+
+  describe("connectToFollowerSession — pace settings sync", () => {
+    const runnerPaceSettings = {
+      basePaceSPerKm: 420,
+      kFatigue: 0.003,
+      lifeBaseStopS: 1800,
+    };
+
+    const dispatchLocation = (paceSettings) => {
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("message", {
+        data: JSON.stringify({
+          type: "location",
+          timestamp: 123,
+          coords: [45.5, -122.7, 100],
+          index: 4,
+          paceSettings,
+        }),
+      });
+    };
+
+    it("applies the runner's pace settings on first sync", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+
+      dispatchLocation(runnerPaceSettings);
+
+      expect(store.getState().setPaceSettings).toHaveBeenCalledWith(
+        runnerPaceSettings,
+      );
+      expect(store.getState().reprocessGPXFile).toHaveBeenCalled();
+      expect(store.getState().app.paceSettings).toEqual(runnerPaceSettings);
+    });
+
+    it("syncs a life-base-stop-only change even when pace and fatigue are unchanged", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      dispatchLocation(runnerPaceSettings);
+      store.getState().setPaceSettings.mockClear();
+      store.getState().reprocessGPXFile.mockClear();
+
+      dispatchLocation({ ...runnerPaceSettings, lifeBaseStopS: 7200 });
+
+      expect(store.getState().setPaceSettings).toHaveBeenCalledWith({
+        ...runnerPaceSettings,
+        lifeBaseStopS: 7200,
+      });
+      expect(store.getState().reprocessGPXFile).toHaveBeenCalled();
+      expect(store.getState().app.paceSettings.lifeBaseStopS).toBe(7200);
+    });
+
+    it("skips the sync when pace settings are unchanged", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      dispatchLocation(runnerPaceSettings);
+      store.getState().setPaceSettings.mockClear();
+      store.getState().reprocessGPXFile.mockClear();
+
+      dispatchLocation({ ...runnerPaceSettings });
+
+      expect(store.getState().setPaceSettings).not.toHaveBeenCalled();
+      expect(store.getState().reprocessGPXFile).not.toHaveBeenCalled();
+    });
+
+    it("ignores out-of-range pace settings", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+
+      dispatchLocation({ ...runnerPaceSettings, basePaceSPerKm: 999_999 });
+
+      expect(store.getState().setPaceSettings).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("connectToFollowerSession — connection status toasts", () => {
+    it("does not toast on the initial connect", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+
+      socket.dispatch("open", {});
+
+      expect(showToast).not.toHaveBeenCalled();
+    });
+
+    it("does not toast a drop that happens before ever connecting", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+
+      socket.dispatch("close", {});
+
+      expect(showToast).not.toHaveBeenCalled();
+    });
+
+    it("toasts a connection drop only after having been connected", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("open", {});
+
+      socket.dispatch("close", {});
+
+      expect(showToast).toHaveBeenCalledWith("Connection lost. Reconnecting…", {
+        type: "error",
+      });
+      expect(store.getState().gps.followerConnectionStatus).toBe(
+        "disconnected",
+      );
+    });
+
+    it("does not double-toast when error and close both fire for the same drop", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("open", {});
+
+      socket.dispatch("error", {});
+      socket.dispatch("close", {});
+
+      expect(showToast).toHaveBeenCalledTimes(1);
+    });
+
+    it("toasts reconnection after a drop", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("open", {});
+      socket.dispatch("close", {});
+      showToast.mockClear();
+
+      socket.dispatch("open", {});
+
+      expect(showToast).toHaveBeenCalledWith("Back online", {
+        type: "success",
+      });
+    });
+
+    it("does not toast after an intentional disconnectFollowerSession", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("open", {});
+
+      store.getState().disconnectFollowerSession();
+      showToast.mockClear();
+      socket.dispatch("close", {});
+
+      expect(showToast).not.toHaveBeenCalled();
     });
   });
 });

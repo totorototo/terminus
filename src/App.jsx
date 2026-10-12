@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { Helmet } from "react-helmet-async";
 import { Route, Switch, useLocation } from "wouter";
 
+import FollowerScreen from "./components/followerScreen/FollowerScreen.jsx";
 import InstallPromptOverlay from "./components/installPromptOverlay/InstallPromptOverlay.jsx";
 
 const Help = lazy(() => import("./components/help/Help.jsx"));
@@ -30,6 +31,9 @@ function App({ className }) {
       <InstallPromptOverlay />
       <ToastContainer />
       <Switch>
+        <Route path="/follow/:roomId">
+          <FollowerScreen />
+        </Route>
         <Route path="/run">
           <TrailerScreen />
         </Route>

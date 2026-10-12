@@ -25,8 +25,10 @@ vi.mock("../../lib/localGpx.js", async (importOriginal) => ({
 }));
 
 const mockFlush = vi.fn();
+const mockForgetLiveSession = vi.fn();
 vi.mock("../../store/store.js", () => ({
-  default: (selector) => selector({ flush: mockFlush }),
+  default: (selector) =>
+    selector({ flush: mockFlush, forgetLiveSession: mockForgetLiveSession }),
 }));
 
 const mockNavigate = vi.fn();
@@ -57,7 +59,7 @@ describe("Wizard", () => {
     ).toBeInTheDocument();
   });
 
-  it("stores a picked GPX, clears the previous race's fixes, and opens /run", async () => {
+  it("stores a picked GPX, clears the previous race's fixes and room, and opens /run", async () => {
     render(<Wizard />);
     pick(gpxFile());
 
@@ -67,6 +69,7 @@ describe("Wizard", () => {
       bytes: expect.any(ArrayBuffer),
     });
     expect(mockFlush).toHaveBeenCalledOnce();
+    expect(mockForgetLiveSession).toHaveBeenCalledOnce();
   });
 
   it("opens a dropped GPX", async () => {

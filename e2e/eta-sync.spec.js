@@ -21,12 +21,16 @@
  *   4. A pace-settings change in the other direction (Elite → Casual) does
  *      the same — pace changes aren't only tested one way.
  *
+ * ...and, with a real PartyKit relay (no WebSocket mocking, same as
+ * location-sharing.spec.js), that a follower's three sections track a
+ * runner's after all three kinds of updates.
  */
 
 import {
   autoShareBtn,
   expect,
   heroDistanceKm,
+  inviteFollower,
   MID_TRAIL,
   mockClipboard,
   selectRunnerRole,
@@ -206,4 +210,106 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
     const hero3 = await waitForStableText(heroEstTime(page));
     expect(hero3).not.toBe(hero2);
   });
+
+  test(
+    "follower: tracks the runner's finish ETA after a location update and pace changes in both directions",
+    { timeout: 150_000 },
+    async ({ browser }) => {
+      const runnerCtx = await browser.newContext();
+      const followerCtx = await browser.newContext();
+
+      try {
+        // ── Runner joins ─────────────────────────────────────────────────
+        const runnerPage = await runnerCtx.newPage();
+        await runnerPage.clock.setFixedTime(RACE_STARTED_AT);
+        await injectGeolocationFix(runnerPage, MID_TRAIL);
+        await mockClipboard(runnerPage);
+
+        await runnerPage.goto("/");
+        await selectRunnerRole(runnerPage);
+        await expect(runnerPage.locator("h1.name")).toBeVisible({
+          timeout: 15_000,
+        });
+        await expect(heroDistanceKm(runnerPage)).not.toHaveText("0.0", {
+          timeout: 30_000,
+        });
+
+        const capturedUrl = await inviteFollower(runnerPage);
+
+        // ── Follower joins that room via the invite link ─────────────────
+        const followerPage = await followerCtx.newPage();
+        await followerPage.clock.setFixedTime(RACE_STARTED_AT);
+
+        await followerPage.goto(capturedUrl);
+        await expect(followerPage.locator("h1.name")).toBeVisible({
+          timeout: 15_000,
+        });
+        await expect(heroDistanceKm(followerPage)).not.toHaveText("0.0", {
+          timeout: 30_000,
+        });
+
+        // ── 1. Runner broadcasts a location fix ──────────────────────────
+        const milestoneRunner0 = await readMilestoneFinish(runnerPage);
+
+        await autoShareBtn(runnerPage).click();
+
+        const milestoneRunner1 = await waitForAgreement(
+          runnerPage,
+          milestoneRunner0,
+        );
+        const heroRunner1 = await waitForStableText(heroEstTime(runnerPage));
+
+        await expect
+          .poll(() => readMilestoneFinish(followerPage), { timeout: 15_000 })
+          .toBe(milestoneRunner1);
+        await expect
+          .poll(() => readCheckpointFinish(followerPage))
+          .toBe(milestoneRunner1);
+        await expect
+          .poll(async () => heroEstTime(followerPage).textContent())
+          .toBe(heroRunner1);
+
+        // ── 2. Runner changes pace settings (Casual → Elite) ─────────────
+        await runnerPage.getByRole("radio", { name: "Elite" }).click();
+
+        const milestoneRunner2 = await waitForAgreement(
+          runnerPage,
+          milestoneRunner1,
+        );
+        const heroRunner2 = await waitForStableText(heroEstTime(runnerPage));
+
+        await expect
+          .poll(() => readMilestoneFinish(followerPage), { timeout: 30_000 })
+          .toBe(milestoneRunner2);
+        await expect
+          .poll(() => readCheckpointFinish(followerPage))
+          .toBe(milestoneRunner2);
+        await expect
+          .poll(async () => heroEstTime(followerPage).textContent())
+          .toBe(heroRunner2);
+
+        // ── 3. Runner changes pace settings back (Elite → Casual) ────────
+        await runnerPage.getByRole("radio", { name: "Casual" }).click();
+
+        const milestoneRunner3 = await waitForAgreement(
+          runnerPage,
+          milestoneRunner2,
+        );
+        const heroRunner3 = await waitForStableText(heroEstTime(runnerPage));
+
+        await expect
+          .poll(() => readMilestoneFinish(followerPage), { timeout: 30_000 })
+          .toBe(milestoneRunner3);
+        await expect
+          .poll(() => readCheckpointFinish(followerPage))
+          .toBe(milestoneRunner3);
+        await expect
+          .poll(async () => heroEstTime(followerPage).textContent())
+          .toBe(heroRunner3);
+      } finally {
+        await runnerCtx.close();
+        await followerCtx.close();
+      }
+    },
+  );
 });

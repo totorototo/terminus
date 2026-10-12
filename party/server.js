@@ -12,6 +12,31 @@ const LAST_LOCATION_TTL_MS = 60 * 60 * 1000; // 1 hour
 // the realistic number of followers for a single runner.
 const MAX_PUSH_SUBS = 50;
 
+// The runner's GPX, gzipped by the browser. TOR330 (4.1 MB) gzips to ~790 KB;
+// 4 MB leaves room for longer races while capping what one room may store.
+const MAX_ROUTE_BYTES = 4 * 1024 * 1024;
+
+// why: Durable Object storage caps each value at 128 KiB, so the route is
+// stored as numbered chunks below that, plus one metadata entry.
+const ROUTE_CHUNK_BYTES = 120 * 1024;
+
+// A room (route, last position, push subscriptions) is deleted this long
+// after its last upload or position. Long enough for a multi-day race.
+const ROOM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "content-type, x-write-key, x-route-hash, x-route-name",
+  "Access-Control-Expose-Headers": "x-route-name",
+};
+
+const respond = (body, status = 200, headers = {}) =>
+  new Response(body, { status, headers: { ...CORS_HEADERS, ...headers } });
+
+const chunkKey = (i) => `route:${i}`;
+
 // Allowlist of trusted Web Push service hosts. Subscriptions whose endpoint
 // does not match one of these (over HTTPS) are rejected — this prevents the
 // server from being coerced into sending requests to attacker-chosen URLs
@@ -43,9 +68,105 @@ export default class Server {
     this.room = room;
   }
 
-  // HTTP handler — used as a health-check endpoint by the Playwright test runner.
-  onRequest() {
-    return new Response("ok");
+  // HTTP: the room's shared route (/route, /route/meta). Any other path is
+  // the health check the Playwright runner polls.
+  async onRequest(request) {
+    const { pathname } = new URL(request.url);
+    const isMeta = pathname.endsWith("/route/meta");
+    if (!isMeta && !pathname.endsWith("/route")) return respond("ok");
+
+    if (request.method === "OPTIONS") return respond(null, 204);
+    if (isMeta) {
+      if (request.method !== "GET") return respond(null, 405);
+      const meta = await this.room.storage.get("routeMeta");
+      if (!meta) return respond(null, 404);
+      const { hash, name, size } = meta;
+      return respond(JSON.stringify({ hash, name, size }), 200, {
+        "content-type": "application/json",
+      });
+    }
+    if (request.method === "GET") return this.readRoute();
+    if (request.method === "POST" || request.method === "DELETE") {
+      // Same capability as broadcasting: only the runner holds the write key.
+      const writeKey = request.headers.get("x-write-key");
+      if (!(await isAuthorizedWriter(writeKey, this.room.id))) {
+        return respond(null, 403);
+      }
+      return request.method === "POST"
+        ? this.writeRoute(request)
+        : this.deleteRoute();
+    }
+    return respond(null, 405);
+  }
+
+  async readRoute() {
+    const meta = await this.room.storage.get("routeMeta");
+    if (!meta) return respond(null, 404);
+    const keys = Array.from({ length: meta.chunks }, (_, i) => chunkKey(i));
+    const chunks = await this.room.storage.get(keys);
+    const body = new Uint8Array(meta.size);
+    let offset = 0;
+    for (const key of keys) {
+      const chunk = chunks.get(key);
+      if (!chunk) return respond(null, 404); // a write was interrupted
+      body.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return respond(body, 200, {
+      "content-type": "application/octet-stream",
+      "x-route-name": encodeURIComponent(meta.name),
+    });
+  }
+
+  async writeRoute(request) {
+    const declared = Number(request.headers.get("content-length"));
+    if (declared > MAX_ROUTE_BYTES) return respond(null, 413);
+    const body = new Uint8Array(await request.arrayBuffer());
+    if (body.byteLength === 0) return respond(null, 400);
+    if (body.byteLength > MAX_ROUTE_BYTES) return respond(null, 413);
+
+    const hash = (request.headers.get("x-route-hash") ?? "").slice(0, 64);
+    let name = "";
+    try {
+      name = decodeURIComponent(request.headers.get("x-route-name") ?? "");
+    } catch {
+      // A malformed name is not worth refusing the route over.
+    }
+    name = name.slice(0, 200);
+
+    const chunks = Math.ceil(body.byteLength / ROUTE_CHUNK_BYTES);
+    const entries = {};
+    for (let i = 0; i < chunks; i++) {
+      entries[chunkKey(i)] = body.slice(
+        i * ROUTE_CHUNK_BYTES,
+        (i + 1) * ROUTE_CHUNK_BYTES,
+      );
+    }
+    entries.routeMeta = { hash, name, size: body.byteLength, chunks };
+
+    const previous = await this.room.storage.get("routeMeta");
+    await this.room.storage.put(entries);
+    // A shorter route leaves the previous route's extra chunks behind.
+    for (let i = chunks; i < (previous?.chunks ?? 0); i++) {
+      await this.room.storage.delete(chunkKey(i));
+    }
+    await this.touch();
+    return respond(null, 204);
+  }
+
+  async deleteRoute() {
+    await this.room.storage.deleteAll();
+    await this.room.storage.deleteAlarm();
+    return respond(null, 204);
+  }
+
+  // Push the room's expiry back: it lives ROOM_TTL_MS past its last activity.
+  async touch() {
+    await this.room.storage.setAlarm(Date.now() + ROOM_TTL_MS);
+  }
+
+  async onAlarm() {
+    await this.room.storage.deleteAll();
   }
 
   async onConnect(conn) {
@@ -79,7 +200,7 @@ export default class Server {
 
     // Stricter size limit for location messages.
     // Base payload is ~120 bytes; paceSettings adds ~55 bytes. 1 024 gives
-    // room for longer raceIds and future fields without risking silent drops.
+    // room for future fields without risking silent drops.
     if (message.length > 1024) return;
     if (parsed.type !== "location") return;
 
@@ -105,6 +226,7 @@ export default class Server {
 
     await this.room.storage.put("lastLocation", sanitized);
     await this.room.storage.put("lastLocationAt", Date.now());
+    await this.touch();
     this.room.broadcast(sanitized, [sender.id]);
 
     await this.sendPushNotifications(parsed);
