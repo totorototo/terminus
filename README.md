@@ -10,7 +10,7 @@
 
 **[→ Live Demo](https://terminus-beta.netlify.app)**
 
-A scroll-driven editorial trail story: pick a race and scroll through it as a longform narrative — hero stats, terrain, climbs, pace model, checkpoints — with a live position marker during the run. Process large GPX files with real-time section analytics, and share live location between a runner and their followers via WebSocket relay and push notifications.
+A scroll-driven editorial trail story: open your race's GPX and scroll through it as a longform narrative — hero stats, terrain, climbs, pace model, checkpoints — with a live position marker during the run. Any GPX works: a race director's file gives the route, climbs and pace; one annotated in [Waymark](https://github.com/totorototo/waymark) (start, time barriers, life bases, cutoffs) adds stages, checkpoints and ETAs. A runner can invite followers, who receive the same file and the runner's live position through a WebSocket relay, with push notifications.
 
 ## Architecture
 
@@ -36,8 +36,9 @@ A scroll-driven editorial trail story: pick a race and scroll through it as a lo
 
 ┌─────────────────────────────────────────────────────────────────┐
 │               PartyKit WebSocket relay (party/)                 │
-│  Runner broadcasts GPS position → followers receive in real     │
-│  time, plus rate-limited Web Push (VAPID) to subscribed browsers│
+│  Holds the race GPX a runner shares (gzipped, chunked, 7-day    │
+│  expiry) · relays the runner's GPS position to followers in     │
+│  real time · rate-limited Web Push (VAPID) to subscribers       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -47,6 +48,7 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 
 ## Features
 
+- **Open Any Race**: pick or drop a GPX on the start screen. It stays on the device (IndexedDB) and reopens after a reload; a file without a `<name>` is named after the file. Checkpoints, stages and cutoffs come from its waypoints
 - **Editorial Story UI**: scroll-driven sections — Hero, Now, Climbs, Terrain, Pace, Stages, Checkpoints, Map, End — each revealing on scroll against the shared elevation-contour throughline
 - **Section Analytics**: distance, elevation gain/loss, slope percentages, difficulty rating
 - **Stage Analytics**: per-stage distance, elevation, estimated/max time, cutoff time, difficulty, and slowest required pace, with a collapsible list for long routes
@@ -58,11 +60,11 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 - **Checkpoint Markers**: location cards with distance, planned/live schedule, and per-checkpoint weather forecast
 - **Interactive 3D Map**: Mapbox GL route trace with 3D terrain (DEM exaggeration, 55° pitch) and a fullscreen toggle
 - **Off-Course Detection**: automatic detection when GPS position strays from the route
-- **Runner / Follower Modes**: single-step race picker — runners broadcast their position, followers join a room and track it live, with a third-person follower view
-- **Live Location Sharing**: broadcast position to followers over a PartyKit WebSocket relay, authenticated by a secret write key (room id is derived via SHA-256 so followers can never forge positions)
+- **Runner / Follower Modes**: runners open a GPX; followers open the runner's invite link (`/follow/<room>`) and read the same story in a third-person view, with no file to find
+- **Live Location Sharing**: inviting someone uploads the runner's GPX to the relay room — byte for byte, since positions travel as trace indices — and broadcasts each GPS fix to the room. Uploads and broadcasts need the room's secret write key (the room id is its SHA-256, so followers can never forge positions or replace the route). "Stop sharing" deletes the route; the relay also deletes a room 7 days after its last activity
 - **Push Notifications**: followers can subscribe to Web Push (VAPID) to get a browser notification on runner position updates, rate-limited server-side
-- **Shareable Finish Card**: client-generated PNG invite/summary card (Satori + embedded QR code linking to the follower room)
-- **PWA**: installable as a Progressive Web App with offline support (cached routes and analytics) and home screen shortcut
+- **Shareable Trail Card**: client-generated PNG summary card (Satori + embedded QR code)
+- **PWA**: installable as a Progressive Web App that works offline — the opened race (or followed race) is kept in IndexedDB — with a home screen shortcut
 - **Dark/Light Theme**: toggle between dark and light modes
 
 ## Tech Stack
@@ -70,7 +72,7 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 - **Frontend**: React 19, Vite, Zustand (state management with DevTools/persist)
 - **Charts & Map**: d3-scale/d3-shape/d3-array for chart geometry, Mapbox GL (`react-map-gl`) for the 3D terrain map
 - **Performance**: Zig 0.17.0 → WASM via Zigar bindings with zero-copy optimization
-- **Real-time**: PartyKit WebSocket relay for live location sharing, Web Push (VAPID) for follower notifications
+- **Real-time**: PartyKit relay (WebSocket for positions, HTTP for the shared GPX in Durable Object storage), Web Push (VAPID) for follower notifications
 - **Styling**: Styled-components, `@react-spring/web` for motion (respects `prefers-reduced-motion`)
 - **PWA**: Vite PWA plugin with service worker and install prompt
 
@@ -91,6 +93,15 @@ npm run dev
 
 The app will be available at `http://localhost:5173` (or next available port)
 
+`.env` points `VITE_PARTYKIT_HOST` at the deployed relay. To work on sharing, run the relay from this checkout instead — a value set in the shell overrides `.env`:
+
+```bash
+npm run party                                   # local relay on localhost:1999
+VITE_PARTYKIT_HOST=localhost:1999 npm run dev   # in a second terminal
+```
+
+The deployed relay only runs `main`'s `party/server.js`, so a branch that changes the relay must be tested against the local one.
+
 ### Simulating GPS on iOS Simulator
 
 To test live GPS tracking features without a physical device, use the included script to simulate movement along a race route in the iOS Simulator:
@@ -109,38 +120,38 @@ xcrun simctl location booted clear
 
 ### Simulating live location via PartyKit
 
-To replay a GPX route as live position updates broadcast to a PartyKit room (useful for testing the follower view without a physical runner):
+To play a runner without one (useful for testing the follower view): the script uploads a GPX to a PartyKit room, as an invite does, then replays the route as live position updates:
 
 ```bash
-# Usage — the second argument is now a secret write key; the public room id
-# followers use is derived from it (SHA-256) and printed on startup.
-node scripts/simulate-partykit.js <gpx-file> <write-key> <race-id> [speed_m_per_s] [update_every_m]
+# The second argument is a secret write key; the public room id followers
+# use is derived from it (SHA-256) and printed with the follow link.
+node scripts/simulate-partykit.js <gpx-file> <write-key> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
 
 # Examples
-node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 vvx-xgtv-2026        # 2 m/s, update every 100 m
-node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 vvx-xgtv-2026 500 500 # 500 m/s, 1 update/sec (fast replay)
+node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123          # 2 m/s, update every 100 m
+node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 500 500  # 500 m/s, 1 update/sec (fast replay)
 ```
 
 By default the script targets `localhost:1999`. Set `PARTYKIT_HOST` to target a deployed instance:
 
 ```bash
-PARTYKIT_HOST=<your-partykit-host> node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 vvx-xgtv-2026
+PARTYKIT_HOST=<your-partykit-host> node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123
 ```
 
-Open the app as a follower and join room `ABC123` to watch the position move in real time.
+Open the printed `/follow/<room>` link in the app to watch the position move in real time.
 
 ### Shifting GPX race dates
 
 To debug time-dependent features (ETAs, cutoffs, circadian pace model) without waiting for race day, shift every `<time>` tag in a GPX file so the race starts on a chosen date:
 
 ```bash
-npm run gpx:shift -- public/grp-160-2026.gpx                       # start = today
-npm run gpx:shift -- public/grp-160-2026.gpx 2026-09-01            # start = that day
-npm run gpx:shift -- public/grp-160-2026.gpx 2026-09-01T12:00:00Z  # start = exact instant
-npm run gpx:shift -- public/grp-160-2026.gpx --dry-run             # preview only
+npm run gpx:shift -- race.gpx                       # start = today
+npm run gpx:shift -- race.gpx 2026-09-01            # start = that day
+npm run gpx:shift -- race.gpx 2026-09-01T12:00:00Z  # start = exact instant
+npm run gpx:shift -- race.gpx --dry-run             # preview only
 ```
 
-The script anchors on the waypoint typed `Start` (falling back to the earliest time in the file) and applies one offset to all `<time>` tags — waypoints, trackpoints, and metadata — so time barriers, multi-day structure, and recording cadence stay relatively intact. A date-only target shifts by whole days and preserves times of day (a 05:00 start stays 05:00); a datetime target shifts exactly. The file is edited in place — undo with `git checkout <file>`. Times are normalized to second-precision UTC (`Z`).
+The script anchors on the waypoint typed `Start` (falling back to the earliest time in the file) and applies one offset to all `<time>` tags — waypoints, trackpoints, and metadata — so time barriers, multi-day structure, and recording cadence stay relatively intact. A date-only target shifts by whole days and preserves times of day (a 05:00 start stays 05:00); a datetime target shifts exactly. The file is edited in place — keep a copy, or undo with `git checkout <file>` for a tracked one. Then open it from the start screen. Times are normalized to second-precision UTC (`Z`).
 
 ## Why Zig?
 
@@ -184,6 +195,19 @@ npm run e2e            # Playwright
 npm run e2e:headed     # Playwright, headed browser
 ```
 
+Playwright serves a build made against `localhost:1999` and starts a `partykit dev` relay, so the sharing specs exercise this checkout's `party/server.js` rather than the deployed relay. Runner specs open `e2e/fixtures/grp-160-2026.gpx` through the start screen. Locally it reuses a server already listening on port 5173 — stop any other dev server there first.
+
+To run the specs against a deployed site and its relay instead (no local server is started):
+
+```bash
+E2E_BASE_URL=https://terminus-beta.netlify.app npx playwright test e2e/location-sharing.spec.js
+```
+
+### In CI
+
+- **Before merge** (every pull request and push): the build job makes a second build against `localhost:1999`, and the end-to-end shards run on it with a local relay. A relay change is tested with the app change that needs it, so both ship in one pull request; the deploy publishes the relay, then the site. Nothing is written to the production relay.
+- **After deploy** (`main`): a smoke job runs the sharing spec against the live site and relay, covering what the local run cannot — the Netlify CSP, the relay host in the deployed build, CORS. Like Lighthouse, a failure there flags a broken production; it does not hold the deploy back.
+
 ## Project Structure
 
 ```
@@ -192,20 +216,24 @@ src/
     story/               # Editorial story UI — Story.jsx orchestrates 9 scroll sections
       sections/           # Hero, Now, Climbs, Terrain, Pace, Stages, Checkpoints, Map, End
     trailData/            # Map, ElevationProfile, PaceProfile, SlopeProfile/Intensity, WeatherLine
-    followerScreen/        # Follower route entry (joins a PartyKit room)
-    trailerScreen/         # Runner route entry (renders the Story)
-    wizard/                 # Race picker (single-step entry)
+    followerScreen/        # /follow/:roomId — loads the shared race, joins the room
+    trailerScreen/         # /run — the runner's race (renders the Story)
+    wizard/                 # Start screen: open or drop a GPX
     help/                    # User guide route
   store/
     slices/               # Zustand state management slices
   helpers/                 # Utility functions (colors, buffers, throttling, push notify)
   utils/                   # Coordinate transforms, shareable trail card generation
   hooks/                   # useGPXWorker, useCheckpointETAs, useStageETAs, etc.
+  lib/                     # localGpx (IndexedDB), sharedRoute (relay upload/download), roomAuth, analytics
   gpxWorker.js             # Web Worker for background GPS processing
 
 party/
-  server.js             # PartyKit WebSocket relay server for live location sharing
+  server.js             # PartyKit relay: shared GPX storage (HTTP) and live positions (WebSocket)
   webpush.js             # Web Push (RFC 8291/8292) via Web Crypto — no Node deps
+
+e2e/
+  fixtures/             # GPX the Playwright specs open (the GRP 160 route)
 
 zig/
   terminus.zig          # WASM boundary: the functions and types the worker calls, over gpxz
