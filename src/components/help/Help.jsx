@@ -9,6 +9,7 @@ const SECTIONS = [
   { id: "terrain", label: "Terrain & Pace" },
   { id: "checkpoints", label: "Checkpoints" },
   { id: "end", label: "End of Line" },
+  { id: "follower", label: "Follower" },
   { id: "install", label: "Install" },
 ];
 
@@ -57,10 +58,11 @@ function Help({ className }) {
           <h2 className="sec-title">Open your race&apos;s GPX</h2>
           <p className="sec-body">
             Tap &quot;Open GPX&quot; on the start screen, or drop the file
-            anywhere on it. The file stays on this device — nothing is uploaded
-            — and Terminus reopens it after a reload. Opening another file
-            starts a new race and erases the GPS positions saved for the
-            previous one.
+            anywhere on it. The file stays on this device until you invite
+            someone to follow, and Terminus reopens it after a reload. Opening
+            another file starts a new race: it erases the GPS positions saved
+            for the previous one and stops sharing it. Followers never see this
+            screen — the link a runner sends opens their race directly.
           </p>
           <div className="role-grid">
             <div className="role-card rn">
@@ -229,8 +231,10 @@ function Help({ className }) {
           <div className="info-box">
             <strong>Spot me</strong> — starts your device&apos;s GPS and takes a
             fix right away, then every 30 minutes. It is the only control that
-            starts the live numbers this whole page depends on. Your positions
-            stay on this device.
+            starts the live numbers this whole page depends on. Once you have
+            invited someone to follow, each fix is also sent to them; until then
+            your positions stay on this device. Followers have no Spot me button
+            — their numbers update from the runner&apos;s fixes.
           </div>
         </section>
 
@@ -329,7 +333,8 @@ function Help({ className }) {
             <strong>Runner profile &amp; life base stops</strong> — pick a
             runner profile (Casual, Trail, Athlete, Elite) and how long you plan
             to rest at each life base (none, 30 min, 1 hour, 2 hours). Changing
-            either instantly recalculates every estimate on the page.
+            either instantly recalculates every estimate on the page. Followers
+            see both pickers disabled, synced from the runner.
           </div>
         </section>
 
@@ -414,12 +419,29 @@ function Help({ className }) {
                 </td>
               </tr>
               <tr>
+                <td>Invite someone to follow</td>
+                <td>
+                  Runner only. Uploads this race&apos;s GPX to the relay and
+                  shares a link to follow you live.
+                </td>
+              </tr>
+              <tr>
+                <td>Stop sharing</td>
+                <td>
+                  Runner only, once you have invited someone. Deletes the race
+                  and your last position from the relay; followers get no more
+                  updates.
+                </td>
+              </tr>
+              <tr>
                 <td>Switch theme</td>
                 <td>Toggle between light and dark mode.</td>
               </tr>
               <tr>
                 <td>Flush saved locations</td>
-                <td>Erases this device&apos;s buffered GPS fixes.</td>
+                <td>
+                  Runner only. Erases this device&apos;s buffered GPS fixes.
+                </td>
               </tr>
               <tr>
                 <td>User guide</td>
@@ -438,9 +460,73 @@ function Help({ className }) {
 
         <hr className="divider" />
 
+        {/* FOLLOWER */}
+        <section id="follower" className="section">
+          <p className="sec-label secondary">07 — Follower Mode</p>
+          <h2 className="sec-title">Follow a runner live</h2>
+          <p className="sec-body">
+            Follower mode lets crew, family, or fans read a runner&apos;s story
+            in real time from any device — no GPX file and no GPS permission
+            needed.
+          </p>
+          <div className="feat-grid">
+            <div className="feat">
+              <h4>
+                <span className="dot t" />
+                Invite link
+              </h4>
+              <p>
+                The runner shares a link from &quot;Invite someone to
+                follow&quot;. Opening it downloads the runner&apos;s race and
+                connects you to their session — nothing to pick or type.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot t" />
+                Live sync
+              </h4>
+              <p>
+                The runner&apos;s position, pace profile, and life base settings
+                are pushed to every connected follower in real time.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot t" />
+                Same story
+              </h4>
+              <p>
+                Followers read the identical scroll, built from the very same
+                file — hero, map, climbs, terrain, pace, checkpoints — locked to
+                the runner&apos;s live position.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot t" />
+                Read-only
+              </h4>
+              <p>
+                Spot me, invite-to-follow, the runner profile / life base
+                pickers, and flush saved locations are hidden or disabled —
+                nothing here can change what the runner set.
+              </p>
+            </div>
+          </div>
+          <div className="info-box">
+            <strong>What the relay keeps</strong> — inviting someone uploads the
+            race&apos;s GPX to the relay so followers can read it. The relay
+            deletes it, with the last position, when the runner stops sharing or
+            opens another race, or 7 days after the last update.
+          </div>
+        </section>
+
+        <hr className="divider" />
+
         {/* INSTALL */}
         <section id="install" className="section">
-          <p className="sec-label">07 — Install</p>
+          <p className="sec-label">08 — Install</p>
           <h2 className="sec-title">Add to Home Screen</h2>
           <p className="sec-body">
             Terminus is a Progressive Web App (PWA). You can install it on your

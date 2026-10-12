@@ -44,6 +44,8 @@ const useStore = create(
             displaySlopes: state.app.displaySlopes,
             profileMode: state.app.profileMode,
             pendingUrl: state.app.pendingUrl,
+            liveSessionId: state.app.liveSessionId,
+            liveWriteKey: state.app.liveWriteKey,
             mode: state.app.mode,
             currentRoute: state.app.currentRoute,
             theme: state.app.theme,

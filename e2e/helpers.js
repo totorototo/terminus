@@ -84,7 +84,7 @@ export async function selectRunnerRole(page) {
 
 /**
  * Install a clipboard mock on the page (before page.goto) that:
- *  - disables navigator.share so the trail card falls back to the clipboard path
+ *  - disables navigator.share so invites fall back to the clipboard path
  *  - captures the text written to the clipboard in window.__capturedCode
  *
  * @param {import("@playwright/test").Page} page
@@ -105,4 +105,18 @@ export async function mockClipboard(page) {
       configurable: true,
     });
   });
+}
+
+/**
+ * Tap "Invite someone to follow" on the runner's page and return the follow
+ * link it shares. Needs mockClipboard(runnerPage) before page.goto.
+ */
+export async function inviteFollower(runnerPage) {
+  await runnerPage
+    .getByRole("button", { name: "Invite someone to follow" })
+    .click();
+  await expect
+    .poll(() => runnerPage.evaluate(() => window.__capturedCode))
+    .toMatch(/\/follow\/[a-f0-9]{16}$/);
+  return runnerPage.evaluate(() => window.__capturedCode);
 }

@@ -5,10 +5,12 @@ import { useShallow } from "zustand/react/shallow";
 import { loadLocalGpx } from "../lib/localGpx.js";
 import useStore from "../store/store.js";
 
-// Starts the worker and feeds it the GPX opened from the wizard. `missing`
-// turns true when this device has no stored file (cleared site data, or /run
-// opened directly), so the screen can send the runner back to the wizard.
-export function useGPXWorker() {
+// Starts the worker and feeds it a GPX: by default the one opened from the
+// wizard, or whatever `loadGpx` resolves to (a followed race). `missing` turns
+// true when there is none (cleared site data, /run opened directly, a shared
+// route that expired), so the screen can send the user back to the wizard.
+// `loadGpx` must be stable across renders: a new function reloads the route.
+export function useGPXWorker(loadGpx = loadLocalGpx) {
   const [missing, setMissing] = useState(false);
   const {
     initGPXWorker,
@@ -44,7 +46,7 @@ export function useGPXWorker() {
     let cancelled = false;
 
     async function loadAndProcessGPX() {
-      const stored = await loadLocalGpx();
+      const stored = await loadGpx();
       if (cancelled) return;
       if (!stored) {
         setMissing(true);
@@ -61,7 +63,7 @@ export function useGPXWorker() {
     return () => {
       cancelled = true;
     };
-  }, [isWorkerReady, processGPXFile, setSections, setLegs]);
+  }, [isWorkerReady, loadGpx, processGPXFile, setSections, setLegs]);
 
   return { isWorkerReady, missing };
 }

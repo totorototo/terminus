@@ -162,6 +162,8 @@ describe("store", () => {
           "currentRoute",
           "displaySlopes",
           "installPromptDismissed",
+          "liveSessionId",
+          "liveWriteKey",
           "mode",
           "outdoorMode",
           "paceSettings",

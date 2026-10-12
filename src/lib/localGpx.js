@@ -8,6 +8,9 @@
 const DB_NAME = "terminus";
 const STORE_NAME = "gpx";
 const CURRENT_KEY = "current";
+// A race followed through a relay room, kept apart so following someone
+// never replaces the runner's own race.
+export const FOLLOWED_KEY = "followed";
 
 export const MAX_GPX_BYTES = 50 * 1024 * 1024;
 
@@ -35,13 +38,13 @@ const run = async (mode, operation) => {
   }
 };
 
-/** Store `{ name, bytes }` as the current race, replacing any previous one. */
-export const saveLocalGpx = ({ name, bytes }) =>
-  run("readwrite", (store) => store.put({ name, bytes }, CURRENT_KEY));
+/** Store `{ name, bytes, ... }` as the current race, replacing any previous one. */
+export const saveLocalGpx = (entry, key = CURRENT_KEY) =>
+  run("readwrite", (store) => store.put(entry, key));
 
-/** The current race as `{ name, bytes }`, or null when none was opened. */
-export const loadLocalGpx = async () =>
-  (await run("readonly", (store) => store.get(CURRENT_KEY))) ?? null;
+/** The current race as `{ name, bytes, ... }`, or null when none was opened. */
+export const loadLocalGpx = async (key = CURRENT_KEY) =>
+  (await run("readonly", (store) => store.get(key))) ?? null;
 
 /** The file's name without its .gpx extension, or null when there is none. */
 export const trailNameFromFileName = (fileName) =>

@@ -17,6 +17,8 @@ export const createAppSlice = (set, get) => {
       profileMode: false,
       locations: [],
       pendingUrl: null,
+      liveSessionId: null,
+      liveWriteKey: null,
       mode: null,
       currentRoute: "/",
       installPromptDismissed: false,
@@ -75,6 +77,20 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, pendingUrl: url } }),
         undefined,
         "app/setPendingUrl",
+      ),
+
+    setLiveSessionId: (id) =>
+      set(
+        (state) => ({ app: { ...state.app, liveSessionId: id } }),
+        undefined,
+        "app/setLiveSessionId",
+      ),
+
+    setLiveWriteKey: (key) =>
+      set(
+        (state) => ({ app: { ...state.app, liveWriteKey: key } }),
+        undefined,
+        "app/setLiveWriteKey",
       ),
 
     setMode: (mode) =>

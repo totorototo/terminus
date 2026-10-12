@@ -1,14 +1,112 @@
 import createRingBuffer from "../../helpers/createRingBuffer";
+import {
+  notifyLocationUpdate,
+  requestNotificationPermission,
+  subscribeToPush,
+} from "../../helpers/notify";
+import { showToast } from "../../helpers/toast.js";
 import { track } from "../../lib/analytics.js";
+import { loadLocalGpx } from "../../lib/localGpx.js";
+import { deriveRoomId, generateWriteKey } from "../../lib/roomAuth.js";
+import {
+  deleteRoute,
+  PARTYKIT_HOST,
+  uploadRoute,
+} from "../../lib/sharedRoute.js";
+
+let PartySocketModule = null;
+const getPartySocket = async () => {
+  if (!PartySocketModule) {
+    PartySocketModule = (await import("partysocket")).default;
+  }
+  return PartySocketModule;
+};
+
+// Bounds for pace settings received from a runner over the relay. Generous
+// margins around the UI presets (pace 300–600 s/km, kFatigue 0.001–0.004,
+// stop 0–7200 s) so any sane runner value passes while rejecting non-finite
+// or absurd inputs before they reach the pace model.
+const isFiniteInRange = (v, min, max) =>
+  typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
+
+const isValidPaceSettings = (p) =>
+  p != null &&
+  typeof p === "object" &&
+  isFiniteInRange(p.basePaceSPerKm, 60, 3600) &&
+  isFiniteInRange(p.kFatigue, 0, 0.05) &&
+  (p.lifeBaseStopS == null || isFiniteInRange(p.lifeBaseStopS, 0, 86_400));
 
 export const createGPSSlice = (set, get) => {
   // Create ring buffer for storing last 10 GPS positions
   // Will be initialized lazily to handle rehydration
   let locationBuffer = null;
+  let partySocket = null;
+  let followerSocket = null;
+  let pendingMessage = null;
+  // The invite's route upload, while it runs. A delete must wait for it, or
+  // an upload landing after the delete would put the route back.
+  let pendingUpload = null;
+  const uploadSettled = () =>
+    (pendingUpload ?? Promise.resolve()).catch(() => {});
   let autoShareIntervalId = null;
   let isTogglingAutoShare = false;
 
   const AUTO_SHARE_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
+  const ensureSocket = async (sessionId) => {
+    const isUnusable =
+      !partySocket ||
+      partySocket.readyState === WebSocket.CLOSED ||
+      partySocket.readyState === WebSocket.CLOSING;
+
+    if (isUnusable) {
+      const PartySocket = await getPartySocket();
+      partySocket = new PartySocket({ host: PARTYKIT_HOST, room: sessionId });
+      // Drain the single pending-message slot on every (re)connect
+      const socket = partySocket;
+      socket.addEventListener("open", () => {
+        if (pendingMessage) {
+          socket.send(pendingMessage);
+          pendingMessage = null;
+        }
+      });
+    }
+  };
+
+  const broadcastLocation = async (sessionId, location, paceSettings) => {
+    // Only the holder of the room's secret write key may broadcast. Without it
+    // the relay rejects the message, so there is nothing to send.
+    const writeKey = get().app.liveWriteKey;
+    if (!writeKey) return;
+    await ensureSocket(sessionId);
+    const { timestamp, coords, index } = location;
+    const message = JSON.stringify({
+      type: "location",
+      timestamp,
+      coords,
+      index,
+      paceSettings,
+      writeKey,
+    });
+    if (partySocket.readyState === WebSocket.OPEN) {
+      partySocket.send(message);
+    } else {
+      // Overwrite — only the latest location matters
+      pendingMessage = message;
+    }
+  };
+
+  // Forget this device's room: close the socket and drop its keys, so the
+  // next invite opens a new room.
+  const clearLiveSession = () => {
+    if (partySocket) {
+      partySocket.close();
+      partySocket = null;
+    }
+    pendingMessage = null;
+    get().setLiveWriteKey(null);
+    get().setLiveSessionId(null);
+  };
 
   const ensureBuffer = () => {
     if (!locationBuffer) {
@@ -32,6 +130,13 @@ export const createGPSSlice = (set, get) => {
       deviationDistance: 0,
       isOffCourse: false,
       savedLocations: [],
+      notificationPermission:
+        typeof window !== "undefined" && "Notification" in window
+          ? Notification.permission === "default"
+            ? null
+            : Notification.permission
+          : null,
+      followerConnectionStatus: "idle", // "idle" | "connecting" | "connected" | "disconnected"
       autoShareEnabled: false,
     },
 
@@ -145,6 +250,12 @@ export const createGPSSlice = (set, get) => {
 
         // Refine ETAs against the new fix (best-effort, non-blocking).
         get().recalibrate?.();
+
+        // Broadcast to followers if in trailer mode
+        const sessionId = get().app.liveSessionId;
+        if (get().app.mode === "trailer" && sessionId) {
+          await broadcastLocation(sessionId, projected, get().app.paceSettings);
+        }
       } catch (error) {
         let errorMessage = "Failed to get current location";
 
@@ -172,6 +283,25 @@ export const createGPSSlice = (set, get) => {
       }
     },
 
+    // Push the runner's current pace settings to followers right away.
+    // broadcastLocation is otherwise only called from spotMe(), tied to a
+    // fresh GPS fix — without this, a settings change only reaches followers
+    // whenever the next incidental fix happens to fire, up to the 30 min
+    // auto-share interval away. Re-sends the last known fix unchanged; a
+    // no-op if the runner hasn't broadcast a position yet.
+    broadcastPaceSettings: async () => {
+      const sessionId = get().app.liveSessionId;
+      const projected = get().gps.projectedLocation;
+      if (
+        get().app.mode !== "trailer" ||
+        !sessionId ||
+        !projected?.coords?.length
+      ) {
+        return;
+      }
+      await broadcastLocation(sessionId, projected, get().app.paceSettings);
+    },
+
     // Get all locations from buffer
     getLocationHistory: () => ensureBuffer().dump(),
 
@@ -183,6 +313,259 @@ export const createGPSSlice = (set, get) => {
         isFull: buffer.isFull(),
         isEmpty: buffer.isEmpty(),
       };
+    },
+
+    // Invite a follower: put this race's GPX in the room, then share the
+    // room's link. The file leaves the device here, and only here.
+    shareLocation: async () => {
+      track("share-location");
+
+      let sessionId = get().app.liveSessionId;
+      // Regenerate when there is no session yet, or when an older persisted
+      // session predates write keys (sessionId present but no key) — otherwise
+      // the relay would reject both the route and the broadcasts.
+      if (!sessionId || !get().app.liveWriteKey) {
+        // Generate a secret write key and derive the public room id from it.
+        // Only this device keeps the write key; the shared link carries the
+        // room id alone, so followers can read but never spoof positions.
+        const writeKey = generateWriteKey();
+        sessionId = await deriveRoomId(writeKey);
+        get().setLiveWriteKey(writeKey);
+        get().setLiveSessionId(sessionId);
+      }
+      const writeKey = get().app.liveWriteKey;
+
+      // why: the upload starts before the share sheet and is awaited after
+      // it. navigator.share() must run while the tap's user activation is
+      // still live, which a multi-second upload on a trail connection would
+      // outlast. A follower opening the link mid-upload retries until the
+      // route lands (see downloadRoute).
+      const upload = (pendingUpload = loadLocalGpx().then((stored) => {
+        if (!stored) throw new Error("No race to share");
+        return uploadRoute({
+          roomId: sessionId,
+          writeKey,
+          name: stored.name,
+          bytes: stored.bytes,
+        });
+      }));
+
+      const url = `${window.location.origin}/follow/${sessionId}`;
+
+      try {
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: "Follow my run", url });
+          } catch (error) {
+            if (error.name !== "AbortError") throw error;
+          }
+        } else {
+          try {
+            await navigator.clipboard.writeText(url);
+          } catch {
+            // Clipboard unavailable — silently fail
+          }
+        }
+      } finally {
+        try {
+          await upload;
+        } catch {
+          showToast("Could not share this race with followers. Try again.", {
+            type: "error",
+          });
+        }
+      }
+    },
+
+    // Delete the room's route and last position, then forget the room.
+    // Followers keep what they already downloaded but get no more updates.
+    stopSharing: async () => {
+      const roomId = get().app.liveSessionId;
+      const writeKey = get().app.liveWriteKey;
+      if (!roomId || !writeKey) return;
+      track("stop-sharing");
+      try {
+        await uploadSettled();
+        await deleteRoute({ roomId, writeKey });
+      } catch {
+        showToast("Could not stop sharing. Try again.", { type: "error" });
+        return;
+      }
+      clearLiveSession();
+      showToast("Followers can no longer see this race.", {
+        type: "success",
+      });
+    },
+
+    // A new race gets a new room: the old room is deleted best-effort (the
+    // relay's expiry covers a delete that never arrives).
+    forgetLiveSession: () => {
+      const roomId = get().app.liveSessionId;
+      const writeKey = get().app.liveWriteKey;
+      if (roomId && writeKey) {
+        uploadSettled()
+          .then(() => deleteRoute({ roomId, writeKey }))
+          .catch(() => {});
+      }
+      clearLiveSession();
+    },
+
+    connectToFollowerSession: async (roomId) => {
+      if (!roomId) return;
+      track("follower-session-start");
+
+      // Close existing follower socket if any
+      if (followerSocket) {
+        followerSocket.close();
+      }
+
+      set(
+        (state) => ({
+          gps: { ...state.gps, followerConnectionStatus: "connecting" },
+        }),
+        undefined,
+        "gps/followerConnectionStatus",
+      );
+
+      const PartySocket = await getPartySocket();
+      followerSocket = new PartySocket({
+        host: PARTYKIT_HOST,
+        room: roomId,
+      });
+
+      followerSocket.addEventListener("open", async () => {
+        const wasDisconnected =
+          get().gps.followerConnectionStatus === "disconnected";
+        set(
+          (state) => ({
+            gps: { ...state.gps, followerConnectionStatus: "connected" },
+          }),
+          undefined,
+          "gps/followerConnectionStatus",
+        );
+        if (wasDisconnected) showToast("Back online", { type: "success" });
+        if (Notification.permission === "granted") {
+          const subscription = await subscribeToPush();
+          if (subscription && followerSocket?.readyState === WebSocket.OPEN) {
+            followerSocket.send(
+              JSON.stringify({
+                type: "push_subscribe",
+                subscription: subscription.toJSON(),
+              }),
+            );
+          }
+        }
+      });
+
+      const handleFollowerSocketDrop = () => {
+        const wasConnected = get().gps.followerConnectionStatus === "connected";
+        set(
+          (state) => ({
+            gps: { ...state.gps, followerConnectionStatus: "disconnected" },
+          }),
+          undefined,
+          "gps/followerConnectionStatus",
+        );
+        if (wasConnected) {
+          showToast("Connection lost. Reconnecting…", { type: "error" });
+        }
+      };
+
+      followerSocket.addEventListener("close", handleFollowerSocketDrop);
+      followerSocket.addEventListener("error", handleFollowerSocketDrop);
+
+      followerSocket.addEventListener("message", (event) => {
+        let msg;
+        try {
+          msg = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+        if (msg.type === "location" && Array.isArray(msg.coords)) {
+          // broadcastPaceSettings() re-sends the runner's last known fix
+          // unchanged, purely to carry updated pace settings (see its
+          // definition above) — the runner itself never recalibrates from
+          // that resend, only from a genuinely new fix via spotMe(). Mirror
+          // that here so a pace-only update doesn't recompute against a
+          // recalibration formula the runner's own display never used for
+          // this event, which would otherwise disagree with the runner.
+          const isNewFix =
+            msg.timestamp !== get().gps.projectedLocation.timestamp;
+
+          get().setProjectedLocation({
+            timestamp: msg.timestamp,
+            coords: msg.coords,
+            index: msg.index,
+          });
+          notifyLocationUpdate(msg);
+
+          (async () => {
+            // Apply runner's pace settings if they differ — triggers re-processing
+            // so followers see the same ETAs as the trailer. Validate first: even
+            // though only an authorized runner can broadcast, never feed
+            // out-of-range or non-finite values into the pace model.
+            if (isValidPaceSettings(msg.paceSettings)) {
+              const current = get().app.paceSettings;
+              if (
+                msg.paceSettings.basePaceSPerKm !== current.basePaceSPerKm ||
+                msg.paceSettings.kFatigue !== current.kFatigue ||
+                msg.paceSettings.lifeBaseStopS !== current.lifeBaseStopS
+              ) {
+                get().setPaceSettings(msg.paceSettings);
+                await get().reprocessGPXFile();
+              }
+            }
+
+            // Refine ETAs against the runner's broadcast fix (best-effort) —
+            // after any pace/section update above, so its worker round-trip
+            // (keyed to the current pace settings) can't resolve out of order
+            // and clobber the freshly reprocessed a-priori ETAs with stale ones.
+            if (isNewFix) {
+              await get().recalibrate?.();
+            }
+          })();
+        }
+      });
+    },
+
+    enableNotifications: async () => {
+      const permission = await requestNotificationPermission();
+      set(
+        (state) => ({
+          gps: {
+            ...state.gps,
+            notificationPermission: permission,
+          },
+        }),
+        undefined,
+        "gps/enableNotifications",
+      );
+      if (permission === "granted") {
+        const subscription = await subscribeToPush();
+        if (subscription && followerSocket?.readyState === WebSocket.OPEN) {
+          followerSocket.send(
+            JSON.stringify({
+              type: "push_subscribe",
+              subscription: subscription.toJSON(),
+            }),
+          );
+        }
+      }
+      return permission;
+    },
+
+    disconnectFollowerSession: () => {
+      if (followerSocket) {
+        followerSocket.close();
+        followerSocket = null;
+      }
+      set(
+        (state) => ({
+          gps: { ...state.gps, followerConnectionStatus: "idle" },
+        }),
+        undefined,
+        "gps/followerConnectionStatus",
+      );
     },
 
     toggleAutoShare: async () => {
@@ -200,6 +583,9 @@ export const createGPSSlice = (set, get) => {
       } else {
         isTogglingAutoShare = true;
         try {
+          // why: no longer creates a session — sharing starts only from an
+          // explicit invite, since it now uploads the race's GPX. Without a
+          // room, these fixes stay on this device.
           // Immediate fix, then repeat every 30 min
           await get().spotMe();
           autoShareIntervalId = setInterval(() => {
@@ -230,8 +616,8 @@ export const createGPSSlice = (set, get) => {
       }
     },
 
-    // Re-arm the 30 min fix loop after a reload when auto-share was persisted
-    // as enabled. Called by the trailer screen once it mounts (geolocation and
+    // Re-arm the fix loop after a reload when auto-share was persisted as
+    // enabled. Called by the trailer screen once it mounts (geolocation and
     // worker are ready by then). It restores the interval AND re-asserts the
     // flag, so it self-heals if StrictMode's mount/unmount cycle cleared it via
     // disconnectTrailerSession.
@@ -264,6 +650,11 @@ export const createGPSSlice = (set, get) => {
     disconnectTrailerSession: () => {
       clearInterval(autoShareIntervalId);
       autoShareIntervalId = null;
+      if (partySocket) {
+        partySocket.close();
+        partySocket = null;
+      }
+      pendingMessage = null;
       set(
         (state) => ({ gps: { ...state.gps, autoShareEnabled: false } }),
         undefined,
