@@ -78,7 +78,7 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 
 ## Prerequisites
 
-- **Node.js**: v18+ (recommended v20+)
+- **Node.js**: v22+ (wrangler, which runs the local relay, requires it)
 - **Zig**: v0.17.0 for WASM compilation
 - **npm**: Latest version
 
