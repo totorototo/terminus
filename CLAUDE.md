@@ -16,7 +16,7 @@ Terminus is a high-performance GPS trail visualization web application combining
 - State: Zustand
 - Build: Vite + rollup-plugin-zigar
 
-**Requires**: Node.js 18+, Zig 0.17.0 in PATH
+**Requires**: Node.js 22+, Zig 0.17.0 in PATH
 
 ## Core Principles
 
