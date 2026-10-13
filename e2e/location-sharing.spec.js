@@ -2,8 +2,8 @@
  * Real end-to-end integration test for location sharing.
  *
  * No WebSocket or fetch mocking — the route and positions flow through a
- * real PartyKit relay:
- *   - by default (locally and in CI): `partykit dev` on port 1999, started by
+ * real relay:
+ *   - by default (locally and in CI): `wrangler dev` on port 1999, started by
  *     playwright.config.js from this checkout
  *   - with E2E_BASE_URL (CI's post-deploy smoke test): the deployed site and
  *     its relay
@@ -15,7 +15,7 @@
  *   3. Follower opens that URL directly, same as clicking a shared link, and
  *      reads the same race — downloaded from the room, not from the site.
  *   4. Runner clicks "Spot me" — fake GPS at the trail midpoint triggers
- *      spotMe → Zig projection → PartyKit broadcast.
+ *      spotMe → Zig projection → relay broadcast.
  *   5. The follower's "Right now" km-left moves off its pre-fix baseline.
  */
 

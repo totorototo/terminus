@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 // Two modes:
 //  - default (local and CI): the specs run against a preview of the build and
-//    a `partykit dev` relay from this checkout, so they test this commit's
+//    a `wrangler dev` relay from this checkout, so they test this commit's
 //    party/server.js rather than whatever relay is deployed.
 //  - E2E_BASE_URL set: the specs run against that deployed site and its relay
 //    (CI's post-deploy smoke test); no local server is started.
@@ -49,6 +49,7 @@ export default defineConfig({
         },
         {
           command: "npm run party",
+          env: { WRANGLER_SEND_METRICS: "false" },
           // party/server.js answers "ok" on any non-route path.
           url: `http://${LOCAL_RELAY}/parties/main/health`,
           reuseExistingServer: !process.env.CI,

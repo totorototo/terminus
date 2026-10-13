@@ -1,5 +1,0 @@
-{
-  "name": "terminus",
-  "main": "party/server.js",
-  "compatibilityDate": "2023-12-01"
-}
