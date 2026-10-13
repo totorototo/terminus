@@ -21,7 +21,7 @@
  *   4. A pace-settings change in the other direction (Elite → Casual) does
  *      the same — pace changes aren't only tested one way.
  *
- * ...and, with a real PartyKit relay (no WebSocket mocking, same as
+ * ...and, with a real relay (no WebSocket mocking, same as
  * location-sharing.spec.js), that a follower's three sections track a
  * runner's after all three kinds of updates.
  */

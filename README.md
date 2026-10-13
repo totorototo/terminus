@@ -35,7 +35,7 @@ A scroll-driven editorial trail story: open your race's GPX and scroll through i
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│               PartyKit WebSocket relay (party/)                 │
+│             PartyServer WebSocket relay (party/)               │
 │  Holds the race GPX a runner shares (gzipped, chunked, 7-day    │
 │  expiry) · relays the runner's GPS position to followers in     │
 │  real time · rate-limited Web Push (VAPID) to subscribers       │
@@ -72,7 +72,7 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 - **Frontend**: React 19, Vite, Zustand (state management with DevTools/persist)
 - **Charts & Map**: d3-scale/d3-shape/d3-array for chart geometry, Mapbox GL (`react-map-gl`) for the 3D terrain map
 - **Performance**: Zig 0.17.0 → WASM via Zigar bindings with zero-copy optimization
-- **Real-time**: PartyKit relay (WebSocket for positions, HTTP for the shared GPX in Durable Object storage), Web Push (VAPID) for follower notifications
+- **Real-time**: PartyServer relay on Cloudflare Workers (WebSocket for positions, HTTP for the shared GPX in Durable Object storage), Web Push (VAPID) for follower notifications
 - **Styling**: Styled-components, `@react-spring/web` for motion (respects `prefers-reduced-motion`)
 - **PWA**: Vite PWA plugin with service worker and install prompt
 
@@ -118,9 +118,9 @@ The script samples evenly-spaced points from the GPX track and feeds them to the
 xcrun simctl location booted clear
 ```
 
-### Simulating live location via PartyKit
+### Simulating live location through the relay
 
-To play a runner without one (useful for testing the follower view): the script uploads a GPX to a PartyKit room, as an invite does, then replays the route as live position updates:
+To play a runner without one (useful for testing the follower view): the script uploads a GPX to a relay room, as an invite does, then replays the route as live position updates:
 
 ```bash
 # The second argument is a secret write key; the public room id followers
@@ -135,7 +135,7 @@ node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 500 500  # 500
 By default the script targets `localhost:1999`. Set `PARTYKIT_HOST` to target a deployed instance:
 
 ```bash
-PARTYKIT_HOST=<your-partykit-host> node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123
+PARTYKIT_HOST=<relay-host> node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123
 ```
 
 Open the printed `/follow/<room>` link in the app to watch the position move in real time.
@@ -195,7 +195,7 @@ npm run e2e            # Playwright
 npm run e2e:headed     # Playwright, headed browser
 ```
 
-Playwright serves a build made against `localhost:1999` and starts a `partykit dev` relay, so the sharing specs exercise this checkout's `party/server.js` rather than the deployed relay. Runner specs open `e2e/fixtures/grp-160-2026.gpx` through the start screen. Locally it reuses a server already listening on port 5173 — stop any other dev server there first.
+Playwright serves a build made against `localhost:1999` and starts a `wrangler dev` relay, so the sharing specs exercise this checkout's `party/server.js` rather than the deployed relay. Runner specs open `e2e/fixtures/grp-160-2026.gpx` through the start screen. Locally it reuses a server already listening on port 5173 — stop any other dev server there first.
 
 To run the specs against a deployed site and its relay instead (no local server is started):
 
@@ -229,7 +229,7 @@ src/
   gpxWorker.js             # Web Worker for background GPS processing
 
 party/
-  server.js             # PartyKit relay: shared GPX storage (HTTP) and live positions (WebSocket)
+  server.js             # PartyServer relay: shared GPX storage (HTTP) and live positions (WebSocket)
   webpush.js             # Web Push (RFC 8291/8292) via Web Crypto — no Node deps
 
 e2e/

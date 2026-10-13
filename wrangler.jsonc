@@ -1,0 +1,14 @@
+// The location-sharing relay (party/server.js), a Worker with one Durable
+// Object per room. Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (and
+// optionally VAPID_SUBJECT), set with `npx wrangler secret put <name>`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "terminus",
+  "main": "party/server.js",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": {
+    "bindings": [{ "name": "Main", "class_name": "Main" }],
+  },
+  // The free plan only offers SQLite-backed Durable Objects.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Main"] }],
+}

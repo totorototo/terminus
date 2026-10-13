@@ -72,7 +72,7 @@ jobs:
       - name: Build with build number
         run: |
           echo "VITE_NUMBER=${{ github.run_number }}" > .env
-          echo "VITE_PARTYKIT_HOST=terminus.${{ secrets.PARTYKIT_LOGIN }}.partykit.dev" >> .env
+          echo "VITE_PARTYKIT_HOST=${{ vars.RELAY_HOST }}" >> .env
           echo "VITE_VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
           echo "VITE_UMAMI_SRC=${{ secrets.VITE_UMAMI_SRC }}" >> .env
           echo "VITE_UMAMI_WEBSITE_ID=${{ secrets.VITE_UMAMI_WEBSITE_ID }}" >> .env
@@ -167,7 +167,7 @@ jobs:
           name: dist-e2e
           path: dist/
 
-      # playwright.config.js starts the preview server and a `partykit dev` relay.
+      # playwright.config.js starts the preview server and a `wrangler dev` relay.
       - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
@@ -251,11 +251,11 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Deploy to PartyKit
-        run: npx partykit deploy
+      - name: Deploy relay to Cloudflare
+        run: npm run party:deploy
         env:
-          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
-          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Install Netlify CLI
         run: npm install -g netlify-cli

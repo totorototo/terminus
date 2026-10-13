@@ -57,3 +57,6 @@ stats.html
 .claude/
 [A-Z]*.md
 e2e/coverage-map.html
+
+# wrangler dev state and bundles
+.wrangler
