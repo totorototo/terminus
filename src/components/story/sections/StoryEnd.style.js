@@ -12,10 +12,7 @@ const style = (Component) => styled(Component)`
     font-size: 0.6875rem;
     letter-spacing: 0.04em;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
   }
 
   .kofi-card {
@@ -39,7 +36,7 @@ const style = (Component) => styled(Component)`
       )};
     padding: 1rem 1.25rem;
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
     cursor: pointer;
     transition: all ${(props) => props.theme.transitions["--transition-base"]};
 
@@ -88,10 +85,9 @@ const style = (Component) => styled(Component)`
     background: none;
     border: 1px solid
       ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.15,
-        )};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-control-border"
+        ]};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
     padding: 0.75rem 1.25rem;
@@ -110,7 +106,7 @@ const style = (Component) => styled(Component)`
           0.4,
         )};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
     }
 
     &:disabled {
@@ -135,7 +131,7 @@ const style = (Component) => styled(Component)`
           0.6,
         )};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
       background: ${(props) =>
         rgba(
           props.theme.colors[props.theme.currentVariant]["--color-primary"],
@@ -165,20 +161,16 @@ const style = (Component) => styled(Component)`
       font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
       font-size: 0.75rem;
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.7,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     }
 
     input,
     textarea {
       border: 1px solid
         ${(props) =>
-          rgba(
-            props.theme.colors[props.theme.currentVariant]["--color-text"],
-            0.2,
-          )};
+          props.theme.colors[props.theme.currentVariant][
+            "--color-control-border"
+          ]};
       border-radius: ${(props) =>
         props.theme.borderRadius["--border-radius-sm"]};
       padding: 0.5rem 0.625rem;
@@ -208,7 +200,9 @@ const style = (Component) => styled(Component)`
 
       &.success {
         color: ${(props) =>
-          props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+          props.theme.colors[props.theme.currentVariant][
+            "--color-primary-text"
+          ]};
       }
 
       &.error {
@@ -235,10 +229,9 @@ const style = (Component) => styled(Component)`
     background: none;
     border: 1px solid
       ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.2,
-        )};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-control-border"
+        ]};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
     padding: 0.5rem 0.875rem;

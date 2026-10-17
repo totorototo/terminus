@@ -65,10 +65,7 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.8,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     white-space: nowrap;
   }
 

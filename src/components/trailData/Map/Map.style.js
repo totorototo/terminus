@@ -57,10 +57,7 @@ const style = (Component) => styled(Component)`
         0.7,
       )};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.75,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     cursor: pointer;
     backdrop-filter: blur(6px);
     transition: all ${(props) => props.theme.transitions["--transition-fast"]};
@@ -68,7 +65,7 @@ const style = (Component) => styled(Component)`
 
     &:hover {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
       border-color: ${(props) =>
         rgba(
           props.theme.colors[props.theme.currentVariant]["--color-primary"],

@@ -215,6 +215,48 @@ describe("useCheckpointETAs", () => {
     expect(result.current.checkpointETAs[0].etaMs).toBeCloseTo(expected, 0);
   });
 
+  // ── Cutoff margin ────────────────────────────────────────────────────────
+
+  it("exposes the margin to the cutoff, cut to the minute", () => {
+    const sections = [{ ...SECTION_1, maxCompletionTime: 4800 }, SECTION_2];
+    setup(sections, { index: 0, timestamp: START_MS - 5000 });
+    const { result } = renderHook(() => useCheckpointETAs());
+    // cutoff = start + 4800 s, ETA = start + 3600 s → 20 min
+    expect(result.current.checkpointETAs[0].cutoffMarginMs).toBe(1_200_000);
+    expect(result.current.checkpointETAs[1].cutoffMarginMs).toBeNull();
+  });
+
+  it("takes the margin before the over-cutoff clamp", () => {
+    const sections = [{ ...SECTION_1, maxCompletionTime: 3000 }, SECTION_2];
+    setup(sections, { index: 0, timestamp: START_MS - 5000 });
+    const { result } = renderHook(() => useCheckpointETAs());
+    const [s1] = result.current.checkpointETAs;
+    expect(s1.isOverCutoff).toBe(true);
+    expect(s1.cutoffMarginMs).toBe(-600_000);
+  });
+
+  it("never reports an over-cutoff margin as zero", () => {
+    // ETA 0.1 s past the cutoff floors to the same minute
+    const sections = [{ ...SECTION_1, maxCompletionTime: 3599.9 }, SECTION_2];
+    setup(sections, { index: 0, timestamp: START_MS - 5000 });
+    const { result } = renderHook(() => useCheckpointETAs());
+    const [s1] = result.current.checkpointETAs;
+    expect(s1.isOverCutoff).toBe(true);
+    expect(s1.cutoffMarginMs).toBe(-60_000);
+  });
+
+  it("gives no margin after the first breach", () => {
+    const sections = [
+      { ...SECTION_1, maxCompletionTime: 3000 },
+      { ...SECTION_2, maxCompletionTime: 3600 },
+    ];
+    setup(sections, { index: 0, timestamp: START_MS - 5000 });
+    const { result } = renderHook(() => useCheckpointETAs());
+    const [, s2] = result.current.checkpointETAs;
+    expect(s2.isOverCutoff).toBe(false);
+    expect(s2.cutoffMarginMs).toBeNull();
+  });
+
   // ── endKm ────────────────────────────────────────────────────────────────
 
   it("computes endKm from cumulativeDistances at endIndex", () => {

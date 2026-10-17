@@ -117,7 +117,7 @@ const style = (Component) => styled(Component)`
 
     &:hover {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
     }
 
     &:active {

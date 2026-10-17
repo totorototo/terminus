@@ -34,12 +34,11 @@ const RunnabilityIndex = memo(function RunnabilityIndex({ className }) {
   const projectedIndex = projectedLocation?.index ?? null;
   const theme = useTheme();
 
-  // why: same single-hue ramp treatment as SlopeIntensity (mono, not a
-  // 3-color traffic light) for visual consistency between the two strips —
-  // keyed off --color-primary instead of --color-accent so the two derived
-  // charts read as a matched pair rather than duplicating the same hue.
+  // why: the same mauve effort ramp as SlopeIntensity (one hue, not a
+  // 3-colour traffic light) — runnable, marginal and hike-only land on
+  // effort steps 1, 3 and 5.
   const bandColors = useMemo(
-    () => gradeBandColors(theme, RUNNABILITY_BANDS.length, "--color-primary"),
+    () => gradeBandColors(theme, RUNNABILITY_BANDS.length),
     [theme],
   );
 
@@ -126,7 +125,7 @@ const RunnabilityIndex = memo(function RunnabilityIndex({ className }) {
       <StripReadout
         pct={currentPct}
         value={currentLabel}
-        color={theme.colors[theme.currentVariant]["--color-primary"]}
+        color={theme.colors[theme.currentVariant]["--color-text"]}
       />
 
       <div className="ri-legend">

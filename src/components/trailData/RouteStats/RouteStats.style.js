@@ -1,4 +1,3 @@
-import { rgba } from "polished";
 import styled from "styled-components";
 
 const style = (Component) => styled(Component)`
@@ -34,10 +33,7 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.1em;
     margin-top: ${(props) => props.theme.spacing[2]}px;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.65,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   .rs-tb-bar {
@@ -54,26 +50,29 @@ const style = (Component) => styled(Component)`
     height: 100%;
   }
 
-  /* why: matches SlopeProfile's own climb/descent pairing (primary =
-     uphill, secondary = downhill) directly above this chart in the same
-     Terrain section — accent is RunnabilityIndex/SlopeIntensity's severity
-     ramp, not a direction color. */
+  /* why: direction is neutral in the design system — text at 85 / 30 / 55%,
+     never the brand gold or the ahead sage, which carry plan and status.
+     Flat (and downhill in light) sit under 3:1, so a 2px ground-coloured
+     gap separates every segment and the legend names each one. */
+  .rs-tb-seg + .rs-tb-seg {
+    box-shadow: inset 2px 0 0
+      ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-background"]};
+  }
+
   .rs-tb-uphill {
     background: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-direction-up"]};
   }
 
   .rs-tb-flat {
     background: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.2,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-direction-flat"]};
   }
 
   .rs-tb-downhill {
     background: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-direction-down"]};
   }
 
   .rs-tb-legend {
@@ -91,10 +90,7 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
     letter-spacing: 0.04em;
   }
 

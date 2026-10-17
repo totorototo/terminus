@@ -22,20 +22,17 @@ const style = (Component) => styled(Component)`
     stroke-dasharray: 2 3;
   }
 
+  /* why: the effort chart in the terrain mauve — climbs on effort-4,
+     descents on effort-1, so harder reads as more contrast and direction
+     never borrows the brand gold or the ahead sage. */
   .sp-climb-area {
     fill: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-primary"],
-        0.4,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-effort-4"]};
   }
 
   .sp-descent-area {
     fill: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-secondary"],
-        0.4,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-effort-1"]};
   }
 
   .sp-done-mask {
@@ -62,13 +59,14 @@ const style = (Component) => styled(Component)`
   .sp-label--climb {
     top: ${labelInset};
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
+      props.theme.colors[props.theme.currentVariant]["--color-effort-4"]};
   }
 
+  /* effort-1 fails 4.5:1 as text; effort-3 is the lightest step that holds. */
   .sp-label--descent {
     bottom: ${labelInset};
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-secondary-text"]};
+      props.theme.colors[props.theme.currentVariant]["--color-effort-3"]};
   }
 `;
 

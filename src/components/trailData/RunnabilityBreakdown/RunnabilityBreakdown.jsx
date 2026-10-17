@@ -30,14 +30,9 @@ const RunnabilityBreakdown = memo(function RunnabilityBreakdown({ className }) {
     ...distribution.map((band) => band.distanceM),
     1,
   );
-  // why: --color-primary, matching RunnabilityIndex's own ramp directly
-  // above this list — the same severity color means the same thing in both
-  // the spatial strip and this aggregate-by-distance view.
-  const bandColors = gradeBandColors(
-    theme,
-    distribution.length,
-    "--color-primary",
-  );
+  // why: the mauve effort ramp RunnabilityIndex uses directly above this list —
+  // the same step means the same severity in the strip and this view.
+  const bandColors = gradeBandColors(theme, distribution.length);
 
   return (
     <div className={className}>

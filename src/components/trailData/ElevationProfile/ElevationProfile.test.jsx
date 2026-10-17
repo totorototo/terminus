@@ -3,6 +3,7 @@ import { useTheme } from "styled-components";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as storeModule from "../../../store/store.js";
+import THEME from "../../../theme/Theme.js";
 import ElevationProfile from "./ElevationProfile.jsx";
 
 import "@testing-library/jest-dom/vitest";
@@ -56,13 +57,7 @@ describe("ElevationProfile", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useTheme.mockReturnValue({
-      colors: {
-        dark: {
-          "--color-background": "#3A3335",
-          "--color-primary": "#f2af29",
-          "--color-secondary": "#6E9075",
-        },
-      },
+      colors: THEME.colors,
       currentVariant: "dark",
     });
   });

@@ -32,9 +32,8 @@ const UphillGradientBreakdown = memo(function UphillGradientBreakdown({
     ...distribution.map((band) => band.distanceM),
     1,
   );
-  // why: same severity ramp as SlopeIntensity's own bands, keyed to
-  // --color-accent, so a band reads as the same color in both the spatial
-  // strip and this aggregate-by-distance view.
+  // why: the mauve effort ramp SlopeIntensity's bands use, so a band reads
+  // as the same colour in the spatial strip and this aggregate-by-distance view.
   const bandColors = gradeBandColors(theme, distribution.length);
 
   return (

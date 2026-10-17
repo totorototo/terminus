@@ -1,6 +1,5 @@
 import { memo, useMemo } from "react";
 
-import { rgba } from "polished";
 import { useTheme } from "styled-components";
 
 import {
@@ -35,15 +34,15 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
   const projectedIndex = projectedLocation?.index ?? null;
   const theme = useTheme();
 
-  // why: reuse RunnabilityIndex's amber (day) and SlopeProfile's sage
-  // (night) rather than a bespoke hue — the profile card sits between
-  // those two strips, so borrowing their colors reads as one connected
-  // day/night signal instead of introducing a third palette.
+  // why: day and night are two shades of the terrain mauve in the design
+  // system, daylight always the paler one. The tokens carry their own alpha
+  // and swap steps per theme (the effort scale runs the other way in light),
+  // so the fill and the legend dot read the same value.
   const dayNightColors = useMemo(() => {
     const colors = theme.colors[theme.currentVariant];
     return {
-      day: colors["--color-primary"],
-      night: colors["--color-secondary"],
+      day: colors["--color-profile-day"],
+      night: colors["--color-profile-night"],
     };
   }, [theme]);
 
@@ -128,7 +127,7 @@ const ElevationProfile = memo(function ElevationProfile({ className }) {
             minElev - elevRange * 0.1,
             seg.start,
           ).path,
-          color: rgba(seg.day ? dayColor : nightColor, 0.3),
+          color: seg.day ? dayColor : nightColor,
         }));
 
         dayNight = {

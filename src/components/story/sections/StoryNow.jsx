@@ -21,6 +21,15 @@ function formatPaceDivergence(ratio) {
   return pct > 0 ? `+${pct}%` : `${pct}%`;
 }
 
+// why: the live figures are plain text; only vs plan carries a meaning, so
+// only it takes a colour — behind or ahead, the same tokens Retrace uses.
+function paceTone(ratio) {
+  if (!Number.isFinite(ratio)) return null;
+  const pct = Math.round((ratio - 1) * 100);
+  if (pct === 0) return null;
+  return pct > 0 ? "behind" : "ahead";
+}
+
 const StoryNow = memo(function StoryNow({ className }) {
   const projectedLocation = useProjectedLocation();
   const cumulativeDistances = useStore(
@@ -111,7 +120,14 @@ const StoryNow = memo(function StoryNow({ className }) {
             <span className="now-label">remaining</span>
           </div>
           <div className="now-stat">
-            <span className="now-value">
+            <span
+              className="now-value"
+              data-tone={
+                raceStart && hasGPSLock
+                  ? (paceTone(paceDivergence) ?? undefined)
+                  : undefined
+              }
+            >
               {raceStart && hasGPSLock
                 ? formatPaceDivergence(paceDivergence)
                 : "--"}

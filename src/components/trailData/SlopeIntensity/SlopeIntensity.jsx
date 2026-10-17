@@ -124,7 +124,7 @@ const SlopeIntensity = memo(function SlopeIntensity({ className }) {
       <StripReadout
         pct={currentPct}
         value={currentGrade !== null ? `${currentGrade}% grade` : null}
-        color={theme.colors[theme.currentVariant]["--color-accent"]}
+        color={theme.colors[theme.currentVariant]["--color-text"]}
       />
 
       <div className="si-legend">

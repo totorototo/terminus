@@ -7,10 +7,7 @@ const style = (Component) => styled(Component)`
   .lede {
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.65,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     max-width: 34ch;
     margin: 0 0 3rem;
   }
@@ -33,10 +30,7 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.8,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     margin: 1.25rem 0 0.5rem;
 
     &:first-of-type {
@@ -66,10 +60,7 @@ const style = (Component) => styled(Component)`
         )};
     background: none;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.65,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     cursor: pointer;
     transition: all ${(props) => props.theme.transitions["--transition-base"]};
 
@@ -77,7 +68,9 @@ const style = (Component) => styled(Component)`
       border-color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-secondary-text"
+        ]};
     }
 
     &:disabled {
@@ -90,10 +83,7 @@ const style = (Component) => styled(Component)`
     margin: 1rem 0 0;
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.45,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 `;
 

@@ -17,15 +17,12 @@ const style = (Component) => styled(Component)`
      invisible. A plain tinted fill stays legible regardless of backdrop. */
   background: ${(props) =>
     rgba(props.theme.colors[props.theme.currentVariant]["--color-text"], 0.12)};
-  /* why: 0.4 alpha keeps the ring at roughly 3:1 against the page
+  /* why: color-control-border keeps the ring at 3:1 or more against the page
      background (WCAG 1.4.11 non-text contrast) — the control needs to
      read as a distinct boundary at a glance, not just on hover. */
   border: 1px solid
     ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.4,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-control-border"]};
   border-radius: ${(props) => props.theme.borderRadius["--border-radius-full"]};
   color: ${(props) =>
     props.theme.colors[props.theme.currentVariant]["--color-text"]};
@@ -44,7 +41,7 @@ const style = (Component) => styled(Component)`
         0.6,
       )};
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
   }
 `;
 

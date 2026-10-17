@@ -149,7 +149,7 @@ const style = (Component) => styled(Component)`
 
   .pp-label--effort {
     color: ${({ theme }) =>
-      theme.colors[theme.currentVariant]["--color-secondary"]};
+      theme.colors[theme.currentVariant]["--color-secondary-text"]};
     opacity: 0.75;
   }
 
@@ -184,7 +184,7 @@ const style = (Component) => styled(Component)`
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
     color: ${({ theme }) =>
-      theme.colors[theme.currentVariant]["--color-primary"]};
+      theme.colors[theme.currentVariant]["--color-primary-text"]};
     letter-spacing: 0.04em;
     line-height: 1;
     white-space: nowrap;
@@ -243,12 +243,12 @@ const style = (Component) => styled(Component)`
 
     &.pp-stat-value--current {
       color: ${({ theme }) =>
-        theme.colors[theme.currentVariant]["--color-primary"]};
+        theme.colors[theme.currentVariant]["--color-primary-text"]};
     }
 
     &.pp-stat-value--effort {
       color: ${({ theme }) =>
-        theme.colors[theme.currentVariant]["--color-secondary"]};
+        theme.colors[theme.currentVariant]["--color-secondary-text"]};
     }
   }
 

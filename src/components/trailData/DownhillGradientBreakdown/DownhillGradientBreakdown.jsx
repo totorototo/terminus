@@ -33,9 +33,8 @@ const DownhillGradientBreakdown = memo(function DownhillGradientBreakdown({
     ...distribution.map((band) => band.distanceM),
     1,
   );
-  // why: same --color-accent ramp as UphillGradientBreakdown — both read off
-  // the same |grade| bands SlopeIntensity's strip already colors by, so a
-  // band means the same severity in all three places.
+  // why: the same mauve effort ramp as UphillGradientBreakdown — both read off
+  // SlopeIntensity's |grade| bands, so a band means the same severity in all three.
   const bandColors = gradeBandColors(theme, distribution.length);
 
   return (

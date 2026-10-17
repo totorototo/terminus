@@ -126,7 +126,7 @@ body *:after {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: var(--border-radius-xs);
 }

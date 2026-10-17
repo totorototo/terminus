@@ -38,6 +38,8 @@ for (let i = 0; i < zigData.items.length; i++) {
 ## Code Conventions
 
 - Always use theme tokens for colors — never inline colors or hardcoded color values.
+- Read colors in styles as theme interpolations: `${(props) => props.theme.colors[props.theme.currentVariant]["--color-text-muted"]}`, not `var(--color-…)`.
+- Use polished `rgba()` only on opaque tokens, for decorative tints (fills, hairlines on hover). Never wrap a token that carries its own alpha (`--color-text-muted`, `--color-text-faint`, `--color-hairline`, `--color-direction-*`, `--color-profile-*`): `rgba()` replaces that alpha and breaks its checked contrast. Text steps down through `--color-text-muted` / `--color-text-faint`, never an ad-hoc alpha on `--color-text`.
 - Keep styles in separate `.styles.js` files, not in component files.
 
 ## Performance

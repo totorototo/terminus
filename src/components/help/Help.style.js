@@ -67,10 +67,7 @@ const style = (Component) => styled(Component)`
     font-size: 0.8125rem;
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -348,7 +345,7 @@ const style = (Component) => styled(Component)`
           0.12,
         )};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
     }
 
     .role-card.fo & {
@@ -358,7 +355,9 @@ const style = (Component) => styled(Component)`
           0.12,
         )};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-secondary-text"
+        ]};
     }
   }
 
@@ -410,10 +409,7 @@ const style = (Component) => styled(Component)`
     p {
       font-size: 0.75rem;
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.5,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
       line-height: 1.55;
     }
   }
@@ -496,7 +492,7 @@ const style = (Component) => styled(Component)`
           0.12,
         )};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
     }
 
     &.secondary {
@@ -506,7 +502,9 @@ const style = (Component) => styled(Component)`
           0.12,
         )};
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-secondary-text"
+        ]};
     }
   }
 
@@ -521,10 +519,7 @@ const style = (Component) => styled(Component)`
   .pi-desc {
     font-size: 0.75rem;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.48,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     line-height: 1.5;
   }
 
@@ -542,10 +537,7 @@ const style = (Component) => styled(Component)`
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.3,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
       padding: 0.5rem 1rem;
       border-bottom: 1px solid
         ${(props) =>
@@ -564,10 +556,7 @@ const style = (Component) => styled(Component)`
             0.05,
           )};
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.55,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
       vertical-align: top;
     }
 
@@ -610,15 +599,14 @@ const style = (Component) => styled(Component)`
       props.theme.borderRadius["--border-radius-base"]};
     font-size: 0.8125rem;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.6,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     line-height: 1.6;
 
     strong {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-secondary-text"
+        ]};
     }
   }
 
@@ -629,10 +617,7 @@ const style = (Component) => styled(Component)`
     font-size: 0.6875rem;
     letter-spacing: 0.04em;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.2,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
     padding-top: 2rem;
     border-top: 1px solid
       ${(props) =>

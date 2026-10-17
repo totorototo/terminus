@@ -7,10 +7,7 @@ const style = (Component) => styled(Component)`
   .lede {
     font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.65,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     max-width: 34ch;
     margin: 0 0 3rem;
   }
@@ -34,10 +31,7 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.65,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
     margin-bottom: 0.75rem;
   }
 
