@@ -28,7 +28,7 @@
   "dependencies": {
     "@react-spring/web": "10.0.3",
     "@styled-icons/feather": "10.47.0",
-    "@totorototo/trail-tokens": "github:totorototo/trail-tokens#v1.0.0",
+    "@totorototo/trail-tokens": "github:totorototo/trail-tokens#v1.1.0",
     "d3-array": "3.2.4",
     "d3-scale": "4.0.2",
     "d3-shape": "3.2.0",

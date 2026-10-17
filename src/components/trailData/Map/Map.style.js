@@ -142,7 +142,7 @@ const style = (Component) => styled(Component)`
     fill: ${(props) => props.theme.map.pin};
     stroke: ${(props) => props.theme.map.casing};
     stroke-width: 1.5px;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 1px 2px ${(props) => props.theme.map.shadow});
   }
 
   /* The number takes the place of the pin's inner circle. */
