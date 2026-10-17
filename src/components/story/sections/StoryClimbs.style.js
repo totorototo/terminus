@@ -6,19 +6,13 @@ const style = (Component) => styled(Component)`
 
   .empty {
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   .climb-legend-note {
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.6,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
     margin: 0 0 1.5rem;
     max-width: 40ch;
   }
@@ -44,8 +38,9 @@ const style = (Component) => styled(Component)`
       border-bottom: none;
     }
 
+    /* the design system's past-row dim, same as Checkpoints and Milestones */
     &.past {
-      opacity: 0.4;
+      opacity: 0.55;
     }
   }
 
@@ -68,7 +63,7 @@ const style = (Component) => styled(Component)`
           0.4,
         )};
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
   }
 
   .climb-marker.unranked {
@@ -76,11 +71,16 @@ const style = (Component) => styled(Component)`
     border-style: dashed;
   }
 
+  /* why: a filled marker is a primary-button surface — the button tokens
+     hold 6.4:1 (dark) and 9.3:1 (light); the background colour on light
+     primary read 2.1:1. */
   .climb-row.current .climb-marker {
     background: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+      props.theme.colors[props.theme.currentVariant]["--color-button-primary"]};
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-background"]};
+      props.theme.colors[props.theme.currentVariant][
+        "--color-on-button-primary"
+      ]};
   }
 
   .climb-info {
@@ -99,10 +99,7 @@ const style = (Component) => styled(Component)`
 
   .climb-summit {
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
   }
 
@@ -129,10 +126,7 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.6,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
 
     .sep {
       opacity: 0.4;

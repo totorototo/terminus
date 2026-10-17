@@ -3,6 +3,7 @@ import { useTheme } from "styled-components";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as storeModule from "../../../store/store.js";
+import THEME from "../../../theme/Theme.js";
 import SlopeIntensity from "./SlopeIntensity.jsx";
 
 import "@testing-library/jest-dom/vitest";
@@ -49,7 +50,7 @@ describe("SlopeIntensity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useTheme.mockReturnValue({
-      colors: { dark: { "--color-accent": "#3388ff" } },
+      colors: THEME.colors,
       currentVariant: "dark",
     });
   });

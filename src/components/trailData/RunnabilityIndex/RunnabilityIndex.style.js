@@ -1,4 +1,3 @@
-import { rgba } from "polished";
 import styled from "styled-components";
 
 const legendItemGap = (props) => `${props.theme.spacing[2]}px`;
@@ -36,10 +35,7 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
     letter-spacing: 0.04em;
   }
 

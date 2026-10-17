@@ -6,10 +6,7 @@ const style = (Component) => styled(Component)`
 
   .empty {
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   .checkpoint-list {
@@ -27,10 +24,7 @@ const style = (Component) => styled(Component)`
     padding: 1rem 0;
     border-bottom: 1px solid
       ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.08,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-hairline"]};
 
     &:last-child {
       border-bottom: none;
@@ -42,7 +36,7 @@ const style = (Component) => styled(Component)`
 
     &.current .checkpoint-name {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+        props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
     }
   }
 
@@ -66,10 +60,7 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.6,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     margin-top: 0.25rem;
   }
 
@@ -100,18 +91,12 @@ const style = (Component) => styled(Component)`
     .cp-weather-detail {
       gap: 0.7rem;
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.6,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     }
 
     .cp-weather-temp {
       color: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.6,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     }
 
     /* keep the cold/wet/windy warning legible even after the base mute above */
@@ -119,6 +104,34 @@ const style = (Component) => styled(Component)`
       color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
     }
+  }
+
+  /* why: the details stay mounted so they can animate — a grid row going
+     0fr → 1fr opens to the content's own height with no JS measuring. The
+     negative margin cancels the row's flex gap while closed. Reduced motion
+     is covered by the global rule in ThemedApp; inert keeps the closed
+     details out of the tab order and the accessibility tree. */
+  .checkpoint-details {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: -0.75rem;
+    opacity: 0;
+    transition:
+      grid-template-rows
+        ${(props) => props.theme.transitions["--transition-standard"]},
+      margin-top ${(props) => props.theme.transitions["--transition-standard"]},
+      opacity ${(props) => props.theme.transitions["--transition-standard"]};
+
+    &.open {
+      grid-template-rows: 1fr;
+      margin-top: 0;
+      opacity: 1;
+    }
+  }
+
+  .checkpoint-details-inner {
+    min-height: 0;
+    overflow: hidden;
   }
 
   .checkpoint-stats-grid {
@@ -150,10 +163,7 @@ const style = (Component) => styled(Component)`
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.7,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   .stat-value {
@@ -172,29 +182,7 @@ const style = (Component) => styled(Component)`
   .stat-sub {
     font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.7,
-      )};
-  }
-
-  .cutoff-value {
-    display: flex;
-    flex-direction: column;
-
-    &.over {
-      color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
-    }
-  }
-
-  .cutoff-time {
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.7,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   .difficulty-value {
@@ -232,56 +220,87 @@ const style = (Component) => styled(Component)`
     font-weight: ${(props) => props.theme.font.weights["--font-weight-medium"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.6,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
+  /* why: outlined, no tint fill — the 14% fill dropped the label under
+     4.5:1 (light OK 1.7:1). The word carries the state; colour repeats it. */
   .checkpoint-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1875rem 0.5rem;
+    border: 1px solid currentColor;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 0.1875rem 0.5rem;
-    border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
+    text-transform: uppercase;
+    white-space: nowrap;
 
     &.tier-ok {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-success"]};
-      background: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-success"],
-          0.14,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-success-text"]};
     }
 
     &.tier-tight {
       color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
-      background: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant][
-            "--color-primary-text"
-          ],
-          0.14,
-        )};
     }
 
     &.tier-over {
       color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
-      background: ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-accent-text"],
-          0.14,
-        )};
+        props.theme.colors[props.theme.currentVariant]["--color-behind-text"]};
+    }
+  }
+
+  /* Cutoff and Margin: the row's two figures, value over label. */
+  .checkpoint-figures {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.625rem 1.5rem;
+    margin: 0;
+    padding: 0.75rem;
+    border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
+    background: ${(props) =>
+      rgba(
+        props.theme.colors[props.theme.currentVariant]["--color-text"],
+        0.03,
+      )};
+
+    > div {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 0.125rem;
+    }
+
+    dt {
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
+    }
+
+    dd {
+      margin: 0;
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+
+      &.is-over {
+        color: ${(props) =>
+          props.theme.colors[props.theme.currentVariant][
+            "--color-behind-text"
+          ]};
+      }
     }
   }
 
   .checkpoint-details-toggle {
     align-self: flex-start;
-    margin-top: 0.5rem;
+    min-height: 44px;
     padding: 0;
     border: none;
     background: none;

@@ -80,9 +80,15 @@ const Story = memo(function Story({ className }) {
       ? markerPosition(contour, projectedLocation.index)
       : null;
 
+  // why: the global prefers-reduced-motion rule only shortens CSS animations
+  // and transitions — scrollIntoView's smooth behavior is JS-driven and
+  // ignores it, so the dot nav checks the preference itself and jumps.
   const jumpToIndex = (index) => {
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     sectionRefs.current[index]?.scrollIntoView({
-      behavior: "smooth",
+      behavior: reduceMotion ? "auto" : "smooth",
       block: "start",
     });
   };

@@ -1,17 +1,18 @@
 import { memo, useEffect, useMemo, useState } from "react";
 
 import { format } from "date-fns";
-import { rgba } from "polished";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
-import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
+import { DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
 import useStore from "../../../store/store.js";
 import {
-  computeCutoffMargin,
+  CUTOFF_BADGE_LABELS,
+  cutoffTier as toCutoffTier,
   formatDuration,
+  formatMargin,
 } from "../../trailData/etaLegHelpers.js";
 import WeatherLine from "../../trailData/WeatherLine/WeatherLine.jsx";
 import CollapseToggle from "../CollapseToggle.jsx";
@@ -40,13 +41,11 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
     })),
   );
 
-  // why: matches .checkpoint-km's rgba(text, 0.6) — WeatherLine's own
-  // defaults (full-opacity temp, 0.8 detail text) were tuned for its native
+  // why: matches .checkpoint-km's muted text — WeatherLine's own defaults
+  // (full-opacity temp, 0.8 detail text) were tuned for its native
   // bordered-card look and read brighter than the rest of this plain-text row.
-  const weatherIconColor = rgba(
-    theme.colors[theme.currentVariant]["--color-text"],
-    0.6,
-  );
+  const weatherIconColor =
+    theme.colors[theme.currentVariant]["--color-text-muted"];
   const weatherFlaggedIconColor =
     theme.colors[theme.currentVariant]["--color-text"];
 
@@ -122,28 +121,25 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
             const difficultyLabel =
               cp.difficulty > 0 ? DIFFICULTY_LABELS[cp.difficulty - 1] : null;
             const difficultyColor =
-              cp.difficulty > 0 ? DIFFICULTY_COLORS[cp.difficulty - 1] : null;
+              cp.difficulty > 0
+                ? theme.colors[theme.currentVariant][
+                    `--color-effort-${cp.difficulty}`
+                  ]
+                : null;
             const weather = forecasts[cp.endLocation] ?? null;
-            const cutoffMargin = section ? computeCutoffMargin(section) : null;
-
             // why: a bold word carries in direct sun and while moving, where
             // a percentage or a thin bar doesn't — see StoryStages' badge.
+            // why: once reached, the row's ETA is a reconstruction, not the
+            // real arrival — a badge or margin from it would be invented.
             const cutoffTier =
-              cp.cutoffMs == null
+              cp.cutoffMs == null || cp.isPast
                 ? null
                 : cp.isOverCutoff
                   ? "over"
-                  : cutoffMargin && cutoffMargin.pctUsed >= 85
-                    ? "tight"
-                    : "ok";
-            const cutoffBadge =
-              cutoffTier === "over"
-                ? "Over"
-                : cutoffTier === "tight"
-                  ? "Tight"
-                  : cutoffTier === "ok"
-                    ? "On pace"
-                    : null;
+                  : toCutoffTier(cp.cutoffMarginMs);
+            const cutoffBadge = cutoffTier
+              ? CUTOFF_BADGE_LABELS[cutoffTier]
+              : null;
 
             const isExpanded = cp.isCurrent !== toggledIds.has(cp.sectionId);
             const detailsId = `checkpoint-details-${cp.sectionId}`;
@@ -192,6 +188,20 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                     flaggedIconColor={weatherFlaggedIconColor}
                   />
                 )}
+                {cp.cutoffMs != null && (
+                  <dl className="checkpoint-figures">
+                    <div>
+                      <dt>Cutoff</dt>
+                      <dd>{format(new Date(cp.cutoffMs), "EEE HH:mm")}</dd>
+                    </div>
+                    <div>
+                      <dt>Margin</dt>
+                      <dd className={cutoffTier === "over" ? "is-over" : ""}>
+                        {cp.isPast ? "--" : formatMargin(cp.cutoffMarginMs)}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
                 {section && (
                   <>
                     <button
@@ -203,64 +213,50 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                     >
                       {isExpanded ? "Hide details" : "Details"}
                     </button>
-                    {isExpanded && (
-                      <div className="checkpoint-stats-grid" id={detailsId}>
-                        {cp.cutoffMs != null && (
-                          <div className="stat-cell wide">
-                            <span className="stat-label">Cutoff</span>
-                            <span
-                              className={`stat-value cutoff-value${cp.isOverCutoff ? " over" : ""}`}
-                            >
-                              {cutoffMargin && (
-                                <span>
-                                  {cutoffMargin.isOver
-                                    ? `${formatDuration(-cutoffMargin.marginS)} over`
-                                    : `+${formatDuration(cutoffMargin.marginS)} buffer`}
-                                </span>
-                              )}
-                              <span className="cutoff-time">
-                                {format(new Date(cp.cutoffMs), "EEE HH:mm")}
-                                {cp.isOverCutoff ? " · over" : ""}
+                    <div
+                      className={`checkpoint-details${isExpanded ? " open" : ""}`}
+                      id={detailsId}
+                      inert={!isExpanded}
+                    >
+                      <div className="checkpoint-details-inner">
+                        <div className="checkpoint-stats-grid">
+                          <div className="stat-cell">
+                            <span className="stat-label">Gain / Loss</span>
+                            <span className="stat-value stacked-value">
+                              <span>
+                                +{Math.round(section.totalElevation || 0)} m
+                              </span>
+                              <span>
+                                −{Math.round(section.totalElevationLoss || 0)} m
                               </span>
                             </span>
                           </div>
-                        )}
-                        <div className="stat-cell">
-                          <span className="stat-label">Gain / Loss</span>
-                          <span className="stat-value stacked-value">
-                            <span>
-                              +{Math.round(section.totalElevation || 0)} m
+                          <div className="stat-cell">
+                            <span className="stat-label">Time</span>
+                            <span className="stat-value stacked-value">
+                              <span>
+                                {formatDuration(section.estimatedDuration)}
+                              </span>
+                              <span className="stat-sub">
+                                max {formatDuration(section.maxCompletionTime)}
+                              </span>
                             </span>
-                            <span>
-                              −{Math.round(section.totalElevationLoss || 0)} m
+                          </div>
+                          <div className="stat-cell wide">
+                            <span className="stat-label">Difficulty</span>
+                            <span className="stat-value difficulty-value">
+                              {difficultyColor && (
+                                <span
+                                  className="difficulty-dot"
+                                  style={{ background: difficultyColor }}
+                                />
+                              )}
+                              {difficultyLabel || "--"}
                             </span>
-                          </span>
-                        </div>
-                        <div className="stat-cell">
-                          <span className="stat-label">Time</span>
-                          <span className="stat-value stacked-value">
-                            <span>
-                              {formatDuration(section.estimatedDuration)}
-                            </span>
-                            <span className="stat-sub">
-                              max {formatDuration(section.maxCompletionTime)}
-                            </span>
-                          </span>
-                        </div>
-                        <div className="stat-cell wide">
-                          <span className="stat-label">Difficulty</span>
-                          <span className="stat-value difficulty-value">
-                            {difficultyColor && (
-                              <span
-                                className="difficulty-dot"
-                                style={{ background: difficultyColor }}
-                              />
-                            )}
-                            {difficultyLabel || "--"}
-                          </span>
+                          </div>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </>
                 )}
               </li>

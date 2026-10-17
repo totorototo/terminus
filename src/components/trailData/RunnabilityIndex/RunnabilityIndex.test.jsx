@@ -3,6 +3,7 @@ import { useTheme } from "styled-components";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as storeModule from "../../../store/store.js";
+import THEME from "../../../theme/Theme.js";
 import RunnabilityIndex from "./RunnabilityIndex.jsx";
 
 import "@testing-library/jest-dom/vitest";
@@ -49,7 +50,7 @@ describe("RunnabilityIndex", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useTheme.mockReturnValue({
-      colors: { dark: { "--color-primary": "#3388ff" } },
+      colors: THEME.colors,
       currentVariant: "dark",
     });
   });

@@ -28,9 +28,11 @@ const style = (Component) => styled(Component)`
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.06)};
   }
 
+  /* why: one line in color-text over the day/night fills, so the terrain
+     shape reads first and the mauve shades sit under it. */
   .ep-line {
-    stroke: ${({ theme }) =>
-      rgba(theme.colors[theme.currentVariant]["--color-text"], 0.4)};
+    stroke: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
 
   .ep-section-line {
@@ -38,14 +40,17 @@ const style = (Component) => styled(Component)`
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.2)};
   }
 
+  /* why: the runner's position is neutral on every terrain chart — gold
+     (plan) and pink (behind/live) both clash with the mauve fills, and
+     color-text holds on every mauve step in both themes. */
   .ep-runner-line {
-    stroke: ${({ theme }) =>
-      theme.colors[theme.currentVariant]["--color-primary"]};
+    stroke: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
 
   .ep-runner-dot {
-    fill: ${({ theme }) =>
-      theme.colors[theme.currentVariant]["--color-primary"]};
+    fill: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
 
   /* HTML overlay for axis labels — avoids SVG text distortion */
@@ -77,13 +82,13 @@ const style = (Component) => styled(Component)`
   }
 
   .ep-daynight-peak {
-    color: ${({ theme }) =>
-      theme.colors[theme.currentVariant]["--color-primary-text"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
 
   .ep-daynight-low {
-    color: ${({ theme }) =>
-      theme.colors[theme.currentVariant]["--color-secondary-text"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   /* Bottom labels row: section names + runner position */
@@ -116,8 +121,8 @@ const style = (Component) => styled(Component)`
     position: absolute;
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
-    color: ${({ theme }) =>
-      theme.colors[theme.currentVariant]["--color-primary"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
     letter-spacing: 0.04em;
     line-height: 1;
     white-space: nowrap;

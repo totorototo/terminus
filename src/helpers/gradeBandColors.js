@@ -1,32 +1,20 @@
-import { hsl, parseToHsl } from "polished";
+// why: terrain has one hue in the Trail Suite design system — the dusty mauve
+// --color-effort-1 (easiest) to --color-effort-5 (hardest), where harder always
+// means more contrast on the ground. Every "how hard" chart (slope bands,
+// runnability, the gradient breakdowns) samples the same five steps, so a
+// band colour means the same thing in every chart and never borrows a status
+// hue (accent = live/behind, primary = brand/plan).
+const EFFORT_STEPS = 5;
 
-// why: a single-hue sequential ramp (same hue/saturation as the given theme
-// token, lightness stepping from a pale tint down to the token color itself)
-// reads severity ordering more directly than a hue-rotating rainbow, and
-// stays consistent with the app's mostly monochrome palette. The most severe
-// band lands exactly on the token color, so it means the same thing wherever
-// bands keyed to that token are shown. SlopeIntensity/RouteStats' gradient
-// distribution use --color-accent; RunnabilityIndex uses --color-primary
-// instead so the two derived strips read as a matched pair rather than
-// duplicating the same hue.
-export function gradeBandColors(
-  theme,
-  bandCount,
-  colorToken = "--color-accent",
-) {
+export function gradeBandColors(theme, bandCount) {
   const colors = theme.colors[theme.currentVariant];
-  const base = parseToHsl(colors[colorToken]);
-  // why: widened from +0.35 so adjacent bands sit further apart in
-  // lightness — the original spread was too subtle to tell bands apart
-  // on a phone screen outdoors.
-  const tintLightness = Math.min(0.92, base.lightness + 0.48);
-
+  if (bandCount <= 0) return [];
   return Array.from({ length: bandCount }, (_, i) => {
-    const t = i / (bandCount - 1);
-    return hsl({
-      hue: base.hue,
-      saturation: base.saturation,
-      lightness: tintLightness + (base.lightness - tintLightness) * t,
-    });
+    // Spread the bands evenly over the five steps: 3 bands → 1, 3, 5.
+    const step =
+      bandCount === 1
+        ? EFFORT_STEPS
+        : 1 + Math.round((i * (EFFORT_STEPS - 1)) / (bandCount - 1));
+    return colors[`--color-effort-${step}`];
   });
 }

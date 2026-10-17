@@ -1,6 +1,5 @@
 import QRCode from "qrcode";
 
-import { DIFFICULTY_COLORS } from "../constants.js";
 import THEME from "../theme/Theme.js";
 
 const CARD_W = 600;
@@ -277,8 +276,9 @@ function buildElement({
               style={{
                 flex: (st.totalDistance || 0) / totalDist,
                 height: 8,
+                // same mauve effort step as the story's difficulty dot
                 background: st.difficulty
-                  ? DIFFICULTY_COLORS[st.difficulty - 1]
+                  ? dark[`--color-effort-${st.difficulty}`]
                   : C.muted,
               }}
             />

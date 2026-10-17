@@ -1,15 +1,18 @@
 import { memo, useState } from "react";
 
 import { format } from "date-fns";
+import { useTheme } from "styled-components";
 
-import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../../../constants.js";
+import { DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
 import { useStageETAs } from "../../../hooks/useStageETAs.js";
 import useStore from "../../../store/store.js";
 import {
-  computeCutoffMargin,
+  CUTOFF_BADGE_LABELS,
+  cutoffTier as toCutoffTier,
   formatDuration,
+  formatMargin,
 } from "../../trailData/etaLegHelpers.js";
 import CollapseToggle from "../CollapseToggle.jsx";
 import StorySection from "../StorySection.jsx";
@@ -17,6 +20,7 @@ import StorySection from "../StorySection.jsx";
 import style from "./StoryStages.style.js";
 
 const StoryStages = memo(function StoryStages({ className }) {
+  const theme = useTheme();
   const { stageETAs } = useStageETAs();
   const { checkpointETAs } = useCheckpointETAs();
   const stages = useStore((state) => state.stages);
@@ -78,36 +82,36 @@ const StoryStages = memo(function StoryStages({ className }) {
               isFinish && finishCheckpointETA
                 ? finishCheckpointETA.isOverCutoff
                 : stage.isOverCutoff;
+            const cutoffMarginMs =
+              isFinish && finishCheckpointETA
+                ? finishCheckpointETA.cutoffMarginMs
+                : stage.cutoffMarginMs;
             const raw = stages?.[i];
-            const cutoffMargin = raw ? computeCutoffMargin(raw) : null;
             const difficultyLabel =
               stage.difficulty > 0
                 ? DIFFICULTY_LABELS[stage.difficulty - 1]
                 : null;
             const difficultyColor =
               stage.difficulty > 0
-                ? DIFFICULTY_COLORS[stage.difficulty - 1]
+                ? theme.colors[theme.currentVariant][
+                    `--color-effort-${stage.difficulty}`
+                  ]
                 : null;
 
             // why: on trail you need a status you can read at a glance, not a
             // percentage to do math on — a bold word carries in direct sun
             // and while moving where a thin bar or "73% used" doesn't.
+            // why: once reached, the row's ETA is a reconstruction, not the
+            // real arrival — a badge or margin from it would be invented.
             const cutoffTier =
-              cutoffMs == null
+              cutoffMs == null || stage.isPast
                 ? null
                 : isOverCutoff
                   ? "over"
-                  : cutoffMargin && cutoffMargin.pctUsed >= 85
-                    ? "tight"
-                    : "ok";
-            const cutoffBadge =
-              cutoffTier === "over"
-                ? "Over"
-                : cutoffTier === "tight"
-                  ? "Tight"
-                  : cutoffTier === "ok"
-                    ? "On pace"
-                    : null;
+                  : toCutoffTier(cutoffMarginMs);
+            const cutoffBadge = cutoffTier
+              ? CUTOFF_BADGE_LABELS[cutoffTier]
+              : null;
 
             const isExpanded =
               stage.isCurrent !== toggledIds.has(stage.stageId);
@@ -144,6 +148,20 @@ const StoryStages = memo(function StoryStages({ className }) {
                     )}
                   </div>
                 </div>
+                {cutoffMs != null && (
+                  <dl className="stage-figures">
+                    <div>
+                      <dt>Cutoff</dt>
+                      <dd>{format(new Date(cutoffMs), "EEE HH:mm")}</dd>
+                    </div>
+                    <div>
+                      <dt>Margin</dt>
+                      <dd className={cutoffTier === "over" ? "is-over" : ""}>
+                        {stage.isPast ? "--" : formatMargin(cutoffMarginMs)}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
                 {raw && (
                   <>
                     <button
@@ -155,62 +173,50 @@ const StoryStages = memo(function StoryStages({ className }) {
                     >
                       {isExpanded ? "Hide details" : "Details"}
                     </button>
-                    {isExpanded && (
-                      <div className="stage-stats-grid" id={detailsId}>
-                        {cutoffMs != null && (
-                          <div className="stat-cell wide">
-                            <span className="stat-label">Cutoff</span>
-                            <span
-                              className={`stat-value cutoff-value${isOverCutoff ? " over" : ""}`}
-                            >
-                              {cutoffMargin && (
-                                <span>
-                                  {cutoffMargin.isOver
-                                    ? `${formatDuration(-cutoffMargin.marginS)} over`
-                                    : `+${formatDuration(cutoffMargin.marginS)} buffer`}
-                                </span>
-                              )}
-                              <span className="cutoff-time">
-                                {format(new Date(cutoffMs), "EEE HH:mm")}
-                                {isOverCutoff ? " · over" : ""}
+                    <div
+                      className={`stage-details${isExpanded ? " open" : ""}`}
+                      id={detailsId}
+                      inert={!isExpanded}
+                    >
+                      <div className="stage-details-inner">
+                        <div className="stage-stats-grid">
+                          <div className="stat-cell">
+                            <span className="stat-label">Gain / Loss</span>
+                            <span className="stat-value stacked-value">
+                              <span>
+                                +{Math.round(raw.totalElevation || 0)} m
+                              </span>
+                              <span>
+                                −{Math.round(raw.totalElevationLoss || 0)} m
                               </span>
                             </span>
                           </div>
-                        )}
-                        <div className="stat-cell">
-                          <span className="stat-label">Gain / Loss</span>
-                          <span className="stat-value stacked-value">
-                            <span>
-                              +{Math.round(raw.totalElevation || 0)} m
+                          <div className="stat-cell">
+                            <span className="stat-label">Time</span>
+                            <span className="stat-value stacked-value">
+                              <span>
+                                {formatDuration(raw.estimatedDuration)}
+                              </span>
+                              <span className="stat-sub">
+                                max {formatDuration(raw.maxCompletionTime)}
+                              </span>
                             </span>
-                            <span>
-                              −{Math.round(raw.totalElevationLoss || 0)} m
+                          </div>
+                          <div className="stat-cell wide">
+                            <span className="stat-label">Difficulty</span>
+                            <span className="stat-value difficulty-value">
+                              {difficultyColor && (
+                                <span
+                                  className="difficulty-dot"
+                                  style={{ background: difficultyColor }}
+                                />
+                              )}
+                              {difficultyLabel || "--"}
                             </span>
-                          </span>
-                        </div>
-                        <div className="stat-cell">
-                          <span className="stat-label">Time</span>
-                          <span className="stat-value stacked-value">
-                            <span>{formatDuration(raw.estimatedDuration)}</span>
-                            <span className="stat-sub">
-                              max {formatDuration(raw.maxCompletionTime)}
-                            </span>
-                          </span>
-                        </div>
-                        <div className="stat-cell wide">
-                          <span className="stat-label">Difficulty</span>
-                          <span className="stat-value difficulty-value">
-                            {difficultyColor && (
-                              <span
-                                className="difficulty-dot"
-                                style={{ background: difficultyColor }}
-                              />
-                            )}
-                            {difficultyLabel || "--"}
-                          </span>
+                          </div>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </>
                 )}
               </li>

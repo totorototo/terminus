@@ -14,10 +14,7 @@ const style = (Component) => styled(Component)`
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     margin-bottom: ${(props) => props.theme.spacing[2]}px;
   }
 
@@ -36,10 +33,7 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.65,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     white-space: nowrap;
   }
 

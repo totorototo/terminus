@@ -19,7 +19,7 @@ const style = (Component) => styled(Component)`
     text-transform: uppercase;
     letter-spacing: 0.15em;
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+      props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
     margin-bottom: 1.5rem;
   }
 
@@ -53,7 +53,17 @@ const style = (Component) => styled(Component)`
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     letter-spacing: -0.02em;
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+
+    &[data-tone="behind"] {
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-behind-text"]};
+    }
+
+    &[data-tone="ahead"] {
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-ahead-text"]};
+    }
   }
 
   .now-label {
@@ -63,20 +73,14 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.1em;
     margin-top: 0.375rem;
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.5,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   .now-note {
     margin: 1.75rem 0 0.75rem;
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.45,
-      )};
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   .track-btn {
@@ -87,10 +91,9 @@ const style = (Component) => styled(Component)`
     background: none;
     border: 1px solid
       ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-accent"],
-          0.4,
-        )};
+        props.theme.colors[props.theme.currentVariant][
+          "--color-control-border"
+        ]};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
     padding: 0.625rem 1.125rem;
@@ -98,7 +101,7 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-accent"]};
+      props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
     cursor: pointer;
     transition: all ${(props) => props.theme.transitions["--transition-base"]};
 

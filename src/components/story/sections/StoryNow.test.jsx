@@ -103,6 +103,35 @@ describe("StoryNow", () => {
     expect(vsPlanValue).toHaveTextContent("--");
   });
 
+  it("tones vs plan behind when slower than plan", () => {
+    storeModule.useProjectedLocation.mockReturnValue({
+      index: 2,
+      timestamp: 1_600_000,
+    });
+    render(<StoryNow />);
+    const vsPlanValue = screen.getByText("vs plan").previousSibling;
+    expect(vsPlanValue.textContent).toMatch(/^\+/);
+    expect(vsPlanValue).toHaveAttribute("data-tone", "behind");
+  });
+
+  it("tones vs plan ahead when faster than plan", () => {
+    storeModule.useProjectedLocation.mockReturnValue({
+      index: 2,
+      timestamp: 1_400_000,
+    });
+    render(<StoryNow />);
+    const vsPlanValue = screen.getByText("vs plan").previousSibling;
+    expect(vsPlanValue.textContent).toMatch(/^-/);
+    expect(vsPlanValue).toHaveAttribute("data-tone", "ahead");
+  });
+
+  it("leaves the live figures untoned", () => {
+    render(<StoryNow />);
+    expect(screen.getByText("km left").previousSibling).not.toHaveAttribute(
+      "data-tone",
+    );
+  });
+
   it("shows a spot-me control that calls toggleAutoShare", () => {
     const toggleAutoShare = vi.fn();
     storeModule.default.mockImplementation((selector) =>

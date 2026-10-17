@@ -15,6 +15,12 @@ vi.mock("../../../store/store.js", () => ({
   useProjectedLocation: vi.fn(),
 }));
 
+vi.mock("styled-components", async (importOriginal) => {
+  const actual = await importOriginal();
+  const { default: THEME } = await import("../../../theme/Theme.js");
+  return { ...actual, useTheme: () => ({ ...THEME, currentVariant: "dark" }) };
+});
+
 vi.mock("date-fns", () => ({
   format: (date) => String(date.getTime()),
 }));
