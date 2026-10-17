@@ -31,6 +31,9 @@ let _fonts = null;
 async function getFonts() {
   if (_fonts) return _fonts;
 
+  // why: the brand mono (--font-family-mono) is the SF Mono system stack, but satori
+  // draws without the device's fonts and SF Mono can't be shipped, so the card
+  // embeds JetBrains Mono as its stand-in (see the design system's Type section).
   // jsDelivr + @fontsource — stable, versioned, already whitelisted in CSP connect-src
   const base = "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono/files";
   const [regular, bold] = await Promise.all([
