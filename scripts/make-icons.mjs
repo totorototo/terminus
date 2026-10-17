@@ -10,14 +10,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { chromium } from "@playwright/test";
+import THEME from "@totorototo/trail-tokens";
 
 import { MARK_PATH } from "../src/theme/mark.js";
 
 const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 
-// Theme.js, dark: background, primary.
-const BACKGROUND = "#3A3335";
-const INK = "#f2af29";
+const BACKGROUND = THEME.colors.dark["--color-background"];
+const INK = THEME.colors.dark["--color-primary"];
 
 const MARK = `<path d="${MARK_PATH}" fill="${INK}"/>`;
 
