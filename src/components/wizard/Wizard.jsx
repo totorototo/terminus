@@ -93,9 +93,10 @@ function Wizard({ className }) {
             <input
               ref={inputRef}
               type="file"
-              // why: no `accept` — iOS maps it to system file types, has
-              // none for .gpx, and greys every file out. checkGpxFile
-              // enforces the extension after the pick instead.
+              // why: extension only, as in Retrace's FilePicker — with
+              // ".gpx,application/gpx+xml" iOS greyed every file out of
+              // the picker.
+              accept=".gpx"
               hidden
               data-testid="gpx-input"
               onChange={(event) => {
