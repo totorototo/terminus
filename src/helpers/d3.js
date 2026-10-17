@@ -2,8 +2,6 @@ import * as d3Array from "d3-array";
 import * as scale from "d3-scale";
 import * as shape from "d3-shape";
 
-import { ELEVATION_COLORS } from "../constants.js";
-
 const d3 = {
   scale,
   shape,
@@ -54,18 +52,4 @@ export const getArea = (points, scaleX, scaleY, domainMin, xOffset = 0) => {
   return {
     path: areaShape(points),
   };
-};
-
-// Create D3 color scale
-export const createColorScale = () => {
-  return d3.scale
-    .scaleThreshold()
-    .domain([1, 2, 3, 4])
-    .range([
-      ELEVATION_COLORS.SMALL,
-      ELEVATION_COLORS.EASY,
-      ELEVATION_COLORS.MEDIUM,
-      ELEVATION_COLORS.DIFFICULT,
-      ELEVATION_COLORS.HARD,
-    ]);
 };
