@@ -17,9 +17,11 @@ const style = (Component) => styled(Component)`
      invisible. A plain tinted fill stays legible regardless of backdrop. */
   background: ${(props) =>
     rgba(props.theme.colors[props.theme.currentVariant]["--color-text"], 0.12)};
-  /* why: color-control-border keeps the ring at 3:1 or more against the page
-     background (WCAG 1.4.11 non-text contrast) — the control needs to
-     read as a distinct boundary at a glance, not just on hover. */
+  /* why: color-control-border is a deliberately soft ring (~2:1 against
+     the page background since trail-tokens v1.2.0), below the 3:1 of
+     WCAG 1.4.11 — it outlines the control without looking stark. The
+     icon in color-text plus the tinted fill are what identify the
+     control; use color-field-border where a boundary must reach 3:1. */
   border: 1px solid
     ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-control-border"]};
