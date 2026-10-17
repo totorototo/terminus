@@ -129,13 +129,39 @@ const style = (Component) => styled(Component)`
     white-space: nowrap;
   }
 
+  /* The map's fixed inks (theme.map), the same in both page themes. */
   .waypoint-marker {
-    fill: var(--waypoint-color);
-    stroke: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-background"]};
-    stroke-width: 1.5px;
+    position: relative;
+    display: block;
+    color: ${(props) => props.theme.map.casing};
     cursor: pointer;
+  }
+
+  .waypoint-marker svg {
+    display: block;
+    fill: ${(props) => props.theme.map.pin};
+    stroke: ${(props) => props.theme.map.casing};
+    stroke-width: 1.5px;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  }
+
+  /* The number takes the place of the pin's inner circle. */
+  .waypoint-marker svg circle {
+    display: none;
+  }
+
+  /* Over the pin's head: Feather's MapPin circle is at (12, 10) of 24. */
+  .waypoint-marker .number {
+    position: absolute;
+    top: 41.7%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: ${(props) =>
+      props.theme.font.family["--font-family-sansSerif"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    line-height: 1;
+    pointer-events: none;
   }
 
   .runner-marker {
@@ -143,11 +169,9 @@ const style = (Component) => styled(Component)`
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: var(--runner-color);
-    border: 2px solid
-      ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-background"]};
-    box-shadow: 0 0 0 2px var(--runner-color);
+    background: ${(props) => props.theme.map.live};
+    border: 2px solid ${(props) => props.theme.map.casing};
+    box-shadow: 0 0 0 2px ${(props) => props.theme.map.live};
   }
 
   .runner-marker::before {
@@ -155,7 +179,7 @@ const style = (Component) => styled(Component)`
     position: absolute;
     inset: -2px;
     border-radius: 50%;
-    background: var(--runner-color);
+    background: ${(props) => props.theme.map.live};
     opacity: 0.4;
     animation: runner-pulse 1.8s ease-out infinite;
   }

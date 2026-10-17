@@ -40,9 +40,11 @@ vi.mock("react-map-gl/mapbox", () => ({
     }));
     return <div>{props.children}</div>;
   }),
-  Source: () => null,
-  Layer: () => null,
-  Marker: () => null,
+  Source: ({ children }) => <>{children}</>,
+  Layer: ({ id, paint }) => (
+    <div data-testid={id} data-color={paint["line-color"]} />
+  ),
+  Marker: ({ children }) => <>{children}</>,
 }));
 
 vi.mock("../../../hooks/useIsOnline.js", () => ({
@@ -54,17 +56,17 @@ vi.mock("../../../store/store.js", () => ({
   useProjectedLocation: vi.fn(),
 }));
 
-function setup({ isOnline }) {
+function setup({ isOnline, coords = [] }) {
   useIsOnline.mockReturnValue(isOnline);
   storeModule.default.mockImplementation((selector) =>
     selector({ gpx: { routeLatLonEle: ROUTE_LAT_LON_ELE } }),
   );
-  storeModule.useProjectedLocation.mockReturnValue({ coords: [] });
+  storeModule.useProjectedLocation.mockReturnValue({ coords });
 }
 
-function renderMap() {
+function renderMap(variant = "dark") {
   return render(
-    <ThemeProvider theme={{ ...THEME, currentVariant: "dark" }}>
+    <ThemeProvider theme={{ ...THEME, currentVariant: variant }}>
       <TrailMap />
     </ThemeProvider>,
   );
@@ -165,4 +167,42 @@ describe("TrailMap fullscreen", () => {
     // stubbing needed, just wait for the callback to run.
     await waitFor(() => expect(resizeSpy).toHaveBeenCalledTimes(1));
   });
+});
+
+describe("TrailMap inks", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // The outdoors basemap stays light in dark mode, so the map's colours come
+  // from THEME.map and must not follow the page theme.
+  it.each(["light", "dark"])(
+    "draws the route in the map's gold on a white casing in %s mode",
+    (variant) => {
+      setup({ isOnline: true });
+      renderMap(variant);
+      expect(screen.getByTestId("route-line")).toHaveAttribute(
+        "data-color",
+        THEME.map.route,
+      );
+      expect(screen.getByTestId("route-casing")).toHaveAttribute(
+        "data-color",
+        THEME.map.casing,
+      );
+    },
+  );
+
+  it.each(["light", "dark"])(
+    "draws the offline route and runner in the map's inks in %s mode",
+    (variant) => {
+      setup({ isOnline: false, coords: [45.01, 6.01, 150] });
+      const { container } = renderMap(variant);
+      expect(
+        container.querySelector(".offline-preview polyline"),
+      ).toHaveAttribute("stroke", THEME.map.route);
+      expect(
+        container.querySelector(".offline-preview circle"),
+      ).toHaveAttribute("fill", THEME.map.live);
+    },
+  );
 });
