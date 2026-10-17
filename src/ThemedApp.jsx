@@ -51,12 +51,12 @@ const setOutdoorFontOverrides = (enabled) => {
 
 const GlobalStyle = createGlobalStyle`
  :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: ${(props) => props.theme.font.family["--font-family-sansSerif"]};
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: ${(props) => props.theme.currentVariant};
-  color: rgba(255, 255, 255, 0.87);
+  color: ${(props) => props.theme.colors[props.theme.currentVariant]["--color-text"]};
 
   ${(props) => setDefaultColors(props.theme.currentVariant)};
   ${setFonts()};
