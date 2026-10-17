@@ -93,7 +93,9 @@ function Wizard({ className }) {
             <input
               ref={inputRef}
               type="file"
-              accept=".gpx,application/gpx+xml"
+              // why: no `accept` — iOS maps it to system file types, has
+              // none for .gpx, and greys every file out. checkGpxFile
+              // enforces the extension after the pick instead.
               hidden
               data-testid="gpx-input"
               onChange={(event) => {
