@@ -17,6 +17,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_KEY;
 
+const LINE_LAYOUT = { "line-join": "round", "line-cap": "round" };
+
 // why: iPhone Safari never implements element-level Fullscreen API (only
 // <video> gets it), so detect support up front and fall back to a fixed
 // "pseudo-fullscreen" overlay via CSS instead of leaving the button dead.
@@ -201,9 +203,10 @@ const TrailMap = memo(function TrailMap({ className }) {
     return () => cancelAnimationFrame(id);
   }, [isFullscreen]);
 
-  const routeColor = theme.colors[theme.currentVariant]["--color-primary"];
-  const runnerColor = theme.colors[theme.currentVariant]["--color-accent"];
-  const waypointColor = theme.colors[theme.currentVariant]["--color-primary"];
+  // The map's fixed inks (Theme.js `map`), not page tokens: the outdoors
+  // basemap stays light in dark mode, so the route and markers must too.
+  const routeColor = theme.map.route;
+  const runnerColor = theme.map.live;
 
   if (!MAPBOX_TOKEN) {
     return (
@@ -276,10 +279,16 @@ const TrailMap = memo(function TrailMap({ className }) {
         {routeGeoJSON && (
           <Source id="route" type="geojson" data={routeGeoJSON}>
             <Layer
+              id="route-casing"
+              type="line"
+              layout={LINE_LAYOUT}
+              paint={{ "line-color": theme.map.casing, "line-width": 7 }}
+            />
+            <Layer
               id="route-line"
               type="line"
-              layout={{ "line-join": "round", "line-cap": "round" }}
-              paint={{ "line-color": routeColor, "line-width": 3 }}
+              layout={LINE_LAYOUT}
+              paint={{ "line-color": routeColor, "line-width": 4 }}
             />
           </Source>
         )}
@@ -290,14 +299,15 @@ const TrailMap = memo(function TrailMap({ className }) {
             latitude={wpt.lat}
             anchor="bottom"
           >
-            <MapPin
+            <div
               className="waypoint-marker"
-              size={26}
-              style={{ "--waypoint-color": waypointColor }}
               role="img"
-              aria-label={wpt.name || "Waypoint"}
+              aria-label={`${wpt.name || "Waypoint"}, waypoint ${index + 1}`}
               title={wpt.name || undefined}
-            />
+            >
+              <MapPin size={30} aria-hidden="true" />
+              <span className="number">{index + 1}</span>
+            </div>
           </Marker>
         ))}
         {runnerPosition && (
@@ -306,10 +316,7 @@ const TrailMap = memo(function TrailMap({ className }) {
             latitude={runnerPosition.latitude}
             anchor="center"
           >
-            <div
-              className="runner-marker"
-              style={{ "--runner-color": runnerColor }}
-            />
+            <div className="runner-marker" />
           </Marker>
         )}
       </Map>

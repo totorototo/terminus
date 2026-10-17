@@ -88,6 +88,20 @@ const THEME = {
     dark: { ...DARK, ...darkAliases },
   },
 
+  // The map's own inks, the same in both themes (design system, Map): the outdoors basemap
+  // stays light in dark mode, so they read against the map, not the page. Chosen on the real
+  // map: the brand gold for the route, the accent for the pins (white number, 4.9:1), the
+  // terrain mauve for the picked pin. why not ink or deep blue: both read too heavy on the
+  // basemap. The gold line sits under 3:1 on the map's land and relies on its width and
+  // white casing.
+  map: {
+    route: DARK["--color-primary"],
+    casing: "#ffffff",
+    pin: LIGHT["--color-accent"],
+    live: LIGHT["--color-effort-1"],
+    label: LIGHT["--color-text"],
+  },
+
   font: {
     family: {
       "--font-family-sansSerif":
