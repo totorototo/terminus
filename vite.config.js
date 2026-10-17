@@ -1,3 +1,4 @@
+import THEME from "@totorototo/trail-tokens";
 import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
 import zigar from "rollup-plugin-zigar";
@@ -64,6 +65,23 @@ function bundleSizePlugin() {
         );
       }
     },
+  };
+}
+
+// The browser chrome takes dark's background, the app's default variant. why: injected here,
+// not written in index.html, so the meta, the manifest and the icons share one source.
+const CHROME_COLOR = THEME.colors.dark["--color-background"];
+
+function themeColorPlugin() {
+  return {
+    name: "theme-color",
+    transformIndexHtml: () => [
+      {
+        tag: "meta",
+        attrs: { name: "theme-color", content: CHROME_COLOR },
+        injectTo: "head",
+      },
+    ],
   };
 }
 
@@ -182,6 +200,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      themeColorPlugin(),
       arraybuffer(),
       !process.env.GITHUB_ACTIONS &&
         compression({
@@ -216,8 +235,8 @@ export default defineConfig(({ mode }) => {
           short_name: "Terminus",
           description:
             "High-performance GPS route analysis tool with interactive 3D elevation profiles, live tracking, and real-time section analytics for hiking and cycling routes.",
-          theme_color: "#3A3335",
-          background_color: "#3A3335",
+          theme_color: CHROME_COLOR,
+          background_color: CHROME_COLOR,
           display: "standalone",
           start_url: "/",
           scope: "/",
