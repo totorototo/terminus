@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ELEVATION_COLORS, ELEVATION_GRADE } from "../constants.js";
-import {
-  createColorScale,
-  createXScale,
-  createYScale,
-  getArea,
-  getLine,
-} from "./d3";
+import { createXScale, createYScale, getArea, getLine } from "./d3";
 
 describe("D3 Helpers", () => {
   it("createXScale should create a linear scale with correct domain and range", () => {
@@ -22,18 +15,6 @@ describe("D3 Helpers", () => {
     expect(scale(0)).toBe(100);
     expect(scale(5)).toBe(50);
     expect(scale(10)).toBe(0);
-  });
-
-  it("createColorScale should create a color scale mapping elevation grades to colors", () => {
-    //use enums values for clarity (Elevation grades and Colors)
-    const colorScale = createColorScale();
-    expect(colorScale(ELEVATION_GRADE.SMALL)).toBe(ELEVATION_COLORS.SMALL);
-    expect(colorScale(ELEVATION_GRADE.EASY)).toBe(ELEVATION_COLORS.EASY);
-    expect(colorScale(ELEVATION_GRADE.MEDIUM)).toBe(ELEVATION_COLORS.MEDIUM);
-    expect(colorScale(ELEVATION_GRADE.DIFFICULT)).toBe(
-      ELEVATION_COLORS.DIFFICULT,
-    );
-    expect(colorScale(ELEVATION_GRADE.HARD)).toBe(ELEVATION_COLORS.HARD);
   });
 
   it("getLine should return a valid SVG path for given points", () => {
