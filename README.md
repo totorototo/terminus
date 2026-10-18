@@ -10,7 +10,7 @@
 
 **[→ Live Demo](https://terminus-beta.netlify.app)**
 
-A scroll-driven editorial trail story: open your race's GPX and its plan, and scroll through it as a longform narrative — hero stats, terrain, climbs, pace model, checkpoints — with a live position marker during the run. The GPX is a course annotated in [Waymark](https://github.com/totorototo/waymark) (start, time barriers, life bases, cutoffs); the `plan.json` is the runner's pace model for it, made in [Regimen](https://github.com/totorototo/regimen). A runner can invite followers, who receive the same file and the runner's live position through a WebSocket relay, with push notifications.
+A scroll-driven editorial trail story: open your race's GPX and its plan, and scroll through it as a longform narrative — hero stats, terrain, climbs, pace model, checkpoints — with a live position marker during the run. The GPX is a course annotated in [Waymark](https://github.com/totorototo/waymark) (start, time barriers, life bases, cutoffs); the `plan.json` is the runner's pace model and fueling for it, made in [Regimen](https://github.com/totorototo/regimen). A runner can invite followers, who receive the same file and the runner's live position through a WebSocket relay, with push notifications.
 
 ## Architecture
 
@@ -49,7 +49,7 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 ## Features
 
 - **Open a Race**: pick or drop the race's GPX on the start screen, then the `plan.json` made for it in Regimen. gpxz checks the plan names that exact GPX (its SHA-256) before either is kept, and refuses a plan for another or an edited file. The race stays on the device (IndexedDB) and reopens after a reload; a file without a `<name>` is named after the file. Checkpoints, stages and cutoffs come from its waypoints, so a GPX with fewer than two typed checkpoints has no plan and can't be opened
-- **Editorial Story UI**: scroll-driven sections — Hero, Now, Climbs, Terrain, Pace, Stages, Checkpoints, Map, End — each revealing on scroll against the shared elevation-contour throughline
+- **Editorial Story UI**: scroll-driven sections — Hero, Now, Climbs, Terrain, Pace, Stages, Checkpoints, Fueling, Map, End — each revealing on scroll against the shared elevation-contour throughline
 - **Section Analytics**: distance, elevation gain/loss, slope percentages, difficulty rating
 - **Stage Analytics**: per-stage distance, elevation, estimated/max time, cutoff time, difficulty, and slowest required pace, with a collapsible list for long routes
 - **Climb Detection**: automatic climb segment detection (AMPD valley detection + Garmin Climb Pro qualification) with distance, elevation gain, and gradient per climb
@@ -57,6 +57,7 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 - **Pace Profile**: chart of the slowest allowed pace (km/h) over distance, anchored to route start/end, with tightest-cutoff and current-section stats
 - **ETA Estimation**: per-checkpoint/stage arrival prediction driven by a physiological pace model — Minetti et al. (2002) metabolic slope cost combined with exponential fatigue (`exp(k·d_eff)`), a circadian sleep-deprivation slowdown, an optional weather penalty (temperature/humidity/wind/precipitation), and LifeBase recovery plus planned stop durations. Base pace, fatigue and LifeBase stop come from the plan.json; the Pace section shows them and can replace the plan. Live weather and recalibration apply on top. An ETA past a cutoff stays the model's: the first missed barrier is flagged Over with its margin
 - **Live Trail Progression**: real-time remaining distance and countdown to next arrival/cutoff based on runner position
+- **Fueling**: the plan.json's fueling, as Regimen planned it — hourly carbs/fluid/sodium targets and a reserve, a supply (full refill, water, none) and what to carry out of each checkpoint. Pace shows the targets, Right now the next refill, each checkpoint row what to leave it with, and the Fueling section every entry: what the targets come to on the leg into it, what to carry out of it, and the race's totals. All at the plan's times: live ETAs don't re-size it
 - **Checkpoint Markers**: location cards with distance, planned/live schedule, and per-checkpoint weather forecast
 - **Interactive 3D Map**: Mapbox GL route trace with 3D terrain (DEM exaggeration, 55° pitch) and a fullscreen toggle, drawn in the design system's fixed map inks
 - **Off-Course Detection**: automatic detection when GPS position strays from the route
@@ -213,8 +214,8 @@ E2E_BASE_URL=https://terminus-beta.netlify.app npx playwright test e2e/location-
 ```
 src/
   components/
-    story/               # Editorial story UI — Story.jsx orchestrates 9 scroll sections
-      sections/           # Hero, Now, Climbs, Terrain, Pace, Stages, Checkpoints, Map, End
+    story/               # Editorial story UI — Story.jsx orchestrates 10 scroll sections
+      sections/           # Hero, Now, Climbs, Terrain, Pace, Stages, Checkpoints, Fueling, Map, End
     trailData/            # Map, ElevationProfile, PaceProfile, SlopeProfile/Intensity, WeatherLine
     followerScreen/        # /follow/:roomId — loads the shared race, joins the room
     trailerScreen/         # /run — the runner's race (renders the Story)
@@ -225,7 +226,7 @@ src/
   helpers/                 # Utility functions (colors, buffers, throttling, push notify)
   utils/                   # Coordinate transforms, shareable trail card generation
   hooks/                   # useGPXWorker, useCheckpointETAs, useStageETAs, etc.
-  lib/                     # localGpx (IndexedDB), planFile (plan.json checks and messages), sharedRoute (relay upload/download), roomAuth, analytics
+  lib/                     # localGpx (IndexedDB), planFile (plan.json checks and messages), fueling (the plan's fueling, entry by entry), sharedRoute (relay upload/download), roomAuth, analytics
   gpxWorker.js             # Web Worker for background GPS processing
 
 party/
@@ -233,7 +234,7 @@ party/
   webpush.js             # Web Push (RFC 8291/8292) via Web Crypto — no Node deps
 
 e2e/
-  fixtures/             # GPX the Playwright specs open (the GRP 160 route) and Regimen plan.json files for it (default, fast, slow)
+  fixtures/             # GPX the Playwright specs open (the GRP 160 route) and Regimen plan.json files for it (default, fast, slow, fueled)
 
 zig/
   terminus.zig          # WASM boundary: the functions and types the worker calls, over gpxz
