@@ -19,6 +19,9 @@ pub const WeatherLookup = gpxz.WeatherLookup;
 
 pub const InputError = error{ SettingsInvalid, ElapsedInvalid };
 
+/// A plan.json's model: what Terminus runs the pace model with when the runner loads one.
+pub const PlanModel = gpxz.plan.Model;
+
 // ── Exports (camelCase: these names are the JavaScript API) ──────────────────────────────
 
 /// Parses a GPX file and computes everything the UI shows. The caller frees the result with
@@ -52,6 +55,29 @@ pub fn recalibrate(
     const points_count = route.trace.points.len;
     const index = if (points_count == 0) 0 else @min(index_current, points_count - 1);
     return route.recalibrate(allocator, index, elapsed_s_actual, &settings);
+}
+
+/// The model in a plan.json (from Regimen or `gpxz --plan`), once gpxz has read and validated
+/// it and checked it was made for the route in `gpx_bytes`: `CourseMismatch` otherwise.
+/// Only the model is taken: Terminus adds the live weather and recalibration on top, so its
+/// ETAs are never the plan's times and there is nothing to compare them with.
+pub fn readPlanModel(
+    allocator: std.mem.Allocator,
+    plan_bytes: []const u8,
+    gpx_bytes: []const u8,
+) !PlanModel {
+    const parsed = try gpxz.plan_read(allocator, plan_bytes);
+    defer parsed.deinit();
+    if (!gpxz.plan.course_matches(&parsed.value, gpx_bytes)) return error.CourseMismatch;
+    const model = parsed.value.model;
+    // plan_read's validation, checked again where a bad model would reach gpxz's asserts.
+    _ = try settings_make(
+        model.pace_base_s_per_km,
+        model.fatigue_coefficient,
+        model.life_base_stop_s,
+        .empty,
+    );
+    return model;
 }
 
 // ── Implementation ───────────────────────────────────────────────────────────────────────
@@ -147,5 +173,49 @@ test "recalibrate: clamps an index past the end and rejects a bad elapsed time" 
     try testing.expectError(
         error.ElapsedInvalid,
         recalibrate(testing.allocator, &route, 0, std.math.nan(f64), 500, 0.002, 3600, .empty),
+    );
+}
+
+/// plan.json for `route_gpx` with `settings`, as gpxz writes it (Regimen's file).
+fn plan_json_test(settings: *const gpxz.Settings) ![]u8 {
+    var data = try gpxz.parse(testing.allocator, route_gpx, settings);
+    defer data.deinit(testing.allocator);
+    const plan = gpxz.plan_build(
+        route_gpx,
+        data.metadata.name,
+        data.trace.distance_m,
+        data.plan.?,
+        settings,
+    );
+    var out: std.Io.Writer.Allocating = .init(testing.allocator);
+    errdefer out.deinit();
+    try gpxz.plan_write(&out.writer, &plan);
+    return out.toOwnedSlice();
+}
+
+test "readPlanModel: the model of a plan.json made for this route" {
+    const settings: gpxz.Settings = .{
+        .pace_base_s_per_km = 420,
+        .fatigue_coefficient = 0.003,
+        .life_base_stop_s = 1800,
+    };
+    const json = try plan_json_test(&settings);
+    defer testing.allocator.free(json);
+    const model = try readPlanModel(testing.allocator, json, route_gpx);
+    try testing.expectEqual(@as(f64, 420), model.pace_base_s_per_km);
+    try testing.expectEqual(@as(f64, 0.003), model.fatigue_coefficient);
+    try testing.expectEqual(@as(u32, 1800), model.life_base_stop_s);
+}
+
+test "readPlanModel: another route, or a bad file, is an error" {
+    const json = try plan_json_test(&.{});
+    defer testing.allocator.free(json);
+    const edited = route_gpx[0 .. route_gpx.len - 1];
+    try testing.expectError(error.CourseMismatch, readPlanModel(testing.allocator, json, edited));
+    try testing.expectError(error.SyntaxError, readPlanModel(testing.allocator, "nope", route_gpx));
+    const v2 = "{\"schema_version\": 2}";
+    try testing.expectError(
+        error.SchemaVersionUnsupported,
+        readPlanModel(testing.allocator, v2, route_gpx),
     );
 }

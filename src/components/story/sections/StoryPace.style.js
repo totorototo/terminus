@@ -24,6 +24,40 @@ const style = (Component) => styled(Component)`
     margin-bottom: 1.5rem;
   }
 
+  .plan-model {
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+    margin: 0;
+  }
+
+  .text-btn {
+    min-height: 44px;
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .plan-open {
+    display: block;
+    margin-top: 1rem;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+  }
+
+  .plan-error {
+    margin: 0.5rem 0 0;
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
+  }
+
   .picker-label {
     display: block;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};

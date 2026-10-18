@@ -4,8 +4,9 @@ The computation lives in [gpxz](https://github.com/totorototo/gpxz), pinned by c
 `build.zig.zon`. This directory only holds the boundary Zigar compiles to WASM:
 
 ```
-terminus.zig     ── What the worker imports: readGPXComplete, recalibrate, and the
-                    Trace / Route / WeatherLookup types
+terminus.zig     ── What the worker imports: readGPXComplete, recalibrate,
+                    readPlanModel (a plan.json's model, refused for another route),
+                    and the Trace / Route / WeatherLookup types
 build.zig.zon    ── Pins gpxz (same commit as retrace when possible)
 build.zig        ── Native test build: `zig build test` (Zigar ignores it)
 build.extra.zig  ── Zigar hook: gives the WASM build the `gpxz` import

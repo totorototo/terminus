@@ -18,6 +18,7 @@ function Wizard({ className }) {
   const [error, setError] = useState(null);
   const flush = useStore((state) => state.flush);
   const forgetLiveSession = useStore((state) => state.forgetLiveSession);
+  const setPlanFile = useStore((state) => state.setPlanFile);
   const [, navigate] = useLocation();
 
   const openFile = async (file) => {
@@ -35,6 +36,8 @@ function Wizard({ className }) {
       // the previous file.
       flush();
       forgetLiveSession();
+      // A plan.json names its route: the previous race's is not this one's.
+      setPlanFile?.(null);
       track("gpx-opened");
       navigate("/run");
     } catch {

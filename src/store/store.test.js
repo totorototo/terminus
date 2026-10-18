@@ -168,6 +168,7 @@ describe("store", () => {
           "outdoorMode",
           "paceSettings",
           "pendingUrl",
+          "planFile",
           "profileMode",
           "theme",
           "trackingMode",

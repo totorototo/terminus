@@ -24,6 +24,9 @@ export const createAppSlice = (set, get) => {
       installPromptDismissed: false,
       highlightedClimbIndex: null,
       paceSettings: DEFAULT_PACE_SETTINGS,
+      // The plan.json the pace settings came from ({ name }), or null when they
+      // came from the pickers. While set, the pickers give way to it.
+      planFile: null,
       theme:
         typeof window !== "undefined" &&
         typeof window.matchMedia === "function" &&
@@ -147,6 +150,13 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, highlightedClimbIndex: index } }),
         undefined,
         "app/setHighlightedClimb",
+      ),
+
+    setPlanFile: (planFile) =>
+      set(
+        (state) => ({ app: { ...state.app, planFile } }),
+        undefined,
+        "app/setPlanFile",
       ),
 
     setPaceSettings: ({ basePaceSPerKm, kFatigue, lifeBaseStopS }) => {

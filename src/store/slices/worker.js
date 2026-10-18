@@ -348,6 +348,17 @@ export const createWorkerSlice = (set, get, workerFactory) => {
       }
     },
 
+    // A plan.json's model, from gpxz in the worker, which checks the plan was
+    // made for the route it holds. Throws what gpxz refused (CourseMismatch,
+    // PlanInvalid, ...) for the caller to show.
+    readPlanFile: async (planBytes) => {
+      if (!messenger) throw new Error(ERROR_MESSAGES.NOT_INITIALIZED);
+      const { paceSettings } = await messenger.send("READ_PLAN_FILE", {
+        planBytes,
+      });
+      return paceSettings;
+    },
+
     reprocessGPXFile: async () => {
       if (!rawGpxBytes || !messenger) return;
       await get().processGPXFile(rawGpxBytes, { fileName: rawGpxFileName });

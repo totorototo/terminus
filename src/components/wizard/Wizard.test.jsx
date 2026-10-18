@@ -26,9 +26,14 @@ vi.mock("../../lib/localGpx.js", async (importOriginal) => ({
 
 const mockFlush = vi.fn();
 const mockForgetLiveSession = vi.fn();
+const mockSetPlanFile = vi.fn();
 vi.mock("../../store/store.js", () => ({
   default: (selector) =>
-    selector({ flush: mockFlush, forgetLiveSession: mockForgetLiveSession }),
+    selector({
+      flush: mockFlush,
+      forgetLiveSession: mockForgetLiveSession,
+      setPlanFile: mockSetPlanFile,
+    }),
 }));
 
 const mockNavigate = vi.fn();
@@ -70,6 +75,8 @@ describe("Wizard", () => {
     });
     expect(mockFlush).toHaveBeenCalledOnce();
     expect(mockForgetLiveSession).toHaveBeenCalledOnce();
+    // The previous race's plan.json names another route.
+    expect(mockSetPlanFile).toHaveBeenCalledWith(null);
   });
 
   it("opens a dropped GPX", async () => {

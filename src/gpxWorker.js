@@ -11,6 +11,7 @@
 import {
   __zigar,
   readGPXComplete,
+  readPlanModel,
   recalibrate as recalibrateRoute,
   Route,
   Trace,
@@ -334,6 +335,10 @@ self.onmessage = async function (e) {
         await recalibrate(data, id);
         break;
 
+      case "READ_PLAN_FILE":
+        await readPlanFile(data, id);
+        break;
+
       default:
         throw new Error(`Unknown message type: ${type}`);
     }
@@ -557,6 +562,29 @@ async function getRouteSection(data, requestId) {
   } finally {
     trace.deinit();
   }
+}
+
+// A plan.json's model, read and checked by gpxz against the route this worker
+// holds (the bytes PROCESS_GPX_FILE retained): CourseMismatch when the plan was
+// made for another file, or for this one before it was edited.
+async function readPlanFile(data, requestId) {
+  if (residentRouteBytes == null) {
+    throw new Error("No GPX route loaded for the plan");
+  }
+  const model = (
+    await readPlanModel(new Uint8Array(data.planBytes), residentRouteBytes)
+  ).valueOf();
+  self.postMessage({
+    type: "PLAN_FILE_READ",
+    id: requestId,
+    results: {
+      paceSettings: {
+        basePaceSPerKm: model.pace_base_s_per_km,
+        kFatigue: model.fatigue_coefficient,
+        lifeBaseStopS: Number(model.life_base_stop_s),
+      },
+    },
+  });
 }
 
 // Recalibrate section and stage ETAs against the resident parsed route. Either

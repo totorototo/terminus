@@ -52,6 +52,7 @@ const useStore = create(
             outdoorMode: state.app.outdoorMode,
             installPromptDismissed: state.app.installPromptDismissed,
             paceSettings: state.app.paceSettings,
+            planFile: state.app.planFile,
           },
           gps: {
             location: state.gps.location,
