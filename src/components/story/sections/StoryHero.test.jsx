@@ -94,7 +94,7 @@ describe("StoryHero", () => {
 
   // Regression test: the "est. time" stat used to be a standalone sum of
   // stages[].estimatedDuration, ignoring the live pace ratio, Zig
-  // recalibration, and cutoff clamping that StoryCheckpoints applies — so it
+  // recalibration and cutoff handling that StoryCheckpoints applies — so it
   // silently drifted from the finish ETA shown as the last checkpoint. It
   // must now be derived from the same section-granularity checkpointETAs
   // array, since sections are the only boundary kind aware of every

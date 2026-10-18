@@ -53,7 +53,7 @@ const COORDINATES = [
 
 // A single stage spanning the whole route, with no cutoff of its own — a
 // stage only sees Start/LifeBase/Arrival, so it's blind to the TimeBarrier
-// cutoff below and its own etaMs would show an optimistic, unclamped finish.
+// cutoff below.
 const STAGE = {
   stageId: 0,
   startIndex: 0,
@@ -67,8 +67,8 @@ const STAGE = {
 };
 
 // Two sections: the first has a cutoff tighter than its own Minetti estimate
-// (a TimeBarrier the runner is projected to miss), forcing the checkpoint
-// chain to clamp early — something the single stage above cannot represent.
+// (a TimeBarrier the runner is projected to miss) — something the single
+// stage above cannot represent.
 const SECTION_1 = {
   sectionId: 0,
   startIndex: 0,
@@ -110,23 +110,18 @@ describe("StoryStages", () => {
     setup();
   });
 
-  // Regression test: the finish (Arrival) row used to show the stage's own
-  // etaMs, which — since a stage never sees TimeBarriers — silently ignored
-  // any intermediate cutoff a runner is projected to miss. That let
-  // Milestones' last row disagree with StoryCheckpoints' (and StoryHero's)
-  // finish estimate whenever such a cutoff was in play.
-  it("shows the finish row's checkpoint-clamped ETA, not the stage's own optimistic one", () => {
+  // The finish (Arrival) row reads the checkpoint chain's last ETA, so
+  // Milestones, StoryCheckpoints and StoryHero share one finish. A missed
+  // TimeBarrier no longer moves it: the ETA past a cutoff stays the model's.
+  it("shows the checkpoint chain's finish, unmoved by a missed cutoff", () => {
     render(<StoryStages />);
 
-    // Section-level chain clamps at section 1's cutoff (raceStart + 400s),
-    // then section 2 adds its own unclamped 1000s -> raceStart + 1400s.
-    const clampedFinishMs = RACE_START_MS + 1400 * 1000;
-    // The stage's own (unclamped) estimate would instead be raceStart + 1500s.
-    const optimisticFinishMs = RACE_START_MS + 1500 * 1000;
+    // Section 1 (500s, over its 400s cutoff) + section 2 (1000s) = 1500s.
+    const finishMs = RACE_START_MS + 1500 * 1000;
+    // Pinning section 1 to its cutoff would have read raceStart + 1400s.
+    const pinnedFinishMs = RACE_START_MS + 1400 * 1000;
 
-    expect(screen.getByText(String(clampedFinishMs))).toBeInTheDocument();
-    expect(
-      screen.queryByText(String(optimisticFinishMs)),
-    ).not.toBeInTheDocument();
+    expect(screen.getByText(String(finishMs))).toBeInTheDocument();
+    expect(screen.queryByText(String(pinnedFinishMs))).not.toBeInTheDocument();
   });
 });

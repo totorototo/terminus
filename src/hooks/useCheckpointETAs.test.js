@@ -192,16 +192,22 @@ describe("useCheckpointETAs", () => {
 
   // ── Cutoff cap ───────────────────────────────────────────────────────────
 
-  it("caps ETA at maxCompletionTime cutoff", () => {
+  // Regression test: an over-cutoff ETA used to be pinned to the cutoff, so
+  // later legs chained from it and the finish read earlier than the model's —
+  // 37 min off Regimen's plan.json on the GRP 160 with one missed barrier.
+  it("keeps the model ETA past a missed cutoff, and chains later legs from it", () => {
     const sections = [
       { ...SECTION_1, maxCompletionTime: 3000 }, // cutoff = START_TIME + 3000
       SECTION_2,
     ];
-    setup(sections, { index: 0, timestamp: START_MS + 100_000 });
+    setup(sections, { index: 0, timestamp: START_MS - 5000 });
     const { result } = renderHook(() => useCheckpointETAs());
-    // estimatedDuration (3600) > maxCompletionTime (3000) → capped
-    expect(result.current.checkpointETAs[0].etaMs).toBe(
-      (START_TIME + 3000) * 1000,
+    const [s1, s2] = result.current.checkpointETAs;
+    expect(s1.isOverCutoff).toBe(true);
+    expect(s1.etaMs).toBe(START_MS + 3_600_000);
+    expect(s2.etaMs).toBe(
+      START_MS +
+        (SECTION_1.estimatedDuration + SECTION_2.estimatedDuration) * 1000,
     );
   });
 
@@ -226,7 +232,7 @@ describe("useCheckpointETAs", () => {
     expect(result.current.checkpointETAs[1].cutoffMarginMs).toBeNull();
   });
 
-  it("takes the margin before the over-cutoff clamp", () => {
+  it("gives a negative margin to an over-cutoff ETA", () => {
     const sections = [{ ...SECTION_1, maxCompletionTime: 3000 }, SECTION_2];
     setup(sections, { index: 0, timestamp: START_MS - 5000 });
     const { result } = renderHook(() => useCheckpointETAs());

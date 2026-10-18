@@ -19,7 +19,7 @@ import useStore, { useProjectedLocation } from "../store/store.js";
  *     etaMs: number | null,
  *     cutoffMs: number | null,
  *     isPast, isCurrent, isOverCutoff,
- *     cutoffMarginMs: number | null, // cutoff minus ETA, before clamping
+ *     cutoffMarginMs: number | null, // cutoff minus ETA
  *     difficulty,
  *     lat, lon,
  *   }
@@ -149,12 +149,10 @@ export function useStageETAs() {
         cutoffMs != null &&
         etaMs != null &&
         etaMs > cutoffMs;
-      // why: taken before the clamp below, which pins an over-cutoff ETA to
-      // the cutoff so later legs chain from it — the margin needs the real gap.
       // Both ends are cut to the minute, as the row prints them, so 01:59
       // against a 02:00 cutoff reads 0h01, not a rounded 0h00.
-      // After the first breach, later ETAs chain from that cutoff and are
-      // hypothetical (the runner is out), so they get no margin at all.
+      // After the first breach the runner is out, so later legs get no
+      // margin and no Over flag of their own.
       let cutoffMarginMs =
         cutoffMs != null && etaMs != null && !cutoffBreached
           ? (Math.floor(cutoffMs / 60_000) - Math.floor(etaMs / 60_000)) *
@@ -162,11 +160,10 @@ export function useStageETAs() {
           : null;
       // Seconds past the cutoff floor to the same minute; Over never reads 0h00.
       if (isOverCutoff && cutoffMarginMs >= 0) cutoffMarginMs = -60_000;
-      if (isOverCutoff) {
-        cutoffBreached = true;
-        etaMs = cutoffMs;
-        runningEtaMs = cutoffMs;
-      }
+      // why: an over-cutoff ETA stays the model's time, not pinned to the
+      // cutoff — pinning shifted every later leg earlier and drifted the finish
+      // from the plan.json Regimen exports for the same model.
+      if (isOverCutoff) cutoffBreached = true;
 
       const coord = coordinates?.[stage.endIndex];
 

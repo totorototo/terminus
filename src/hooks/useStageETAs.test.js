@@ -173,7 +173,7 @@ describe("useStageETAs", () => {
 
   // ── Cutoff breach ─────────────────────────────────────────────────────────
 
-  it("caps ETA at maxCompletionTime cutoff and flags isOverCutoff", () => {
+  it("flags isOverCutoff but keeps the model ETA past the cutoff", () => {
     const stages = [
       { ...STAGE_1, maxCompletionTime: 3000 }, // cutoff = START_TIME + 3000
       STAGE_2,
@@ -181,9 +181,9 @@ describe("useStageETAs", () => {
     setup(stages, { index: 0, timestamp: START_MS + 100_000 });
     const { result } = renderHook(() => useStageETAs());
     const [stage1] = result.current.stageETAs;
-    // estimatedDuration (3600) > maxCompletionTime (3000) → capped and breached
+    // estimatedDuration (3600) > maxCompletionTime (3000) → breached, not capped
     expect(stage1.isOverCutoff).toBe(true);
-    expect(stage1.etaMs).toBe((START_TIME + 3000) * 1000);
+    expect(stage1.etaMs).toBe(START_MS + 100_000 + 3_600_000);
   });
 
   it("does not cap past stages at cutoff even when the Minetti estimate exceeds it", () => {

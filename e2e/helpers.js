@@ -47,6 +47,10 @@ export const PLAN_FIXTURE = fileURLToPath(
 export const FAST_PLAN_FIXTURE = fileURLToPath(
   new URL("./fixtures/grp-160-2026.fast.plan.json", import.meta.url),
 );
+// Exported by Regimen at 8:50/km flat: misses the Restaurant Merlans cutoff.
+export const SLOW_PLAN_FIXTURE = fileURLToPath(
+  new URL("./fixtures/grp-160-2026.slow.plan.json", import.meta.url),
+);
 
 /** Open the fixture's GPX and its plan.json from the wizard, landing on /run. */
 export async function openRace(page) {

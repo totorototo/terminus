@@ -13,6 +13,7 @@ import {
   PLAN_FIXTURE,
   replacePlan,
   selectRunnerRole,
+  SLOW_PLAN_FIXTURE,
   test,
 } from "./helpers.js";
 
@@ -44,6 +45,20 @@ test.describe("plan.json", () => {
       "5:00/km flat · fatigue 0.001 · 0h30 at each LifeBase",
     );
     await expect(estTime(page)).not.toHaveText(before);
+  });
+
+  // Regression test: Terminus used to pin an ETA past a missed cutoff to the
+  // cutoff, so its finish read 43h 44m against Regimen's 44h 21m.
+  test("the finish is the plan's, even past a missed cutoff", async ({
+    page,
+  }) => {
+    const plan = JSON.parse(readFileSync(SLOW_PLAN_FIXTURE, "utf8"));
+    const finishS = plan.entries.at(-1).duration_s_arrival;
+    const finish = `${Math.floor(finishS / 3600)}h ${Math.floor((finishS % 3600) / 60)}m`;
+
+    await replacePlan(page, SLOW_PLAN_FIXTURE);
+    await expect(page.getByTestId("plan-model")).toContainText("8:50/km flat");
+    await expect(estTime(page)).toHaveText(finish);
   });
 
   test("a replacement made for another route is refused", async ({ page }) => {
