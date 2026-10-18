@@ -26,7 +26,8 @@ test.describe("Story dot nav", () => {
   test("renders one labeled dot per section, Overview active at the top", async ({
     page,
   }) => {
-    await expect(nav(page).getByRole("button")).toHaveCount(9);
+    await expect(nav(page).getByRole("button")).toHaveCount(10);
+    await expect(dot(page, "Fueling")).toBeVisible();
     await expect(dot(page, "Overview")).toHaveAttribute("aria-current", "true");
     await expect(dot(page, "End")).not.toHaveAttribute("aria-current");
   });
