@@ -7,6 +7,11 @@ import { useShallow } from "zustand/react/shallow";
 import { DIFFICULTY_LABELS } from "../../../constants.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
+import {
+  carryText,
+  entryFueling,
+  SUPPLY_LABELS,
+} from "../../../lib/fueling.js";
 import useStore from "../../../store/store.js";
 import {
   CUTOFF_BADGE_LABELS,
@@ -33,11 +38,12 @@ function formatRemaining(etaMs) {
 const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
   const theme = useTheme();
   const { checkpointETAs } = useCheckpointETAs();
-  const { sections, forecasts, fetchWeatherForCheckpoints } = useStore(
+  const { sections, forecasts, fetchWeatherForCheckpoints, fueling } = useStore(
     useShallow((state) => ({
       sections: state.sections,
       forecasts: state.weather.forecasts,
       fetchWeatherForCheckpoints: state.fetchWeatherForCheckpoints,
+      fueling: state.app?.fueling ?? null,
     })),
   );
 
@@ -141,6 +147,16 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
               ? CUTOFF_BADGE_LABELS[cutoffTier]
               : null;
 
+            // The plan's refill here (entry i + 1: entry 0 is the start), at
+            // the plan's times. Hidden once reached, like the margin.
+            const refill = cp.isPast
+              ? null
+              : entryFueling(fueling, checkpointETAs.length, i + 1);
+            const showRefill =
+              refill != null &&
+              refill.supply !== "none" &&
+              refill.carry != null;
+
             const isExpanded = cp.isCurrent !== toggledIds.has(cp.sectionId);
             const detailsId = `checkpoint-details-${cp.sectionId}`;
 
@@ -201,6 +217,17 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                       </dd>
                     </div>
                   </dl>
+                )}
+                {showRefill && (
+                  <p
+                    className="checkpoint-refill"
+                    data-testid="checkpoint-refill"
+                  >
+                    <span className="checkpoint-refill-kind">
+                      {SUPPLY_LABELS[refill.supply]}
+                    </span>
+                    Leave with {carryText(refill.carry)}
+                  </p>
                 )}
                 {section && (
                   <>

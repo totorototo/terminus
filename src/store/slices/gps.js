@@ -6,6 +6,7 @@ import {
 } from "../../helpers/notify";
 import { showToast } from "../../helpers/toast.js";
 import { track } from "../../lib/analytics.js";
+import { isValidFueling } from "../../lib/fueling.js";
 import { loadLocalGpx } from "../../lib/localGpx.js";
 import { deriveRoomId, generateWriteKey } from "../../lib/roomAuth.js";
 import {
@@ -86,6 +87,9 @@ export const createGPSSlice = (set, get) => {
       coords,
       index,
       paceSettings,
+      // The plan's fueling rides along with the pace settings: followers show
+      // the same targets and carry. Null is sent too, so clearing it syncs.
+      fueling: get().app.fueling ?? null,
       writeKey,
     });
     if (partySocket.readyState === WebSocket.OPEN) {
@@ -498,6 +502,15 @@ export const createGPSSlice = (set, get) => {
             index: msg.index,
           });
           notifyLocationUpdate(msg);
+
+          // The runner's fueling, display-only: no reprocessing. An older
+          // runner sends no key at all, which leaves the follower's as it is.
+          if (msg.fueling === null || isValidFueling(msg.fueling)) {
+            const current = get().app.fueling ?? null;
+            if (JSON.stringify(msg.fueling) !== JSON.stringify(current)) {
+              get().setFueling(msg.fueling);
+            }
+          }
 
           (async () => {
             // Apply runner's pace settings if they differ — triggers re-processing

@@ -28,6 +28,7 @@ const mockFlush = vi.fn();
 const mockForgetLiveSession = vi.fn();
 const mockSetPlanFile = vi.fn();
 const mockSetPaceSettings = vi.fn();
+const mockSetFueling = vi.fn();
 const mockInitGPXWorker = vi.fn();
 const mockReadPlanFile = vi.fn();
 vi.mock("../../store/store.js", () => ({
@@ -37,6 +38,7 @@ vi.mock("../../store/store.js", () => ({
       forgetLiveSession: mockForgetLiveSession,
       setPlanFile: mockSetPlanFile,
       setPaceSettings: mockSetPaceSettings,
+      setFueling: mockSetFueling,
       initGPXWorker: mockInitGPXWorker,
       readPlanFile: mockReadPlanFile,
     }),
@@ -46,6 +48,15 @@ const PLAN_SETTINGS = {
   basePaceSPerKm: 450,
   kFatigue: 0.003,
   lifeBaseStopS: 0,
+};
+
+const PLAN_FUELING = {
+  carbsGPerH: 70,
+  fluidMlPerH: 500,
+  sodiumMgPerH: 400,
+  reserveS: 1800,
+  supplies: ["full", "none"],
+  carry: [{ fluidMl: 1000, carbsG: 140, sodiumMg: 800 }, null],
 };
 
 const mockNavigate = vi.fn();
@@ -80,7 +91,10 @@ describe("Wizard", () => {
     vi.clearAllMocks();
     useLocation.mockReturnValue(["/", mockNavigate]);
     saveLocalGpx.mockResolvedValue(undefined);
-    mockReadPlanFile.mockResolvedValue(PLAN_SETTINGS);
+    mockReadPlanFile.mockResolvedValue({
+      paceSettings: PLAN_SETTINGS,
+      fueling: PLAN_FUELING,
+    });
   });
 
   it("offers the GPX, and the plan.json only once the GPX is in", async () => {
@@ -115,6 +129,7 @@ describe("Wizard", () => {
       bytes: expect.any(ArrayBuffer),
     });
     expect(mockSetPaceSettings).toHaveBeenCalledWith(PLAN_SETTINGS);
+    expect(mockSetFueling).toHaveBeenCalledWith(PLAN_FUELING);
     expect(mockSetPlanFile).toHaveBeenCalledWith({ name: "race.plan.json" });
     expect(mockFlush).toHaveBeenCalledOnce();
     expect(mockForgetLiveSession).toHaveBeenCalledOnce();

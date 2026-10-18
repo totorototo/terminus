@@ -33,6 +33,22 @@ export function modelText({ basePaceSPerKm, kFatigue, lifeBaseStopS }) {
   return `${paceText(basePaceSPerKm)} flat · fatigue ${kFatigue} · ${stopText}`;
 }
 
+/**
+ * A plan's fueling targets as one line:
+ * "70 g carbs · 500 ml fluid · 400 mg sodium per hour · 30 min reserve".
+ */
+export function fuelingText({
+  carbsGPerH,
+  fluidMlPerH,
+  sodiumMgPerH,
+  reserveS,
+}) {
+  const reserveMin = Math.round(reserveS / 60);
+  const reserveText =
+    reserveMin === 0 ? "no reserve" : `${reserveMin} min reserve`;
+  return `${carbsGPerH} g carbs · ${fluidMlPerH} ml fluid · ${sodiumMgPerH} mg sodium per hour · ${reserveText}`;
+}
+
 // What to do about a plan.json gpxz refused, by the Zig error's name. Zigar
 // reports it as words ("Course mismatch"): match either form.
 const PLAN_FILE_ERRORS = {

@@ -50,10 +50,13 @@ function mockStore(overrides = {}) {
     },
     gps: { followerConnectionStatus: "disconnected" },
     setPaceSettings: vi.fn(),
+    setFueling: vi.fn(),
     setPlanFile: vi.fn(),
     reprocessGPXFile: vi.fn(),
     broadcastPaceSettings: vi.fn(),
-    readPlanFile: vi.fn().mockResolvedValue(PLAN_SETTINGS),
+    readPlanFile: vi
+      .fn()
+      .mockResolvedValue({ paceSettings: PLAN_SETTINGS, fueling: null }),
     ...overrides,
   };
   useStore.mockImplementation((selector) => selector(state));
@@ -87,6 +90,27 @@ describe("StoryPace", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the plan's fueling targets under its model", () => {
+    mockStore({
+      app: {
+        paceSettings: PLAN_SETTINGS,
+        planFile: { name: "race.plan.json" },
+        fueling: {
+          carbsGPerH: 70,
+          fluidMlPerH: 500,
+          sodiumMgPerH: 400,
+          reserveS: 1800,
+          supplies: ["full", "none"],
+          carry: [{ fluidMl: 1000, carbsG: 140, sodiumMg: 800 }, null],
+        },
+      },
+    });
+    render(<StoryPace />);
+    expect(screen.getByTestId("plan-fueling")).toHaveTextContent(
+      "70 g carbs · 500 ml fluid · 400 mg sodium per hour · 30 min reserve",
+    );
+  });
+
   it("replaces the plan.json, then reprocesses and tells the followers", async () => {
     const state = mockStore({
       app: {
@@ -102,6 +126,8 @@ describe("StoryPace", () => {
     await waitFor(() =>
       expect(state.setPaceSettings).toHaveBeenCalledWith(PLAN_SETTINGS),
     );
+    // A plan without fueling clears the previous plan's.
+    expect(state.setFueling).toHaveBeenCalledWith(null);
     // Checked against the route the worker holds: no GPX bytes passed.
     expect(state.readPlanFile).toHaveBeenCalledWith(expect.any(ArrayBuffer));
     expect(state.setPlanFile).toHaveBeenCalledWith({ name: "race.plan.json" });

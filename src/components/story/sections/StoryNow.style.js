@@ -83,6 +83,14 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
+  .now-fuel {
+    margin: 0 0 1rem;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+  }
+
   .track-btn {
     display: inline-flex;
     align-items: center;

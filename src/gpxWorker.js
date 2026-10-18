@@ -11,7 +11,7 @@
 import {
   __zigar,
   readGPXComplete,
-  readPlanModel,
+  readPlan,
   recalibrate as recalibrateRoute,
   Route,
   Trace,
@@ -564,10 +564,34 @@ async function getRouteSection(data, requestId) {
   }
 }
 
-// A plan.json's model, read and checked by gpxz against a route: the GPX the
-// wizard is about to open (gpxBytes), else the one this worker holds (the bytes
-// PROCESS_GPX_FILE retained). CourseMismatch when the plan was made for another
-// file, or for this one before it was edited.
+// A plan's fueling as the store keeps it, or null when the plan has none. The
+// carry is the plan's, at the plan's times (one per plan entry: the start, then
+// each section's end); Terminus doesn't re-size it to live ETAs.
+export function sanitizeFueling(fueling, carry) {
+  if (fueling == null) return null;
+  return {
+    carbsGPerH: fueling.carbs_g_per_h,
+    fluidMlPerH: fueling.fluid_ml_per_h,
+    sodiumMgPerH: fueling.sodium_mg_per_h,
+    reserveS: Number(fueling.reserve_s),
+    // Zigar's valueOf gives an enum as its name: "none", "water" or "full".
+    supplies: Array.from(fueling.supplies, String),
+    carry: Array.from(carry ?? [], (amounts) =>
+      amounts == null
+        ? null
+        : {
+            fluidMl: amounts.fluid_ml,
+            carbsG: amounts.carbs_g,
+            sodiumMg: amounts.sodium_mg,
+          },
+    ),
+  };
+}
+
+// A plan.json's model and fueling, read and checked by gpxz against a route:
+// the GPX the wizard is about to open (gpxBytes), else the one this worker
+// holds (the bytes PROCESS_GPX_FILE retained). CourseMismatch when the plan was
+// made for another file, or for this one before it was edited.
 async function readPlanFile(data, requestId) {
   const routeBytes = data.gpxBytes
     ? new Uint8Array(data.gpxBytes)
@@ -575,20 +599,24 @@ async function readPlanFile(data, requestId) {
   if (routeBytes == null) {
     throw new Error("No GPX route loaded for the plan");
   }
-  const model = (
-    await readPlanModel(new Uint8Array(data.planBytes), routeBytes)
-  ).valueOf();
-  self.postMessage({
-    type: "PLAN_FILE_READ",
-    id: requestId,
-    results: {
-      paceSettings: {
-        basePaceSPerKm: model.pace_base_s_per_km,
-        kFatigue: model.fatigue_coefficient,
-        lifeBaseStopS: Number(model.life_base_stop_s),
+  const plan = await readPlan(new Uint8Array(data.planBytes), routeBytes);
+  try {
+    const { model, carry } = plan.valueOf();
+    self.postMessage({
+      type: "PLAN_FILE_READ",
+      id: requestId,
+      results: {
+        paceSettings: {
+          basePaceSPerKm: model.pace_base_s_per_km,
+          kFatigue: model.fatigue_coefficient,
+          lifeBaseStopS: Number(model.life_base_stop_s),
+        },
+        fueling: sanitizeFueling(model.fueling, carry),
       },
-    },
-  });
+    });
+  } finally {
+    plan.deinit();
+  }
 }
 
 // Recalibrate section and stage ETAs against the resident parsed route. Either

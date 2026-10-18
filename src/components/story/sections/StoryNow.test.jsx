@@ -196,4 +196,63 @@ describe("StoryNow", () => {
       screen.getByText("Based on their pace so far against terrain."),
     ).toBeInTheDocument();
   });
+
+  describe("the plan's fueling", () => {
+    const fueling = {
+      carbsGPerH: 70,
+      fluidMlPerH: 500,
+      sodiumMgPerH: 400,
+      reserveS: 1800,
+      supplies: ["full", "water", "none"],
+      carry: [
+        { fluidMl: 1650, carbsG: 455, sodiumMg: 2600 },
+        { fluidMl: 900, carbsG: null, sodiumMg: null },
+        null,
+      ],
+    };
+
+    const mockFuelingStore = (value) =>
+      storeModule.default.mockImplementation((selector) =>
+        selector({
+          sections: mockSections.map((section, i) => ({
+            ...section,
+            endLocation: ["Ravito", "Finish"][i],
+          })),
+          gpx: { cumulativeDistances: mockCumulativeDistances },
+          gps: { autoShareEnabled: false },
+          toggleAutoShare: vi.fn(),
+          app: { fueling: value },
+        }),
+      );
+
+    it("says what to leave the start with before there is a fix", () => {
+      mockFuelingStore(fueling);
+      storeModule.useProjectedLocation.mockReturnValue({
+        index: 0,
+        timestamp: 0,
+      });
+      render(<StoryNow />);
+      expect(screen.getByTestId("now-fuel")).toHaveTextContent(
+        "Leave the start with 455 g carbs · 1.65 L · 2.6 g sodium, as planned.",
+      );
+    });
+
+    it("names the next refill ahead once there is a fix", () => {
+      mockFuelingStore(fueling);
+      storeModule.useProjectedLocation.mockReturnValue({
+        index: 1,
+        timestamp: 1_500_000,
+      });
+      render(<StoryNow />);
+      expect(screen.getByTestId("now-fuel")).toHaveTextContent(
+        "Next refill: Ravito (water). Leave it with 900 ml, as planned.",
+      );
+    });
+
+    it("shows nothing without fueling, or past the last refill", () => {
+      mockFuelingStore(null);
+      render(<StoryNow />);
+      expect(screen.queryByTestId("now-fuel")).toBeNull();
+    });
+  });
 });

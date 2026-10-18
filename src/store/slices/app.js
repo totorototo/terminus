@@ -27,6 +27,9 @@ export const createAppSlice = (set, get) => {
       // The plan.json the pace settings came from ({ name }), or null when they
       // came from the pickers. While set, the pickers give way to it.
       planFile: null,
+      // The plan's fueling (worker's sanitizeFueling), or null without one:
+      // targets, a supply and a carry per plan entry, as Regimen planned them.
+      fueling: null,
       theme:
         typeof window !== "undefined" &&
         typeof window.matchMedia === "function" &&
@@ -157,6 +160,13 @@ export const createAppSlice = (set, get) => {
         (state) => ({ app: { ...state.app, planFile } }),
         undefined,
         "app/setPlanFile",
+      ),
+
+    setFueling: (fueling) =>
+      set(
+        (state) => ({ app: { ...state.app, fueling: fueling ?? null } }),
+        undefined,
+        "app/setFueling",
       ),
 
     setPaceSettings: ({ basePaceSPerKm, kFatigue, lifeBaseStopS }) => {

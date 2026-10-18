@@ -21,6 +21,24 @@ pub const InputError = error{ SettingsInvalid, ElapsedInvalid };
 
 /// A plan.json's model: what Terminus runs the pace model with when the runner loads one.
 pub const PlanModel = gpxz.plan.Model;
+pub const Supply = gpxz.fueling.Supply;
+pub const Carry = gpxz.fueling.Carry;
+
+/// What Terminus takes from a plan.json: the model it runs, and the plan's fueling as the plan
+/// has it. The carry is the plan's, at the plan's times: it isn't re-sized to live ETAs.
+/// Owns `model.fueling.supplies` and `carry`; the worker frees them with `deinit`.
+pub const PlanRead = struct {
+    model: PlanModel,
+    /// One per plan entry with fueling, else null rather than empty: a zero-length slice from
+    /// an allocator has a placeholder address, which Zigar can't view in WASM memory.
+    carry: ?[]const ?Carry,
+
+    pub fn deinit(self: *PlanRead, allocator: std.mem.Allocator) void {
+        if (self.model.fueling) |fueling| allocator.free(fueling.supplies);
+        if (self.carry) |carry| allocator.free(carry);
+        self.* = undefined;
+    }
+};
 
 // ── Exports (camelCase: these names are the JavaScript API) ──────────────────────────────
 
@@ -57,19 +75,19 @@ pub fn recalibrate(
     return route.recalibrate(allocator, index, elapsed_s_actual, &settings);
 }
 
-/// The model in a plan.json (from Regimen or `gpxz --plan`), once gpxz has read and validated
-/// it and checked it was made for the route in `gpx_bytes`: `CourseMismatch` otherwise.
-/// Only the model is taken: Terminus adds the live weather and recalibration on top, so its
-/// ETAs are never the plan's times and there is nothing to compare them with.
-pub fn readPlanModel(
+/// The model and fueling in a plan.json (from Regimen or `gpxz --plan`), once gpxz has read
+/// and validated it and checked it was made for the route in `gpx_bytes`: `CourseMismatch`
+/// otherwise. The entries are left behind: Terminus adds the live weather and recalibration
+/// on top, so its ETAs are never the plan's times. The caller frees the result with `deinit`.
+pub fn readPlan(
     allocator: std.mem.Allocator,
     plan_bytes: []const u8,
     gpx_bytes: []const u8,
-) !PlanModel {
+) !PlanRead {
     const parsed = try gpxz.plan_read(allocator, plan_bytes);
     defer parsed.deinit();
     if (!gpxz.plan.course_matches(&parsed.value, gpx_bytes)) return error.CourseMismatch;
-    const model = parsed.value.model;
+    var model = parsed.value.model;
     // plan_read's validation, checked again where a bad model would reach gpxz's asserts.
     _ = try settings_make(
         model.pace_base_s_per_km,
@@ -77,7 +95,19 @@ pub fn readPlanModel(
         model.life_base_stop_s,
         .empty,
     );
-    return model;
+    // No fueling: nothing to copy, and plan_valid guarantees no carry either.
+    if (model.fueling == null) {
+        std.debug.assert(parsed.value.carry.len == 0);
+        return .{ .model = model, .carry = null };
+    }
+    // The supplies and the carry point into `parsed`, which is freed on return: copy them.
+    // gpxz checked one of each per entry, so neither is empty unless the plan has no entries.
+    const fueling = &model.fueling.?;
+    fueling.supplies = try allocator.dupe(Supply, fueling.supplies);
+    errdefer allocator.free(fueling.supplies);
+    const carry = try allocator.dupe(?Carry, parsed.value.carry);
+    std.debug.assert(carry.len == fueling.supplies.len);
+    return .{ .model = model, .carry = carry };
 }
 
 // ── Implementation ───────────────────────────────────────────────────────────────────────
@@ -177,7 +207,7 @@ test "recalibrate: clamps an index past the end and rejects a bad elapsed time" 
 }
 
 /// plan.json for `route_gpx` with `settings`, as gpxz writes it (Regimen's file).
-fn plan_json_test(settings: *const gpxz.Settings) ![]u8 {
+fn plan_json_test(settings: *const gpxz.Settings, fuel_plan: ?*const gpxz.fueling.FuelPlan) ![]u8 {
     var data = try gpxz.parse(testing.allocator, route_gpx, settings);
     defer data.deinit(testing.allocator);
     const plan = gpxz.plan_build(
@@ -186,6 +216,7 @@ fn plan_json_test(settings: *const gpxz.Settings) ![]u8 {
         data.trace.distance_m,
         data.plan.?,
         settings,
+        fuel_plan,
     );
     var out: std.Io.Writer.Allocating = .init(testing.allocator);
     errdefer out.deinit();
@@ -193,29 +224,67 @@ fn plan_json_test(settings: *const gpxz.Settings) ![]u8 {
     return out.toOwnedSlice();
 }
 
-test "readPlanModel: the model of a plan.json made for this route" {
+test "readPlan: the model of a plan.json made for this route" {
     const settings: gpxz.Settings = .{
         .pace_base_s_per_km = 420,
         .fatigue_coefficient = 0.003,
         .life_base_stop_s = 1800,
     };
-    const json = try plan_json_test(&settings);
+    const json = try plan_json_test(&settings, null);
     defer testing.allocator.free(json);
-    const model = try readPlanModel(testing.allocator, json, route_gpx);
-    try testing.expectEqual(@as(f64, 420), model.pace_base_s_per_km);
-    try testing.expectEqual(@as(f64, 0.003), model.fatigue_coefficient);
-    try testing.expectEqual(@as(u32, 1800), model.life_base_stop_s);
+    var plan = try readPlan(testing.allocator, json, route_gpx);
+    defer plan.deinit(testing.allocator);
+    try testing.expectEqual(@as(f64, 420), plan.model.pace_base_s_per_km);
+    try testing.expectEqual(@as(f64, 0.003), plan.model.fatigue_coefficient);
+    try testing.expectEqual(@as(u32, 1800), plan.model.life_base_stop_s);
+    try testing.expect(plan.model.fueling == null);
+    try testing.expect(plan.carry == null);
 }
 
-test "readPlanModel: another route, or a bad file, is an error" {
-    const json = try plan_json_test(&.{});
+test "readPlan: the fueling and carry outlive the parsed plan" {
+    var data = try gpxz.parse(testing.allocator, route_gpx, &.{});
+    defer data.deinit(testing.allocator);
+    const entries = data.plan.?;
+    try testing.expectEqual(@as(usize, 3), entries.len);
+    // The route has two sections, and the plan one entry more: its start.
+    try testing.expectEqual(data.sections.?.len + 1, entries.len);
+    const supplies = [_]Supply{ .full, .water, .none };
+    const fueling: gpxz.fueling.Fueling = .{
+        .carbs_g_per_h = 60,
+        .fluid_ml_per_h = 500,
+        .sodium_mg_per_h = 300,
+        .reserve_s = 600,
+        .supplies = &supplies,
+    };
+    var times: [3]gpxz.fueling.Times = undefined;
+    gpxz.fueling.times_from_entries(entries, &times);
+    var carry: [3]?Carry = undefined;
+    gpxz.fueling.carry_compute(&times, &fueling, &carry);
+    const fuel_plan: gpxz.fueling.FuelPlan = .{ .fueling = fueling, .carry = &carry };
+    const json = try plan_json_test(&.{}, &fuel_plan);
+    defer testing.allocator.free(json);
+
+    var plan = try readPlan(testing.allocator, json, route_gpx);
+    defer plan.deinit(testing.allocator);
+    // std.testing.allocator would report a use-after-free if these pointed into the parse.
+    try testing.expectEqualSlices(Supply, &supplies, plan.model.fueling.?.supplies);
+    const read = plan.carry.?;
+    try testing.expectEqual(@as(usize, 3), read.len);
+    try testing.expectEqual(carry[0].?.carbs_g, read[0].?.carbs_g);
+    try testing.expectEqual(carry[1].?.fluid_ml, read[1].?.fluid_ml);
+    try testing.expect(read[1].?.carbs_g == null);
+    try testing.expect(read[2] == null);
+}
+
+test "readPlan: another route, or a bad file, is an error" {
+    const json = try plan_json_test(&.{}, null);
     defer testing.allocator.free(json);
     const edited = route_gpx[0 .. route_gpx.len - 1];
-    try testing.expectError(error.CourseMismatch, readPlanModel(testing.allocator, json, edited));
-    try testing.expectError(error.SyntaxError, readPlanModel(testing.allocator, "nope", route_gpx));
-    const v2 = "{\"schema_version\": 2}";
+    try testing.expectError(error.CourseMismatch, readPlan(testing.allocator, json, edited));
+    try testing.expectError(error.SyntaxError, readPlan(testing.allocator, "nope", route_gpx));
+    const v3 = "{\"schema_version\": 3}";
     try testing.expectError(
         error.SchemaVersionUnsupported,
-        readPlanModel(testing.allocator, v2, route_gpx),
+        readPlan(testing.allocator, v3, route_gpx),
     );
 }
