@@ -53,6 +53,7 @@ const useStore = create(
             installPromptDismissed: state.app.installPromptDismissed,
             paceSettings: state.app.paceSettings,
             planFile: state.app.planFile,
+            fueling: state.app.fueling,
           },
           gps: {
             location: state.gps.location,

@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import {
   expect,
   FAST_PLAN_FIXTURE,
+  FUELED_PLAN_FIXTURE,
   heroDistanceKm,
   PLAN_FIXTURE,
   replacePlan,
@@ -59,6 +60,31 @@ test.describe("plan.json", () => {
     await replacePlan(page, SLOW_PLAN_FIXTURE);
     await expect(page.getByTestId("plan-model")).toContainText("8:50/km flat");
     await expect(estTime(page)).toHaveText(finish);
+  });
+
+  // The v1 fixtures above still read; a v2 plan brings Regimen's fueling,
+  // shown as the plan has it.
+  test("a plan with fueling shows its targets and what to carry", async ({
+    page,
+  }) => {
+    await expect(page.getByTestId("plan-fueling")).toHaveCount(0);
+    await replacePlan(page, FUELED_PLAN_FIXTURE);
+    await expect(page.getByTestId("plan-fueling")).toHaveText(
+      "70 g carbs · 500 ml fluid · 400 mg sodium per hour · 30 min reserve",
+    );
+    const plan = JSON.parse(readFileSync(FUELED_PLAN_FIXTURE, "utf8"));
+    const start = plan.carry[0];
+    await expect(page.getByTestId("now-fuel")).toContainText(
+      `Leave the start with ${start.carbs_g} g carbs`,
+    );
+    // One refill line per checkpoint the plan refills at, the finish aside.
+    const refills = plan.model.fueling.supplies
+      .slice(1)
+      .filter((supply, i) => supply !== "none" && plan.carry[i + 1] != null);
+    const rows = page.getByTestId("checkpoint-refill");
+    await expect(rows.first()).toBeAttached();
+    expect(await rows.count()).toBeLessThanOrEqual(refills.length);
+    await expect(rows.first()).toContainText("Leave with");
   });
 
   test("a replacement made for another route is refused", async ({ page }) => {

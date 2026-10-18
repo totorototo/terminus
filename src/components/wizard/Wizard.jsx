@@ -29,6 +29,7 @@ function Wizard({ className }) {
   const forgetLiveSession = useStore((state) => state.forgetLiveSession);
   const setPlanFile = useStore((state) => state.setPlanFile);
   const setPaceSettings = useStore((state) => state.setPaceSettings);
+  const setFueling = useStore((state) => state.setFueling);
   const initGPXWorker = useStore((state) => state.initGPXWorker);
   const readPlanFile = useStore((state) => state.readPlanFile);
   const [, navigate] = useLocation();
@@ -55,12 +56,12 @@ function Wizard({ className }) {
     }
     setError(null);
     setOpening(true);
-    let settings;
+    let plan;
     try {
       // The app's one worker, started here rather than on /run: gpxz reads
       // the plan, and it carries on to /run with the race.
       initGPXWorker();
-      settings = await readPlanFile(await file.arrayBuffer(), course.bytes);
+      plan = await readPlanFile(await file.arrayBuffer(), course.bytes);
     } catch (err) {
       setError(planFileError(err.message));
       setOpening(false);
@@ -78,7 +79,8 @@ function Wizard({ className }) {
     // the previous file.
     flush();
     forgetLiveSession();
-    setPaceSettings(settings);
+    setPaceSettings(plan.paceSettings);
+    setFueling(plan.fueling);
     setPlanFile({ name: file.name });
     track("gpx-opened");
     navigate("/run");

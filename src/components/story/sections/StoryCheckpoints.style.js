@@ -298,6 +298,27 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  /* The plan's refill: what to leave this checkpoint with. */
+  .checkpoint-refill {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    margin: 0;
+    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text"]};
+  }
+
+  .checkpoint-refill-kind {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
+  }
+
   .checkpoint-details-toggle {
     align-self: flex-start;
     min-height: 44px;

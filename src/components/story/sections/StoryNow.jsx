@@ -6,6 +6,12 @@ import { format } from "date-fns";
 import { useShallow } from "zustand/react/shallow";
 
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
+import {
+  carryText,
+  entryFueling,
+  nextRefill,
+  SUPPLY_LABELS,
+} from "../../../lib/fueling.js";
 import useStore, { useProjectedLocation } from "../../../store/store.js";
 import StorySection from "../StorySection.jsx";
 
@@ -37,13 +43,29 @@ const StoryNow = memo(function StoryNow({ className }) {
   );
   const { checkpointETAs, raceStart, hasGPSLock, paceDivergence } =
     useCheckpointETAs();
-  const { autoShareEnabled, toggleAutoShare, isFollower } = useStore(
+  const { autoShareEnabled, toggleAutoShare, isFollower, fueling } = useStore(
     useShallow((state) => ({
       autoShareEnabled: state.gps.autoShareEnabled,
       toggleAutoShare: state.toggleAutoShare,
       isFollower: state.gps.followerConnectionStatus === "connected",
+      fueling: state.app?.fueling ?? null,
     })),
   );
+
+  // The plan's carry, at the plan's times: from the start until there is a
+  // fix, then at the next refill ahead.
+  const fuelLine = useMemo(() => {
+    if (!hasGPSLock) {
+      const start = entryFueling(fueling, checkpointETAs?.length ?? 0, 0);
+      if (!start?.carry) return null;
+      return `Leave the start with ${carryText(start.carry)}`;
+    }
+    const next = nextRefill(fueling, checkpointETAs);
+    if (!next) return null;
+    const name = next.checkpoint.endLocation || "the next checkpoint";
+    const kind = SUPPLY_LABELS[next.supply].toLowerCase();
+    return `Next refill: ${name} (${kind}). Leave it with ${carryText(next.carry)}`;
+  }, [fueling, checkpointETAs, hasGPSLock]);
 
   // why: sourced from checkpointETAs (section granularity), the same finish
   // estimate StoryHero and StoryCheckpoints' last row read — not a
@@ -138,6 +160,11 @@ const StoryNow = memo(function StoryNow({ className }) {
         <p className="now-note">
           Based on {isFollower ? "their" : "your"} pace so far against terrain.
         </p>
+        {fuelLine && (
+          <p className="now-fuel" data-testid="now-fuel">
+            {fuelLine}, as planned.
+          </p>
+        )}
 
         {/* why: this is the only control that starts the GPS fix this whole
             page's live numbers depend on for a runner — everything else here

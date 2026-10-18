@@ -4,6 +4,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import {
   checkPlanFile,
+  fuelingText,
   modelText,
   planFileError,
 } from "../../../lib/planFile.js";
@@ -28,6 +29,8 @@ const StoryPace = memo(function StoryPace({ className }) {
     planFile,
     setPlanFile,
     readPlanFile,
+    fueling,
+    setFueling,
   } = useStore(
     useShallow((state) => ({
       paceSettings: state.app?.paceSettings ?? DEFAULT_PACE_SETTINGS,
@@ -38,6 +41,8 @@ const StoryPace = memo(function StoryPace({ className }) {
       planFile: state.app?.planFile ?? null,
       setPlanFile: state.setPlanFile ?? (() => {}),
       readPlanFile: state.readPlanFile,
+      fueling: state.app?.fueling ?? null,
+      setFueling: state.setFueling ?? (() => {}),
     })),
   );
 
@@ -53,8 +58,9 @@ const StoryPace = memo(function StoryPace({ className }) {
       }
       setPlanError(null);
       try {
-        const settings = await readPlanFile(await file.arrayBuffer());
-        setPaceSettings(settings);
+        const plan = await readPlanFile(await file.arrayBuffer());
+        setPaceSettings(plan.paceSettings);
+        setFueling(plan.fueling);
         setPlanFile({ name: file.name });
         reprocessGPXFile();
         broadcastPaceSettings();
@@ -65,6 +71,7 @@ const StoryPace = memo(function StoryPace({ className }) {
     [
       readPlanFile,
       setPaceSettings,
+      setFueling,
       setPlanFile,
       reprocessGPXFile,
       broadcastPaceSettings,
@@ -93,6 +100,11 @@ const StoryPace = memo(function StoryPace({ className }) {
         <p className="plan-model" data-testid="plan-model">
           {modelText(paceSettings)}
         </p>
+        {fueling && (
+          <p className="plan-model" data-testid="plan-fueling">
+            {fuelingText(fueling)}
+          </p>
+        )}
         <p className="synced-note">
           {source}{" "}
           {!isFollower && readPlanFile && (

@@ -11,6 +11,7 @@
 - `useShallow()` for selectors returning objects
 - Prefer computed values over stored derived state
 - The pace model (`app.paceSettings`) comes from the race's plan.json (Regimen), read by gpxz in the worker (`READ_PLAN_FILE`): the wizard takes it with the GPX and refuses one made for another route; StoryPace can replace it. Terminus never picks a model of its own — no runner-profile presets. Followers get the runner's over the relay. The live weather and recalibration still apply on top
+- The plan's fueling (`app.fueling`: targets, a supply and a carry per plan entry) comes from the same plan.json and is display-only: the carry is the plan's, at the plan's times, never re-sized to live ETAs. Plan entry 0 is the start, entry i + 1 is section i's end (`lib/fueling.js`). Followers get it with the pace settings
 
 ## Worker (`gpxWorker.js`)
 

@@ -111,8 +111,12 @@ describe("GPS Slice", () => {
           kFatigue: 0.002,
           lifeBaseStopS: 3600,
         },
+        fueling: null,
       },
       recalibrate: vi.fn(),
+      setFueling: vi.fn((fueling) => {
+        set({ app: { ...get().app, fueling } });
+      }),
       setPaceSettings: vi.fn(({ basePaceSPerKm, kFatigue, lifeBaseStopS }) => {
         set({
           app: {
@@ -724,6 +728,7 @@ describe("GPS Slice", () => {
           kFatigue: 0.002,
           lifeBaseStopS: 3600,
         },
+        fueling: null,
         writeKey: "write-key-1",
       });
     });
@@ -795,6 +800,54 @@ describe("GPS Slice", () => {
       dispatchLocation({ ...runnerPaceSettings, basePaceSPerKm: 999_999 });
 
       expect(store.getState().setPaceSettings).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("connectToFollowerSession — fueling sync", () => {
+    const runnerFueling = {
+      carbsGPerH: 70,
+      fluidMlPerH: 500,
+      sodiumMgPerH: 400,
+      reserveS: 1800,
+      supplies: ["full", "none"],
+      carry: [{ fluidMl: 1000, carbsG: 140, sodiumMg: 800 }, null],
+    };
+
+    const dispatchFueling = (extra) => {
+      const socket = PartySocket.instances.at(-1);
+      socket.dispatch("message", {
+        data: JSON.stringify({
+          type: "location",
+          timestamp: 123,
+          coords: [45.5, -122.7, 100],
+          index: 4,
+          ...extra,
+        }),
+      });
+    };
+
+    it("applies the runner's fueling, and skips it when unchanged", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      dispatchFueling({ fueling: runnerFueling });
+      expect(store.getState().app.fueling).toEqual(runnerFueling);
+
+      store.getState().setFueling.mockClear();
+      dispatchFueling({ fueling: { ...runnerFueling } });
+      expect(store.getState().setFueling).not.toHaveBeenCalled();
+      // Display-only: fueling never reprocesses the route.
+      expect(store.getState().reprocessGPXFile).not.toHaveBeenCalled();
+    });
+
+    it("clears it on null, and leaves it on a missing key or a bad shape", async () => {
+      await store.getState().connectToFollowerSession("room-1");
+      dispatchFueling({ fueling: runnerFueling });
+
+      dispatchFueling({});
+      dispatchFueling({ fueling: { ...runnerFueling, supplies: ["full"] } });
+      expect(store.getState().app.fueling).toEqual(runnerFueling);
+
+      dispatchFueling({ fueling: null });
+      expect(store.getState().app.fueling).toBeNull();
     });
   });
 

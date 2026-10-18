@@ -161,6 +161,7 @@ describe("store", () => {
         [
           "currentRoute",
           "displaySlopes",
+          "fueling",
           "installPromptDismissed",
           "liveSessionId",
           "liveWriteKey",

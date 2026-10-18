@@ -52,6 +52,14 @@ export const SLOW_PLAN_FIXTURE = fileURLToPath(
   new URL("./fixtures/grp-160-2026.slow.plan.json", import.meta.url),
 );
 
+// A v2 plan.json with fueling, at PLAN_FIXTURE's model: 70 g carbs, 500 ml,
+// 400 mg sodium per hour, a 30 min reserve, full at the Start and LifeBases and
+// water at every other checkpoint. gpxz's CLI has no fueling flags yet: made
+// with gpxz's fueling.supplies_default, carry_compute and plan_build.
+export const FUELED_PLAN_FIXTURE = fileURLToPath(
+  new URL("./fixtures/grp-160-2026.fueled.plan.json", import.meta.url),
+);
+
 /** Open the fixture's GPX and its plan.json from the wizard, landing on /run. */
 export async function openRace(page) {
   await page.getByTestId("gpx-input").setInputFiles(GPX_FIXTURE);
