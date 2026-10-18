@@ -10,7 +10,7 @@
 
 **[→ Live Demo](https://terminus-beta.netlify.app)**
 
-A scroll-driven editorial trail story: open your race's GPX and scroll through it as a longform narrative — hero stats, terrain, climbs, pace model, checkpoints — with a live position marker during the run. Any GPX works: a race director's file gives the route, climbs and pace; one annotated in [Waymark](https://github.com/totorototo/waymark) (start, time barriers, life bases, cutoffs) adds stages, checkpoints and ETAs. A runner can invite followers, who receive the same file and the runner's live position through a WebSocket relay, with push notifications.
+A scroll-driven editorial trail story: open your race's GPX and its plan, and scroll through it as a longform narrative — hero stats, terrain, climbs, pace model, checkpoints — with a live position marker during the run. The GPX is a course annotated in [Waymark](https://github.com/totorototo/waymark) (start, time barriers, life bases, cutoffs); the `plan.json` is the runner's pace model for it, made in [Regimen](https://github.com/totorototo/regimen). A runner can invite followers, who receive the same file and the runner's live position through a WebSocket relay, with push notifications.
 
 ## Architecture
 
@@ -48,24 +48,24 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 
 ## Features
 
-- **Open Any Race**: pick or drop a GPX on the start screen. It stays on the device (IndexedDB) and reopens after a reload; a file without a `<name>` is named after the file. Checkpoints, stages and cutoffs come from its waypoints
+- **Open a Race**: pick or drop the race's GPX on the start screen, then the `plan.json` made for it in Regimen. gpxz checks the plan names that exact GPX (its SHA-256) before either is kept, and refuses a plan for another or an edited file. The race stays on the device (IndexedDB) and reopens after a reload; a file without a `<name>` is named after the file. Checkpoints, stages and cutoffs come from its waypoints, so a GPX with fewer than two typed checkpoints has no plan and can't be opened
 - **Editorial Story UI**: scroll-driven sections — Hero, Now, Climbs, Terrain, Pace, Stages, Checkpoints, Map, End — each revealing on scroll against the shared elevation-contour throughline
 - **Section Analytics**: distance, elevation gain/loss, slope percentages, difficulty rating
 - **Stage Analytics**: per-stage distance, elevation, estimated/max time, cutoff time, difficulty, and slowest required pace, with a collapsible list for long routes
 - **Climb Detection**: automatic climb segment detection (AMPD valley detection + Garmin Climb Pro qualification) with distance, elevation gain, and gradient per climb
 - **Terrain Section**: elevation profile, per-point slope/grade intensity strip, and slope profile chart
 - **Pace Profile**: chart of the slowest allowed pace (km/h) over distance, anchored to route start/end, with tightest-cutoff and current-section stats
-- **ETA Estimation**: per-checkpoint/stage arrival prediction driven by a physiological pace model — Minetti et al. (2002) metabolic slope cost combined with exponential fatigue (`exp(k·d_eff)`, selectable Low/Moderate/High presets), a circadian sleep-deprivation slowdown, an optional weather penalty (temperature/humidity/wind/precipitation), and LifeBase recovery plus planned stop durations
+- **ETA Estimation**: per-checkpoint/stage arrival prediction driven by a physiological pace model — Minetti et al. (2002) metabolic slope cost combined with exponential fatigue (`exp(k·d_eff)`), a circadian sleep-deprivation slowdown, an optional weather penalty (temperature/humidity/wind/precipitation), and LifeBase recovery plus planned stop durations. Base pace, fatigue and LifeBase stop come from the plan.json; the Pace section shows them and can replace the plan. Live weather and recalibration apply on top. An ETA past a cutoff stays the model's: the first missed barrier is flagged Over with its margin
 - **Live Trail Progression**: real-time remaining distance and countdown to next arrival/cutoff based on runner position
 - **Checkpoint Markers**: location cards with distance, planned/live schedule, and per-checkpoint weather forecast
-- **Interactive 3D Map**: Mapbox GL route trace with 3D terrain (DEM exaggeration, 55° pitch) and a fullscreen toggle
+- **Interactive 3D Map**: Mapbox GL route trace with 3D terrain (DEM exaggeration, 55° pitch) and a fullscreen toggle, drawn in the design system's fixed map inks
 - **Off-Course Detection**: automatic detection when GPS position strays from the route
-- **Runner / Follower Modes**: runners open a GPX; followers open the runner's invite link (`/follow/<room>`) and read the same story in a third-person view, with no file to find
+- **Runner / Follower Modes**: runners open a GPX and its plan; followers open the runner's invite link (`/follow/<room>`) and read the same story in a third-person view, with no file to find
 - **Live Location Sharing**: inviting someone uploads the runner's GPX to the relay room — byte for byte, since positions travel as trace indices — and broadcasts each GPS fix to the room. Uploads and broadcasts need the room's secret write key (the room id is its SHA-256, so followers can never forge positions or replace the route). "Stop sharing" deletes the route; the relay also deletes a room 7 days after its last activity
 - **Push Notifications**: followers can subscribe to Web Push (VAPID) to get a browser notification on runner position updates, rate-limited server-side
 - **Shareable Trail Card**: client-generated PNG summary card (Satori + embedded QR code)
 - **PWA**: installable as a Progressive Web App that works offline — the opened race (or followed race) is kept in IndexedDB — with a home screen shortcut
-- **Dark/Light Theme**: toggle between dark and light modes
+- **Dark/Light Theme**: toggle between dark and light modes, from the Trail Suite design tokens shared with Waymark and Retrace
 
 ## Tech Stack
 
@@ -73,7 +73,7 @@ The UI has no 3D scene — an earlier React Three Fiber / Three.js route visuali
 - **Charts & Map**: d3-scale/d3-shape/d3-array for chart geometry, Mapbox GL (`react-map-gl`) for the 3D terrain map
 - **Performance**: Zig 0.17.0 → WASM via Zigar bindings with zero-copy optimization
 - **Real-time**: PartyServer relay on Cloudflare Workers (WebSocket for positions, HTTP for the shared GPX in Durable Object storage), Web Push (VAPID) for follower notifications
-- **Styling**: Styled-components, `@react-spring/web` for motion (respects `prefers-reduced-motion`)
+- **Styling**: Styled-components themed from [`@totorototo/trail-tokens`](https://github.com/totorototo/trail-tokens) (`src/theme/Theme.js` reads them), `@react-spring/web` for motion (respects `prefers-reduced-motion`)
 - **PWA**: Vite PWA plugin with service worker and install prompt
 
 ## Prerequisites
@@ -151,7 +151,7 @@ npm run gpx:shift -- race.gpx 2026-09-01T12:00:00Z  # start = exact instant
 npm run gpx:shift -- race.gpx --dry-run             # preview only
 ```
 
-The script anchors on the waypoint typed `Start` (falling back to the earliest time in the file) and applies one offset to all `<time>` tags — waypoints, trackpoints, and metadata — so time barriers, multi-day structure, and recording cadence stay relatively intact. A date-only target shifts by whole days and preserves times of day (a 05:00 start stays 05:00); a datetime target shifts exactly. The file is edited in place — keep a copy, or undo with `git checkout <file>` for a tracked one. Then open it from the start screen. Times are normalized to second-precision UTC (`Z`).
+The script anchors on the waypoint typed `Start` (falling back to the earliest time in the file) and applies one offset to all `<time>` tags — waypoints, trackpoints, and metadata — so time barriers, multi-day structure, and recording cadence stay relatively intact. A date-only target shifts by whole days and preserves times of day (a 05:00 start stays 05:00); a datetime target shifts exactly. The file is edited in place — keep a copy, or undo with `git checkout <file>` for a tracked one. Then open it from the start screen. Shifting edits the bytes, so make a new plan.json for it in Regimen. Times are normalized to second-precision UTC (`Z`).
 
 ## Why Zig?
 
@@ -195,7 +195,7 @@ npm run e2e            # Playwright
 npm run e2e:headed     # Playwright, headed browser
 ```
 
-Playwright serves a build made against `localhost:1999` and starts a `wrangler dev` relay, so the sharing specs exercise this checkout's `party/server.js` rather than the deployed relay. Runner specs open `e2e/fixtures/grp-160-2026.gpx` through the start screen. Locally it reuses a server already listening on port 5173 — stop any other dev server there first.
+Playwright serves a build made against `localhost:1999` and starts a `wrangler dev` relay, so the sharing specs exercise this checkout's `party/server.js` rather than the deployed relay. Runner specs open `e2e/fixtures/grp-160-2026.gpx` and its `grp-160-2026.plan.json` through the start screen. Locally it reuses a server already listening on port 5173 — stop any other dev server there first.
 
 To run the specs against a deployed site and its relay instead (no local server is started):
 
@@ -218,14 +218,14 @@ src/
     trailData/            # Map, ElevationProfile, PaceProfile, SlopeProfile/Intensity, WeatherLine
     followerScreen/        # /follow/:roomId — loads the shared race, joins the room
     trailerScreen/         # /run — the runner's race (renders the Story)
-    wizard/                 # Start screen: open or drop a GPX
+    wizard/                 # Start screen: open or drop a GPX, then its plan.json
     help/                    # User guide route
   store/
     slices/               # Zustand state management slices
   helpers/                 # Utility functions (colors, buffers, throttling, push notify)
   utils/                   # Coordinate transforms, shareable trail card generation
   hooks/                   # useGPXWorker, useCheckpointETAs, useStageETAs, etc.
-  lib/                     # localGpx (IndexedDB), sharedRoute (relay upload/download), roomAuth, analytics
+  lib/                     # localGpx (IndexedDB), planFile (plan.json checks and messages), sharedRoute (relay upload/download), roomAuth, analytics
   gpxWorker.js             # Web Worker for background GPS processing
 
 party/
@@ -233,7 +233,7 @@ party/
   webpush.js             # Web Push (RFC 8291/8292) via Web Crypto — no Node deps
 
 e2e/
-  fixtures/             # GPX the Playwright specs open (the GRP 160 route)
+  fixtures/             # GPX the Playwright specs open (the GRP 160 route) and Regimen plan.json files for it (default, fast, slow)
 
 zig/
   terminus.zig          # WASM boundary: the functions and types the worker calls, over gpxz
