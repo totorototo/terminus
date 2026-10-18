@@ -45,6 +45,9 @@ vi.mock("./sections/StoryStages.jsx", () => ({
 vi.mock("./sections/StoryCheckpoints.jsx", () => ({
   default: () => <div data-testid="story-checkpoints">StoryCheckpoints</div>,
 }));
+vi.mock("./sections/StoryFueling.jsx", () => ({
+  default: () => <div data-testid="story-fueling">StoryFueling</div>,
+}));
 vi.mock("./sections/StoryEnd.jsx", () => ({
   default: () => <div data-testid="story-end">StoryEnd</div>,
 }));
@@ -74,6 +77,7 @@ describe("Story", () => {
     expect(screen.getByTestId("story-pace")).toBeInTheDocument();
     expect(screen.getByTestId("story-stages")).toBeInTheDocument();
     expect(screen.getByTestId("story-checkpoints")).toBeInTheDocument();
+    expect(screen.getByTestId("story-fueling")).toBeInTheDocument();
     expect(screen.getByTestId("story-end")).toBeInTheDocument();
   });
 

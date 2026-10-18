@@ -23,19 +23,24 @@ pub const InputError = error{ SettingsInvalid, ElapsedInvalid };
 pub const PlanModel = gpxz.plan.Model;
 pub const Supply = gpxz.fueling.Supply;
 pub const Carry = gpxz.fueling.Carry;
+pub const Times = gpxz.fueling.Times;
 
 /// What Terminus takes from a plan.json: the model it runs, and the plan's fueling as the plan
 /// has it. The carry is the plan's, at the plan's times: it isn't re-sized to live ETAs.
-/// Owns `model.fueling.supplies` and `carry`; the worker frees them with `deinit`.
+/// Owns `model.fueling.supplies`, `carry` and `times`; the worker frees them with `deinit`.
 pub const PlanRead = struct {
     model: PlanModel,
     /// One per plan entry with fueling, else null rather than empty: a zero-length slice from
     /// an allocator has a placeholder address, which Zigar can't view in WASM memory.
     carry: ?[]const ?Carry,
+    /// The plan's arrival and departure at each entry, with fueling only (null alike): the
+    /// times the carry was sized for, so the fueling view reads the plan's legs, not live ETAs.
+    times: ?[]const Times,
 
     pub fn deinit(self: *PlanRead, allocator: std.mem.Allocator) void {
         if (self.model.fueling) |fueling| allocator.free(fueling.supplies);
         if (self.carry) |carry| allocator.free(carry);
+        if (self.times) |times| allocator.free(times);
         self.* = undefined;
     }
 };
@@ -77,8 +82,9 @@ pub fn recalibrate(
 
 /// The model and fueling in a plan.json (from Regimen or `gpxz --plan`), once gpxz has read
 /// and validated it and checked it was made for the route in `gpx_bytes`: `CourseMismatch`
-/// otherwise. The entries are left behind: Terminus adds the live weather and recalibration
-/// on top, so its ETAs are never the plan's times. The caller frees the result with `deinit`.
+/// otherwise. Only the entries' times are kept, for the fueling: Terminus adds the live weather
+/// and recalibration on top, so its ETAs are never the plan's times. The caller frees the
+/// result with `deinit`.
 pub fn readPlan(
     allocator: std.mem.Allocator,
     plan_bytes: []const u8,
@@ -98,7 +104,7 @@ pub fn readPlan(
     // No fueling: nothing to copy, and plan_valid guarantees no carry either.
     if (model.fueling == null) {
         std.debug.assert(parsed.value.carry.len == 0);
-        return .{ .model = model, .carry = null };
+        return .{ .model = model, .carry = null, .times = null };
     }
     // The supplies and the carry point into `parsed`, which is freed on return: copy them.
     // gpxz checked one of each per entry, so neither is empty unless the plan has no entries.
@@ -106,8 +112,13 @@ pub fn readPlan(
     fueling.supplies = try allocator.dupe(Supply, fueling.supplies);
     errdefer allocator.free(fueling.supplies);
     const carry = try allocator.dupe(?Carry, parsed.value.carry);
+    errdefer allocator.free(carry);
     std.debug.assert(carry.len == fueling.supplies.len);
-    return .{ .model = model, .carry = carry };
+    // plan_valid checked the entries run forward, which times_from_entries asserts.
+    const times = try allocator.alloc(Times, parsed.value.entries.len);
+    gpxz.fueling.times_from_entries(parsed.value.entries, times);
+    std.debug.assert(times.len == carry.len);
+    return .{ .model = model, .carry = carry, .times = times };
 }
 
 // ── Implementation ───────────────────────────────────────────────────────────────────────
@@ -239,6 +250,7 @@ test "readPlan: the model of a plan.json made for this route" {
     try testing.expectEqual(@as(u32, 1800), plan.model.life_base_stop_s);
     try testing.expect(plan.model.fueling == null);
     try testing.expect(plan.carry == null);
+    try testing.expect(plan.times == null);
 }
 
 test "readPlan: the fueling and carry outlive the parsed plan" {
@@ -274,6 +286,7 @@ test "readPlan: the fueling and carry outlive the parsed plan" {
     try testing.expectEqual(carry[1].?.fluid_ml, read[1].?.fluid_ml);
     try testing.expect(read[1].?.carbs_g == null);
     try testing.expect(read[2] == null);
+    try testing.expectEqualSlices(Times, &times, plan.times.?);
 }
 
 test "readPlan: another route, or a bad file, is an error" {

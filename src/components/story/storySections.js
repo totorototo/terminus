@@ -1,6 +1,7 @@
 import StoryCheckpoints from "./sections/StoryCheckpoints.jsx";
 import StoryClimbs from "./sections/StoryClimbs.jsx";
 import StoryEnd from "./sections/StoryEnd.jsx";
+import StoryFueling from "./sections/StoryFueling.jsx";
 import StoryHero from "./sections/StoryHero.jsx";
 import StoryMap from "./sections/StoryMap.jsx";
 import StoryNow from "./sections/StoryNow.jsx";
@@ -20,5 +21,6 @@ export const STORY_SECTIONS = [
   { id: "pace", label: "Pace", Component: StoryPace },
   { id: "stages", label: "Milestones", Component: StoryStages },
   { id: "checkpoints", label: "Checkpoints", Component: StoryCheckpoints },
+  { id: "fueling", label: "Fueling", Component: StoryFueling },
   { id: "end", label: "End", Component: StoryEnd },
 ];

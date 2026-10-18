@@ -160,6 +160,7 @@ test.describe("A11y — Runner app", () => {
       "Pace",
       "Milestones",
       "Checkpoints",
+      "Fueling",
       "End of line",
     ]) {
       await expect(page.getByRole("heading", { name }).first()).toBeVisible();

@@ -566,8 +566,9 @@ async function getRouteSection(data, requestId) {
 
 // A plan's fueling as the store keeps it, or null when the plan has none. The
 // carry is the plan's, at the plan's times (one per plan entry: the start, then
-// each section's end); Terminus doesn't re-size it to live ETAs.
-export function sanitizeFueling(fueling, carry) {
+// each section's end); Terminus doesn't re-size it to live ETAs. The times are
+// the plan's arrival and departure at each entry, which the carry was sized for.
+export function sanitizeFueling(fueling, carry, times) {
   if (fueling == null) return null;
   return {
     carbsGPerH: fueling.carbs_g_per_h,
@@ -585,6 +586,10 @@ export function sanitizeFueling(fueling, carry) {
             sodiumMg: amounts.sodium_mg,
           },
     ),
+    times: Array.from(times ?? [], (entry) => ({
+      arrivalS: entry.arrival_s,
+      departureS: entry.departure_s,
+    })),
   };
 }
 
@@ -601,7 +606,7 @@ async function readPlanFile(data, requestId) {
   }
   const plan = await readPlan(new Uint8Array(data.planBytes), routeBytes);
   try {
-    const { model, carry } = plan.valueOf();
+    const { model, carry, times } = plan.valueOf();
     self.postMessage({
       type: "PLAN_FILE_READ",
       id: requestId,
@@ -611,7 +616,7 @@ async function readPlanFile(data, requestId) {
           kFatigue: model.fatigue_coefficient,
           lifeBaseStopS: Number(model.life_base_stop_s),
         },
-        fueling: sanitizeFueling(model.fueling, carry),
+        fueling: sanitizeFueling(model.fueling, carry, times),
       },
     });
   } finally {
