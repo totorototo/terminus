@@ -22,6 +22,24 @@ const isValidCarry = (carry) =>
     isOptionalAmount(carry.carbsG) &&
     isOptionalAmount(carry.sodiumMg));
 
+// The plan's times, one per entry, running forward. Empty or absent in a
+// fueling saved, or sent by a runner, before Terminus kept them.
+const isValidTimes = (times, count) => {
+  if (times == null || (Array.isArray(times) && times.length === 0)) {
+    return true;
+  }
+  if (!Array.isArray(times) || times.length !== count) return false;
+  return times.every(
+    (entry, i) =>
+      entry !== null &&
+      typeof entry === "object" &&
+      isAmount(entry.arrivalS) &&
+      isAmount(entry.departureS) &&
+      entry.departureS >= entry.arrivalS &&
+      (i === 0 || entry.arrivalS >= times[i - 1].departureS),
+  );
+};
+
 /**
  * Whether `fueling` has the shape the worker's sanitizeFueling gives. gpxz
  * validated the plan; this guards what a follower receives over the relay.
@@ -39,7 +57,8 @@ export function isValidFueling(fueling) {
   }
   return (
     supplies.every((supply) => SUPPLIES.has(supply)) &&
-    carry.every(isValidCarry)
+    carry.every(isValidCarry) &&
+    isValidTimes(fueling.times, supplies.length)
   );
 }
 
@@ -69,6 +88,66 @@ export function nextRefill(fueling, checkpointETAs) {
     }
   }
   return null;
+}
+
+// What the hourly targets come to over `durationS`, rounded up as gpxz rounds
+// the carry, so the view never reads less than the plan sized for.
+function intakeOver(fueling, durationS) {
+  const hours = durationS / 3600;
+  return {
+    carbsG: Math.ceil(fueling.carbsGPerH * hours),
+    fluidMl: Math.ceil(fueling.fluidMlPerH * hours),
+    sodiumMg: Math.ceil(fueling.sodiumMgPerH * hours),
+  };
+}
+
+/**
+ * The plan's fueling, entry by entry, for the fueling view: one row per plan
+ * entry (the start, then each section's end) and the race's totals. Each row
+ * holds its supply and carry, and, from the plan's times, its arrival, its
+ * stop and what the targets come to on the leg into it (departure from the
+ * entry before to arrival here; stops are left out, as the carry leaves out
+ * the stop where it refills). Null without fueling, or when the plan's entries
+ * don't line up with the route's sections. Without the plan's times (a fueling
+ * kept before Terminus read them), the times, intakes and totals are null.
+ */
+export function fuelingRows(fueling, sections) {
+  const sectionCount = sections?.length ?? 0;
+  if (!fueling || sectionCount === 0) return null;
+  if (fueling.supplies.length !== sectionCount + 1) return null;
+  const times =
+    fueling.times?.length === sectionCount + 1 ? fueling.times : null;
+
+  const rows = fueling.supplies.map((supply, entry) => {
+    const time = times?.[entry] ?? null;
+    const previous = entry > 0 ? (times?.[entry - 1] ?? null) : null;
+    return {
+      entry,
+      name:
+        entry === 0
+          ? sections[0].startLocation
+          : sections[entry - 1].endLocation,
+      supply,
+      carry: fueling.carry[entry],
+      arrivalS: time?.arrivalS ?? null,
+      stopS: time ? time.departureS - time.arrivalS : null,
+      intake:
+        time && previous
+          ? intakeOver(fueling, time.arrivalS - previous.departureS)
+          : null,
+    };
+  });
+
+  const finishS = times ? times[times.length - 1].arrivalS : null;
+  const totals =
+    finishS == null
+      ? null
+      : {
+          durationS: finishS,
+          // Stops count here: the runner keeps eating at a time barrier.
+          ...intakeOver(fueling, finishS),
+        };
+  return { rows, totals };
 }
 
 function fluidText(ml) {

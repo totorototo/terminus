@@ -85,6 +85,12 @@ test.describe("plan.json", () => {
     await expect(rows.first()).toBeAttached();
     expect(await rows.count()).toBeLessThanOrEqual(refills.length);
     await expect(rows.first()).toContainText("Leave with");
+    // The Fueling section: every plan entry, and the race's totals at the
+    // plan's times.
+    await expect(page.getByTestId("fueling-totals")).toContainText("Carbs");
+    const fuelingRows = page.getByTestId("fueling-row");
+    await expect(fuelingRows.first()).toContainText("Full refill");
+    await expect(fuelingRows.first()).toContainText(`${start.carbs_g} g carbs`);
   });
 
   test("a replacement made for another route is refused", async ({ page }) => {

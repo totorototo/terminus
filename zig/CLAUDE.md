@@ -5,8 +5,8 @@ The computation lives in [gpxz](https://github.com/totorototo/gpxz), pinned by c
 
 ```
 terminus.zig     ── What the worker imports: readGPXComplete, recalibrate,
-                    readPlan (a plan.json's model and fueling, refused for another
-                    route),
+                    readPlan (a plan.json's model, fueling and entry times,
+                    refused for another route),
                     and the Trace / Route / WeatherLookup types
 build.zig.zon    ── Pins gpxz (same commit as retrace when possible)
 build.zig        ── Native test build: `zig build test` (Zigar ignores it)
