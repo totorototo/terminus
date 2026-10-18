@@ -51,21 +51,21 @@ describe("RouteStats", () => {
 
     expect(screen.getByText("+12.0%")).toBeInTheDocument();
     expect(screen.getByText("-18.0%")).toBeInTheDocument();
-    expect(screen.getByText("hike time (Casual)")).toBeInTheDocument();
+    expect(screen.getByText("hike time (8:20/km)")).toBeInTheDocument();
   });
 
-  it("labels both run and hike estimates with the currently selected runner profile", () => {
+  it("labels both run and hike estimates with the plan's flat pace", () => {
     setupStore({
       cumulativeDistances: [0, 100, 200],
       slopes: [0, 5, 10],
       paceFactors: [1, 1.2, 1.5],
-      basePaceSPerKm: 300, // Elite preset
+      basePaceSPerKm: 300,
     });
 
     render(<RouteStats />);
 
-    expect(screen.getByText("run time (Elite)")).toBeInTheDocument();
-    expect(screen.getByText("hike time (Elite)")).toBeInTheDocument();
+    expect(screen.getByText("run time (5:00/km)")).toBeInTheDocument();
+    expect(screen.getByText("hike time (5:00/km)")).toBeInTheDocument();
   });
 
   it("falls back to the default pace when the app slice is absent entirely", () => {
@@ -83,9 +83,7 @@ describe("RouteStats", () => {
 
     render(<RouteStats />);
 
-    // DEFAULT_PACE_SETTINGS.basePaceSPerKm (500) is closest to "Casual" (600,
-    // diff 100) among the RUNNER_PROFILES presets (Trail 365, Athlete 330,
-    // Elite 300 are all further away).
-    expect(screen.getByText("run time (Casual)")).toBeInTheDocument();
+    // DEFAULT_PACE_SETTINGS.basePaceSPerKm: 500 s/km.
+    expect(screen.getByText("run time (8:20/km)")).toBeInTheDocument();
   });
 });

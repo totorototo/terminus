@@ -19,6 +19,7 @@ import {
   GPX_FIXTURE,
   inviteFollower,
   mockClipboard,
+  PLAN_FIXTURE,
   selectRunnerRole,
   test,
 } from "./helpers.js";
@@ -67,7 +68,7 @@ test.describe("A11y — Help", () => {
 // ── Keyboard navigation ───────────────────────────────────────────────────────
 
 test.describe("A11y — Keyboard navigation", () => {
-  test("Tab reaches Open GPX, and Enter opens the file chooser", async ({
+  test("Tab reaches Open GPX then Open plan.json, and Enter opens each chooser", async ({
     page,
   }) => {
     await page.goto("/");
@@ -83,9 +84,18 @@ test.describe("A11y — Keyboard navigation", () => {
     await page.keyboard.press("Tab");
     await expect(page.locator(".choice-btn").first()).toBeFocused();
 
-    const chooser = page.waitForEvent("filechooser");
+    const gpxChooser = page.waitForEvent("filechooser");
     await page.keyboard.press("Enter");
-    await (await chooser).setFiles(GPX_FIXTURE);
+    await (await gpxChooser).setFiles(GPX_FIXTURE);
+
+    // Open plan.json is the next stop once the GPX is in.
+    const planButton = page.getByRole("button", { name: /open plan\.json/i });
+    await expect(planButton).toBeEnabled();
+    await page.keyboard.press("Tab");
+    await expect(planButton).toBeFocused();
+    const planChooser = page.waitForEvent("filechooser");
+    await page.keyboard.press("Enter");
+    await (await planChooser).setFiles(PLAN_FIXTURE);
     await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
   });
 

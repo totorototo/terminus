@@ -564,15 +564,19 @@ async function getRouteSection(data, requestId) {
   }
 }
 
-// A plan.json's model, read and checked by gpxz against the route this worker
-// holds (the bytes PROCESS_GPX_FILE retained): CourseMismatch when the plan was
-// made for another file, or for this one before it was edited.
+// A plan.json's model, read and checked by gpxz against a route: the GPX the
+// wizard is about to open (gpxBytes), else the one this worker holds (the bytes
+// PROCESS_GPX_FILE retained). CourseMismatch when the plan was made for another
+// file, or for this one before it was edited.
 async function readPlanFile(data, requestId) {
-  if (residentRouteBytes == null) {
+  const routeBytes = data.gpxBytes
+    ? new Uint8Array(data.gpxBytes)
+    : residentRouteBytes;
+  if (routeBytes == null) {
     throw new Error("No GPX route loaded for the plan");
   }
   const model = (
-    await readPlanModel(new Uint8Array(data.planBytes), residentRouteBytes)
+    await readPlanModel(new Uint8Array(data.planBytes), routeBytes)
   ).valueOf();
   self.postMessage({
     type: "PLAN_FILE_READ",

@@ -2,47 +2,20 @@ import { memo, useCallback, useRef, useState } from "react";
 
 import { useShallow } from "zustand/react/shallow";
 
-import useStore, { DEFAULT_PACE_SETTINGS } from "../../../store/store.js";
-import PaceProfile from "../../trailData/PaceProfile/PaceProfile.jsx";
 import {
-  closestOption,
-  LIFE_BASE_STOP_OPTIONS,
+  checkPlanFile,
   modelText,
   planFileError,
-  RUNNER_PROFILES,
-} from "../../trailData/PaceSettings/PaceSettings.constants.js";
+} from "../../../lib/planFile.js";
+import useStore, { DEFAULT_PACE_SETTINGS } from "../../../store/store.js";
+import PaceProfile from "../../trailData/PaceProfile/PaceProfile.jsx";
 import StorySection from "../StorySection.jsx";
 
 import style from "./StoryPace.style.js";
 
-function closestProfile(basePaceSPerKm) {
-  return RUNNER_PROFILES.reduce((best, p) =>
-    Math.abs(p.basePaceSPerKm - basePaceSPerKm) <
-    Math.abs(best.basePaceSPerKm - basePaceSPerKm)
-      ? p
-      : best,
-  );
-}
-
-// The plan.json the pace came from, in place of the pickers: its model, and a
-// way back to the pickers.
-function PlanFileModel({ planFile, paceSettings, onRemove }) {
-  return (
-    <>
-      <span className="picker-label">Plan</span>
-      <p className="plan-model" data-testid="plan-model">
-        {modelText(paceSettings)}
-      </p>
-      <p className="synced-note">
-        From {planFile.name}.{" "}
-        <button type="button" className="text-btn" onClick={onRemove}>
-          Use the pickers instead
-        </button>
-      </p>
-    </>
-  );
-}
-
+// The pace comes from the race's plan.json (Regimen), opened with the GPX in
+// the wizard: Terminus runs it, with the live weather and recalibration on
+// top, and never picks one of its own. A follower sees the runner's, synced.
 const StoryPace = memo(function StoryPace({ className }) {
   const planInputRef = useRef(null);
   const [planError, setPlanError] = useState(null);
@@ -68,43 +41,16 @@ const StoryPace = memo(function StoryPace({ className }) {
     })),
   );
 
-  const selectedProfile = closestProfile(paceSettings.basePaceSPerKm);
-  const selectedStop = closestOption(
-    LIFE_BASE_STOP_OPTIONS,
-    paceSettings.lifeBaseStopS ?? 3600,
-  );
-
-  const handleProfileChange = useCallback(
-    (profile) => {
-      setPaceSettings({
-        basePaceSPerKm: profile.basePaceSPerKm,
-        kFatigue: profile.kFatigue,
-      });
-      reprocessGPXFile();
-      broadcastPaceSettings();
-    },
-    [setPaceSettings, reprocessGPXFile, broadcastPaceSettings],
-  );
-
-  // why: LifeBase stop time (rest planned at major aid stations) was only
-  // exposed via the old nav-app's PaceSettings panel — dropped here when the
-  // profile picker was ported over. It feeds the same reprocessGPXFile pass
-  // as the runner profile and materially changes total time estimates (the
-  // hero's "est. time"), so it belongs alongside the profile picker.
-  const handleStopChange = useCallback(
-    (value) => {
-      setPaceSettings({ lifeBaseStopS: value });
-      reprocessGPXFile();
-      broadcastPaceSettings();
-    },
-    [setPaceSettings, reprocessGPXFile, broadcastPaceSettings],
-  );
-
-  // A plan.json from Regimen: gpxz checks it was made for this route, and its
-  // model replaces the pickers'. The live weather and recalibration still run
-  // on top of it, as they do on the pickers' settings.
+  // Another plan.json for the same race (remade in Regimen): gpxz checks it
+  // names the route the worker holds, then the estimates are reprocessed and
+  // the followers synced, as when the race was opened.
   const handlePlanFile = useCallback(
     async (file) => {
+      const problem = checkPlanFile(file);
+      if (problem) {
+        setPlanError(problem);
+        return;
+      }
       setPlanError(null);
       try {
         const settings = await readPlanFile(await file.arrayBuffer());
@@ -125,7 +71,11 @@ const StoryPace = memo(function StoryPace({ className }) {
     ],
   );
 
-  const showPlanFile = planFile && !isFollower;
+  let source;
+  if (isFollower) source = "Synced from the runner you're following.";
+  else if (planFile) source = `From ${planFile.name}.`;
+  // A race opened before Terminus took plan.json files: its last model.
+  else source = "No plan.json for this race yet.";
 
   return (
     <div className={className}>
@@ -139,99 +89,37 @@ const StoryPace = memo(function StoryPace({ className }) {
           <PaceProfile />
         </div>
 
-        {showPlanFile ? (
-          <PlanFileModel
-            planFile={planFile}
-            paceSettings={paceSettings}
-            onRemove={() => setPlanFile(null)}
-          />
-        ) : (
-          <>
-            <span className="picker-label">Runner profile</span>
-            <div
-              className="profile-picker"
-              role="radiogroup"
-              aria-label="Runner profile"
-            >
-              {RUNNER_PROFILES.map((profile) => (
-                <button
-                  key={profile.label}
-                  type="button"
-                  role="radio"
-                  aria-checked={profile.label === selectedProfile.label}
-                  className={
-                    profile.label === selectedProfile.label
-                      ? "profile-btn active"
-                      : "profile-btn"
-                  }
-                  onClick={() => handleProfileChange(profile)}
-                  disabled={isFollower}
-                >
-                  {profile.label}
-                </button>
-              ))}
-            </div>
-
-            <span className="picker-label">Life base stops</span>
-            <div
-              className="profile-picker"
-              role="radiogroup"
-              aria-label="Planned stop duration at each life base"
-            >
-              {LIFE_BASE_STOP_OPTIONS.map((opt) => (
-                <button
-                  key={opt.label}
-                  type="button"
-                  role="radio"
-                  aria-checked={opt.value === selectedStop.value}
-                  className={
-                    opt.value === selectedStop.value
-                      ? "profile-btn active"
-                      : "profile-btn"
-                  }
-                  onClick={() => handleStopChange(opt.value)}
-                  disabled={isFollower}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <p className="synced-note">{selectedStop.sub}</p>
-          </>
-        )}
-
-        {!isFollower && !showPlanFile && readPlanFile && (
-          <>
+        <span className="picker-label">Plan</span>
+        <p className="plan-model" data-testid="plan-model">
+          {modelText(paceSettings)}
+        </p>
+        <p className="synced-note">
+          {source}{" "}
+          {!isFollower && readPlanFile && (
             <button
               type="button"
-              className="text-btn plan-open"
+              className="text-btn"
               onClick={() => planInputRef.current?.click()}
             >
-              Use a plan.json from Regimen
+              {planFile ? "Replace plan.json" : "Open the plan.json"}
             </button>
-            <input
-              ref={planInputRef}
-              type="file"
-              accept=".json"
-              hidden
-              data-testid="plan-input"
-              onChange={(event) => {
-                const [file] = event.target.files;
-                if (file) handlePlanFile(file);
-                event.target.value = "";
-              }}
-            />
-          </>
-        )}
+          )}
+        </p>
+        <input
+          ref={planInputRef}
+          type="file"
+          accept=".json"
+          hidden
+          data-testid="plan-input"
+          onChange={(event) => {
+            const [file] = event.target.files;
+            if (file) handlePlanFile(file);
+            event.target.value = "";
+          }}
+        />
         {planError && (
           <p className="plan-error" role="alert">
             {planError}
-          </p>
-        )}
-
-        {isFollower && (
-          <p className="synced-note">
-            Synced from the runner you&apos;re following.
           </p>
         )}
       </StorySection>

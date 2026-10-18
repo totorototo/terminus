@@ -136,6 +136,12 @@ const style = (Component) => styled(Component)`
       cursor: progress;
       opacity: 0.7;
     }
+
+    /* Waiting for the GPX, not working: plain unavailable. */
+    &:disabled:not([aria-busy="true"]) {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
   }
 
   &.dragging .choices {

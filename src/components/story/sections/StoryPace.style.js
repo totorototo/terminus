@@ -45,12 +45,6 @@ const style = (Component) => styled(Component)`
     cursor: pointer;
   }
 
-  .plan-open {
-    display: block;
-    margin-top: 1rem;
-    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-  }
-
   .plan-error {
     margin: 0.5rem 0 0;
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
@@ -69,47 +63,6 @@ const style = (Component) => styled(Component)`
 
     &:first-of-type {
       margin-top: 0;
-    }
-  }
-
-  .profile-picker {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .profile-btn {
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-    font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    min-height: 44px;
-    padding: 0.5rem 1rem;
-    border-radius: ${(props) =>
-      props.theme.borderRadius["--border-radius-base"]};
-    border: 1px solid
-      ${(props) =>
-        rgba(
-          props.theme.colors[props.theme.currentVariant]["--color-text"],
-          0.15,
-        )};
-    background: none;
-    color: ${(props) =>
-      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
-    cursor: pointer;
-    transition: all ${(props) => props.theme.transitions["--transition-base"]};
-
-    &.active {
-      border-color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant]["--color-secondary"]};
-      color: ${(props) =>
-        props.theme.colors[props.theme.currentVariant][
-          "--color-secondary-text"
-        ]};
-    }
-
-    &:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
     }
   }
 

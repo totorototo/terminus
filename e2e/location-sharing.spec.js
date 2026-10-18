@@ -19,12 +19,9 @@
  *   5. The follower's "Right now" km-left moves off its pre-fix baseline.
  */
 
-import { readFileSync } from "node:fs";
-
 import {
   autoShareBtn,
   expect,
-  GPX_FIXTURE,
   heroDistanceKm,
   inviteFollower,
   kmLeft,
@@ -115,46 +112,6 @@ test.describe("Location Sharing", () => {
         await expect(
           followerPage.getByText("This race is no longer shared."),
         ).toBeVisible();
-      } finally {
-        await runnerCtx.close();
-        await followerCtx.close();
-      }
-    },
-  );
-
-  test(
-    "a follower of a waypoint-less race sees it named after the file",
-    { timeout: 90_000 },
-    async ({ browser }) => {
-      const runnerCtx = await browser.newContext();
-      const followerCtx = await browser.newContext();
-
-      try {
-        const runnerPage = await runnerCtx.newPage();
-        await mockClipboard(runnerPage);
-        await runnerPage.goto("/");
-        // The GRP route, as a race director might publish it: no waypoints
-        // and no <name>, so the trail is named after the file.
-        const bare = readFileSync(GPX_FIXTURE, "utf8")
-          .replace(/<wpt[\s\S]*?<\/wpt>/g, "")
-          .replace(/<name>[\s\S]*?<\/name>/g, "");
-        await runnerPage.getByTestId("gpx-input").setInputFiles({
-          name: "Tour du Lac.gpx",
-          mimeType: "application/gpx+xml",
-          buffer: Buffer.from(bare),
-        });
-        await expect(runnerPage.locator("h1.name")).toHaveText("Tour du Lac", {
-          timeout: 15_000,
-        });
-
-        const followUrl = await inviteFollower(runnerPage);
-        const followerPage = await followerCtx.newPage();
-        await followerPage.goto(followUrl);
-
-        await expect(followerPage.locator("h1.name")).toHaveText(
-          "Tour du Lac",
-          { timeout: 30_000 },
-        );
       } finally {
         await runnerCtx.close();
         await followerCtx.close();

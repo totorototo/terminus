@@ -16,10 +16,10 @@
  * Covers, for a single runner:
  *   1. Baseline (a-priori) agreement before any GPS fix.
  *   2. A location update (Spot me) recalibrates all three together.
- *   3. A pace-settings change (runner profile, Casual → Elite) recalibrates
- *      all three together.
- *   4. A pace-settings change in the other direction (Elite → Casual) does
- *      the same — pace changes aren't only tested one way.
+ *   3. A pace change (the race's plan.json replaced by a faster one)
+ *      recalibrates all three together.
+ *   4. A pace change in the other direction (back to the first plan.json)
+ *      does the same — pace changes aren't only tested one way.
  *
  * ...and, with a real relay (no WebSocket mocking, same as
  * location-sharing.spec.js), that a follower's three sections track a
@@ -29,10 +29,13 @@
 import {
   autoShareBtn,
   expect,
+  FAST_PLAN_FIXTURE,
   heroDistanceKm,
   inviteFollower,
   MID_TRAIL,
   mockClipboard,
+  PLAN_FIXTURE,
+  replacePlan,
   selectRunnerRole,
   test,
 } from "./helpers.js";
@@ -196,15 +199,15 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
     const hero1 = await waitForStableText(heroEstTime(page));
     expect(hero1).not.toBe(hero0);
 
-    // ── 2. Pace-settings change (Casual → Elite) ──────────────────────────
-    await page.getByRole("radio", { name: "Elite" }).click();
+    // ── 2. Pace change (7:30/km → 5:00/km plan.json) ──────────────────────
+    await replacePlan(page, FAST_PLAN_FIXTURE);
 
     const milestone2 = await waitForAgreement(page, milestone1);
     const hero2 = await waitForStableText(heroEstTime(page));
     expect(hero2).not.toBe(hero1);
 
-    // ── 3. Pace-settings change back (Elite → Casual) ─────────────────────
-    await page.getByRole("radio", { name: "Casual" }).click();
+    // ── 3. Pace change back (5:00/km → 7:30/km plan.json) ─────────────────
+    await replacePlan(page, PLAN_FIXTURE);
 
     await waitForAgreement(page, milestone2);
     const hero3 = await waitForStableText(heroEstTime(page));
@@ -269,8 +272,8 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
           .poll(async () => heroEstTime(followerPage).textContent())
           .toBe(heroRunner1);
 
-        // ── 2. Runner changes pace settings (Casual → Elite) ─────────────
-        await runnerPage.getByRole("radio", { name: "Elite" }).click();
+        // ── 2. Runner replaces the plan.json with a faster one ───────────
+        await replacePlan(runnerPage, FAST_PLAN_FIXTURE);
 
         const milestoneRunner2 = await waitForAgreement(
           runnerPage,
@@ -288,8 +291,8 @@ test.describe("ETA sync across Hero, Milestones, and Checkpoints", () => {
           .poll(async () => heroEstTime(followerPage).textContent())
           .toBe(heroRunner2);
 
-        // ── 3. Runner changes pace settings back (Elite → Casual) ────────
-        await runnerPage.getByRole("radio", { name: "Casual" }).click();
+        // ── 3. Runner goes back to the first plan.json ───────────────────
+        await replacePlan(runnerPage, PLAN_FIXTURE);
 
         const milestoneRunner3 = await waitForAgreement(
           runnerPage,

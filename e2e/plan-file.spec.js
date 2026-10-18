@@ -1,20 +1,20 @@
 /**
- * plan.json from Regimen: its model replaces the pace pickers, through the
- * real WASM path (gpxz reads the file and checks it names the open route).
- *
- * e2e/fixtures/grp-160-2026.plan.json is gpxz's plan for the fixture at
- * 7:30/km and a 30 min LifeBase stop:
- *   gpxz --plan --pace 450 --life-base-stop 1800 e2e/fixtures/grp-160-2026.gpx
+ * The race's plan.json from Regimen: its model is the pace, with no pickers,
+ * through the real WASM path (gpxz reads the file and checks it names the
+ * route). Opening it with the GPX is covered in wizard.spec.js.
  */
 
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 
-import { expect, heroDistanceKm, selectRunnerRole, test } from "./helpers.js";
-
-const PLAN_FIXTURE = fileURLToPath(
-  new URL("./fixtures/grp-160-2026.plan.json", import.meta.url),
-);
+import {
+  expect,
+  FAST_PLAN_FIXTURE,
+  heroDistanceKm,
+  PLAN_FIXTURE,
+  replacePlan,
+  selectRunnerRole,
+  test,
+} from "./helpers.js";
 
 const estTime = (page) =>
   page
@@ -30,36 +30,31 @@ test.describe("plan.json", () => {
     });
   });
 
-  test("its model replaces the pickers and the estimate", async ({ page }) => {
-    const before = await estTime(page).textContent();
-    await page.getByTestId("plan-input").setInputFiles(PLAN_FIXTURE);
-
+  test("its model is the pace, and a faster one moves the estimate", async ({
+    page,
+  }) => {
+    await expect(page.getByRole("radiogroup")).toHaveCount(0);
     await expect(page.getByTestId("plan-model")).toHaveText(
       "7:30/km flat · fatigue 0.002 · 0h30 at each LifeBase",
     );
-    await expect(
-      page.getByRole("radiogroup", { name: "Runner profile" }),
-    ).toHaveCount(0);
-    // Faster than the 8:20/km default, with shorter stops: an earlier finish.
-    await expect(estTime(page)).not.toHaveText(before);
+    const before = await estTime(page).textContent();
 
-    await page.getByRole("button", { name: "Use the pickers instead" }).click();
-    await expect(
-      page.getByRole("radiogroup", { name: "Runner profile" }),
-    ).toBeVisible();
+    await replacePlan(page, FAST_PLAN_FIXTURE);
+    await expect(page.getByTestId("plan-model")).toHaveText(
+      "5:00/km flat · fatigue 0.001 · 0h30 at each LifeBase",
+    );
+    await expect(estTime(page)).not.toHaveText(before);
   });
 
-  test("one made for another route is refused", async ({ page }) => {
+  test("a replacement made for another route is refused", async ({ page }) => {
     const plan = JSON.parse(readFileSync(PLAN_FIXTURE, "utf8"));
     plan.course.sha256 = "0".repeat(64);
-    await page.getByTestId("plan-input").setInputFiles({
+    await replacePlan(page, {
       name: "other.plan.json",
       mimeType: "application/json",
       buffer: Buffer.from(JSON.stringify(plan)),
     });
     await expect(page.getByRole("alert")).toContainText("made for another GPX");
-    await expect(
-      page.getByRole("radiogroup", { name: "Runner profile" }),
-    ).toBeVisible();
+    await expect(page.getByTestId("plan-model")).toContainText("7:30/km flat");
   });
 });

@@ -1,8 +1,8 @@
 import { memo, useMemo } from "react";
 
 import { computeRouteStats } from "../../../helpers/routeStats.js";
+import { paceText } from "../../../lib/planFile.js";
 import useStore, { DEFAULT_PACE_SETTINGS } from "../../../store/store.js";
-import { RUNNER_PROFILES } from "../PaceSettings/PaceSettings.constants.js";
 
 import style from "./RouteStats.style.js";
 
@@ -11,19 +11,6 @@ function formatHoursMinutes(totalSeconds) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return `${hours}h ${minutes}m`;
-}
-
-// why: the store only holds the numeric basePaceSPerKm the user picked, not
-// which named profile it came from — match it back to a label (e.g.
-// "Athlete") the same way StoryPace does, so the run estimate here reads as
-// tied to that same choice.
-function closestProfile(basePaceSPerKm) {
-  return RUNNER_PROFILES.reduce((best, p) =>
-    Math.abs(p.basePaceSPerKm - basePaceSPerKm) <
-    Math.abs(best.basePaceSPerKm - basePaceSPerKm)
-      ? p
-      : best,
-  );
 }
 
 const RouteStats = memo(function RouteStats({ className }) {
@@ -60,7 +47,8 @@ const RouteStats = memo(function RouteStats({ className }) {
   } = routeStats;
 
   const terrainAriaLabel = `Terrain breakdown: ${terrainBreakdown.uphillPct.toFixed(0)}% uphill, ${terrainBreakdown.flatPct.toFixed(0)}% flat, ${terrainBreakdown.downhillPct.toFixed(0)}% downhill.`;
-  const runnerProfileLabel = closestProfile(basePaceSPerKm).label;
+  // The plan.json's flat pace: what the run estimate is tied to.
+  const runnerProfileLabel = paceText(basePaceSPerKm);
 
   return (
     <div className={className}>

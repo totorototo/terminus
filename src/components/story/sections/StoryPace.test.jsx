@@ -62,25 +62,38 @@ function mockStore(overrides = {}) {
 
 const planFile = () => ({
   name: "race.plan.json",
+  size: 2,
   arrayBuffer: async () => new Uint8Array([123, 125]).buffer,
 });
 
 describe("StoryPace", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("shows the pickers and offers a plan.json", () => {
-    mockStore();
+  it("shows the plan.json's model, and no pickers", () => {
+    mockStore({
+      app: {
+        paceSettings: PLAN_SETTINGS,
+        planFile: { name: "race.plan.json" },
+      },
+    });
     render(<StoryPace />);
+    expect(screen.queryByRole("radiogroup")).toBeNull();
+    expect(screen.getByTestId("plan-model")).toHaveTextContent(
+      "7:30/km flat · fatigue 0.003 · no stop at LifeBases",
+    );
+    expect(screen.getByText(/From race.plan.json/)).toBeInTheDocument();
     expect(
-      screen.getByRole("radiogroup", { name: "Runner profile" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /plan.json from Regimen/ }),
+      screen.getByRole("button", { name: "Replace plan.json" }),
     ).toBeInTheDocument();
   });
 
-  it("applies a plan.json's model, then reprocesses and tells the followers", async () => {
-    const state = mockStore();
+  it("replaces the plan.json, then reprocesses and tells the followers", async () => {
+    const state = mockStore({
+      app: {
+        paceSettings: PLAN_SETTINGS,
+        planFile: { name: "race.plan.json" },
+      },
+    });
     render(<StoryPace />);
     fireEvent.change(screen.getByTestId("plan-input"), {
       target: { files: [planFile()] },
@@ -89,6 +102,7 @@ describe("StoryPace", () => {
     await waitFor(() =>
       expect(state.setPaceSettings).toHaveBeenCalledWith(PLAN_SETTINGS),
     );
+    // Checked against the route the worker holds: no GPX bytes passed.
     expect(state.readPlanFile).toHaveBeenCalledWith(expect.any(ArrayBuffer));
     expect(state.setPlanFile).toHaveBeenCalledWith({ name: "race.plan.json" });
     expect(state.reprocessGPXFile).toHaveBeenCalled();
@@ -111,25 +125,36 @@ describe("StoryPace", () => {
     expect(state.setPlanFile).not.toHaveBeenCalled();
   });
 
-  it("with a plan.json, shows its model instead of the pickers, and can go back", () => {
-    const state = mockStore({
-      app: {
-        paceSettings: PLAN_SETTINGS,
-        planFile: { name: "race.plan.json" },
-      },
-    });
+  it("refuses a file that is not a plan.json before reading it", async () => {
+    const state = mockStore();
     render(<StoryPace />);
-    expect(screen.queryByRole("radiogroup")).toBeNull();
-    expect(screen.getByTestId("plan-model")).toHaveTextContent(
-      "7:30/km flat · fatigue 0.003 · no stop at LifeBases",
+    const notes = {
+      name: "notes.txt",
+      size: 3,
+      arrayBuffer: async () => new ArrayBuffer(3),
+    };
+    fireEvent.change(screen.getByTestId("plan-input"), {
+      target: { files: [notes] },
+    });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Choose the race's plan.json.",
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Use the pickers instead" }),
-    );
-    expect(state.setPlanFile).toHaveBeenCalledWith(null);
+    expect(state.readPlanFile).not.toHaveBeenCalled();
   });
 
-  it("a follower sees the synced pickers, never the runner's plan.json", () => {
+  it("asks for a plan.json on a race opened without one", () => {
+    mockStore();
+    render(<StoryPace />);
+    expect(
+      screen.getByText(/No plan.json for this race yet/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Open the plan.json" }),
+    ).toBeInTheDocument();
+  });
+
+  it("a follower sees the runner's synced model, and can't replace it", () => {
     mockStore({
       app: {
         paceSettings: PLAN_SETTINGS,
@@ -138,10 +163,8 @@ describe("StoryPace", () => {
       gps: { followerConnectionStatus: "connected" },
     });
     render(<StoryPace />);
-    expect(
-      screen.getByRole("radiogroup", { name: "Runner profile" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByTestId("plan-input")).toBeNull();
+    expect(screen.getByTestId("plan-model")).toHaveTextContent("7:30/km flat");
     expect(screen.getByText(/Synced from the runner/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /plan.json/ })).toBeNull();
   });
 });

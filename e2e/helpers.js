@@ -35,6 +35,33 @@ export const GPX_FIXTURE = fileURLToPath(
   new URL("./fixtures/grp-160-2026.gpx", import.meta.url),
 );
 
+// gpxz's plan.json for the fixture, as Regimen writes it (7:30/km, 30 min
+// at each LifeBase), and a faster one for pace changes (5:00/km). Remake them
+// if gpxz's model changes:
+//   gpxz --plan --pace 450 --life-base-stop 1800 e2e/fixtures/grp-160-2026.gpx
+//   gpxz --plan --pace 300 --fatigue 0.001 --life-base-stop 1800 \
+//     e2e/fixtures/grp-160-2026.gpx
+export const PLAN_FIXTURE = fileURLToPath(
+  new URL("./fixtures/grp-160-2026.plan.json", import.meta.url),
+);
+export const FAST_PLAN_FIXTURE = fileURLToPath(
+  new URL("./fixtures/grp-160-2026.fast.plan.json", import.meta.url),
+);
+
+/** Open the fixture's GPX and its plan.json from the wizard, landing on /run. */
+export async function openRace(page) {
+  await page.getByTestId("gpx-input").setInputFiles(GPX_FIXTURE);
+  // The GPX is read before the plan.json can be checked against it.
+  await expect(
+    page.getByRole("button", { name: /open plan\.json/i }),
+  ).toBeEnabled();
+  await page.getByTestId("plan-input").setInputFiles(PLAN_FIXTURE);
+  await page.waitForURL("**/run");
+}
+
+/** Replace the race's plan.json from the pace section, on /run. */
+export const replacePlan = (page, plan) =>
+  page.getByTestId("plan-input").setInputFiles(plan);
 /**
  * Shared GPS fixtures — reused across multiple spec files.
  *
@@ -77,9 +104,7 @@ export async function selectRunnerRole(page) {
   // the browser context was created.
   await page.setViewportSize({ width: 390, height: 844 });
 
-  // Open the fixture GPX through the wizard's file input.
-  await page.getByTestId("gpx-input").setInputFiles(GPX_FIXTURE);
-  await page.waitForURL("**/run");
+  await openRace(page);
 }
 
 /**

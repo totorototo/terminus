@@ -7,7 +7,7 @@
  * key sections are reachable, at both a mobile and a desktop viewport.
  */
 
-import { expect, GPX_FIXTURE, selectRunnerRole, test } from "./helpers.js";
+import { expect, openRace, selectRunnerRole, test } from "./helpers.js";
 
 test.describe("Smoke", () => {
   test("wizard loads without JS errors", async ({ page }) => {
@@ -20,7 +20,7 @@ test.describe("Smoke", () => {
       timeout: 10_000,
     });
     await expect(
-      page.getByText("Open the GPX of the race you're running today."),
+      page.getByText(/Open the GPX of the race you're running today/),
     ).toBeVisible();
     expect(errors).toEqual([]);
   });
@@ -49,7 +49,7 @@ test.describe("Smoke", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
 
-    await page.getByTestId("gpx-input").setInputFiles(GPX_FIXTURE);
+    await openRace(page);
 
     await expect(page.locator("h1.name")).toBeVisible({ timeout: 15_000 });
     await expect(
