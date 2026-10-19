@@ -18,6 +18,15 @@ function planClock(seconds) {
   return `+${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}`;
 }
 
+// A carry as one line that wraps only between its figures: "1.6 g sodium"
+// never splits across lines.
+function figuresText(carry) {
+  return carryText(carry)
+    .split(" · ")
+    .map((part) => part.replaceAll(" ", " "))
+    .join(" · ");
+}
+
 // The whole plan's fueling, entry by entry: what to leave each point with,
 // what the targets come to on the way there, and the race's totals. All of it
 // at the plan's times, as Regimen sized it: live ETAs don't re-size it.
@@ -140,7 +149,7 @@ const StoryFueling = memo(function StoryFueling({ className }) {
                     {row.intake && (
                       <div className="wide">
                         <dt>On the way</dt>
-                        <dd>{carryText(row.intake)}</dd>
+                        <dd>{figuresText(row.intake)}</dd>
                       </div>
                     )}
                     {refills && (
@@ -150,7 +159,7 @@ const StoryFueling = memo(function StoryFueling({ className }) {
                             ? "Leave with · water only, keep your food"
                             : "Leave with"}
                         </dt>
-                        <dd>{carryText(row.carry)}</dd>
+                        <dd>{figuresText(row.carry)}</dd>
                       </div>
                     )}
                     {row.stopS > 0 && (

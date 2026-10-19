@@ -132,7 +132,12 @@ const style = (Component) => styled(Component)`
     border: 1px solid currentColor;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: ${(props) => props.theme.font.sizes["--font-size-tiny"]};
+    /* why: outdoor mode's 1.35x makes the tiny step 16px, too heavy for a
+       pill beside the ETA on a phone; one step down still reads 14px. */
+    font-size: ${(props) =>
+      props.theme.font.sizes[
+        props.theme.outdoorMode ? "--font-size-xsmall" : "--font-size-tiny"
+      ]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -182,7 +187,12 @@ const style = (Component) => styled(Component)`
     dd {
       margin: 0;
       font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-      font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
+      /* why: the carry is a long mono line; outdoors one step down (16px)
+         keeps it to a line or two at phone width. */
+      font-size: ${(props) =>
+        props.theme.font.sizes[
+          props.theme.outdoorMode ? "--font-size-tiny" : "--font-size-small"
+        ]};
       font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     }
   }
