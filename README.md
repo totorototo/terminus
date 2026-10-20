@@ -259,6 +259,13 @@ from `zig/`).
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
 
+## Privacy
+
+No accounts and no cookies; the GPX, plan and settings stay in the browser. Mapbox (map),
+Open-Meteo (forecasts at the checkpoints), Umami (cookieless statistics), Web3Forms (the contact
+form), the Cloudflare relay (only while sharing a location) and Netlify see requests. The in-app
+Help page (`/help#privacy`) lists what each receives and what the relay keeps.
+
 ## License
 
 AGPL-3.0-or-later, see `LICENSE`. Copyright (C) 2026 Terminus Contributors.
