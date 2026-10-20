@@ -650,7 +650,7 @@ function Help({ className }) {
             <strong>What the relay keeps</strong> — your last position for an
             hour. The GPX, position and followers&apos; push addresses are
             deleted when you stop sharing or open another race, or 7 days after
-            the last update.
+            the last update. Nothing is sold or used for advertising.
           </div>
         </section>
 
