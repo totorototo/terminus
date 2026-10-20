@@ -59,13 +59,15 @@ const StoryFueling = memo(function StoryFueling({ className }) {
 
   if (!sections?.length) return null;
 
-  if (!plan) {
+  // Fueling stays on the runner's device. What this device holds is its own
+  // plan's, for another race, so a follower sees none of it.
+  if (isFollower || !plan) {
     return (
       <div className={className}>
         <StorySection eyebrow="The plan" title="Fueling">
           <p className="lede">
             {isFollower
-              ? "The runner's plan has no fueling."
+              ? "Fueling stays on the runner's device: it isn't shared with followers."
               : "This race's plan.json has no fueling. Plan it in Regimen, then open the new plan.json in Pace."}
           </p>
         </StorySection>

@@ -149,10 +149,18 @@ describe("StoryFueling", () => {
     mockStore({ fueling: null });
     render(<StoryFueling />);
     expect(screen.getByText(/has no fueling/)).toBeInTheDocument();
-    mockStore({ fueling: null, isFollower: true });
-    render(<StoryFueling />);
-    expect(
-      screen.getByText("The runner's plan has no fueling."),
-    ).toBeInTheDocument();
+  });
+
+  // The follower's own fueling is for another race: never shown.
+  it("tells a follower fueling isn't shared, whatever this device holds", () => {
+    for (const fueling of [FUELING, null]) {
+      mockStore({ fueling, isFollower: true });
+      const { unmount } = render(<StoryFueling />);
+      expect(
+        screen.getByText(/isn't shared with followers/),
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId("fueling-totals")).not.toBeInTheDocument();
+      unmount();
+    }
   });
 });

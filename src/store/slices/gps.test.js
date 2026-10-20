@@ -728,9 +728,40 @@ describe("GPS Slice", () => {
           kFatigue: 0.002,
           lifeBaseStopS: 3600,
         },
-        fueling: null,
         writeKey: "write-key-1",
       });
+    });
+
+    // The relay drops a location message over 1 KiB (party/server.js), so a
+    // plan's fueling, which grows with the race, must never ride along.
+    it("sends no fueling, and stays under the relay's limit on a long race", async () => {
+      const entries = 60;
+      store.setState({
+        app: {
+          ...store.getState().app,
+          fueling: {
+            carbsGPerH: 70,
+            fluidMlPerH: 500,
+            sodiumMgPerH: 400,
+            reserveS: 1800,
+            supplies: Array.from({ length: entries }, () => "full"),
+            carry: Array.from({ length: entries }, () => ({
+              fluidMl: 1000,
+              carbsG: 140,
+              sodiumMg: 800,
+            })),
+            times: Array.from({ length: entries }, (_, i) => ({
+              arrivalS: i * 3600,
+              departureS: i * 3600 + 600,
+            })),
+          },
+        },
+      });
+      await store.getState().broadcastPaceSettings();
+
+      const raw = PartySocket.instances.at(-1).send.mock.calls[0][0];
+      expect(JSON.parse(raw)).not.toHaveProperty("fueling");
+      expect(raw.length).toBeLessThanOrEqual(1024);
     });
   });
 
@@ -803,50 +834,20 @@ describe("GPS Slice", () => {
     });
   });
 
-  describe("connectToFollowerSession — fueling sync", () => {
-    const runnerFueling = {
-      carbsGPerH: 70,
-      fluidMlPerH: 500,
-      sodiumMgPerH: 400,
-      reserveS: 1800,
-      supplies: ["full", "none"],
-      carry: [{ fluidMl: 1000, carbsG: 140, sodiumMg: 800 }, null],
-    };
-
-    const dispatchFueling = (extra) => {
-      const socket = PartySocket.instances.at(-1);
-      socket.dispatch("message", {
+  describe("connectToFollowerSession — fueling", () => {
+    it("ignores a fueling sent by an older runner", async () => {
+      store.setState({ app: { ...store.getState().app, fueling: null } });
+      await store.getState().connectToFollowerSession("room-1");
+      PartySocket.instances.at(-1).dispatch("message", {
         data: JSON.stringify({
           type: "location",
           timestamp: 123,
           coords: [45.5, -122.7, 100],
           index: 4,
-          ...extra,
+          fueling: { carbsGPerH: 70, supplies: ["full"], carry: [null] },
         }),
       });
-    };
-
-    it("applies the runner's fueling, and skips it when unchanged", async () => {
-      await store.getState().connectToFollowerSession("room-1");
-      dispatchFueling({ fueling: runnerFueling });
-      expect(store.getState().app.fueling).toEqual(runnerFueling);
-
-      store.getState().setFueling.mockClear();
-      dispatchFueling({ fueling: { ...runnerFueling } });
       expect(store.getState().setFueling).not.toHaveBeenCalled();
-      // Display-only: fueling never reprocesses the route.
-      expect(store.getState().reprocessGPXFile).not.toHaveBeenCalled();
-    });
-
-    it("clears it on null, and leaves it on a missing key or a bad shape", async () => {
-      await store.getState().connectToFollowerSession("room-1");
-      dispatchFueling({ fueling: runnerFueling });
-
-      dispatchFueling({});
-      dispatchFueling({ fueling: { ...runnerFueling, supplies: ["full"] } });
-      expect(store.getState().app.fueling).toEqual(runnerFueling);
-
-      dispatchFueling({ fueling: null });
       expect(store.getState().app.fueling).toBeNull();
     });
   });
