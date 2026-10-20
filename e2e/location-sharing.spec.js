@@ -28,6 +28,7 @@ import {
   kmLeft,
   MID_TRAIL,
   mockClipboard,
+  nowStat,
   replacePlan,
   selectRunnerRole,
   test,
@@ -49,6 +50,32 @@ async function openRunner(browser) {
     timeout: 30_000,
   });
   return { runnerCtx, runnerPage };
+}
+
+// The follower shows the runner's own fix and projection: the same km left
+// and the same ETA. km left counts up with an animation, so a single read can
+// catch a frame mid-way; poll until both sides settle on the same figures.
+const nowFigures = async (page) => ({
+  kmLeft: await kmLeft(page).textContent(),
+  eta: await nowStat(page, "eta").textContent(),
+});
+
+async function expectSamePosition(runnerPage, followerPage) {
+  await expect
+    .poll(
+      async () => {
+        const [runner, follower] = await Promise.all([
+          nowFigures(runnerPage),
+          nowFigures(followerPage),
+        ]);
+        const fixed = runner.kmLeft !== "0" && /^\d+\.\d$/.test(runner.kmLeft);
+        return fixed && JSON.stringify(runner) === JSON.stringify(follower)
+          ? "same"
+          : `runner ${JSON.stringify(runner)}, follower ${JSON.stringify(follower)}`;
+      },
+      { timeout: 20_000 },
+    )
+    .toBe("same");
 }
 
 test.describe("Location Sharing", () => {
@@ -80,11 +107,7 @@ test.describe("Location Sharing", () => {
         await expect(kmLeft(followerPage)).toHaveText("0");
 
         await autoShareBtn(runnerPage).click();
-
-        await expect(kmLeft(followerPage)).not.toHaveText("0", {
-          timeout: 15_000,
-        });
-        await expect(kmLeft(followerPage)).toHaveText(/^\d+\.\d$/);
+        await expectSamePosition(runnerPage, followerPage);
       } finally {
         await runnerCtx.close();
         await followerCtx.close();
@@ -118,11 +141,7 @@ test.describe("Location Sharing", () => {
         await expect(kmLeft(followerPage)).toHaveText("0");
 
         await autoShareBtn(runnerPage).click();
-
-        await expect(kmLeft(followerPage)).not.toHaveText("0", {
-          timeout: 15_000,
-        });
-        await expect(kmLeft(followerPage)).toHaveText(/^\d+\.\d$/);
+        await expectSamePosition(runnerPage, followerPage);
       } finally {
         await runnerCtx.close();
         await followerCtx.close();

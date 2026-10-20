@@ -90,9 +90,14 @@ export const NEAR_START = {
 export const OFF_TRAIL = { latitude: 48.8584, longitude: 2.2945, accuracy: 10 };
 
 /** "km left" stat value in the "Right now" story section (confirms GPX loaded/updated). */
-export const kmLeft = (page) =>
+export const kmLeft = (page) => nowStat(page, "km left");
+
+/** A "Right now" figure by its label ("km left", "eta", "remaining", "vs plan"). */
+export const nowStat = (page, label) =>
   page
-    .locator(".now-stat", { has: page.getByText("km left") })
+    .locator(".now-stat", {
+      has: page.locator(".now-label", { hasText: new RegExp(`^${label}$`) }),
+    })
     .locator(".now-value");
 
 /**
