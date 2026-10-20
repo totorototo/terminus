@@ -20,7 +20,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("message", (event) => {
   if (event.origin !== self.location.origin) return;
   if (typeof event.data !== "object" || event.data === null) return;
-  if (event.data?.type === "PARTYKIT_MESSAGE") {
+  if (event.data?.type === "RELAY_MESSAGE") {
     const { payload } = event.data;
     event.waitUntil(
       self.registration.showNotification(payload.title ?? "Terminus", {

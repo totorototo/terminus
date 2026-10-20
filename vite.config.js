@@ -94,22 +94,22 @@ const zigarOptions = {
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const partykitHost = env.VITE_PARTYKIT_HOST;
-  // A local `partykit dev` relay speaks plain http/ws (see sharedRoute.js).
-  const partykitIsLocal = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(
-    partykitHost ?? "",
+  const relayHost = env.VITE_RELAY_HOST;
+  // A local `wrangler dev` relay speaks plain http/ws (see sharedRoute.js).
+  const relayIsLocal = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(
+    relayHost ?? "",
   );
-  const partykitSources = partykitHost
-    ? partykitIsLocal
-      ? ` http://${partykitHost} ws://${partykitHost}`
-      : ` https://${partykitHost} wss://${partykitHost}`
+  const relaySources = relayHost
+    ? relayIsLocal
+      ? ` http://${relayHost} ws://${relayHost}`
+      : ` https://${relayHost} wss://${relayHost}`
     : "";
   const csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://cloud.umami.is",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
-    `connect-src 'self'${partykitSources} blob: data: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev https://api.open-meteo.com https://api.web3forms.com`,
+    `connect-src 'self'${relaySources} blob: data: https://cdn.jsdelivr.net https://cloud.umami.is https://api-gateway.umami.dev https://api.open-meteo.com https://api.web3forms.com`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",

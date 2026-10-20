@@ -12,13 +12,12 @@ import {
   saveLocalGpx,
 } from "./localGpx.js";
 
-export const PARTYKIT_HOST =
-  import.meta.env.VITE_PARTYKIT_HOST ?? "localhost:1999";
+export const RELAY_HOST = import.meta.env.VITE_RELAY_HOST ?? "localhost:1999";
 
 const isLocalHost = (host) => /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
 
 export const routeUrl = (roomId, suffix = "") =>
-  `${isLocalHost(PARTYKIT_HOST) ? "http" : "https"}://${PARTYKIT_HOST}/parties/main/${roomId}/route${suffix}`;
+  `${isLocalHost(RELAY_HOST) ? "http" : "https"}://${RELAY_HOST}/parties/main/${roomId}/route${suffix}`;
 
 const toHex = (buffer) =>
   Array.from(new Uint8Array(buffer))

@@ -7,7 +7,7 @@ import {
   gunzip,
   gzip,
   loadFollowedRoute,
-  PARTYKIT_HOST,
+  RELAY_HOST,
   routeUrl,
   uploadRoute,
 } from "./sharedRoute.js";
@@ -21,8 +21,8 @@ vi.mock("./localGpx.js", () => ({
 
 const encode = (text) => new TextEncoder().encode(text).buffer;
 const decode = (buffer) => new TextDecoder().decode(buffer);
-// .env may point VITE_PARTYKIT_HOST at the deployed relay.
-const PROTOCOL = PARTYKIT_HOST.startsWith("localhost") ? "http" : "https";
+// .env may point VITE_RELAY_HOST at the deployed relay.
+const PROTOCOL = RELAY_HOST.startsWith("localhost") ? "http" : "https";
 const GPX = encode("<gpx><trk><trkseg></trkseg></trk></gpx>".repeat(50));
 
 describe("gzip / gunzip", () => {
@@ -51,10 +51,10 @@ describe("relay requests", () => {
 
   it("addresses the room's route on the relay", () => {
     expect(routeUrl("abc")).toBe(
-      `${PROTOCOL}://${PARTYKIT_HOST}/parties/main/abc/route`,
+      `${PROTOCOL}://${RELAY_HOST}/parties/main/abc/route`,
     );
     expect(routeUrl("abc", "/meta")).toBe(
-      `${PROTOCOL}://${PARTYKIT_HOST}/parties/main/abc/route/meta`,
+      `${PROTOCOL}://${RELAY_HOST}/parties/main/abc/route/meta`,
     );
   });
 

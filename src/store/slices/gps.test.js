@@ -37,7 +37,7 @@ vi.mock("../../lib/localGpx.js", () => ({
 }));
 
 vi.mock("../../lib/sharedRoute.js", () => ({
-  PARTYKIT_HOST: "localhost:1999",
+  RELAY_HOST: "localhost:1999",
   uploadRoute: vi.fn(),
   deleteRoute: vi.fn(),
 }));

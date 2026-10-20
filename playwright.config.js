@@ -45,7 +45,7 @@ export default defineConfig({
           timeout: 180_000, // 3 minutes for build + startup
           // Also read by the preview server's CSP (vite.config.js), which must
           // allow the local relay.
-          env: { VITE_PARTYKIT_HOST: LOCAL_RELAY },
+          env: { VITE_RELAY_HOST: LOCAL_RELAY },
         },
         {
           command: "npm run party",

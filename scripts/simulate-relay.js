@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Replay a GPX route as live location updates sent to a PartyKit room.
+// Replay a GPX route as live location updates sent to a relay room.
 // The GPX is first uploaded to the room, as an invite from the app does, so
 // a follower opening the printed link reads the same route.
-// Usage: node scripts/simulate-partykit.js <gpx-file> <write-key> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
+// Usage: node scripts/simulate-relay.js <gpx-file> <write-key> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
 //   gpx-file         - path to the GPX file (absolute or relative to cwd)
 //   write-key        - secret room write key (e.g. "ABC123"); the public room
 //                      id followers use is derived as SHA-256(write-key) and
@@ -13,14 +13,14 @@
 //   k_fatigue        - cumulative fatigue coefficient (default: 0.004, calibrated for 200 km+)
 //
 // Environment:
-//   PARTYKIT_HOST - PartyKit host (default: localhost:1999)
+//   RELAY_HOST - relay host (default: localhost:1999)
 
 import { readFileSync } from "fs";
 import { createHash, webcrypto } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { basename, resolve } from "path";
 
-// Web Crypto is a global in browsers and the PartyKit worker; on Node 18 it is
+// Web Crypto is a global in browsers and the relay worker; on Node 18 it is
 // not, so expose it before importing the shared room-auth helper.
 globalThis.crypto ??= webcrypto;
 const { deriveRoomId } = await import("../src/lib/roomAuth.js");
@@ -30,7 +30,7 @@ const [, , gpxArg, writeKey, speedArg, intervalArg, paceArg, fatigueArg] =
 
 if (!gpxArg || !writeKey) {
   console.error(
-    "Usage: node scripts/simulate-partykit.js <gpx-file> <write-key> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]",
+    "Usage: node scripts/simulate-relay.js <gpx-file> <write-key> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]",
   );
   process.exit(1);
 }
@@ -139,7 +139,7 @@ console.log(`Follow at: /follow/${roomId}`);
 
 // ── Route upload ──────────────────────────────────────────────────────────────
 
-const host = process.env.PARTYKIT_HOST ?? "localhost:1999";
+const host = process.env.RELAY_HOST ?? "localhost:1999";
 const isLocal = host.startsWith("localhost") || host.startsWith("127.");
 const roomUrl = `${isLocal ? "http" : "https"}://${host}/parties/main/${roomId}`;
 const wsUrl = `${isLocal ? "ws" : "wss"}://${host}/parties/main/${roomId}`;
@@ -165,7 +165,7 @@ if (!upload.ok) {
 }
 console.log("Route uploaded.");
 
-// ── PartyKit WebSocket connection ─────────────────────────────────────────────
+// ── Relay WebSocket connection ────────────────────────────────────────────────
 
 console.log(`\nConnecting to ${wsUrl} …`);
 

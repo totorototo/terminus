@@ -162,7 +162,7 @@ describe("notifyLocationUpdate", () => {
     notifyLocationUpdate(msg);
 
     expect(postMessage).toHaveBeenCalledWith({
-      type: "PARTYKIT_MESSAGE",
+      type: "RELAY_MESSAGE",
       payload: {
         title: "Runner update",
         body: "Runner at 45.1235, 5.6789 · 1235m",
@@ -183,7 +183,7 @@ describe("notifyLocationUpdate", () => {
     notifyLocationUpdate(msg);
 
     expect(postMessage).toHaveBeenCalledWith({
-      type: "PARTYKIT_MESSAGE",
+      type: "RELAY_MESSAGE",
       payload: {
         title: "Runner update",
         body: "Runner's position updated",

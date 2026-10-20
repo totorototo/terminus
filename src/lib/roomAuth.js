@@ -8,7 +8,7 @@
 // enumerated by guessing.
 //
 // Pure and framework-agnostic: relies only on the global Web Crypto API, so the
-// same logic runs in the browser, the PartyKit worker, and Node (the simulate
+// same logic runs in the browser, the relay worker, and Node (the simulate
 // script sets globalThis.crypto before importing).
 
 const ROOM_ID_LENGTH = 16; // hex chars → 64 bits
