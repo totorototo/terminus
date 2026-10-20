@@ -38,6 +38,22 @@ describe("Help", () => {
     expect(screen.getByText("Install")).toBeInTheDocument();
   });
 
+  it("lists every service that receives data in the privacy section", () => {
+    render(<Help />);
+    const privacy = document.getElementById("privacy");
+    for (const service of [
+      "Mapbox",
+      "Open-Meteo",
+      "Umami",
+      "Web3Forms",
+      "Cloudflare",
+      "Netlify",
+      "jsDelivr",
+    ]) {
+      expect(privacy).toHaveTextContent(service);
+    }
+  });
+
   it("scrolls the matching section into view when a nav button is clicked", () => {
     render(<Help />);
     const section = document.createElement("div");

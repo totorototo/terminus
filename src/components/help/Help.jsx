@@ -11,6 +11,7 @@ const SECTIONS = [
   { id: "end", label: "End of Line" },
   { id: "follower", label: "Follower" },
   { id: "install", label: "Install" },
+  { id: "privacy", label: "Privacy" },
 ];
 
 function Help({ className }) {
@@ -563,6 +564,93 @@ function Help({ className }) {
             <strong>Safari required on iPhone</strong> — iOS only allows PWA
             installation from Safari. If you are using Chrome or another browser
             on iPhone, open the same URL in Safari first.
+          </div>
+        </section>
+
+        <hr className="divider" />
+
+        {/* PRIVACY */}
+        <section id="privacy" className="section">
+          <p className="sec-label">09 — Privacy</p>
+          <h2 className="sec-title">What leaves your device</h2>
+          <p className="sec-body">
+            Terminus has no accounts and sets no cookies. Your GPX, plan and
+            settings stay in this browser (IndexedDB and local storage). These
+            services see a request only when you use what they serve:
+          </p>
+          <div className="feat-grid">
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                Mapbox — the map
+              </h4>
+              <p>
+                Map tiles, terrain and fonts come from Mapbox, so it sees your
+                IP address and the area you view. The map library also sends
+                Mapbox anonymous usage events (map loads).
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                Open-Meteo — forecasts
+              </h4>
+              <p>
+                Forecasts are fetched for the checkpoints&apos; coordinates, the
+                course&apos;s and not yours. Open-Meteo sees your IP address and
+                those coordinates.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                Umami — usage statistics
+              </h4>
+              <p>
+                Cookieless, aggregate statistics: pages viewed, browser, device,
+                country, page speed, and which features are used (opening a GPX,
+                sharing, theme). No position and no file content.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                Web3Forms — the contact form
+              </h4>
+              <p>
+                Only when you send the form: your email address, your message
+                and the race&apos;s name, forwarded to the author by email.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot t" />
+                Cloudflare — live sharing
+              </h4>
+              <p>
+                Only while you share your location: the race&apos;s GPX, your
+                position, pace and fueling settings go to the relay, which
+                passes them to your followers. Followers who turn on
+                notifications leave their browser&apos;s push address there.
+              </p>
+            </div>
+            <div className="feat">
+              <h4>
+                <span className="dot" />
+                Netlify and jsDelivr — the app itself
+              </h4>
+              <p>
+                Netlify hosts Terminus and sees each visit&apos;s IP address.
+                The trail card you share is drawn with a font fetched from
+                jsDelivr.
+              </p>
+            </div>
+          </div>
+          <div className="info-box">
+            <strong>What the relay keeps</strong> — your last position for an
+            hour. The GPX, position and followers&apos; push addresses are
+            deleted when you stop sharing or open another race, or 7 days after
+            the last update.
           </div>
         </section>
 
