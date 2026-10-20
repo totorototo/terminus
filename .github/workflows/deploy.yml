@@ -78,7 +78,7 @@ jobs:
         run: |
           echo "VITE_NUMBER=${{ github.run_number }}" > .env
           echo "VITE_RELAY_HOST=${{ vars.RELAY_HOST }}" >> .env
-          echo "VITE_VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
+          echo "VITE_VAPID_PUBLIC_KEY=${{ secrets.VITE_VAPID_PUBLIC_KEY }}" >> .env
           echo "VITE_UMAMI_SRC=${{ secrets.VITE_UMAMI_SRC }}" >> .env
           echo "VITE_UMAMI_WEBSITE_ID=${{ secrets.VITE_UMAMI_WEBSITE_ID }}" >> .env
           echo "VITE_MAPBOX_KEY=${{ secrets.VITE_MAPBOX_KEY }}" >> .env
