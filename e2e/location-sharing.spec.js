@@ -22,11 +22,13 @@
 import {
   autoShareBtn,
   expect,
+  FUELED_PLAN_FIXTURE,
   heroDistanceKm,
   inviteFollower,
   kmLeft,
   MID_TRAIL,
   mockClipboard,
+  replacePlan,
   selectRunnerRole,
   test,
 } from "./helpers.js";
@@ -75,6 +77,44 @@ test.describe("Location Sharing", () => {
         );
 
         // Baseline: before any location update, km-left has no live fix yet.
+        await expect(kmLeft(followerPage)).toHaveText("0");
+
+        await autoShareBtn(runnerPage).click();
+
+        await expect(kmLeft(followerPage)).not.toHaveText("0", {
+          timeout: 15_000,
+        });
+        await expect(kmLeft(followerPage)).toHaveText(/^\d+\.\d$/);
+      } finally {
+        await runnerCtx.close();
+        await followerCtx.close();
+      }
+    },
+  );
+
+  // A plan with fueling made the location message outgrow the relay's 1 KiB
+  // limit, and the relay dropped every position (fixed in 2138046). The
+  // fueling stays on the runner's device; the position must still arrive.
+  test(
+    "with a fueling plan, the follower still receives the position",
+    { timeout: 90_000 },
+    async ({ browser }) => {
+      const { runnerCtx, runnerPage } = await openRunner(browser);
+      const followerCtx = await browser.newContext();
+
+      try {
+        await replacePlan(runnerPage, FUELED_PLAN_FIXTURE);
+        await expect(runnerPage.getByTestId("plan-fueling")).toBeVisible({
+          timeout: 30_000,
+        });
+        const followUrl = await inviteFollower(runnerPage);
+
+        const followerPage = await followerCtx.newPage();
+        await followerPage.goto(followUrl);
+        await expect(heroDistanceKm(followerPage)).toHaveText(
+          await heroDistanceKm(runnerPage).textContent(),
+          { timeout: 30_000 },
+        );
         await expect(kmLeft(followerPage)).toHaveText("0");
 
         await autoShareBtn(runnerPage).click();
