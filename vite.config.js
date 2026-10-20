@@ -18,10 +18,6 @@ import { VitePWA } from "vite-plugin-pwa";
 // chunk.name matches the manualChunks keys defined below; the entry chunk is
 // always named "index".
 const BUNDLE_BUDGETS = {
-  "three-core": 900 * 1024, // Three.js 0.181 minified ≈ 580 KB
-  "react-three-fiber": 450 * 1024, // R3F         minified ≈ 250 KB
-  "react-three-drei": 700 * 1024, // Drei        minified ≈ 450 KB
-  "react-spring-three": 250 * 1024, // Spring/3    minified ≈ 100 KB
   "react-vendor": 350 * 1024, // React 19    minified ≈ 200 KB
   "d3-vendor": 200 * 1024, // d3-*        minified ≈ 100 KB
   zustand: 80 * 1024, // Zustand     minified ≈  25 KB
@@ -130,8 +126,8 @@ export default defineConfig(({ mode }) => {
       modulePreload: {
         resolveDependencies: (_filename, deps) => {
           // Only preload small shared vendor chunks (zustand, react-vendor).
-          // Exclude heavy 3D / data-viz chunks — they are lazy-loaded per route.
-          const heavy = /three|drei|fiber|spring|d3-vendor|Scene|TrailData/;
+          // Exclude heavy data-viz chunks — they are lazy-loaded per route.
+          const heavy = /d3-vendor|TrailData/;
           return deps.filter((d) => !heavy.test(d));
         },
       },
@@ -139,29 +135,9 @@ export default defineConfig(({ mode }) => {
         output: {
           // Rolldown's code splitting groups. Unlike a manualChunks function,
           // these groups are authoritative and are not folded back into their
-          // sole importer, so the 3D vendor libs stay split for better caching.
+          // sole importer, so the vendor libs stay split for better caching.
           codeSplitting: {
             groups: [
-              // Split Three.js core
-              {
-                name: "three-core",
-                test: /[\\/]node_modules[\\/]three[\\/]/,
-              },
-              // Split React Three Fiber separately
-              {
-                name: "react-three-fiber",
-                test: /[\\/]node_modules[\\/]@react-three[\\/]fiber[\\/]/,
-              },
-              // Split Drei helpers separately
-              {
-                name: "react-three-drei",
-                test: /[\\/]node_modules[\\/]@react-three[\\/]drei[\\/]/,
-              },
-              // Split React Spring Three
-              {
-                name: "react-spring-three",
-                test: /[\\/]node_modules[\\/]@react-spring[\\/]three[\\/]/,
-              },
               // Split D3 libraries into separate chunk
               {
                 name: "d3-vendor",

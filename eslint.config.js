@@ -39,8 +39,6 @@ export default [
       ...react.configs["jsx-runtime"].rules,
       ...reactHooks.configs.recommended.rules,
       "react/jsx-no-target-blank": "off",
-      // R3F uses custom Three.js props (position, rotation, castShadow, etc.)
-      "react/no-unknown-property": "off",
       // PropTypes not used in this project (React 19, no prop-types package)
       "react/prop-types": "off",
       "react-refresh/only-export-components": [

@@ -47,5 +47,4 @@ for (let i = 0; i < zigData.items.length; i++) {
 
 ## Performance
 
-- Use refs (not state) for high-frequency 60fps updates (e.g. `useFrame` loops)
-- Memoize Three.js geometries/materials with `useMemo`
+- Use refs (not state) for high-frequency 60fps updates (e.g. `requestAnimationFrame` loops)
