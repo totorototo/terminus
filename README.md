@@ -94,11 +94,11 @@ npm run dev
 
 The app will be available at `http://localhost:5173` (or next available port)
 
-`.env` points `VITE_PARTYKIT_HOST` at the deployed relay. To work on sharing, run the relay from this checkout instead — a value set in the shell overrides `.env`:
+`.env` points `VITE_RELAY_HOST` at the deployed relay. To work on sharing, run the relay from this checkout instead — a value set in the shell overrides `.env`:
 
 ```bash
 npm run party                                   # local relay on localhost:1999
-VITE_PARTYKIT_HOST=localhost:1999 npm run dev   # in a second terminal
+VITE_RELAY_HOST=localhost:1999 npm run dev   # in a second terminal
 ```
 
 The deployed relay only runs `main`'s `party/server.js`, so a branch that changes the relay must be tested against the local one.
@@ -126,17 +126,17 @@ To play a runner without one (useful for testing the follower view): the script 
 ```bash
 # The second argument is a secret write key; the public room id followers
 # use is derived from it (SHA-256) and printed with the follow link.
-node scripts/simulate-partykit.js <gpx-file> <write-key> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
+node scripts/simulate-relay.js <gpx-file> <write-key> [speed_m_per_s] [update_every_m] [base_pace_s_per_km] [k_fatigue]
 
 # Examples
-node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123          # 2 m/s, update every 100 m
-node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123 500 500  # 500 m/s, 1 update/sec (fast replay)
+node scripts/simulate-relay.js public/vvx-xgtv-2026.gpx ABC123          # 2 m/s, update every 100 m
+node scripts/simulate-relay.js public/vvx-xgtv-2026.gpx ABC123 500 500  # 500 m/s, 1 update/sec (fast replay)
 ```
 
-By default the script targets `localhost:1999`. Set `PARTYKIT_HOST` to target a deployed instance:
+By default the script targets `localhost:1999`. Set `RELAY_HOST` to target a deployed instance:
 
 ```bash
-PARTYKIT_HOST=<relay-host> node scripts/simulate-partykit.js public/vvx-xgtv-2026.gpx ABC123
+RELAY_HOST=<relay-host> node scripts/simulate-relay.js public/vvx-xgtv-2026.gpx ABC123
 ```
 
 Open the printed `/follow/<room>` link in the app to watch the position move in real time.

@@ -28,7 +28,7 @@ export const subscribeToPush = async () => {
 const relayToServiceWorker = (payload) => {
   if (navigator.serviceWorker?.controller) {
     navigator.serviceWorker.controller.postMessage({
-      type: "PARTYKIT_MESSAGE",
+      type: "RELAY_MESSAGE",
       payload,
     });
   }

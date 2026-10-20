@@ -9,11 +9,7 @@ import { track } from "../../lib/analytics.js";
 import { isValidFueling } from "../../lib/fueling.js";
 import { loadLocalGpx } from "../../lib/localGpx.js";
 import { deriveRoomId, generateWriteKey } from "../../lib/roomAuth.js";
-import {
-  deleteRoute,
-  PARTYKIT_HOST,
-  uploadRoute,
-} from "../../lib/sharedRoute.js";
+import { deleteRoute, RELAY_HOST, uploadRoute } from "../../lib/sharedRoute.js";
 
 let PartySocketModule = null;
 const getPartySocket = async () => {
@@ -62,7 +58,7 @@ export const createGPSSlice = (set, get) => {
 
     if (isUnusable) {
       const PartySocket = await getPartySocket();
-      partySocket = new PartySocket({ host: PARTYKIT_HOST, room: sessionId });
+      partySocket = new PartySocket({ host: RELAY_HOST, room: sessionId });
       // Drain the single pending-message slot on every (re)connect
       const socket = partySocket;
       socket.addEventListener("open", () => {
@@ -433,7 +429,7 @@ export const createGPSSlice = (set, get) => {
 
       const PartySocket = await getPartySocket();
       followerSocket = new PartySocket({
-        host: PARTYKIT_HOST,
+        host: RELAY_HOST,
         room: roomId,
       });
 

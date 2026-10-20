@@ -1,6 +1,6 @@
 // Web Push implementation using only Web Crypto API + fetch
 // Implements RFC 8291 (Message Encryption) and RFC 8292 (VAPID)
-// No Node.js dependencies — compatible with Cloudflare Workers / PartyKit
+// No Node.js dependencies — compatible with Cloudflare Workers
 
 function b64urlEncode(data) {
   if (data instanceof ArrayBuffer) data = new Uint8Array(data);

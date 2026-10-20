@@ -77,7 +77,7 @@ jobs:
       - name: Build with build number
         run: |
           echo "VITE_NUMBER=${{ github.run_number }}" > .env
-          echo "VITE_PARTYKIT_HOST=${{ vars.RELAY_HOST }}" >> .env
+          echo "VITE_RELAY_HOST=${{ vars.RELAY_HOST }}" >> .env
           echo "VITE_VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}" >> .env
           echo "VITE_UMAMI_SRC=${{ secrets.VITE_UMAMI_SRC }}" >> .env
           echo "VITE_UMAMI_WEBSITE_ID=${{ secrets.VITE_UMAMI_WEBSITE_ID }}" >> .env
@@ -98,7 +98,7 @@ jobs:
       - name: Build for end-to-end tests (local relay)
         run: |
           rm -rf dist
-          VITE_PARTYKIT_HOST=localhost:1999 npm run build
+          VITE_RELAY_HOST=localhost:1999 npm run build
 
       - name: Upload end-to-end build artifact
         uses: actions/upload-artifact@v5
