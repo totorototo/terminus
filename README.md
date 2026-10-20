@@ -258,3 +258,7 @@ from `zig/`).
 4. Commit your changes (`git commit -m 'Add amazing feature'`)
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
+
+## License
+
+AGPL-3.0-or-later, see `LICENSE`. Copyright (C) 2026 Terminus Contributors.
