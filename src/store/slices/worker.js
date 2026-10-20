@@ -365,6 +365,12 @@ export const createWorkerSlice = (set, get, workerFactory) => {
     reprocessGPXFile: async () => {
       if (!rawGpxBytes || !messenger) return;
       await get().processGPXFile(rawGpxBytes, { fileName: rawGpxFileName });
+      // why: new sections make any recalibration in flight stale, and
+      // recalibrate drops a stale result. Without this, a reprocess (pace
+      // change, weather arriving) right after a fix left the ETAs on the
+      // a-priori model until the next fix, 30 min later with auto-share: a
+      // follower opening the race showed a wrong ETA from the start.
+      await get().recalibrate?.();
     },
 
     // Recalibrate section and stage ETAs against the runner's current trace index

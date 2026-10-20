@@ -831,6 +831,22 @@ describe("Worker Slice", () => {
         expect(store.getState().gpx.metadata.name).toBe("race");
       });
 
+      it("recalibrates against the new sections after a reprocess", async () => {
+        const first = store
+          .getState()
+          .processGPXFile(new ArrayBuffer(1), { fileName: "race.gpx" });
+        await answer(resultsNamed(null));
+        await first;
+        const recalibrate = vi.fn();
+        store.setState({ recalibrate });
+
+        const again = store.getState().reprocessGPXFile();
+        await answer(resultsNamed(null));
+        await again;
+
+        expect(recalibrate).toHaveBeenCalledTimes(1);
+      });
+
       it("keeps the file-name fallback across a reprocess", async () => {
         const first = store
           .getState()
