@@ -1,8 +1,8 @@
 name: Deploy to Netlify
 
 # Build (lint, formatting, Zig, unit tests with coverage), end-to-end tests on the build,
-# deploy to PartyKit and Netlify, then Lighthouse on the deployed site. Pull requests run the
-# checks only. Same pipeline as retrace's.
+# deploy the relay to Cloudflare and the app to Netlify, then Lighthouse on the deployed site.
+# Pull requests run the checks only. Same pipeline as retrace's.
 on:
   push:
     branches:
@@ -53,6 +53,10 @@ jobs:
 
       - name: Check formatting
         run: npx prettier --check .
+
+      # Same pins as the other apps: gpxz and fitz at main, and debriefz on those commits.
+      - name: Zig pins are the suite's
+        run: node scripts/check-pins.mjs
 
       # Fetches gpxz at the commit pinned in zig/build.zig.zon.
       - name: Run Zig tests
