@@ -54,9 +54,10 @@ jobs:
       - name: Check formatting
         run: npx prettier --check .
 
-      # Same pins as the other apps: gpxz and fitz at main, and debriefz on those commits.
+      # Same pins as the other apps: gpxz and fitz at their latest release, and debriefz on those
+      # commits.
       - name: Zig pins are the suite's
-        run: node scripts/check-pins.mjs
+        run: node --test scripts/check-pins.test.mjs && node scripts/check-pins.mjs
 
       # Fetches gpxz at the commit pinned in zig/build.zig.zon.
       - name: Run Zig tests
