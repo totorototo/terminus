@@ -12,7 +12,6 @@ Terminus is a high-performance GPS trail visualization web application combining
 
 - Frontend: React 19 + Vite
 - Performance: Zig 0.17.0 → WebAssembly
-- 3D: Three.js + React Three Fiber
 - State: Zustand
 - Build: Vite + rollup-plugin-zigar
 
@@ -51,10 +50,10 @@ Zig tests run the WASM boundary's tests against the pinned gpxz: `cd zig && zig 
 
 **React UI** → **Web Worker** (`src/gpxWorker.js`) → **Zig WASM** (`zig/`) → results sanitized to plain JS → **Zustand store** → re-render
 
-- `src/components/` — React components (scene, profile, peaks, markers, panels)
-- `src/store/` — Zustand store with slice pattern (7 slices in `slices/`)
+- `src/components/` — React components (story sections, map, profile, panels)
+- `src/store/` — Zustand store with slice pattern (11 slices in `slices/`)
 - `src/helpers/` — Pure utilities (colors, geometry, throttle)
-- `src/utils/` — Coordinate transforms (geo → 3D scene space)
+- `src/utils/` — The shareable trail card (`trailCard.jsx`, rendered with Satori)
 - `zig/` — `terminus.zig`, the WASM boundary over the [gpxz](https://github.com/totorototo/gpxz) library (GPX parsing, route calculations, peaks, climbs, pace model), pinned in `zig/build.zig.zon`
 
 See `src/CLAUDE.md` for frontend conventions and `zig/CLAUDE.md` for Zig/WASM conventions.
