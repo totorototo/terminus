@@ -629,9 +629,9 @@ function Help({ className }) {
               </h4>
               <p>
                 Only while you share your location: the race&apos;s GPX, your
-                position, pace and fueling settings go to the relay, which
-                passes them to your followers. Followers who turn on
-                notifications leave their browser&apos;s push address there.
+                position and pace settings go to the relay, which passes them to
+                your followers. Followers who turn on notifications leave their
+                browser&apos;s push address there.
               </p>
             </div>
             <div className="feat">

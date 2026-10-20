@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  carryText,
-  entryFueling,
-  fuelingRows,
-  isValidFueling,
-  nextRefill,
-} from "./fueling.js";
+import { carryText, entryFueling, fuelingRows, nextRefill } from "./fueling.js";
 
 const FUELING = {
   carbsGPerH: 70,
@@ -29,60 +23,6 @@ const FUELING = {
     { arrivalS: 18000, departureS: 18000 },
   ],
 };
-
-describe("isValidFueling", () => {
-  it("accepts what the worker gives", () => {
-    expect(isValidFueling(FUELING)).toBe(true);
-  });
-
-  it("rejects a bad shape, a bad supply, or mismatched lengths", () => {
-    expect(isValidFueling(null)).toBe(false);
-    expect(isValidFueling({ ...FUELING, carbsGPerH: -1 })).toBe(false);
-    expect(isValidFueling({ ...FUELING, reserveS: Infinity })).toBe(false);
-    expect(
-      isValidFueling({
-        ...FUELING,
-        supplies: ["full", "food", "none", "full", "none"],
-      }),
-    ).toBe(false);
-    expect(isValidFueling({ ...FUELING, carry: FUELING.carry.slice(1) })).toBe(
-      false,
-    );
-    expect(
-      isValidFueling({
-        ...FUELING,
-        carry: [
-          { fluidMl: "1 L", carbsG: null, sodiumMg: null },
-          null,
-          null,
-          null,
-          null,
-        ],
-      }),
-    ).toBe(false);
-  });
-});
-
-describe("isValidFueling: the plan's times", () => {
-  it("accepts a fueling without them, kept before Terminus read them", () => {
-    expect(isValidFueling({ ...FUELING, times: undefined })).toBe(true);
-    expect(isValidFueling({ ...FUELING, times: [] })).toBe(true);
-  });
-
-  it("rejects times that don't line up or run backwards", () => {
-    expect(isValidFueling({ ...FUELING, times: FUELING.times.slice(1) })).toBe(
-      false,
-    );
-    const backwards = FUELING.times.map((t, i) =>
-      i === 2 ? { arrivalS: 3000, departureS: 3000 } : t,
-    );
-    expect(isValidFueling({ ...FUELING, times: backwards })).toBe(false);
-    const leavesEarly = FUELING.times.map((t, i) =>
-      i === 3 ? { arrivalS: 9000, departureS: 8000 } : t,
-    );
-    expect(isValidFueling({ ...FUELING, times: leavesEarly })).toBe(false);
-  });
-});
 
 describe("fuelingRows", () => {
   const sections = [

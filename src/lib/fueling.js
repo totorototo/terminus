@@ -3,64 +3,7 @@
 // plan's, at the plan's times, never re-sized to live ETAs (gpxz's
 // carry_compute would be the place for that, not this file).
 
-const SUPPLIES = new Set(["none", "water", "full"]);
-
-// A plan has one entry per section boundary; this bounds what a follower
-// accepts over the relay long before memory would matter.
-const ENTRIES_MAX = 10_000;
-
 export const SUPPLY_LABELS = { water: "Water", full: "Full refill" };
-
-const isAmount = (value) =>
-  typeof value === "number" && Number.isFinite(value) && value >= 0;
-const isOptionalAmount = (value) => value === null || isAmount(value);
-
-const isValidCarry = (carry) =>
-  carry === null ||
-  (typeof carry === "object" &&
-    isAmount(carry.fluidMl) &&
-    isOptionalAmount(carry.carbsG) &&
-    isOptionalAmount(carry.sodiumMg));
-
-// The plan's times, one per entry, running forward. Empty or absent in a
-// fueling saved, or sent by a runner, before Terminus kept them.
-const isValidTimes = (times, count) => {
-  if (times == null || (Array.isArray(times) && times.length === 0)) {
-    return true;
-  }
-  if (!Array.isArray(times) || times.length !== count) return false;
-  return times.every(
-    (entry, i) =>
-      entry !== null &&
-      typeof entry === "object" &&
-      isAmount(entry.arrivalS) &&
-      isAmount(entry.departureS) &&
-      entry.departureS >= entry.arrivalS &&
-      (i === 0 || entry.arrivalS >= times[i - 1].departureS),
-  );
-};
-
-/**
- * Whether `fueling` has the shape the worker's sanitizeFueling gives. gpxz
- * validated the plan; this guards what a follower receives over the relay.
- */
-export function isValidFueling(fueling) {
-  if (fueling == null || typeof fueling !== "object") return false;
-  const { carbsGPerH, fluidMlPerH, sodiumMgPerH, reserveS } = fueling;
-  if (![carbsGPerH, fluidMlPerH, sodiumMgPerH, reserveS].every(isAmount)) {
-    return false;
-  }
-  const { supplies, carry } = fueling;
-  if (!Array.isArray(supplies) || !Array.isArray(carry)) return false;
-  if (supplies.length > ENTRIES_MAX || carry.length !== supplies.length) {
-    return false;
-  }
-  return (
-    supplies.every((supply) => SUPPLIES.has(supply)) &&
-    carry.every(isValidCarry) &&
-    isValidTimes(fueling.times, supplies.length)
-  );
-}
 
 /**
  * The plan's supply and carry at plan entry `entry` (0 is the start, entry
