@@ -37,10 +37,12 @@ export const GPX_FIXTURE = fileURLToPath(
 
 // gpxz's plan.json for the fixture, as Regimen writes it (7:30/km, 30 min
 // at each LifeBase), and a faster one for pace changes (5:00/km). Remake them
-// if gpxz's model changes:
+// if gpxz's model changes (last: gpxz v0.3.0):
 //   gpxz --plan --pace 450 --life-base-stop 1800 e2e/fixtures/grp-160-2026.gpx
 //   gpxz --plan --pace 300 --fatigue 0.001 --life-base-stop 1800 \
 //     e2e/fixtures/grp-160-2026.gpx
+// gpxz writes v2; these stay v1 on purpose (Terminus still reads v1), so drop
+// `"fueling": null` and `"carry": []` and set `"schema_version": 1`.
 export const PLAN_FIXTURE = fileURLToPath(
   new URL("./fixtures/grp-160-2026.plan.json", import.meta.url),
 );
@@ -48,6 +50,7 @@ export const FAST_PLAN_FIXTURE = fileURLToPath(
   new URL("./fixtures/grp-160-2026.fast.plan.json", import.meta.url),
 );
 // Exported by Regimen at 8:50/km flat: misses the Restaurant Merlans cutoff.
+// Remade like the two above: gpxz --plan --pace 530 --life-base-stop 3600.
 export const SLOW_PLAN_FIXTURE = fileURLToPath(
   new URL("./fixtures/grp-160-2026.slow.plan.json", import.meta.url),
 );
@@ -55,7 +58,8 @@ export const SLOW_PLAN_FIXTURE = fileURLToPath(
 // A v2 plan.json with fueling, at PLAN_FIXTURE's model: 70 g carbs, 500 ml,
 // 400 mg sodium per hour, a 30 min reserve, full at the Start and LifeBases and
 // water at every other checkpoint. gpxz's CLI has no fueling flags yet: made
-// with gpxz's fueling.supplies_default, carry_compute and plan_build.
+// with gpxz's times_from_entries, carry_compute and plan_build, from a short
+// Zig program with these supplies.
 export const FUELED_PLAN_FIXTURE = fileURLToPath(
   new URL("./fixtures/grp-160-2026.fueled.plan.json", import.meta.url),
 );
