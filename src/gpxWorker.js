@@ -461,6 +461,8 @@ async function sanitizeAndPostGPXResults(gpxData, requestId) {
       sym: wpt.symbol ? wpt.symbol.string : null,
       wptType: wpt.type_name ? wpt.type_name.string : null,
       time: wpt.epoch_s ? Number(wpt.epoch_s) : null,
+      // The offset `<time>` was written with (s): the race's clock. 0 for `Z`.
+      utcOffset: wpt.utc_offset_s,
     });
   }
 

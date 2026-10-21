@@ -29,10 +29,6 @@ vi.mock("@react-spring/web", () => ({
   },
 }));
 
-vi.mock("date-fns", () => ({
-  format: () => "Thu 14:30",
-}));
-
 vi.mock("./StoryNow.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));

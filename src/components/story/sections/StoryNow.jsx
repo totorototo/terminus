@@ -2,9 +2,9 @@ import { memo, useMemo } from "react";
 
 import { animated, useSpring } from "@react-spring/web";
 import { Radio } from "@styled-icons/feather/Radio";
-import { format } from "date-fns";
 import { useShallow } from "zustand/react/shallow";
 
+import { formatRaceTime, raceUtcOffset } from "../../../helpers/raceClock.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import {
   carryText,
@@ -41,6 +41,7 @@ const StoryNow = memo(function StoryNow({ className }) {
   const cumulativeDistances = useStore(
     (state) => state.gpx.cumulativeDistances || [],
   );
+  const utcOffset = useStore((state) => raceUtcOffset(state.waypoints));
   const { checkpointETAs, raceStart, hasGPSLock, paceDivergence } =
     useCheckpointETAs();
   const { autoShareEnabled, toggleAutoShare, isFollower, fueling } = useStore(
@@ -87,13 +88,13 @@ const StoryNow = memo(function StoryNow({ className }) {
     const remainingMs = Math.max(0, finishEtaMs - projectedLocation.timestamp);
     const totalMinutes = Math.floor(remainingMs / 60_000);
     return {
-      etaDateStr: format(new Date(finishEtaMs), "EEE HH:mm"),
+      etaDateStr: formatRaceTime(finishEtaMs, utcOffset),
       remainingStr:
         remainingMs > 0
           ? `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`
           : "--",
     };
-  }, [checkpointETAs, raceStart, projectedLocation.timestamp]);
+  }, [checkpointETAs, raceStart, projectedLocation.timestamp, utcOffset]);
 
   // why: without a fix nothing of the route is done yet, so all of it is
   // left — 0 would read as "finished" to a runner on the start line.

@@ -1,10 +1,14 @@
 import { memo, useEffect, useMemo, useState } from "react";
 
-import { format } from "date-fns";
 import { useTheme } from "styled-components";
 import { useShallow } from "zustand/react/shallow";
 
 import { DIFFICULTY_LABELS } from "../../../constants.js";
+import {
+  formatRaceTime,
+  raceClockNote,
+  raceUtcOffset,
+} from "../../../helpers/raceClock.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
 import {
@@ -46,6 +50,8 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
       fueling: state.app?.fueling ?? null,
     })),
   );
+  const utcOffset = useStore((state) => raceUtcOffset(state.waypoints));
+  const clockNote = raceClockNote(utcOffset);
 
   // why: matches .checkpoint-km's muted text — WeatherLine's own defaults
   // (full-opacity temp, 0.8 detail text) were tuned for its native
@@ -120,6 +126,7 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
   return (
     <div className={className}>
       <StorySection eyebrow="The checkpoints" title="Checkpoints">
+        {clockNote && <p className="lede">{clockNote}</p>}
         <ol className="checkpoint-list">
           {checkpointETAs.slice(0, visibleCount).map((cp, i) => {
             const remaining = formatRemaining(cp.etaMs);
@@ -181,7 +188,7 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                       {cp.isPast
                         ? "Reached"
                         : cp.etaMs
-                          ? format(new Date(cp.etaMs), "EEE HH:mm")
+                          ? formatRaceTime(cp.etaMs, utcOffset)
                           : "--:--"}
                     </span>
                     {!cp.isPast && remaining && (
@@ -208,7 +215,7 @@ const StoryCheckpoints = memo(function StoryCheckpoints({ className }) {
                   <dl className="checkpoint-figures">
                     <div>
                       <dt>Cutoff</dt>
-                      <dd>{format(new Date(cp.cutoffMs), "EEE HH:mm")}</dd>
+                      <dd>{formatRaceTime(cp.cutoffMs, utcOffset)}</dd>
                     </div>
                     <div>
                       <dt>Margin</dt>
