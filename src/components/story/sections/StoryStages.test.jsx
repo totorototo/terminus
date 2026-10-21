@@ -21,8 +21,10 @@ vi.mock("styled-components", async (importOriginal) => {
   return { ...actual, useTheme: () => ({ ...THEME, currentVariant: "dark" }) };
 });
 
-vi.mock("date-fns", () => ({
-  format: (date) => String(date.getTime()),
+vi.mock("../../../helpers/raceClock.js", () => ({
+  formatRaceTime: (ms) => String(ms),
+  raceClockNote: () => null,
+  raceUtcOffset: () => null,
 }));
 
 vi.mock("./StoryStages.style.js", () => ({

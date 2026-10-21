@@ -1,7 +1,6 @@
 import { memo, useEffect, useMemo, useState } from "react";
 
-import { format } from "date-fns";
-
+import { formatRaceTime, raceUtcOffset } from "../../../helpers/raceClock.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import useStore, { useStats } from "../../../store/store.js";
 
@@ -31,6 +30,7 @@ function formatDurationHours(ms) {
 const StoryHero = memo(function StoryHero({ className }) {
   const stats = useStats();
   const metadata = useStore((state) => state.gpx.metadata);
+  const utcOffset = useStore((state) => raceUtcOffset(state.waypoints));
   const { checkpointETAs, raceStart: raceStartMs } = useCheckpointETAs();
 
   // why: sourced from checkpointETAs (section granularity) rather than
@@ -66,14 +66,14 @@ const StoryHero = memo(function StoryHero({ className }) {
     if (raceEndMs != null && now >= raceEndMs) {
       return {
         label: "Ended",
-        value: format(new Date(raceEndMs), "EEE d MMM"),
+        value: formatRaceTime(raceEndMs, utcOffset, "day"),
       };
     }
     const delta = now - raceStartMs;
     return delta < 0
       ? { label: "Starts in", value: formatDuration(-delta) }
       : { label: "Elapsed", value: formatDuration(delta) };
-  }, [raceStartMs, raceEndMs, now]);
+  }, [raceStartMs, raceEndMs, now, utcOffset]);
 
   return (
     <header className={className}>

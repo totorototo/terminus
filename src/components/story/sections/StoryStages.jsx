@@ -1,9 +1,13 @@
 import { memo, useState } from "react";
 
-import { format } from "date-fns";
 import { useTheme } from "styled-components";
 
 import { DIFFICULTY_LABELS } from "../../../constants.js";
+import {
+  formatRaceTime,
+  raceClockNote,
+  raceUtcOffset,
+} from "../../../helpers/raceClock.js";
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import { useCollapsibleList } from "../../../hooks/useCollapsibleList.js";
 import { useStageETAs } from "../../../hooks/useStageETAs.js";
@@ -24,6 +28,8 @@ const StoryStages = memo(function StoryStages({ className }) {
   const { stageETAs } = useStageETAs();
   const { checkpointETAs } = useCheckpointETAs();
   const stages = useStore((state) => state.stages);
+  const utcOffset = useStore((state) => raceUtcOffset(state.waypoints));
+  const clockNote = raceClockNote(utcOffset);
 
   // why: TimeBarriers only exist as SECTION boundaries — a stage spanning
   // several of them is blind to any cutoff missed mid-stage and would show
@@ -66,7 +72,9 @@ const StoryStages = memo(function StoryStages({ className }) {
   return (
     <div className={className}>
       <StorySection eyebrow="The stages" title="Milestones">
-        <p className="lede">Start, life bases, and the finish.</p>
+        <p className="lede">
+          Start, life bases, and the finish.{clockNote && ` ${clockNote}`}
+        </p>
         <ol className="stage-list">
           {stageETAs.slice(0, visibleCount).map((stage, i) => {
             const isFinish = i === stageETAs.length - 1;
@@ -138,7 +146,7 @@ const StoryStages = memo(function StoryStages({ className }) {
                       {stage.isPast
                         ? "Reached"
                         : etaMs
-                          ? format(new Date(etaMs), "EEE HH:mm")
+                          ? formatRaceTime(etaMs, utcOffset)
                           : "--:--"}
                     </span>
                     {cutoffBadge && (
@@ -152,7 +160,7 @@ const StoryStages = memo(function StoryStages({ className }) {
                   <dl className="stage-figures">
                     <div>
                       <dt>Cutoff</dt>
-                      <dd>{format(new Date(cutoffMs), "EEE HH:mm")}</dd>
+                      <dd>{formatRaceTime(cutoffMs, utcOffset)}</dd>
                     </div>
                     <div>
                       <dt>Margin</dt>

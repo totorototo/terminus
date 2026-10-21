@@ -4,6 +4,14 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   display: block;
 
+  .lede {
+    font-size: ${(props) => props.theme.font.sizes["--font-size-medium"]};
+    color: ${(props) =>
+      props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
+    max-width: 34ch;
+    margin: 0 0 2rem;
+  }
+
   .empty {
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};

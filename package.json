@@ -33,7 +33,6 @@
     "d3-array": "3.2.4",
     "d3-scale": "4.0.2",
     "d3-shape": "3.2.0",
-    "date-fns": "4.1.0",
     "mapbox-gl": "^3.24.0",
     "partyserver": "^0.5.10",
     "partysocket": "^1.1.15",
