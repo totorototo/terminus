@@ -11,7 +11,11 @@ import style from "./StoryClimbs.style.js";
 const StoryClimbs = memo(function StoryClimbs({ className }) {
   const climbs = useStore((state) => state.gpx.climbs);
   const projectedLocation = useProjectedLocation();
-  const currentIdx = projectedLocation?.index ?? 0;
+  // why: without a fix the index defaults to 0, which sits inside a climb
+  // that starts at the line — "In progress" before the runner has moved.
+  // -1 is before every climb: none past, none current, the first one next.
+  const hasGPSLock = (projectedLocation?.timestamp ?? 0) > 0;
+  const currentIdx = hasGPSLock ? (projectedLocation.index ?? 0) : -1;
 
   // Collapse to a short preview by default — but never behind the climb
   // that's current or next, so a long route's climb list doesn't bury the

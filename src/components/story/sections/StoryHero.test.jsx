@@ -116,4 +116,50 @@ describe("StoryHero", () => {
     expect(screen.getByText("0h 50m")).toBeInTheDocument();
     expect(screen.queryByText("0h 25m")).not.toBeInTheDocument();
   });
+
+  describe("the race clock", () => {
+    // The Arrival closes 1h after its section starts: at raceStart + 500s + 3600s.
+    const ARRIVAL_CUTOFF_MS = (START_TIME + 500 + 3600) * 1000;
+    const timed = [SECTION_1, { ...SECTION_2, maxCompletionTime: 3600 }];
+
+    const renderAt = (nowMs, sections = timed) => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(nowMs);
+      setup({
+        sections,
+        projectedLocation: { index: 0, timestamp: 0 },
+        stats: { distance: 5000, elevationGain: 100, elevationLoss: 50 },
+      });
+      render(<StoryHero />);
+      vi.useRealTimers();
+    };
+
+    const clockLabel = () => document.querySelector(".clock-label");
+
+    it("counts down to the start", () => {
+      renderAt(RACE_START_MS - 2 * 3600 * 1000);
+      expect(clockLabel()).toHaveTextContent("Starts in");
+      expect(screen.getByText("2h 0m")).toBeInTheDocument();
+    });
+
+    it("counts up while the race is open", () => {
+      renderAt(RACE_START_MS + 30 * 60 * 1000);
+      expect(clockLabel()).toHaveTextContent("Elapsed");
+      expect(screen.getByText("30m")).toBeInTheDocument();
+    });
+
+    it("says the race ended once the Arrival's cutoff has passed", () => {
+      renderAt(ARRIVAL_CUTOFF_MS + 60 * 24 * 3600 * 1000);
+      expect(clockLabel()).toHaveTextContent("Ended");
+      expect(document.querySelector(".clock-value").textContent).toMatch(
+        /^\w{3} \d{1,2} \w{3}$/,
+      );
+      expect(screen.queryByText("Elapsed")).toBeNull();
+    });
+
+    it("keeps counting without an Arrival cutoff", () => {
+      renderAt(RACE_START_MS + 2 * 24 * 3600 * 1000, [SECTION_1, SECTION_2]);
+      expect(clockLabel()).toHaveTextContent("Elapsed");
+    });
+  });
 });
