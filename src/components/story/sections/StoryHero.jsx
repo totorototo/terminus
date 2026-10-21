@@ -1,5 +1,7 @@
 import { memo, useEffect, useMemo, useState } from "react";
 
+import { format } from "date-fns";
+
 import { useCheckpointETAs } from "../../../hooks/useCheckpointETAs.js";
 import useStore, { useStats } from "../../../store/store.js";
 
@@ -53,13 +55,25 @@ const StoryHero = memo(function StoryHero({ className }) {
     return () => clearInterval(id);
   }, [raceStartMs]);
 
+  // why: the Arrival's cutoff, not the finish ETA, ends the race: it is the
+  // official close, the same for the runner and followers, while an ETA
+  // moves with the pace and would call a slow runner's race over mid-run.
+  // A race without one keeps its elapsed clock.
+  const raceEndMs = checkpointETAs?.at(-1)?.cutoffMs ?? null;
+
   const clock = useMemo(() => {
     if (!raceStartMs) return null;
+    if (raceEndMs != null && now >= raceEndMs) {
+      return {
+        label: "Ended",
+        value: format(new Date(raceEndMs), "EEE d MMM"),
+      };
+    }
     const delta = now - raceStartMs;
     return delta < 0
       ? { label: "Starts in", value: formatDuration(-delta) }
       : { label: "Elapsed", value: formatDuration(delta) };
-  }, [raceStartMs, now]);
+  }, [raceStartMs, raceEndMs, now]);
 
   return (
     <header className={className}>
