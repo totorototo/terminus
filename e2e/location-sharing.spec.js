@@ -53,9 +53,12 @@ async function openRunner(browser) {
 }
 
 // The follower shows the runner's own fix and projection: the same km left
-// and the same ETA. km left counts up with an animation, so a single read can
-// catch a frame mid-way; poll until both sides settle on the same figures.
+// and the same ETA, both live. km left counts up with an animation, so a
+// single read can catch a frame mid-way; poll until both sides settle on the
+// same figures. Before a fix both show the whole route, so the live badge,
+// not the figure, says a fix arrived.
 const nowFigures = async (page) => ({
+  live: await page.getByTestId("live-badge").isVisible(),
   kmLeft: await kmLeft(page).textContent(),
   eta: await nowStat(page, "eta").textContent(),
 });
@@ -68,7 +71,7 @@ async function expectSamePosition(runnerPage, followerPage) {
           nowFigures(runnerPage),
           nowFigures(followerPage),
         ]);
-        const fixed = runner.kmLeft !== "0" && /^\d+\.\d$/.test(runner.kmLeft);
+        const fixed = runner.live && /^\d+\.\d$/.test(runner.kmLeft);
         return fixed && JSON.stringify(runner) === JSON.stringify(follower)
           ? "same"
           : `runner ${JSON.stringify(runner)}, follower ${JSON.stringify(follower)}`;
@@ -103,8 +106,12 @@ test.describe("Location Sharing", () => {
           { timeout: 30_000 },
         );
 
-        // Baseline: before any location update, km-left has no live fix yet.
-        await expect(kmLeft(followerPage)).toHaveText("0");
+        // Baseline: before any location update, the whole route is left and
+        // nothing is live.
+        await expect(kmLeft(followerPage)).toHaveText(
+          await heroDistanceKm(followerPage).textContent(),
+        );
+        await expect(followerPage.getByTestId("live-badge")).toBeHidden();
 
         await autoShareBtn(runnerPage).click();
         await expectSamePosition(runnerPage, followerPage);
@@ -138,7 +145,9 @@ test.describe("Location Sharing", () => {
           await heroDistanceKm(runnerPage).textContent(),
           { timeout: 30_000 },
         );
-        await expect(kmLeft(followerPage)).toHaveText("0");
+        await expect(kmLeft(followerPage)).toHaveText(
+          await heroDistanceKm(followerPage).textContent(),
+        );
 
         await autoShareBtn(runnerPage).click();
         await expectSamePosition(runnerPage, followerPage);
