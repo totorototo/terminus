@@ -129,19 +129,15 @@ fn settings_make(
     life_base_stop_s: u32,
     weather: WeatherLookup,
 ) InputError!gpxz.Settings {
-    if (!std.math.isFinite(pace_base_s_per_km) or pace_base_s_per_km <= 0) {
-        return error.SettingsInvalid;
-    }
-    if (!std.math.isFinite(fatigue_coefficient) or fatigue_coefficient < 0) {
-        return error.SettingsInvalid;
-    }
-    if (weather.names.len != weather.values.len) return error.SettingsInvalid;
-    return .{
+    const settings: gpxz.Settings = .{
         .pace_base_s_per_km = pace_base_s_per_km,
         .fatigue_coefficient = fatigue_coefficient,
         .life_base_stop_s = life_base_stop_s,
         .weather = weather,
     };
+    // gpxz holds the one range check for settings.
+    try settings.validate();
+    return settings;
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────────────────
@@ -183,6 +179,9 @@ test "readGPXComplete: rejects invalid settings instead of asserting" {
         .{ std.math.nan(f64), 0.002 },
         .{ 500, -0.1 },
         .{ 500, std.math.inf(f64) },
+        // gpxz's upper bounds, which terminus didn't check before.
+        .{ gpxz.pace_model.pace_base_s_per_km_max + 1, 0.002 },
+        .{ 500, gpxz.pace_model.fatigue_coefficient_max + 0.001 },
     };
     for (invalid) |case| {
         try testing.expectError(
@@ -190,6 +189,11 @@ test "readGPXComplete: rejects invalid settings instead of asserting" {
             readGPXComplete(testing.allocator, route_gpx, case[0], case[1], 3600, .empty),
         );
     }
+    const stop_s_over = gpxz.pace_model.life_base_stop_s_max + 1;
+    try testing.expectError(
+        error.SettingsInvalid,
+        readGPXComplete(testing.allocator, route_gpx, 500, 0.002, stop_s_over, .empty),
+    );
     const mismatched: WeatherLookup = .{ .names = &.{"CP1"}, .values = &.{} };
     try testing.expectError(
         error.SettingsInvalid,
