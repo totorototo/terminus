@@ -48,13 +48,17 @@ test.describe("Story Sections", () => {
 
   // ── StoryNow ─────────────────────────────────────────────────────────────
 
-  test("Right now: shows a baseline km-left / eta / remaining before any GPS fix", async ({
+  test("Right now: shows the whole route left and no eta before any GPS fix", async ({
     page,
   }) => {
     await expect(
       page.getByRole("heading", { name: "Where you are" }),
     ).toBeVisible();
-    await expect(kmLeft(page)).toHaveText("0");
+    // The whole route is left, and nothing claims a live fix.
+    await expect(kmLeft(page)).toHaveText(
+      await heroDistanceKm(page).textContent(),
+    );
+    await expect(page.getByTestId("live-badge")).toBeHidden();
     await expect(
       page
         .locator(".now-stat", { has: page.getByText("eta") })

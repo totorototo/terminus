@@ -95,19 +95,17 @@ const StoryNow = memo(function StoryNow({ className }) {
     };
   }, [checkpointETAs, raceStart, projectedLocation.timestamp]);
 
+  // why: without a fix nothing of the route is done yet, so all of it is
+  // left — 0 would read as "finished" to a runner on the start line.
   const remainingKm = useMemo(() => {
-    if (!cumulativeDistances?.length || !projectedLocation.timestamp) {
-      return 0;
-    }
-    const distanceDone = cumulativeDistances[projectedLocation.index || 0] || 0;
+    if (!cumulativeDistances?.length) return 0;
     const totalDistance =
       cumulativeDistances[cumulativeDistances.length - 1] || 0;
+    const distanceDone = hasGPSLock
+      ? cumulativeDistances[projectedLocation.index || 0] || 0
+      : 0;
     return Math.max(0, totalDistance - distanceDone) / 1000;
-  }, [
-    cumulativeDistances,
-    projectedLocation.index,
-    projectedLocation.timestamp,
-  ]);
+  }, [cumulativeDistances, projectedLocation.index, hasGPSLock]);
 
   const { remainingKm: animatedRemainingKm } = useSpring({
     remainingKm,
@@ -120,10 +118,12 @@ const StoryNow = memo(function StoryNow({ className }) {
         eyebrow="Right now"
         title={isFollower ? "Where they are" : "Where you are"}
       >
-        <div className="live-badge">
-          <span className="live-dot" />
-          live
-        </div>
+        {hasGPSLock && (
+          <div className="live-badge" data-testid="live-badge">
+            <span className="live-dot" />
+            live
+          </div>
+        )}
         <div className="now-row" aria-live="polite">
           <div className="now-stat">
             <animated.span className="now-value">

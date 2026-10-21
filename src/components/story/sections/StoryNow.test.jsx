@@ -165,6 +165,27 @@ describe("StoryNow", () => {
     ).toBeInTheDocument();
   });
 
+  it("counts the whole route left, and claims no live fix, before there is one", () => {
+    storeModule.useProjectedLocation.mockReturnValue({
+      index: 0,
+      timestamp: 0,
+    });
+
+    render(<StoryNow />);
+    expect(screen.getByText("km left").previousSibling).toHaveTextContent(
+      "5.0",
+    );
+    expect(screen.queryByTestId("live-badge")).toBeNull();
+  });
+
+  it("counts what is left from the fix, and shows it live", () => {
+    render(<StoryNow />);
+    expect(screen.getByText("km left").previousSibling).toHaveTextContent(
+      "3.0",
+    );
+    expect(screen.getByTestId("live-badge")).toBeInTheDocument();
+  });
+
   it("falls back to placeholders before the race has started", () => {
     storeModule.useProjectedLocation.mockReturnValue({
       index: 0,

@@ -33,7 +33,11 @@ test.describe("Live GPS Tracking", () => {
       await expect(heroDistanceKm(page)).not.toHaveText("0.0", {
         timeout: 30_000,
       });
-      const before = parseFloat(await kmLeft(page).textContent());
+      // Before a fix the whole route is left. km left counts up to it with an
+      // animation: wait for it to settle, or a mid-count read would "change".
+      const routeKm = await heroDistanceKm(page).textContent();
+      await expect(kmLeft(page)).toHaveText(routeKm);
+      const before = parseFloat(routeKm);
 
       await autoShareBtn(page).click();
 
@@ -57,10 +61,12 @@ test.describe("Live GPS Tracking", () => {
       await expect(heroDistanceKm(page)).not.toHaveText("0.0", {
         timeout: 30_000,
       });
+      const routeKm = await heroDistanceKm(page).textContent();
+      await expect(kmLeft(page)).toHaveText(routeKm);
+      const initialKm = parseFloat(routeKm);
 
       // First fix at mid-trail — enables auto-share and does an immediate spotMe
       await autoShareBtn(page).click();
-      const initialKm = parseFloat(await kmLeft(page).textContent());
       await expect
         .poll(async () => parseFloat(await kmLeft(page).textContent()), {
           timeout: 15_000,
