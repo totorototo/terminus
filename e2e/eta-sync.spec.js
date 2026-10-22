@@ -40,7 +40,7 @@ import {
   test,
 } from "./helpers.js";
 
-// grp-160-2026.gpx's race Start waypoint, pinned 2h past it (same fixture as
+// grp-160-2026.gpx's race Start waypoint, pinned 4h past it (same fixture as
 // live-recalibration.spec.js) — a mid-trail fix needs to postdate race start
 // on both the mount-time `Date.now()` in useCheckpointETAs (raceNotStarted
 // gating) and the fix's own timestamp, or recalibration is skipped entirely.

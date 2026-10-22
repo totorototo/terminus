@@ -2,7 +2,7 @@
  * End-to-end test for live ETA recalibration.
  *
  * Flow (single runner, no relay needed — recalibration is local):
- *   1. Pin the clock to 2h after the race Start (2026-08-21T05:00:00Z) so the
+ *   1. Pin the clock to 4h after the race Start (05:00+02:00, 03:00Z) so the
  *      race is "already started" and the a-priori predictions render as times.
  *   2. Runner goes through the wizard; the GPX loads and the Checkpoints panel
  *      shows the a-priori finish ETA (anchored at race start, no fix yet).
@@ -27,7 +27,7 @@ import {
   test,
 } from "./helpers.js";
 
-// Race Start waypoint in grp-160-2026.gpx. The clock is pinned 2h past it: at
+// Race Start waypoint in grp-160-2026.gpx. The clock is pinned 4h past it: at
 // that point a runner already at the trail midpoint is well ahead of the a-priori
 // schedule, so the calibration factor floors and the finish ETA shifts clearly.
 const RACE_STARTED_AT = new Date("2026-08-21T07:00:00Z");
