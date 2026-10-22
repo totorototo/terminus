@@ -35,8 +35,10 @@ const style = (Component) => styled(Component)`
     display: flex;
     flex-direction: column;
     max-width: ${(props) => props.theme.layout["--measure"]};
+    /* At least the screen's height, so the footer sits at its foot, as the other apps'. */
+    min-height: 100%;
     margin: 0 auto;
-    padding: 0 ${(props) => props.theme.layout["--gutter"]} 3rem;
+    padding: 0 ${(props) => props.theme.layout["--gutter"]};
     box-sizing: content-box;
   }
 
@@ -100,7 +102,7 @@ const style = (Component) => styled(Component)`
     max-width: 16ch;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    margin: 0 0 0.75rem;
+    margin: 0 0 1rem;
   }
 
   .subtitle {
@@ -245,9 +247,11 @@ const style = (Component) => styled(Component)`
     }
   }
 
-  /* Centred, as the other apps' footer (the column is centred, so its middle is the page's). */
+  /* Centred and at the foot, as the other apps' footer (the column is centred, so its middle
+     is the page's). */
   .footer {
-    margin-top: 3rem;
+    margin-top: auto;
+    padding: 3rem 0 2.5rem;
     text-align: center;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 0.6875rem;
