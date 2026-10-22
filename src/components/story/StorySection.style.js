@@ -4,11 +4,11 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   display: block;
   width: 100%;
-  padding: clamp(4rem, 14vh, 7rem) clamp(1.25rem, 6vw, 4rem);
+  padding: clamp(4rem, 14vh, 7rem) ${(props) => props.theme.layout["--gutter"]};
   position: relative;
 
   .section-inner {
-    max-width: 46rem;
+    max-width: ${(props) => props.theme.layout["--measure"]};
     margin: 0 auto;
   }
 

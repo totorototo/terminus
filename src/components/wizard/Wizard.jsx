@@ -10,6 +10,7 @@ import { track } from "../../lib/analytics.js";
 import { checkGpxFile, saveLocalGpx } from "../../lib/localGpx.js";
 import { checkPlanFile, planFileError } from "../../lib/planFile.js";
 import useStore from "../../store/store.js";
+import { MARK_PATH } from "../../theme/mark.js";
 import ThemeToggle from "../story/ThemeToggle.jsx";
 
 import style from "./Wizard.style.js";
@@ -116,8 +117,15 @@ function Wizard({ className }) {
         onDrop={onDrop}
       >
         <div className="content">
-          <span className="eyebrow">Your race, your file</span>
-          <h1 className="title">Terminus</h1>
+          <header className="masthead">
+            <svg className="mark" viewBox="0 0 64 64" aria-hidden="true">
+              <path d={MARK_PATH} fillRule="evenodd" />
+            </svg>
+            <h1>terminus</h1>
+          </header>
+
+          <span className="eyebrow">Race day</span>
+          <h2 className="title">Follow your race live</h2>
           <p className="subtitle">
             Open the GPX of the race you&apos;re running today, then the
             plan.json you made for it.
@@ -191,7 +199,7 @@ function Wizard({ className }) {
             Need some help?
           </button>
 
-          <footer className="footer">© 2026 Terminus</footer>
+          <footer className="footer">© 2026 terminus — La Vallée</footer>
         </div>
       </div>
     </>

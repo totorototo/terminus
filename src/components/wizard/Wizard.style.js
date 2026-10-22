@@ -29,12 +29,51 @@ const style = (Component) => styled(Component)`
     black calc(env(safe-area-inset-top, 0px) + ${topFadeDistance})
   );
 
+  /* The suite's start page: the masthead, then the eyebrow and title, on the measure,
+     centred (Retrace's setup, Waymark's and Regimen's start). */
   .content {
     display: flex;
     flex-direction: column;
-    min-height: 92vh;
-    justify-content: center;
-    padding: clamp(4rem, 14vh, 7rem) clamp(1.25rem, 6vw, 4rem);
+    max-width: ${(props) => props.theme.layout["--measure"]};
+    margin: 0 auto;
+    padding: 0 ${(props) => props.theme.layout["--gutter"]} 3rem;
+    box-sizing: content-box;
+  }
+
+  /* Level with the theme toggle: same top offset, same 44px height. */
+  .masthead {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    gap: 0.625rem;
+    margin: calc(env(safe-area-inset-top, 0px) + 1.25rem) 0
+      clamp(3rem, 12vh, 6rem);
+
+    /* The first panel starts 8 of the mark's 64 in: pulled back to line up with the text
+       below. */
+    .mark {
+      width: 44px;
+      height: 44px;
+      flex: none;
+      margin-left: calc(-44px * 8 / 64);
+    }
+
+    /* One ink, as the favicon's: dark's primary is its gold, light's its blue. */
+    .mark path {
+      fill: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-primary"]};
+    }
+
+    h1 {
+      font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
+      font-size: ${(props) => props.theme.font.sizes["--font-size-xlarge"]};
+      font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin: 0;
+      color: ${(props) =>
+        props.theme.colors[props.theme.currentVariant]["--color-text"]};
+    }
   }
 
   .eyebrow {
@@ -54,10 +93,11 @@ const style = (Component) => styled(Component)`
 
   .title {
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: clamp(2.75rem, 11vw, 5rem);
+    font-size: clamp(2.25rem, 6vw, 3.5rem);
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    letter-spacing: -0.04em;
-    line-height: 0.98;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    max-width: 16ch;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
     margin: 0 0 0.75rem;
@@ -205,8 +245,10 @@ const style = (Component) => styled(Component)`
     }
   }
 
+  /* Centred, as the other apps' footer (the column is centred, so its middle is the page's). */
   .footer {
     margin-top: 3rem;
+    text-align: center;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 0.6875rem;
     letter-spacing: 0.04em;

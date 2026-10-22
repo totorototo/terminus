@@ -6,7 +6,7 @@ const style = (Component) => styled(Component)`
   flex-direction: column;
   min-height: 92vh;
   justify-content: center;
-  padding: clamp(4rem, 14vh, 7rem) clamp(1.25rem, 6vw, 4rem);
+  padding: clamp(4rem, 14vh, 7rem) ${(props) => props.theme.layout["--gutter"]};
 
   .eyebrow {
     display: block;
