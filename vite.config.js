@@ -207,10 +207,10 @@ export default defineConfig(({ mode }) => {
           "apple-touch-icon.png",
         ],
         manifest: {
-          name: "Terminus - GPS Route Analysis & 3D Trail Visualization",
+          name: "Terminus",
           short_name: "Terminus",
           description:
-            "High-performance GPS route analysis tool with interactive 3D elevation profiles, live tracking, and real-time section analytics for hiking and cycling routes.",
+            "Race day on a trail: your course and plan as a scrolling story, with your live position, the margin on each cutoff, and followers who see where you are.",
           theme_color: CHROME_COLOR,
           background_color: CHROME_COLOR,
           display: "standalone",
@@ -240,7 +240,7 @@ export default defineConfig(({ mode }) => {
               sizes: "640x320",
               type: "image/gif",
               form_factor: "wide",
-              label: "3D Trail Visualization",
+              label: "Terminus on race day",
             },
           ],
         },
