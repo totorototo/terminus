@@ -41,6 +41,9 @@ export const GPX_FIXTURE = fileURLToPath(
 //   gpxz --plan --pace 450 --life-base-stop 1800 e2e/fixtures/grp-160-2026.gpx
 //   gpxz --plan --pace 300 --fatigue 0.001 --life-base-stop 1800 \
 //     e2e/fixtures/grp-160-2026.gpx
+// The GPX's waypoint times carry +02:00, as Waymark writes them, and gpxz's
+// night slowdown follows that clock: change a time or its offset and the plans
+// (and their course sha256) must be remade.
 // gpxz writes v2; these stay v1 on purpose (Terminus still reads v1), so drop
 // `"fueling": null` and `"carry": []` and set `"schema_version": 1`.
 export const PLAN_FIXTURE = fileURLToPath(

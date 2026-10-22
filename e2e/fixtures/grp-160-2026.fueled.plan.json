@@ -2,7 +2,7 @@
   "schema_version": 2,
   "course": {
     "name": "GRP 2026 Ultra Tour",
-    "sha256": "0c1edd8f282976b54626c0098a49ee3f224ed4d8e4255711fc8da519da9f6cb4",
+    "sha256": "6bca2a14190130525d3fce3235761c7debbf8004786c3e3dd8e5b15a802aa170",
     "distance_m": 173301.31029685083
   },
   "model": {
@@ -61,12 +61,12 @@
       "distance_m": 15669.072854324277,
       "elevation_gain_m": 1542.675,
       "elevation_loss_m": 298.17499999999995,
-      "duration_s_arrival": 12306.54716303391,
+      "duration_s_arrival": 11606.983623067346,
       "stop_s": 0,
-      "duration_s_departure": 12306.54716303391,
-      "epoch_s_arrival": 1787293507,
+      "duration_s_departure": 11606.983623067346,
+      "epoch_s_arrival": 1787292807,
       "epoch_s_cutoff": 1787293800,
-      "margin_s": 293.4528369660893
+      "margin_s": 993.0163769326537
     },
     {
       "name": "La Mongie",
@@ -78,12 +78,12 @@
       "distance_m": 30675.23263156757,
       "elevation_gain_m": 2497.175,
       "elevation_loss_m": 1558.675,
-      "duration_s_arrival": 21792.853055077558,
+      "duration_s_arrival": 21093.28951511099,
       "stop_s": 0,
-      "duration_s_departure": 21792.853055077558,
-      "epoch_s_arrival": 1787302993,
+      "duration_s_departure": 21093.28951511099,
+      "epoch_s_arrival": 1787302293,
       "epoch_s_cutoff": 1787310000,
-      "margin_s": 7007.146944922442
+      "margin_s": 7706.7104848890085
     },
     {
       "name": "Col de Sencours",
@@ -95,12 +95,12 @@
       "distance_m": 38264.48770985857,
       "elevation_gain_m": 3367.175,
       "elevation_loss_m": 1787.175,
-      "duration_s_arrival": 28316.337005805704,
+      "duration_s_arrival": 27616.77346583914,
       "stop_s": 0,
-      "duration_s_departure": 28316.337005805704,
-      "epoch_s_arrival": 1787309516,
+      "duration_s_departure": 27616.77346583914,
+      "epoch_s_arrival": 1787308817,
       "epoch_s_cutoff": 1787317200,
-      "margin_s": 7683.662994194296
+      "margin_s": 8383.226534160862
     },
     {
       "name": "Col de Sencours (retour)",
@@ -112,12 +112,12 @@
       "distance_m": 44883.92052599167,
       "elevation_gain_m": 3877.675,
       "elevation_loss_m": 2297.675,
-      "duration_s_arrival": 32919.293317983036,
+      "duration_s_arrival": 32219.729778016466,
       "stop_s": 0,
-      "duration_s_departure": 32919.293317983036,
-      "epoch_s_arrival": 1787314119,
+      "duration_s_departure": 32219.729778016466,
+      "epoch_s_arrival": 1787313420,
       "epoch_s_cutoff": 1787322600,
-      "margin_s": 8480.706682016964
+      "margin_s": 9180.270221983534
     },
     {
       "name": "Descente Aoube",
@@ -129,12 +129,12 @@
       "distance_m": 50491.41010092073,
       "elevation_gain_m": 4198.675,
       "elevation_loss_m": 2792.175,
-      "duration_s_arrival": 36429.68851095472,
+      "duration_s_arrival": 35730.12497098815,
       "stop_s": 0,
-      "duration_s_departure": 36429.68851095472,
-      "epoch_s_arrival": 1787317630,
+      "duration_s_departure": 35730.12497098815,
+      "epoch_s_arrival": 1787316930,
       "epoch_s_cutoff": 1787327400,
-      "margin_s": 9770.311489045278
+      "margin_s": 10469.875029011848
     },
     {
       "name": "Hautacam",
@@ -146,12 +146,12 @@
       "distance_m": 64323.074299204716,
       "elevation_gain_m": 4959.675,
       "elevation_loss_m": 4209.175,
-      "duration_s_arrival": 44916.10023217929,
+      "duration_s_arrival": 44216.53669221272,
       "stop_s": 0,
-      "duration_s_departure": 44916.10023217929,
-      "epoch_s_arrival": 1787326116,
+      "duration_s_departure": 44216.53669221272,
+      "epoch_s_arrival": 1787325417,
       "epoch_s_cutoff": 1787339700,
-      "margin_s": 13583.899767820709
+      "margin_s": 14283.463307787279
     },
     {
       "name": "Pierrefitte",
@@ -163,12 +163,12 @@
       "distance_m": 76439.0500366812,
       "elevation_gain_m": 5117.514999999999,
       "elevation_loss_m": 5421.515,
-      "duration_s_arrival": 50694.94648711375,
+      "duration_s_arrival": 49995.38294714718,
       "stop_s": 1800,
-      "duration_s_departure": 52494.94648711375,
-      "epoch_s_arrival": 1787331895,
+      "duration_s_departure": 51795.38294714718,
+      "epoch_s_arrival": 1787331195,
       "epoch_s_cutoff": 1787349600,
-      "margin_s": 15905.053512886247
+      "margin_s": 16604.617052852816
     },
     {
       "name": "Lac d'Estaing",
@@ -180,12 +180,12 @@
       "distance_m": 97412.31986635324,
       "elevation_gain_m": 6658.014999999999,
       "elevation_loss_m": 6274.27,
-      "duration_s_arrival": 68710.3559780249,
+      "duration_s_arrival": 68010.79243805833,
       "stop_s": 0,
-      "duration_s_departure": 68710.3559780249,
-      "epoch_s_arrival": 1787349910,
+      "duration_s_departure": 68010.79243805833,
+      "epoch_s_arrival": 1787349211,
       "epoch_s_cutoff": 1787371200,
-      "margin_s": 21289.644021975095
+      "margin_s": 21989.207561941672
     },
     {
       "name": "Cauterets",
@@ -197,12 +197,12 @@
       "distance_m": 113290.60106153491,
       "elevation_gain_m": 7885.284999999999,
       "elevation_loss_m": 7710.285,
-      "duration_s_arrival": 81130.06469296207,
+      "duration_s_arrival": 80652.13786402991,
       "stop_s": 0,
-      "duration_s_departure": 81130.06469296207,
-      "epoch_s_arrival": 1787362330,
+      "duration_s_departure": 80652.13786402991,
+      "epoch_s_arrival": 1787361852,
       "epoch_s_cutoff": 1787389200,
-      "margin_s": 26869.93530703793
+      "margin_s": 27347.862135970092
     },
     {
       "name": "Luz Saint Sauveur",
@@ -214,12 +214,12 @@
       "distance_m": 131127.38558539585,
       "elevation_gain_m": 8938.045,
       "elevation_loss_m": 9033.045,
-      "duration_s_arrival": 95228.23549522216,
+      "duration_s_arrival": 94553.86666790419,
       "stop_s": 1800,
-      "duration_s_departure": 97028.23549522216,
-      "epoch_s_arrival": 1787376428,
+      "duration_s_departure": 96353.86666790419,
+      "epoch_s_arrival": 1787375754,
       "epoch_s_cutoff": 1787410800,
-      "margin_s": 32571.764504777835
+      "margin_s": 33246.13333209581
     },
     {
       "name": "Tournaboup",
@@ -231,12 +231,12 @@
       "distance_m": 143343.28649738902,
       "elevation_gain_m": 9918.045,
       "elevation_loss_m": 9247.045,
-      "duration_s_arrival": 107673.08598126326,
+      "duration_s_arrival": 106979.17486550732,
       "stop_s": 0,
-      "duration_s_departure": 107673.08598126326,
-      "epoch_s_arrival": 1787388873,
+      "duration_s_departure": 106979.17486550732,
+      "epoch_s_arrival": 1787388179,
       "epoch_s_cutoff": 1787425200,
-      "margin_s": 36326.914018736745
+      "margin_s": 37020.82513449268
     },
     {
       "name": "Refuge d'Aygues Cluses",
@@ -248,12 +248,12 @@
       "distance_m": 149757.98065482188,
       "elevation_gain_m": 10605.545,
       "elevation_loss_m": 9255.545,
-      "duration_s_arrival": 114420.06199170409,
+      "duration_s_arrival": 113726.15087594815,
       "stop_s": 0,
-      "duration_s_departure": 114420.06199170409,
-      "epoch_s_arrival": 1787395620,
+      "duration_s_departure": 113726.15087594815,
+      "epoch_s_arrival": 1787394926,
       "epoch_s_cutoff": 1787436000,
-      "margin_s": 40379.93800829591
+      "margin_s": 41073.84912405185
     },
     {
       "name": "Restaurant Merlans (retour)",
@@ -265,12 +265,12 @@
       "distance_m": 159719.6521830815,
       "elevation_gain_m": 11110.045,
       "elevation_loss_m": 9878.545,
-      "duration_s_arrival": 121537.57139706696,
+      "duration_s_arrival": 120843.66028131102,
       "stop_s": 0,
-      "duration_s_departure": 121537.57139706696,
-      "epoch_s_arrival": 1787402738,
+      "duration_s_departure": 120843.66028131102,
+      "epoch_s_arrival": 1787402044,
       "epoch_s_cutoff": 1787448600,
-      "margin_s": 45862.42860293304
+      "margin_s": 46556.33971868898
     },
     {
       "name": "Vielle-Aure",
@@ -282,19 +282,19 @@
       "distance_m": 173301.31029685083,
       "elevation_gain_m": 11301.045,
       "elevation_loss_m": 11297.045000000004,
-      "duration_s_arrival": 128773.10907962424,
+      "duration_s_arrival": 128079.1979638683,
       "stop_s": 0,
-      "duration_s_departure": 128773.10907962424,
-      "epoch_s_arrival": 1787409973,
+      "duration_s_departure": 128079.1979638683,
+      "epoch_s_arrival": 1787409279,
       "epoch_s_cutoff": 1787461200,
-      "margin_s": 51226.890920375765
+      "margin_s": 51920.8020361317
     }
   ],
   "carry": [
     {
-      "fluid_ml": 1960,
-      "carbs_g": 1021,
-      "sodium_mg": 5833
+      "fluid_ml": 1863,
+      "carbs_g": 1008,
+      "sodium_mg": 5756
     },
     {
       "fluid_ml": 2474,
@@ -315,20 +315,20 @@
     },
     null,
     {
-      "fluid_ml": 4228,
-      "carbs_g": 866,
-      "sodium_mg": 4949
+      "fluid_ml": 4258,
+      "carbs_g": 867,
+      "sodium_mg": 4951
     },
     null,
     {
-      "fluid_ml": 2209,
+      "fluid_ml": 2181,
       "carbs_g": null,
       "sodium_mg": null
     },
     {
-      "fluid_ml": 1729,
-      "carbs_g": 653,
-      "sodium_mg": 3728
+      "fluid_ml": 1726,
+      "carbs_g": 652,
+      "sodium_mg": 3726
     },
     {
       "fluid_ml": 2176,
