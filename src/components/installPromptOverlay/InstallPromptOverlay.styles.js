@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+import { space } from "../../theme/space.js";
+
 export const Overlay = styled.div`
   position: fixed;
   inset: 0;
@@ -9,10 +11,10 @@ export const Overlay = styled.div`
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: ${space(6)};
   color: var(--color-text);
   text-align: center;
-  padding: 2rem;
+  padding: ${space(8)};
 `;
 
 export const Icon = styled.div`
@@ -36,13 +38,13 @@ export const Instructions = styled.p`
 `;
 
 export const DismissButton = styled.button`
-  margin-top: 0.5rem;
+  margin-top: ${space(2)};
   background: none;
   border: 1px solid var(--color-text);
   border-radius: var(--border-radius-md);
   color: var(--color-text);
   font-size: var(--font-size-small);
-  padding: 0.5rem 1.5rem;
+  padding: ${space(2)} ${space(6)};
   cursor: pointer;
   opacity: 0.9;
   transition: opacity var(--transition-fast);

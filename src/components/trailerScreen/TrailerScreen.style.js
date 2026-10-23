@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-const topFadeDistance = (props) => `${props.theme.spacing[5]}px`;
+const topFadeDistance = (props) => `${props.theme.space["--space-8"]}`;
 
 const style = (Component) => styled(Component)`
   background-color: var(--color-background);

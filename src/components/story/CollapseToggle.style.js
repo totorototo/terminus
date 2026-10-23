@@ -1,11 +1,13 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: block;
   width: 100%;
   min-height: 44px;
-  margin-top: 1rem;
+  margin-top: ${space(4)};
   background: none;
   border: 1px dashed
     ${(props) =>

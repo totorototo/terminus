@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: block;
 
@@ -9,11 +11,11 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     max-width: 34ch;
-    margin: 0 0 3rem;
+    margin: 0 0 ${space(12)};
   }
 
   .chart-frame {
-    padding: 1rem 1.5rem;
+    padding: ${space(4)} ${space(6)};
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
     border: 1px solid
       ${(props) =>
@@ -32,11 +34,11 @@ const style = (Component) => styled(Component)`
     text-transform: uppercase;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
-    margin-bottom: 0.75rem;
+    margin-bottom: ${space(3)};
   }
 
   .stacked-frame {
-    margin-top: 1rem;
+    margin-top: ${space(4)};
   }
 `;
 

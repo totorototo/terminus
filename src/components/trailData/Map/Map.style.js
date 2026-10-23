@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   position: relative;
   width: 100%;
@@ -34,8 +36,8 @@ const style = (Component) => styled(Component)`
 
   .fullscreen-btn {
     position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
+    top: ${space(3)};
+    right: ${space(3)};
     z-index: 1;
     display: flex;
     align-items: center;
@@ -86,7 +88,7 @@ const style = (Component) => styled(Component)`
   &:-webkit-full-screen .fullscreen-btn,
   &.is-fullscreen .fullscreen-btn {
     top: max(calc(env(safe-area-inset-top, 0px) + 0.75rem), 3.25rem);
-    right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+    right: calc(env(safe-area-inset-right, 0px) + ${space(3)});
   }
 
   .map-message {
@@ -95,7 +97,7 @@ const style = (Component) => styled(Component)`
     justify-content: center;
     width: 100%;
     height: 100%;
-    padding: 1rem;
+    padding: ${space(4)};
     text-align: center;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
@@ -113,10 +115,10 @@ const style = (Component) => styled(Component)`
 
   .offline-badge {
     position: absolute;
-    bottom: 0.5rem;
+    bottom: ${space(2)};
     left: 50%;
     transform: translateX(-50%);
-    padding: 0.25rem 0.6rem;
+    padding: ${space(1)} ${space(3)};
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
     background: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-background"]};
@@ -177,7 +179,7 @@ const style = (Component) => styled(Component)`
   .runner-marker::before {
     content: "";
     position: absolute;
-    inset: -2px;
+    inset: calc(-1 * ${space("hair")});
     border-radius: 50%;
     background: ${(props) => props.theme.map.live};
     opacity: 0.4;

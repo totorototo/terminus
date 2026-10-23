@@ -1,11 +1,13 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
-const legendItemGap = (props) => `${props.theme.spacing[2]}px`;
+import { space } from "../../../theme/space.js";
+
+const legendItemGap = (props) => `${props.theme.space["--space-1"]}`;
 const legendGap = (props) =>
-  `${props.theme.spacing[2]}px ${props.theme.spacing[4]}px`;
-const legendMarginTop = (props) => `${props.theme.spacing[3]}px`;
-const dotSize = (props) => `${props.theme.spacing[3]}px`;
+  `${props.theme.space["--space-1"]} ${props.theme.space["--space-4"]}`;
+const legendMarginTop = (props) => `${props.theme.space["--space-2"]}`;
+const dotSize = (props) => `${props.theme.space["--space-2"]}`;
 
 const style = (Component) => styled(Component)`
   width: 100%;
@@ -72,13 +74,13 @@ const style = (Component) => styled(Component)`
   }
 
   .ep-label--tl {
-    top: 2px;
-    left: 2px;
+    top: ${space("hair")};
+    left: ${space("hair")};
   }
 
   .ep-label--tr {
-    top: 2px;
-    right: 2px;
+    top: ${space("hair")};
+    right: ${space("hair")};
   }
 
   .ep-daynight-peak {
@@ -96,7 +98,7 @@ const style = (Component) => styled(Component)`
     position: relative;
     width: 100%;
     height: 14px;
-    margin-top: 3px;
+    margin-top: ${space(1)};
   }
 
   .ep-section-name {

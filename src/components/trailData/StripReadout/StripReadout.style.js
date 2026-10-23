@@ -1,10 +1,12 @@
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   position: relative;
   width: 100%;
   height: 14px;
-  margin-top: 4px;
+  margin-top: ${space(1)};
 
   .strip-readout-value {
     position: absolute;

@@ -1,5 +1,7 @@
 import styled, { keyframes } from "styled-components";
 
+import { space } from "../../theme/space.js";
+
 const slideIn = keyframes`
   from {
     opacity: 0;
@@ -22,8 +24,8 @@ const style = (Component) => styled(Component)`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0 1rem;
+  gap: ${space(2)};
+  padding: 0 ${space(4)};
   width: 100%;
   max-width: 420px;
   pointer-events: none;
@@ -41,7 +43,7 @@ const style = (Component) => styled(Component)`
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
-    padding: 0.75rem 1rem;
+    padding: ${space(3)} ${space(4)};
     animation: ${slideIn}
       ${(props) => props.theme.transitions["--transition-standard"]};
   }

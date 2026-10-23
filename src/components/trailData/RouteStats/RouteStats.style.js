@@ -6,9 +6,9 @@ const style = (Component) => styled(Component)`
   .rs-stat-row {
     display: flex;
     flex-wrap: wrap;
-    gap: ${(props) => props.theme.spacing[4]}px
-      ${(props) => props.theme.spacing[5]}px;
-    margin-bottom: ${(props) => props.theme.spacing[5]}px;
+    gap: ${(props) => props.theme.space["--space-4"]}
+      ${(props) => props.theme.space["--space-8"]};
+    margin-bottom: ${(props) => props.theme.space["--space-8"]};
   }
 
   .rs-stat {
@@ -31,7 +31,7 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    margin-top: ${(props) => props.theme.spacing[2]}px;
+    margin-top: ${(props) => props.theme.space["--space-1"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
@@ -78,15 +78,15 @@ const style = (Component) => styled(Component)`
   .rs-tb-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: ${(props) => props.theme.spacing[3]}px
-      ${(props) => props.theme.spacing[4]}px;
-    margin-top: ${(props) => props.theme.spacing[3]}px;
+    gap: ${(props) => props.theme.space["--space-2"]}
+      ${(props) => props.theme.space["--space-4"]};
+    margin-top: ${(props) => props.theme.space["--space-2"]};
   }
 
   .rs-tb-legend-item {
     display: flex;
     align-items: center;
-    gap: ${(props) => props.theme.spacing[2]}px;
+    gap: ${(props) => props.theme.space["--space-1"]};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-xxsmall"]};
     color: ${(props) =>
@@ -96,8 +96,8 @@ const style = (Component) => styled(Component)`
 
   .rs-tb-legend-dot {
     display: inline-block;
-    width: ${(props) => props.theme.spacing[3]}px;
-    height: ${(props) => props.theme.spacing[3]}px;
+    width: ${(props) => props.theme.space["--space-2"]};
+    height: ${(props) => props.theme.space["--space-2"]};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-full"]};
     flex-shrink: 0;

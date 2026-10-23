@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: block;
 
@@ -9,7 +11,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     max-width: 34ch;
-    margin: 0 0 2rem;
+    margin: 0 0 ${space(8)};
   }
 
   .map-frame {

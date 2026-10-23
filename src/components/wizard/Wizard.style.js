@@ -1,7 +1,9 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
-const topFadeDistance = (props) => `${props.theme.spacing[5]}px`;
+import { layout, space } from "../../theme/space.js";
+
+const topFadeDistance = (props) => `${props.theme.space["--space-8"]}`;
 
 const style = (Component) => styled(Component)`
   background-color: var(--color-background);
@@ -47,9 +49,9 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     min-height: 44px;
-    gap: 0.625rem;
-    margin: calc(env(safe-area-inset-top, 0px) + 1.25rem) 0
-      clamp(3rem, 12vh, 6rem);
+    gap: ${space(3)};
+    margin: calc(env(safe-area-inset-top, 0px) + ${space(5)}) 0
+      ${layout("start-gap")};
 
     /* The first panel starts 8 of the mark's 64 in: pulled back to line up with the text
        below. */
@@ -90,7 +92,7 @@ const style = (Component) => styled(Component)`
         props.theme.colors[props.theme.currentVariant]["--color-text"],
         0.85,
       )};
-    margin-bottom: 1rem;
+    margin-bottom: ${space(4)};
   }
 
   .title {
@@ -102,7 +104,7 @@ const style = (Component) => styled(Component)`
     max-width: 16ch;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    margin: 0 0 1rem;
+    margin: 0 0 ${space(4)};
   }
 
   .subtitle {
@@ -117,14 +119,14 @@ const style = (Component) => styled(Component)`
         props.theme.colors[props.theme.currentVariant]["--color-text"],
         0.85,
       )};
-    margin: 0 0 2.5rem;
-    max-width: 32ch;
+    margin: 0 0 ${space(10)};
+    max-width: ${layout("measure-lede")};
   }
 
   .choices {
     display: flex;
     flex-direction: column;
-    max-width: 28rem;
+    max-width: ${layout("measure-list")};
     border-top: 1px solid
       ${(props) =>
         rgba(
@@ -137,9 +139,9 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: baseline;
     justify-content: flex-start;
-    gap: 0.875rem;
+    gap: ${space(4)};
     width: 100%;
-    padding: 1rem 0;
+    padding: ${space(4)} 0;
     border: none;
     border-bottom: 1px solid
       ${(props) =>
@@ -205,18 +207,18 @@ const style = (Component) => styled(Component)`
   }
 
   .drop-hint {
-    margin: 0.75rem 0 0;
+    margin: ${space(3)} 0 0;
   }
 
   .error {
-    margin: 0.75rem 0 0;
+    margin: ${space(3)} 0 0;
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
   }
 
   .note {
-    margin: 2rem 0 0;
+    margin: ${space(8)} 0 0;
     max-width: 40ch;
     line-height: 1.5;
   }
@@ -224,7 +226,7 @@ const style = (Component) => styled(Component)`
   .help-link {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: ${space(2)};
     align-self: flex-start;
     background: none;
     border: none;
@@ -239,7 +241,7 @@ const style = (Component) => styled(Component)`
       )};
     transition: color ${(props) => props.theme.transitions["--transition-fast"]};
     -webkit-tap-highlight-color: transparent;
-    margin-top: 1.5rem;
+    margin-top: ${space(6)};
 
     &:hover {
       color: ${(props) =>
@@ -251,7 +253,7 @@ const style = (Component) => styled(Component)`
      is the page's). */
   .footer {
     margin-top: auto;
-    padding: 3rem 0 2.5rem;
+    padding: ${space(12)} 0 ${space(10)};
     text-align: center;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 0.6875rem;

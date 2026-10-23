@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled, { keyframes } from "styled-components";
 
+import { space } from "../../theme/space.js";
+
 const pulse = keyframes`
   0%, 100% { transform: scale(1); opacity: 0.9; }
   50% { transform: scale(1.6); opacity: 0.4; }
@@ -29,7 +31,7 @@ const style = (Component) => styled(Component)`
     position: absolute;
     width: 8px;
     height: 8px;
-    margin: -4px 0 0 -4px;
+    margin: calc(-1 * ${space(1)}) 0 0 calc(-1 * ${space(1)});
     border-radius: 50%;
     background: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-accent"]};
@@ -44,7 +46,7 @@ const style = (Component) => styled(Component)`
     &::after {
       content: "";
       position: absolute;
-      inset: -6px;
+      inset: calc(-1 * ${space(2)});
       border-radius: 50%;
       border: 1px solid
         ${(props) =>

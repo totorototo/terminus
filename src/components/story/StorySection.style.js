@@ -1,10 +1,13 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { layout, space } from "../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: block;
   width: 100%;
-  padding: clamp(4rem, 14vh, 7rem) ${(props) => props.theme.layout["--gutter"]};
+  padding: ${layout("section-block")}
+    ${(props) => props.theme.layout["--gutter"]};
   position: relative;
 
   .section-inner {
@@ -24,7 +27,7 @@ const style = (Component) => styled(Component)`
         props.theme.colors[props.theme.currentVariant]["--color-text"],
         0.85,
       )};
-    margin-bottom: 0.75rem;
+    margin-bottom: ${space(3)};
   }
 
   .title {
@@ -35,7 +38,7 @@ const style = (Component) => styled(Component)`
     line-height: 1;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    margin: 0 0 2rem;
+    margin: 0 0 ${space(8)};
   }
 
   .body {

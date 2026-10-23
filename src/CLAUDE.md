@@ -41,6 +41,11 @@ for (let i = 0; i < zigData.items.length; i++) {
 
 - Tokens come from `@totorototo/trail-tokens` (shared with Waymark and Retrace); `src/theme/Theme.js` only re-exports it. To change a token, change it in the Trail Suite design-system artifact first, then in the package, then bump the tag here. Never edit values in this repo.
 - Always use theme tokens for colors — never inline colors or hardcoded color values.
+- Spacing (padding, margin, gap, offsets) is the design system's 4px grid through
+  `src/theme/space.js`: `padding: ${space(4)} ${space(6)};`, and `${layout("stat-gap")}` for the
+  shared fluid values. Never a rem or px literal; a value off the grid rounds up.
+  Don't read `props.theme.spacing[n]`: it is the old doubling scale, which trail-tokens drops in
+  its next major version.
 - Read colors in styles as theme interpolations: `${(props) => props.theme.colors[props.theme.currentVariant]["--color-text-muted"]}`, not `var(--color-…)`.
 - Use polished `rgba()` only on opaque tokens, for decorative tints (fills, hairlines on hover). Never wrap a token that carries its own alpha (`--color-text-muted`, `--color-text-faint`, `--color-hairline`, `--color-direction-*`, `--color-profile-*`): `rgba()` replaces that alpha and breaks its checked contrast. Text steps down through `--color-text-muted` / `--color-text-faint`, never an ad-hoc alpha on `--color-text`.
 - Keep styles in separate `.styles.js` files, not in component files.

@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled, { keyframes } from "styled-components";
 
+import { space } from "../../theme/space.js";
+
 const fadeUp = keyframes`
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -23,8 +25,9 @@ const style = (Component) => styled(Component)`
     z-index: 50;
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: calc(env(safe-area-inset-top) + 0.75rem) 1.5rem 0.75rem;
+    gap: ${space(4)};
+    padding: calc(env(safe-area-inset-top) + ${space(3)}) ${space(6)}
+      ${space(3)};
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-background"],
@@ -75,7 +78,7 @@ const style = (Component) => styled(Component)`
   .section-nav {
     margin-left: auto;
     display: flex;
-    gap: 2px;
+    gap: ${space("hair")};
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -92,7 +95,7 @@ const style = (Component) => styled(Component)`
     cursor: pointer;
     font-size: 0.75rem;
     font-weight: 500;
-    padding: 0.3rem 0.75rem;
+    padding: ${space(2)} ${space(3)};
     border-radius: 100px;
     color: ${(props) =>
       rgba(
@@ -117,13 +120,13 @@ const style = (Component) => styled(Component)`
   .help-main {
     max-width: 800px;
     margin: 0 auto;
-    padding: 0 1.5rem 4rem;
+    padding: 0 ${space(6)} ${space(16)};
   }
 
   /* ── HERO ── */
   .hero {
     text-align: center;
-    padding: 5rem 0 4rem;
+    padding: ${space(20)} 0 ${space(16)};
     animation: ${fadeUp} 0.45s ease both;
 
     @media (prefers-reduced-motion: reduce) {
@@ -138,7 +141,7 @@ const style = (Component) => styled(Component)`
     text-transform: uppercase;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-secondary-text"]};
-    margin-bottom: 1rem;
+    margin-bottom: ${space(4)};
   }
 
   .hero-title {
@@ -147,7 +150,7 @@ const style = (Component) => styled(Component)`
     font-weight: 900;
     letter-spacing: -0.05em;
     line-height: 1;
-    margin: 0 0 1.25rem;
+    margin: 0 0 ${space(5)};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
@@ -165,7 +168,7 @@ const style = (Component) => styled(Component)`
 
   /* ── SECTIONS ── */
   .section {
-    margin-bottom: 5rem;
+    margin-bottom: ${space(20)};
     animation: ${fadeUp} 0.45s ease both;
 
     @media (prefers-reduced-motion: reduce) {
@@ -180,7 +183,7 @@ const style = (Component) => styled(Component)`
     text-transform: uppercase;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
-    margin-bottom: 0.4rem;
+    margin-bottom: ${space(2)};
 
     &.secondary {
       color: ${(props) =>
@@ -196,7 +199,7 @@ const style = (Component) => styled(Component)`
     font-weight: 800;
     letter-spacing: -0.03em;
     line-height: 1.1;
-    margin: 0 0 1rem;
+    margin: 0 0 ${space(4)};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
   }
@@ -212,7 +215,7 @@ const style = (Component) => styled(Component)`
     max-width: 640px;
 
     &.pace-intro {
-      margin-top: 1.75rem;
+      margin-top: ${space(7)};
     }
   }
 
@@ -224,15 +227,15 @@ const style = (Component) => styled(Component)`
         props.theme.colors[props.theme.currentVariant]["--color-text"],
         0.07,
       )};
-    margin: 0 0 5rem;
+    margin: 0 0 ${space(20)};
   }
 
   /* ── ROLE CARDS ── */
   .role-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.875rem;
-    margin-top: 1.75rem;
+    gap: ${space(4)};
+    margin-top: ${space(7)};
 
     @media (max-width: 540px) {
       grid-template-columns: 1fr;
@@ -252,7 +255,7 @@ const style = (Component) => styled(Component)`
           0.08,
         )};
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
-    padding: 1.75rem 1.5rem;
+    padding: ${space(7)} ${space(6)};
     position: relative;
     overflow: hidden;
     transition: all ${(props) => props.theme.transitions["--transition-base"]};
@@ -313,7 +316,7 @@ const style = (Component) => styled(Component)`
       font-size: 1.0625rem;
       font-weight: 700;
       letter-spacing: -0.02em;
-      margin-bottom: 0.5rem;
+      margin-bottom: ${space(2)};
       color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-text"]};
     }
@@ -336,7 +339,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1.125rem;
+    margin-bottom: ${space(5)};
 
     .role-card.rn & {
       background: ${(props) =>
@@ -365,8 +368,8 @@ const style = (Component) => styled(Component)`
   .feat-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 0.625rem;
-    margin-top: 1.5rem;
+    gap: ${space(3)};
+    margin-top: ${space(6)};
   }
 
   .feat {
@@ -383,7 +386,7 @@ const style = (Component) => styled(Component)`
         )};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
-    padding: 1rem 1.125rem;
+    padding: ${space(4)} ${space(5)};
     transition: all ${(props) => props.theme.transitions["--transition-fast"]};
 
     &:hover {
@@ -400,10 +403,10 @@ const style = (Component) => styled(Component)`
       font-weight: 700;
       color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-text"]};
-      margin-bottom: 0.3rem;
+      margin-bottom: ${space(2)};
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: ${space(2)};
     }
 
     p {
@@ -437,15 +440,15 @@ const style = (Component) => styled(Component)`
   .panel-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1.5rem;
+    gap: ${space(2)};
+    margin-top: ${space(6)};
   }
 
   .pi {
     display: flex;
     align-items: flex-start;
-    gap: 0.875rem;
-    padding: 0.875rem 1rem;
+    gap: ${space(4)};
+    padding: ${space(4)} ${space(4)};
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-surface"],
@@ -513,7 +516,7 @@ const style = (Component) => styled(Component)`
     font-weight: 700;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    margin-bottom: 0.2rem;
+    margin-bottom: ${space(1)};
   }
 
   .pi-desc {
@@ -527,7 +530,7 @@ const style = (Component) => styled(Component)`
   .gtable {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 1.25rem;
+    margin-top: ${space(5)};
     font-size: 0.875rem;
 
     thead th {
@@ -538,7 +541,7 @@ const style = (Component) => styled(Component)`
       text-transform: uppercase;
       color: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
-      padding: 0.5rem 1rem;
+      padding: ${space(2)} ${space(4)};
       border-bottom: 1px solid
         ${(props) =>
           rgba(
@@ -548,7 +551,7 @@ const style = (Component) => styled(Component)`
     }
 
     td {
-      padding: 0.7rem 1rem;
+      padding: ${space(3)} ${space(4)};
       border-bottom: 1px solid
         ${(props) =>
           rgba(
@@ -582,8 +585,8 @@ const style = (Component) => styled(Component)`
 
   /* ── INFO BOX ── */
   .info-box {
-    margin-top: 1.25rem;
-    padding: 1rem 1.25rem;
+    margin-top: ${space(5)};
+    padding: ${space(4)} ${space(5)};
     background: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-secondary"],
@@ -618,7 +621,7 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.04em;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
-    padding-top: 2rem;
+    padding-top: ${space(8)};
     border-top: 1px solid
       ${(props) =>
         rgba(

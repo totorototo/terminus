@@ -1,25 +1,27 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   width: 100%;
   height: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  padding: 0 0.75rem;
+  padding: 0 ${space(3)};
 
   .pp-header {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    row-gap: 0.25rem;
-    padding-bottom: 0.4rem;
+    row-gap: ${space(1)};
+    padding-bottom: ${space(2)};
     border-bottom: 1px solid
       ${({ theme }) =>
         rgba(theme.colors[theme.currentVariant]["--color-text"], 0.07)};
-    margin-bottom: 0.5rem;
+    margin-bottom: ${space(2)};
     flex-shrink: 0;
   }
 
@@ -37,13 +39,13 @@ const style = (Component) => styled(Component)`
   .pp-legend {
     display: flex;
     flex-wrap: nowrap;
-    gap: 0.6rem;
+    gap: ${space(3)};
   }
 
   .pp-legend-item {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: ${space(1)};
     font-family: ${({ theme }) => theme.font.family["--font-family-mono"]};
     font-size: ${({ theme }) => theme.font.sizes["--font-size-xxsmall"]};
     color: ${({ theme }) =>
@@ -128,23 +130,23 @@ const style = (Component) => styled(Component)`
   }
 
   .pp-label--tl {
-    top: 2px;
-    left: 2px;
+    top: ${space("hair")};
+    left: ${space("hair")};
   }
 
   .pp-label--bl {
-    bottom: 2px;
-    left: 2px;
+    bottom: ${space("hair")};
+    left: ${space("hair")};
   }
 
   .pp-label--br {
-    bottom: 2px;
-    right: 2px;
+    bottom: ${space("hair")};
+    right: ${space("hair")};
   }
 
   .pp-label--tr {
-    top: 2px;
-    right: 2px;
+    top: ${space("hair")};
+    right: ${space("hair")};
   }
 
   .pp-label--effort {
@@ -158,7 +160,7 @@ const style = (Component) => styled(Component)`
     position: relative;
     width: 100%;
     height: 14px;
-    margin-top: 3px;
+    margin-top: ${space(1)};
   }
 
   .pp-section-name {
@@ -195,7 +197,7 @@ const style = (Component) => styled(Component)`
     height: 1px;
     background: ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.07)};
-    margin: 0.6rem 0;
+    margin: ${space(3)} 0;
     flex-shrink: 0;
   }
 
@@ -212,7 +214,7 @@ const style = (Component) => styled(Component)`
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: ${space(1)};
   }
 
   .pp-stat-sep {
@@ -220,7 +222,7 @@ const style = (Component) => styled(Component)`
     align-self: stretch;
     background: ${({ theme }) =>
       rgba(theme.colors[theme.currentVariant]["--color-text"], 0.07)};
-    margin: 0 0.5rem;
+    margin: 0 ${space(2)};
     flex-shrink: 0;
   }
 

@@ -4,8 +4,8 @@ import styled from "styled-components";
 const style = (Component) => styled(Component)`
   display: flex;
   flex-direction: column;
-  gap: ${(props) => props.theme.spacing[2]}px;
-  margin-top: ${(props) => props.theme.spacing[4]}px;
+  gap: ${(props) => props.theme.space["--space-1"]};
+  margin-top: ${(props) => props.theme.space["--space-4"]};
 
   .gd-title {
     display: block;
@@ -15,7 +15,7 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.1em;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
-    margin-bottom: ${(props) => props.theme.spacing[2]}px;
+    margin-bottom: ${(props) => props.theme.space["--space-1"]};
   }
 
   .gd-row {
@@ -25,7 +25,7 @@ const style = (Component) => styled(Component)`
         max-content
       );
     align-items: center;
-    gap: ${(props) => props.theme.spacing[3]}px;
+    gap: ${(props) => props.theme.space["--space-2"]};
   }
 
   .gd-label,
@@ -43,7 +43,7 @@ const style = (Component) => styled(Component)`
 
   .gd-track {
     display: block;
-    height: ${(props) => props.theme.spacing[3]}px;
+    height: ${(props) => props.theme.space["--space-2"]};
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-sm"]};
     background: ${(props) =>
       rgba(
