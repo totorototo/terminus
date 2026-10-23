@@ -14,6 +14,8 @@ vi.mock("./Help.style.js", () => ({
   default: (Component) => (props) => <Component {...props} />,
 }));
 
+vi.mock("../story/ThemeToggle.jsx", () => ({ default: () => null }));
+
 const mockNavigate = vi.fn();
 
 describe("Help", () => {
@@ -27,15 +29,33 @@ describe("Help", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders the hero title", () => {
+  it("heads the page with the app's name, then the guide's title", () => {
     render(<Help />);
-    expect(screen.getByText("Terminus")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "terminus" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "How it works" }),
+    ).toBeInTheDocument();
   });
 
-  it("renders a nav button for every section", () => {
+  it("lists every section in the contents, each with its section", () => {
     render(<Help />);
-    expect(screen.getByText("Getting Started")).toBeInTheDocument();
-    expect(screen.getByText("Install")).toBeInTheDocument();
+    const contents = screen.getByRole("navigation", { name: "Contents" });
+    for (const label of ["Getting started", "Fueling", "Install", "Privacy"]) {
+      expect(contents).toHaveTextContent(label);
+    }
+    for (const id of ["start", "story", "fueling", "follower", "privacy"]) {
+      expect(document.getElementById(id)).not.toBeNull();
+    }
+  });
+
+  it("describes no runner-profile presets: the model is the plan.json's", () => {
+    render(<Help />);
+    expect(document.body).not.toHaveTextContent(/Casual|Athlete|Elite/);
+    expect(document.getElementById("terrain")).toHaveTextContent(
+      "Replace plan.json",
+    );
   });
 
   it("lists every service that receives data in the privacy section", () => {
@@ -60,7 +80,7 @@ describe("Help", () => {
     section.id = "story";
     document.body.appendChild(section);
 
-    fireEvent.click(screen.getByText("The Story"));
+    fireEvent.click(screen.getByRole("button", { name: "The story" }));
 
     expect(section.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" });
     document.body.removeChild(section);
@@ -74,7 +94,7 @@ describe("Help", () => {
     });
 
     render(<Help />);
-    fireEvent.click(screen.getByText("← Back"));
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
 
     expect(window.history.back).toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();
@@ -87,7 +107,7 @@ describe("Help", () => {
     });
 
     render(<Help />);
-    fireEvent.click(screen.getByText("← Back"));
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
 
     expect(mockNavigate).toHaveBeenCalledWith("/");
   });
