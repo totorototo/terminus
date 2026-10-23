@@ -21,9 +21,20 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      playwright: ${{ steps.playwright.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      # The e2e and smoke jobs run in the Playwright image of this exact version: browsers and
+      # system libraries come baked in, so no apt step (it hung for 37 and 47 minutes), and a
+      # lockfile bump moves the image with it.
+      - name: Read the Playwright version
+        id: playwright
+        run: >-
+          echo "version=$(node -p "require('./package-lock.json')
+          .packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
 
       # mlugg/setup-zig, as retrace's and gpxz's CI: maintained, and it caches Zig's global
       # cache.
@@ -125,8 +136,9 @@ jobs:
   e2e:
     needs: build
     runs-on: ubuntu-latest
-    # A shard takes under 2 minutes; `playwright install-deps` (apt) has hung for 37 and 47.
-    # Fail instead, and rerun the failed jobs.
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.build.outputs.playwright }}-noble
+    # A shard takes under 2 minutes. Fail a hang instead, and rerun the failed jobs.
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -152,22 +164,6 @@ jobs:
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v5
-        id: cache-playwright
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Playwright Browsers
-        if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps
-
-      # A cached browser still needs the runner's system libraries.
-      - name: Install Playwright system dependencies
-        if: steps.cache-playwright.outputs.cache-hit == 'true'
-        run: npx playwright install-deps
 
       - name: Download end-to-end build artifact
         uses: actions/download-artifact@v5
@@ -279,9 +275,11 @@ jobs:
   # against the live site and relay checks those. A failure here means production is already
   # broken: it alerts, it does not gate the deploy (as with Lighthouse).
   smoke:
-    needs: deploy
+    # build for the Playwright version only.
+    needs: [build, deploy]
     runs-on: ubuntu-latest
-    # Same apt hang as e2e.
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.build.outputs.playwright }}-noble
     timeout-minutes: 20
     steps:
       - name: Checkout code
@@ -302,21 +300,6 @@ jobs:
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v5
-        id: cache-playwright
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Playwright Browsers
-        if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps
-
-      - name: Install Playwright system dependencies
-        if: steps.cache-playwright.outputs.cache-hit == 'true'
-        run: npx playwright install-deps
 
       - name: Run sharing smoke test against production
         run: npx playwright test e2e/location-sharing.spec.js --reporter=github
