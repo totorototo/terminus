@@ -1,12 +1,14 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: block;
   padding-bottom: clamp(6rem, 20vh, 10rem);
 
   .footer {
-    margin-top: 3rem;
+    margin-top: ${space(12)};
     text-align: center;
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 0.6875rem;
@@ -18,8 +20,8 @@ const style = (Component) => styled(Component)`
   .kofi-card {
     display: flex;
     align-items: center;
-    gap: 0.875rem;
-    margin-bottom: 1.5rem;
+    gap: ${space(4)};
+    margin-bottom: ${space(6)};
     text-decoration: none;
     border: 1px solid
       ${(props) =>
@@ -34,7 +36,7 @@ const style = (Component) => styled(Component)`
         props.theme.colors[props.theme.currentVariant]["--color-primary"],
         0.1,
       )};
-    padding: 1rem 1.25rem;
+    padding: ${space(4)} ${space(5)};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-primary-text"]};
     cursor: pointer;
@@ -72,14 +74,14 @@ const style = (Component) => styled(Component)`
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.75rem;
+    gap: ${space(3)};
   }
 
   .action-btn {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.625rem;
+    gap: ${space(3)};
     white-space: nowrap;
     text-decoration: none;
     background: none;
@@ -90,7 +92,7 @@ const style = (Component) => styled(Component)`
         ]};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
-    padding: 0.75rem 1.25rem;
+    padding: ${space(3)} ${space(5)};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
@@ -143,7 +145,7 @@ const style = (Component) => styled(Component)`
   .contact-form {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: ${space(3)};
     border: 1px solid
       ${(props) =>
         rgba(
@@ -152,12 +154,12 @@ const style = (Component) => styled(Component)`
         )};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
-    padding: 1rem 1.25rem;
+    padding: ${space(4)} ${space(5)};
 
     label {
       display: flex;
       flex-direction: column;
-      gap: 0.375rem;
+      gap: ${space(2)};
       font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
       font-size: 0.75rem;
       color: ${(props) =>
@@ -173,7 +175,7 @@ const style = (Component) => styled(Component)`
           ]};
       border-radius: ${(props) =>
         props.theme.borderRadius["--border-radius-sm"]};
-      padding: 0.5rem 0.625rem;
+      padding: ${space(2)} ${space(3)};
       background: ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-background"]};
       font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
@@ -217,7 +219,7 @@ const style = (Component) => styled(Component)`
   .confirm-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: ${space(3)};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
   }
@@ -234,7 +236,7 @@ const style = (Component) => styled(Component)`
         ]};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
-    padding: 0.5rem 0.875rem;
+    padding: ${space(2)} ${space(4)};
     cursor: pointer;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};

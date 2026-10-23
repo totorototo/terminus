@@ -1,8 +1,8 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
-const labelInset = (props) => `${props.theme.spacing[1]}px`;
-const overlayInset = (props) => `-${props.theme.spacing[2]}px 0`;
+const labelInset = (props) => `${props.theme.space["--space-hair"]}`;
+const overlayInset = (props) => `-${props.theme.space["--space-1"]} 0`;
 
 const style = (Component) => styled(Component)`
   width: 100%;

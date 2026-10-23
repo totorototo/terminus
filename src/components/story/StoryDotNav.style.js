@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   position: fixed;
   top: 50%;
@@ -11,7 +13,7 @@ const style = (Component) => styled(Component)`
      directly overlapping the Slope legend on a 390px viewport); staying
      narrow and tall trades some touch-target width for not fighting the
      content it floats over. */
-  right: calc(env(safe-area-inset-right, 0px) + 2px);
+  right: calc(env(safe-area-inset-right, 0px) + ${space("hair")});
   transform: translateY(-50%);
   z-index: ${(props) => props.theme.zIndex["--z-index-overlay"]};
   display: flex;
@@ -26,10 +28,10 @@ const style = (Component) => styled(Component)`
   .callout {
     position: absolute;
     right: 100%;
-    margin-right: 10px;
+    margin-right: ${space(3)};
     transform: translateY(-50%);
     white-space: nowrap;
-    padding: 0.4rem 0.7rem;
+    padding: ${space(2)} ${space(3)};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
     background: ${(props) =>
@@ -58,8 +60,8 @@ const style = (Component) => styled(Component)`
   &::before {
     content: "";
     position: absolute;
-    top: 13px;
-    bottom: 13px;
+    top: ${space(4)};
+    bottom: ${space(4)};
     left: 50%;
     width: 1px;
     transform: translateX(-50%);

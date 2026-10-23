@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: block;
 
@@ -9,7 +11,7 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     max-width: 34ch;
-    margin: 0 0 2rem;
+    margin: 0 0 ${space(8)};
   }
 
   .stage-list {
@@ -23,8 +25,8 @@ const style = (Component) => styled(Component)`
   .stage-row {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.875rem 0;
+    gap: ${space(3)};
+    padding: ${space(4)} 0;
     border-bottom: 1px solid
       ${(props) =>
         props.theme.colors[props.theme.currentVariant]["--color-hairline"]};
@@ -47,7 +49,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 1rem;
+    gap: ${space(4)};
   }
 
   .stage-main {
@@ -65,7 +67,7 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
-    margin-top: 0.25rem;
+    margin-top: ${space(1)};
   }
 
   /* why: the details stay mounted so they can animate — a grid row going
@@ -76,7 +78,7 @@ const style = (Component) => styled(Component)`
   .stage-details {
     display: grid;
     grid-template-rows: 0fr;
-    margin-top: -0.75rem;
+    margin-top: calc(-1 * ${space(3)});
     opacity: 0;
     transition:
       grid-template-rows
@@ -99,8 +101,8 @@ const style = (Component) => styled(Component)`
   .stage-stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.625rem 1.5rem;
-    padding: 0.75rem;
+    gap: ${space(3)} ${space(6)};
+    padding: ${space(3)};
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     background: ${(props) =>
       rgba(
@@ -112,7 +114,7 @@ const style = (Component) => styled(Component)`
   .stat-cell {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
+    gap: ${space("hair")};
 
     &.wide {
       grid-column: span 2;
@@ -150,7 +152,7 @@ const style = (Component) => styled(Component)`
   .difficulty-value {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: ${space(2)};
   }
 
   .difficulty-dot {
@@ -165,7 +167,7 @@ const style = (Component) => styled(Component)`
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.375rem;
+    gap: ${space(2)};
     text-align: right;
     white-space: nowrap;
   }
@@ -183,7 +185,7 @@ const style = (Component) => styled(Component)`
   .stage-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.1875rem 0.5rem;
+    padding: ${space(1)} ${space(2)};
     border: 1px solid currentColor;
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
@@ -213,9 +215,9 @@ const style = (Component) => styled(Component)`
   .stage-figures {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.625rem 1.5rem;
+    gap: ${space(3)} ${space(6)};
     margin: 0;
-    padding: 0.75rem;
+    padding: ${space(3)};
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
     background: ${(props) =>
       rgba(
@@ -226,7 +228,7 @@ const style = (Component) => styled(Component)`
     > div {
       display: flex;
       flex-direction: column-reverse;
-      gap: 0.125rem;
+      gap: ${space("hair")};
     }
 
     dt {

@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled, { keyframes } from "styled-components";
 
+import { layout, space } from "../../../theme/space.js";
+
 const blink = keyframes`
   0%, 100% { opacity: 1; }
   50% { opacity: 0.25; }
@@ -12,7 +14,7 @@ const style = (Component) => styled(Component)`
   .live-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: ${space(2)};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-xsmall"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
@@ -20,7 +22,7 @@ const style = (Component) => styled(Component)`
     letter-spacing: 0.15em;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
-    margin-bottom: 1.5rem;
+    margin-bottom: ${space(6)};
   }
 
   .live-dot {
@@ -39,7 +41,7 @@ const style = (Component) => styled(Component)`
   .now-row {
     display: flex;
     flex-wrap: wrap;
-    gap: clamp(1.5rem, 5vw, 3rem);
+    gap: ${layout("stat-gap")};
   }
 
   .now-stat {
@@ -71,20 +73,20 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    margin-top: 0.375rem;
+    margin-top: ${space(2)};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   .now-note {
-    margin: 1.75rem 0 0.75rem;
+    margin: ${space(7)} 0 ${space(3)};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
   }
 
   .now-fuel {
-    margin: 0 0 1rem;
+    margin: 0 0 ${space(4)};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
@@ -94,7 +96,7 @@ const style = (Component) => styled(Component)`
   .track-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: ${space(2)};
     min-height: 44px;
     background: none;
     border: 1px solid
@@ -104,7 +106,7 @@ const style = (Component) => styled(Component)`
         ]};
     border-radius: ${(props) =>
       props.theme.borderRadius["--border-radius-base"]};
-    padding: 0.625rem 1.125rem;
+    padding: ${space(3)} ${space(5)};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};

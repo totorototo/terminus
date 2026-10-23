@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: block;
 
@@ -9,11 +11,11 @@ const style = (Component) => styled(Component)`
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
     max-width: 34ch;
-    margin: 0 0 3rem;
+    margin: 0 0 ${space(12)};
   }
 
   .chart-frame {
-    padding: 2rem 1.5rem;
+    padding: ${space(8)} ${space(6)};
     border-radius: ${(props) => props.theme.borderRadius["--border-radius-lg"]};
     border: 1px solid
       ${(props) =>
@@ -21,7 +23,7 @@ const style = (Component) => styled(Component)`
           props.theme.colors[props.theme.currentVariant]["--color-text"],
           0.08,
         )};
-    margin-bottom: 1.5rem;
+    margin-bottom: ${space(6)};
   }
 
   .plan-model {
@@ -46,7 +48,7 @@ const style = (Component) => styled(Component)`
   }
 
   .plan-error {
-    margin: 0.5rem 0 0;
+    margin: ${space(2)} 0 0;
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-accent-text"]};
@@ -59,7 +61,7 @@ const style = (Component) => styled(Component)`
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};
-    margin: 1.25rem 0 0.5rem;
+    margin: ${space(5)} 0 ${space(2)};
 
     &:first-of-type {
       margin-top: 0;
@@ -67,7 +69,7 @@ const style = (Component) => styled(Component)`
   }
 
   .synced-note {
-    margin: 1rem 0 0;
+    margin: ${space(4)} 0 0;
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-muted"]};

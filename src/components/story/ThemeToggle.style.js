@@ -1,10 +1,12 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 1.25rem);
-  right: calc(env(safe-area-inset-right, 0px) + 1.25rem);
+  top: calc(env(safe-area-inset-top, 0px) + ${space(5)});
+  right: calc(env(safe-area-inset-right, 0px) + ${space(5)});
   z-index: ${(props) => props.theme.zIndex["--z-index-overlay"]};
   display: flex;
   align-items: center;

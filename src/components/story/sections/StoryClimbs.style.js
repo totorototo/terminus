@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: block;
 
@@ -13,20 +15,20 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text-faint"]};
-    margin: 0 0 1.5rem;
+    margin: 0 0 ${space(6)};
     max-width: 40ch;
   }
 
   .climb-list {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: ${space(6)};
   }
 
   .climb-row {
     display: flex;
-    gap: 1rem;
-    padding-bottom: 1.5rem;
+    gap: ${space(4)};
+    padding-bottom: ${space(6)};
     border-bottom: 1px solid
       ${(props) =>
         rgba(
@@ -94,7 +96,7 @@ const style = (Component) => styled(Component)`
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size"]};
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
-    margin-bottom: 0.5rem;
+    margin-bottom: ${space(2)};
   }
 
   .climb-summit {
@@ -111,7 +113,7 @@ const style = (Component) => styled(Component)`
         0.08,
       )};
     overflow: hidden;
-    margin-bottom: 0.5rem;
+    margin-bottom: ${space(2)};
   }
 
   .climb-gain-bar-fill {
@@ -122,7 +124,7 @@ const style = (Component) => styled(Component)`
 
   .climb-stats-row {
     display: flex;
-    gap: 0.5rem;
+    gap: ${space(2)};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>

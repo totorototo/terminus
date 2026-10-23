@@ -1,12 +1,14 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.625rem 0.875rem;
+  gap: ${space(3)};
+  padding: ${space(3)} ${space(4)};
   border-radius: ${(props) => props.theme.borderRadius["--border-radius-md"]};
   background: ${(props) =>
     rgba(props.theme.colors[props.theme.currentVariant]["--color-text"], 0.04)};
@@ -33,7 +35,7 @@ const style = (Component) => styled(Component)`
   .cp-weather-main {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: ${space(2)};
   }
 
   .cp-weather-alert {
@@ -61,7 +63,7 @@ const style = (Component) => styled(Component)`
   .cp-weather-detail {
     display: flex;
     align-items: center;
-    gap: 0.7rem;
+    gap: ${space(3)};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     color: ${(props) =>
@@ -72,7 +74,7 @@ const style = (Component) => styled(Component)`
   .cp-weather-wind {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: ${space(1)};
   }
 `;
 

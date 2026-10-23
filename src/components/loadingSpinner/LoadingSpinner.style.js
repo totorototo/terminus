@@ -1,6 +1,8 @@
 import { rgba } from "polished";
 import styled, { keyframes } from "styled-components";
 
+import { space } from "../../theme/space.js";
+
 const spin = keyframes`
   to {
     transform: rotate(360deg);
@@ -16,7 +18,7 @@ const style = (Component) => styled(Component)`
   justify-content: center;
   background: ${(props) =>
     props.theme.colors[props.theme.currentVariant]["--color-background"]};
-  gap: 1rem;
+  gap: ${space(4)};
 
   .spinner {
     width: 48px;

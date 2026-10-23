@@ -1,12 +1,15 @@
 import { rgba } from "polished";
 import styled from "styled-components";
 
+import { layout, space } from "../../../theme/space.js";
+
 const style = (Component) => styled(Component)`
   display: flex;
   flex-direction: column;
   min-height: 92vh;
   justify-content: center;
-  padding: clamp(4rem, 14vh, 7rem) ${(props) => props.theme.layout["--gutter"]};
+  padding: ${layout("section-block")}
+    ${(props) => props.theme.layout["--gutter"]};
 
   .eyebrow {
     display: block;
@@ -20,7 +23,7 @@ const style = (Component) => styled(Component)`
         props.theme.colors[props.theme.currentVariant]["--color-text"],
         0.85,
       )};
-    margin-bottom: 1rem;
+    margin-bottom: ${space(4)};
   }
 
   .name {
@@ -31,14 +34,14 @@ const style = (Component) => styled(Component)`
     line-height: 0.98;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
-    margin: 0 0 2.5rem;
+    margin: 0 0 ${space(10)};
     max-width: 20ch;
   }
 
   .stat-row {
     display: flex;
     flex-wrap: wrap;
-    gap: clamp(1.5rem, 5vw, 3.5rem);
+    gap: ${layout("stat-gap")};
   }
 
   .stat {
@@ -61,7 +64,7 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size-small"]};
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    margin-top: 0.375rem;
+    margin-top: ${space(2)};
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],
@@ -72,8 +75,8 @@ const style = (Component) => styled(Component)`
   .clock {
     display: flex;
     align-items: baseline;
-    gap: 0.625rem;
-    margin-top: 3rem;
+    gap: ${space(3)};
+    margin-top: ${space(12)};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
   }
 
@@ -97,7 +100,7 @@ const style = (Component) => styled(Component)`
 
   .build-number {
     display: block;
-    margin-top: 1.5rem;
+    margin-top: ${space(6)};
     font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
     font-size: 0.6875rem;
     letter-spacing: 0.04em;
