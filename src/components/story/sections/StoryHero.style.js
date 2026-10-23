@@ -10,6 +10,12 @@ const style = (Component) => styled(Component)`
   justify-content: center;
   padding: ${layout("section-block")}
     ${(props) => props.theme.layout["--gutter"]};
+  /* On the measure, as the sections after it and the start page before it. */
+  max-width: calc(
+    ${(props) => props.theme.layout["--measure"]} + 2 *
+      ${(props) => props.theme.layout["--gutter"]}
+  );
+  margin: 0 auto;
 
   .eyebrow {
     display: block;
@@ -36,6 +42,7 @@ const style = (Component) => styled(Component)`
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
     margin: 0 0 ${space(10)};
     max-width: 20ch;
+    text-wrap: balance;
   }
 
   .stat-row {
@@ -96,19 +103,6 @@ const style = (Component) => styled(Component)`
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
-  }
-
-  .build-number {
-    display: block;
-    margin-top: ${space(6)};
-    font-family: ${(props) => props.theme.font.family["--font-family-mono"]};
-    font-size: 0.6875rem;
-    letter-spacing: 0.04em;
-    color: ${(props) =>
-      rgba(
-        props.theme.colors[props.theme.currentVariant]["--color-text"],
-        0.85,
-      )};
   }
 `;
 
