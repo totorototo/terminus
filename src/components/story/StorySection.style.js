@@ -36,6 +36,7 @@ const style = (Component) => styled(Component)`
     font-weight: ${(props) => props.theme.font.weights["--font-weight-bold"]};
     letter-spacing: -0.03em;
     line-height: 1;
+    text-wrap: balance;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
     margin: 0 0 ${space(8)};

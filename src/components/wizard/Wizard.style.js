@@ -112,9 +112,9 @@ const style = (Component) => styled(Component)`
     font-size: ${(props) => props.theme.font.sizes["--font-size"]};
     /* why: this text sits directly on the flat --color-background (no
        glassMorphism card behind it anymore) — 0.85 is the app's existing
-       floor for that context (see StoryHero's eyebrow/stat-label/
-       build-number), the lowest opacity that still clears WCAG AA 4.5:1
-       against the light-theme background. */
+       floor for that context (see StoryHero's eyebrow and stat-label), the
+       lowest opacity that still clears WCAG AA 4.5:1 against the light-theme
+       background. */
     color: ${(props) =>
       rgba(
         props.theme.colors[props.theme.currentVariant]["--color-text"],

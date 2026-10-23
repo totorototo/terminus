@@ -125,10 +125,6 @@ const StoryHero = memo(function StoryHero({ className }) {
           <span className="clock-value">{clock.value}</span>
         </div>
       )}
-
-      <span className="build-number">
-        Build {import.meta.env.VITE_NUMBER || "dev"}
-      </span>
     </header>
   );
 });
