@@ -102,6 +102,7 @@ const style = (Component) => styled(Component)`
     letter-spacing: -0.03em;
     line-height: 1;
     max-width: 16ch;
+    text-wrap: balance;
     color: ${(props) =>
       props.theme.colors[props.theme.currentVariant]["--color-text"]};
     margin: 0 0 ${space(4)};
